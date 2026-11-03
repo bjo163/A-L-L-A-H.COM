@@ -1,0 +1,20 @@
+{
+  "name": "@allah/sentinel-radius",
+  "version": "0.1.0",
+  "description": "Native SENTINEL RADIUS Protocol Engine (RFC 2865/2866) - Node.js UDP socket server with packet codec",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "tsx --test test/**/*.test.mjs"
+  },
+  "dependencies": {
+    "@allah/arsy-core": "workspace:*",
+    "@allah/arsy-orm": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}
