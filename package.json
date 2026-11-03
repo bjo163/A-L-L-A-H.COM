@@ -5,10 +5,10 @@
   "scripts": {
     "build": "pnpm -r run build",
     "dev": "pnpm -r --parallel run dev",
-    "web:dev": "pnpm --filter moonwitness-web dev",
-    "web:build": "pnpm --filter moonwitness-web build",
-    "server": "powershell -Command \"Set-Location apps/moonwitness-server; cargo loco start\"",
-    "server:migrate": "powershell -Command \"Set-Location apps/moonwitness-server; cargo loco db migrate\""
+    "web:dev": "pnpm --filter web dev",
+    "web:build": "pnpm --filter web build",
+    "server": "powershell -Command \"Set-Location apps/server; cargo loco start\"",
+    "server:migrate": "powershell -Command \"Set-Location apps/server; cargo loco db migrate\""
   }
 }
 

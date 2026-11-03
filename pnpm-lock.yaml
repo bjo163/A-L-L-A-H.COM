@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  apps/moonwitness-web:
+  apps/web:
     dependencies:
       next:
         specifier: 16.4.3

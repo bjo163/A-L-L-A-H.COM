@@ -1,0 +1,42 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: moonwitness-server
+    restart: unless-stopped
+    ports:
+      - "5150:5150"
+    environment:
+      - LOCO_ENV=production
+      - PORT=5150
+      - BINDING=0.0.0.0
+      - DATABASE_URL=sqlite:///app/data/moonwitness.sqlite?mode=rwc
+    volumes:
+      - server_data:/app/data
+    networks:
+      - moonwitness-net
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: moonwitness-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://server:5150
+    depends_on:
+      - server
+    networks:
+      - moonwitness-net
+
+volumes:
+  server_data:
+    driver: local
+
+networks:
+  moonwitness-net:
+    driver: bridge
