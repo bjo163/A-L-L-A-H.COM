@@ -32,6 +32,7 @@ Status: COMPLETED — documentation/specification delivery only.
 - [x] Push / advance the feature branch and verify its remote head.
 - [x] Inspect concurrent dev commits and confirm their changed paths do not overlap this feature.
 - [x] Integrate the latest dev head into the feature branch without force-pushing or overwriting unrelated work.
+- [x] Incorporate the subsequent package build-order fix from dev and verify the feature remains zero commits behind.
 - [x] Verify the expected DNA and plan files in the remote tree.
 - [x] Verify the feature branch is synchronized with the latest dev head and has zero commits behind.
 - [x] Perform a manual internal-link/path review and record verification limitations in report.md.
