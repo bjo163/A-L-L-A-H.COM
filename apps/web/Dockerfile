@@ -30,3 +30,4 @@ WORKDIR /app/apps/web
 EXPOSE 3000
 
 CMD ["pnpm", "start"]
+

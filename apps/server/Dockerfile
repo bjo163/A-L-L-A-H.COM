@@ -38,3 +38,4 @@ ENV BINDING=0.0.0.0
 EXPOSE 5150
 
 CMD ["server-cli", "start"]
+
