@@ -224,3 +224,78 @@ export interface McpToolCallResult {
 
 export const MCP_PROTOCOL_VERSION = '2025-06-12';
 
+/**
+ * Autonomous Cognitive Agent Loop Contracts (Phase 4)
+ */
+export interface AgentThought {
+  step: number;
+  thought: string;
+  timestamp: string;
+}
+
+export interface AgentToolCallEvent {
+  step: number;
+  call_id: string;
+  tool: string;
+  arguments: Record<string, unknown>;
+}
+
+export interface AgentToolResultEvent {
+  step: number;
+  call_id: string;
+  tool: string;
+  success: boolean;
+  result: any;
+  error?: string | null;
+  latency_ms: number;
+}
+
+export interface AgentSduiEvent {
+  type: string;
+  title?: string;
+  props: Record<string, any>;
+}
+
+export interface AgentStreamEvent {
+  event: 'thought' | 'tool_call' | 'tool_result' | 'sdui' | 'chunk' | 'done';
+  data: AgentThought | AgentToolCallEvent | AgentToolResultEvent | AgentSduiEvent | { delta: string } | { total_steps: number; tools_called: string[]; finish_reason: string };
+}
+
+export interface AgentStep {
+  step: number;
+  thought?: string;
+  tool_calls?: AgentToolCallEvent[];
+  tool_results?: AgentToolResultEvent[];
+  sdui?: AgentSduiEvent[];
+  response?: string;
+  finish_reason?: string;
+}
+
+export interface AgentRunRequest {
+  prompt: string;
+  system?: string;
+  thread_id?: string;
+  max_steps?: number;
+  timeout_ms?: number;
+  allowed_tools?: string[];
+  temperature?: number;
+}
+
+export interface AgentRunResponse {
+  success: boolean;
+  session_id: string;
+  steps: AgentStep[];
+  final_response: string;
+  total_steps: number;
+  tools_called: string[];
+  finish_reason: 'completed' | 'max_steps' | 'loop_detected' | 'timeout' | 'error';
+  error?: string;
+  sdui_views: AgentSduiEvent[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    estimated_cost_usd?: number;
+  };
+}
+

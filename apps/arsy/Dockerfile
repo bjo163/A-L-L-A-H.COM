@@ -1,0 +1,52 @@
+# Multi-stage Dockerfile for Arsy Fastify Gateway Runtime Server
+FROM node:22-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+FROM base AS builder
+WORKDIR /app
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/arsy/package.json ./apps/arsy/
+COPY packages/arsy-core/package.json ./packages/arsy-core/
+COPY packages/arsy-orm/package.json ./packages/arsy-orm/
+COPY packages/arsy-plugin-auth/package.json ./packages/arsy-plugin-auth/
+COPY packages/arsy-plugin-storage/package.json ./packages/arsy-plugin-storage/
+COPY packages/arsy-plugin-llm-gateway/package.json ./packages/arsy-plugin-llm-gateway/
+COPY packages/arsy-plugin-sdui/package.json ./packages/arsy-plugin-sdui/
+
+RUN pnpm install --frozen-lockfile
+
+COPY packages/arsy-core ./packages/arsy-core
+COPY packages/arsy-orm ./packages/arsy-orm
+COPY packages/arsy-plugin-auth ./packages/arsy-plugin-auth
+COPY packages/arsy-plugin-storage ./packages/arsy-plugin-storage
+COPY packages/arsy-plugin-llm-gateway ./packages/arsy-plugin-llm-gateway
+COPY packages/arsy-plugin-sdui ./packages/arsy-plugin-sdui
+COPY apps/arsy ./apps/arsy
+
+RUN pnpm --filter @allah/arsy-core build \
+ && pnpm --filter @allah/arsy-orm build \
+ && pnpm --filter @allah/arsy-plugin-auth build \
+ && pnpm --filter @allah/arsy-plugin-storage build \
+ && pnpm --filter @allah/arsy-plugin-llm-gateway build \
+ && pnpm --filter @allah/arsy-plugin-sdui build \
+ && pnpm --filter @allah/arsy build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=5150
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/arsy ./apps/arsy
+
+WORKDIR /app/apps/arsy
+
+EXPOSE 5150
+
+CMD ["pnpm", "start"]

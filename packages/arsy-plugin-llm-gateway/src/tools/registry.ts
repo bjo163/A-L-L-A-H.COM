@@ -90,6 +90,17 @@ export class ToolRegistry {
     return [...this.executionLog].reverse();
   }
 
+  getDefinitions(): Array<{ type: 'function'; function: { name: string; description: string; parameters: any } }> {
+    return this.list().map((tool) => ({
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: (tool.inputSchema as any)?.properties || tool.inputSchema,
+      },
+    }));
+  }
+
   private async persistAudit(record: ToolExecutionRecord): Promise<void> {
     try {
       await dbEngine.query(

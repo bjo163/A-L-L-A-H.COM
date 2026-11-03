@@ -254,4 +254,11 @@ export class SmartRouter {
 
     throw new Error(`All streaming providers in fallback chain failed: ${JSON.stringify(errors)}`);
   }
+
+  async routeChat(req: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+    const model = req.model || 'dx-default';
+    const resolution = await this.resolveRoute(model);
+    const { response } = await this.executeWithFallback(resolution, req);
+    return response;
+  }
 }

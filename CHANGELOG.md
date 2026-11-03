@@ -14,6 +14,11 @@ This file records changes that actually happened. It is not a roadmap and must n
 ## [Unreleased]
 
 ### Added
+- **Autonomous Cognitive Agent Loop & Generative SDUI (@allah/arsy-plugin-llm-gateway)**: Implemented multi-turn ReAct cognitive reasoning engine with loop detection, max-step ceilings, native tool dispatch, /v1/agent/run, and zero-copy /v1/agent/stream SSE endpoints.
+- **Generative SDUI Synthesis Tool (
+ender_sdui)**: Added dynamic server-driven UI synthesis tool allowing cognitive agents to compose typed view components (card, 	able, 	ree, stats_grid, kanban, orm).
+- **Universal Agent SDK Methods (@allah/sdk)**: Added mwClient.agent.run and mwClient.agent.stream with typed event handling.
+- **Headquarter Agent Studio (pps/headquarter/src/app/agent)**: Added real-time autonomous agent command center with cognitive trajectory timeline and Generative SDUI viewport using @moonwitness/ui.
 - **Architectural Linter Gate (`@moonwitness/lint`)**: Implemented standalone invariant checker `node packages/lint/src/check-architecture.mjs` (`pnpm lint:arch`) enforcing zero ORM overlap (embedded PGlite only), strict `@moonwitness/ui` usage in `apps/`, unified `@allah/sdk` client routing, and shared `@moonwitness/types` data contracts.
 - **Strict TypeScript Typechecking (`pnpm typecheck`)**: Integrated deterministic TypeScript compiler gate across all packages and apps (`@allah/arsy-orm`, `@allah/arsy-core`, `@allah/arsy-plugin-llm-gateway`, `@allah/arsy-plugin-auth`, `@allah/arsy-plugin-storage`, `@allah/arsy-plugin-sdui`, `@moonwitness/types`, `@allah/sdk`, `@moonwitness/ui`, `apps/arsy`). Fixed remaining interface mismatches and dead scaffold files.
 - **Enhanced Husky Pre-Commit Gate**: Upgraded `.husky/pre-commit` to synchronously enforce documentation contracts (`pnpm docs:check`), architectural invariants (`pnpm lint:arch`), and strict TypeScript type validation (`pnpm typecheck`) before commit creation.
@@ -30,6 +35,8 @@ This file records changes that actually happened. It is not a roadmap and must n
 - **Arsy Auth Plugin Endpoints**: Added remote session revocation, session listing, user-agent tracking, and unified session guard in @allah/arsy-plugin-auth.
 - **Root Workspace Scripts**: Added pnpm id:dev and pnpm id:build.
 - **VS Code plan workbench**: Added three-state task actions, multi-root navigation, `.plans` file refresh, four-artifact plan generation, and focused extension tests.
+- **MoonFrame Six Master DNA specifications:** Added the canonical DNA directory with the shared engine contract, six world-specific design specifications, component mapping, and quality gates. Runtime skin implementation remains pending.
+- **Six Master DNA implementation task:** Added SKIN-001 to track the Skin Laboratory, token systems, component recipes, integration, and verification.
 
 ### Changed
 - **VS Code gateway handling:** Parse Arsy's model catalog envelope and reject mock, malformed, or failed plan completions instead of reporting local fallback as AI success.

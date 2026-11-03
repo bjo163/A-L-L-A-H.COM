@@ -11,6 +11,7 @@ import { GeminiAdapter } from './adapters/gemini';
 import { AnthropicAdapter } from './adapters/anthropic';
 import { toolRegistry } from './tools';
 import { mcpHandler } from './mcp';
+import { AgentLoop } from './agent';
 import type { LlmGatewayOptions, ChatCompletionRequest, ToolDefinition, ToolChoice, ToolCall } from './types';
 
 export * from './types';
@@ -24,6 +25,7 @@ export * from './adapters/openai';
 export * from './adapters/anthropic';
 export * from './adapters/gemini';
 export * from './tools';
+export * from './agent';
 
 const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   fastify: FastifyInstance,
@@ -325,6 +327,82 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return fail('MCP_AUDIT_ERROR', err.message);
     }
   });
+
+  // --- Autonomous Cognitive Agent Loop Endpoints ---
+  const agentLoop = new AgentLoop(router);
+
+  // POST /v1/agent/run: Synchronous execution of cognitive agent loop
+  fastify.post<{
+    Body: {
+      prompt: string;
+      system?: string;
+      max_steps?: number;
+      allowed_tools?: string[];
+      temperature?: number;
+    };
+  }>(`${prefix}/agent/run`, async (request, reply) => {
+    const { prompt, system, max_steps, allowed_tools, temperature } = request.body || {};
+    if (!prompt) {
+      return fail('MISSING_PROMPT', 'Prompt is required for agent execution');
+    }
+
+    const companyId = (request as any).user?.company_id || 'default';
+    const result = await agentLoop.run({
+      prompt,
+      system,
+      max_steps,
+      allowed_tools,
+      temperature,
+      company_id: companyId,
+    });
+
+    return ok(result);
+  });
+
+  // POST /v1/agent/stream: Zero-copy SSE real-time cognitive reasoning stream
+  fastify.post<{
+    Body: {
+      prompt: string;
+      system?: string;
+      max_steps?: number;
+      allowed_tools?: string[];
+      temperature?: number;
+    };
+  }>(`${prefix}/agent/stream`, async (request, reply) => {
+    const { prompt, system, max_steps, allowed_tools, temperature } = request.body || {};
+    if (!prompt) {
+      reply.code(400).send({ error: 'Prompt is required for agent execution' });
+      return;
+    }
+
+    reply.raw.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('X-Accel-Buffering', 'no');
+
+    const companyId = (request as any).user?.company_id || 'default';
+
+    await agentLoop.run(
+      {
+        prompt,
+        system,
+        max_steps,
+        allowed_tools,
+        temperature,
+        company_id: companyId,
+      },
+      ({ event, data }) => {
+        try {
+          reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        } catch {
+          // Client disconnected
+        }
+      }
+    );
+
+    reply.raw.end();
+  });
+
 
   // GET /v1/gateway/telemetry (Aggregate Usage & Health Telemetry)
   fastify.get(`${prefix}/gateway/telemetry`, async () => {

@@ -13,6 +13,23 @@ Statuses: DISCOVERED, READY, IN_PROGRESS, IMPLEMENTED, VERIFIED, RELEASED, BLOCK
 
 ## Tasks
 
+### SKIN-001: Implement the Six Master DNA in MoonFrame Skin Engine
+- Priority: P1
+- Status: READY
+- Outcome: Deliver six distinct, accessible, responsive visual worlds on the existing shared UI foundation.
+- Canonical specification: [DNA/README.md](DNA/README.md)
+- Plan: [.plans/20261103-2207-six-master-dna/](.plans/20261103-2207-six-master-dna/)
+- Dependencies: Inspect and preserve the current `packages/ui` API, Base UI primitives, Tailwind integration, and consuming apps.
+- Acceptance criteria:
+  - Implement a Skin Laboratory showing the same content and tasks in all six worlds.
+  - Implement independent tokens, typography, geometry, material, composition, navigation, motion, and component recipes for each DNA.
+  - Preserve one functional component contract, accessibility, responsive behavior, and reduced-motion fallbacks.
+  - Use original or properly licensed assets; avoid unapproved dependencies and primitive migrations.
+  - Preserve ROCKSOUL's unseen-face poster canon and distinguish astronomy from narrative symbolism.
+  - Keep IMPERIUM LUMEN abstract; never depict or claim to represent ALLAH.
+  - Verify Dock and Headquarter integration, builds, representative interaction tests, visual comparison, and accessibility.
+- Verification: Pending runtime implementation; documentation approval is not implementation evidence.
+
 ### DOC-001: Reconcile documentation with implementation
 - Priority: P1
 - Status: READY
