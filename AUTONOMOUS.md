@@ -19,35 +19,38 @@ Operational contract for autonomous AI execution on A-L-L-A-H.COM.
 ## Execution Loop
 `DISCOVER` -> `PLAN (.plans/)` -> `AUDIT` -> `PRIORITIZE` -> `IMPLEMENT` -> `VERIFY` -> `DOCUMENT` -> `PUSH`
 
-### 1. Research & Spec-Driven Planning
+### 1. Research & Spec-Driven Planning (4-Artifact Standard)
 - Consult `bjo163/*` (`moonwitnessxv`, `echolog`, `ql-orm`, `ql_ai`, `mwx-isp`) + Odoo/OpenDAL standards.
 - Select highest-value safe task from `BACKLOG.md`.
-- Create or update `.plans/<timestamp>-<slug>/` with `spec.md` (architecture & AC) and `task.md` (checklist).
+- Create or update `.plans/<timestamp>-<slug>/` containing exactly 4 canonical artifacts:
+  1. `spec.md`: Functional architecture, requirements, and acceptance criteria.
+  2. `task.md`: Actionable checklist with real-time status checkoff.
+  3. `design.md`: UX/UI composition, interaction states, and API contract specifications.
+  4. `rules.md`: Invariants, security constraints, and boundary rules (e.g. tenant isolation, anti-slop, SSRF guard).
 - **Mandatory Live Task Checkoff**: Update `task.md` checkboxes (`- [x]`) and `spec.md` frontmatter status (`in_progress`, `completed`) as tasks transition so VS Code Extension and human operators see real-time progress.
 
 ### 2. Security & Integrity Audit
-- Zero-copy stream pipes (`axum::body::Body::from_stream`).
-- Parameterized DB queries (SeaORM/SQLx). No raw string SQL.
-- Storage immutability: SHA-256 content addressable (`objects/<digest>`).
+- Zero-copy stream pipes (`fastify` / `undici` / stream handling).
+- Parameterized DB queries (PGlite / `@allah/arsy-orm`). No raw string SQL.
+- Storage immutability: SHA-256 content addressable (`data/storage/<digest>`).
 - Fail-closed access: `legal_hold` and `retention_until` checks enforce deletion rejection.
 - Upstream guard: validate `base_url`, prevent SSRF.
 
 ### 3. Implementation Standards
-- Backend: Rust (`apps/server`), Loco framework, modular addons in `addons/`.
-- Frontend: Next.js (`apps/web`), App Router, React 19, Tailwind v4.
+- Backend: TypeScript (`apps/arsy`), Fastify framework, modular addons in `addons/`, embedded PGlite.
+- Frontend: Next.js (`apps/id`, `apps/dock`, `apps/headquarter`), App Router, React 19, Tailwind v4.
 - Anti-slop: zero placeholder files, concise logic, strict types, high-signal comments only.
 
 ### 4. Build Gates (Zero-Error Mandate)
 Execute and verify:
 ```bash
-pnpm server:migrate
-cargo check --manifest-path apps/server/Cargo.toml
-pnpm web:build
+pnpm --filter @allah/arsy build
+pnpm docs:check
 ```
 On error: self-diagnose and fix root cause immediately. Do not prompt user.
 
 ### 5. Mandatory Canonical Document Sync
-Apply the change-to-document matrix in `DOCUMENTATION_CONTRACT.md`. Keep document ownership distinct and update only affected docs. In particular:
+Apply the change-to-document matrix in `DOCUMENTATION_CONTRACT.md`. Keep document ownership distinct and update only affected docs:
 - `README.md`: verified capabilities, setup, and deployment entry point.
 - `CHANGELOG.md`: changes that actually happened.
 - `BLUEPRINT.md` and `DESIGN.md`: architecture and product experience respectively.

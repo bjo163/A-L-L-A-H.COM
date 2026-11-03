@@ -13,22 +13,28 @@ Contracts: `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `GOAL.md`, `LEGACY_RECO
 
 ## Universal Engineering Rules
 - **Autonomous execution**: Read `AUTONOMOUS.md`. Zero-confirmation loop for safe tasks.
-- **Spec-Driven Planning & Realtime Tracking**:
-  - Any multi-step task or architecture change MUST be planned under `.plans/<timestamp>-<slug>/` containing `spec.md` (architecture, invariants & AC) and `task.md` (checklist).
+- **Spec-Driven Planning & Realtime Tracking (4-Artifact Standard)**:
+  - Any multi-step task or architecture change MUST be planned under `.plans/<timestamp>-<slug>/` containing exactly 4 canonical artifacts:
+    1. `spec.md`: Functional architecture, requirements, and acceptance criteria.
+    2. `task.md`: Actionable checklist with real-time status checkoff.
+    3. `design.md`: UX/UI composition, interaction states, and API contract specifications.
+    4. `rules.md`: Invariants, security constraints, and boundary rules (e.g. tenant isolation, anti-slop, SSRF guard).
   - **Live Task Status Checkoff (Mandatory)**: During execution, the agent MUST update `task.md` checkboxes in realtime (`- [ ]` to `- [/]` or `- [x]`) and update frontmatter `status:` in `spec.md` (`proposed` -> `in_progress` -> `completed`). Never leave finished items unchecked.
   - Compatible with the `allah-vscode-extension` Project Management tree view.
 - **Documentation**: Follow `DOCUMENTATION_CONTRACT.md`; update only the canonical docs affected by a change.
 - **Product & legacy integrity**: A-L-L-A-H.COM unifies MoonWitness & Empire of the Light. Follow `LEGACY_RECONCILIATION.md`. Preserve provenance; distinguish verified implementation from narrative/plan.
 - **Architecture**:
-  - `apps/server/src/core/`: Ql-Orm engine, BaseModel, Storage, Router state.
-  - `apps/server/addons/`: Addons modular `base`, `mw_storage`, `mw_llm_router`.
-  - `apps/server/src/controllers/`: Fast-path gateway `/v1/chat/completions`, `/v1/models`, `/v1/sdui`.
-  - `apps/web/`: Next.js 16 (App Router) + React 19 + Tailwind v4.
+  - `apps/arsy/`: Fastify Hub + embedded PGlite ORM (Ql-Orm engine, BaseModel, Storage, Router state).
+  - `addons/`: Addons modular `base`, `mw_storage`, `mw_llm_router`.
+  - `apps/arsy/src/controllers/`: Fast-path gateway `/v1/chat/completions`, `/v1/models`, `/v1/sdui`.
+  - `apps/dock/`: Next.js 16 (App Router) + React 19 + Tailwind v4 — public homepage (port 3001).
+  - `apps/headquarter/`: Next.js 16 (App Router) + React 19 + Tailwind v4 — command center (port 3002).
+  - `packages/ui/`: shadcn/ui shared component library (`@moonwitness/ui`).
 - **Invariants**: Content-addressed write-once storage (SHA-256), fail-closed retention/holds, parameterized queries, tenant isolation (`company_id`).
 - **Build gates (must pass 100%)**:
-  1. `pnpm server:migrate`
-  2. `cargo check --manifest-path apps/server/Cargo.toml`
-  3. `pnpm web:build`
+  1. `pnpm dock:build`
+  2. `pnpm headquarter:build`
+  3. `pnpm --filter @allah/arsy build`
 - **Doc sync**: Follow the change-to-document matrix in `DOCUMENTATION_CONTRACT.md`.
 - **Git safety**: Review staged diff. No secrets/untracked bloat. Conventional commits + push to `dev` (CI auto-promotes to `main` upon 100% pass).
 
