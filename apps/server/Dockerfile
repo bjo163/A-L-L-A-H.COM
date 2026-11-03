@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Rust Loco Server
-# Use Debian Bookworm (modern & stable package mirrors)
-FROM rust:1.85-bookworm AS builder
+# Use latest stable Rust compiler image
+FROM rust:latest AS builder
 
 WORKDIR /usr/src/app
 
