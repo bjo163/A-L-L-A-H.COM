@@ -1,6 +1,6 @@
 ---
 title: "NEXUS Phase 1: Network Inventory & MikroTik NAS Registry Foundation (Issue #8)"
-status: "proposed"
+status: "completed"
 timestamp: "2026-11-04T00:54:00+07:00"
 author: "Antigravity Assistant"
 target_branch: "dev"
