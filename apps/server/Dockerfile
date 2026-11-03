@@ -1,5 +1,6 @@
 # Multi-stage Dockerfile for Rust Loco Server
-FROM rust:1.85-bullseye AS builder
+# Use Debian Bookworm (modern & stable package mirrors)
+FROM rust:1.85-bookworm AS builder
 
 WORKDIR /usr/src/app
 
@@ -17,14 +18,15 @@ WORKDIR /usr/src/app/apps/server
 RUN cargo build --release
 
 # Runner Stage
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    libssl1.1 \
+    libssl3 \
     libsqlite3-0 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/app/apps/server/target/release/dx_server-cli /usr/local/bin/server-cli
@@ -38,4 +40,3 @@ ENV BINDING=0.0.0.0
 EXPOSE 5150
 
 CMD ["server-cli", "start"]
-
