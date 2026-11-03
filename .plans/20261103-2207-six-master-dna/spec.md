@@ -1,6 +1,6 @@
 ---
 title: "Six Master DNA — Canonical Design Specification"
-status: "in_progress"
+status: "completed"
 timestamp: "2026-11-03T22:07:00+07:00"
 author: "OpenAI"
 target_branch: "feature/moonframe-six-master-dna"
@@ -29,20 +29,20 @@ A contributor or coding agent can understand each world, implement it without bl
 ## Repository baseline and constraints
 
 - Repository: bjo163/A-L-L-A-H.COM.
-- Base branch: dev.
+- Base branch: dev at bbf93bc94ac1373ca245f1b045325240c144135a.
 - Feature branch: feature/moonframe-six-master-dna.
 - Current shared UI foundation: packages/ui/, package name @moonwitness/ui.
 - Current shared component implementation uses Base UI primitives and Tailwind-oriented recipes; do not assume Radix is installed.
 - Preserve existing app and package contracts.
-- Do not implement the runtime skins in this documentation-only task.
+- This is a documentation/specification delivery, not runtime skin implementation.
 - Distinguish approved design direction from implemented and verified software.
 
-## Scope
+## Scope delivered
 
-- Add canonical specifications under DNA/.
-- Define one shared Skin Engine contract and a component mapping / quality gate.
-- Update DESIGN.md, DECISIONS.md, BACKLOG.md, and CHANGELOG.md according to the documentation contract.
-- Create and complete this plan with evidence after the branch push is verified.
+- Added canonical specifications under DNA/.
+- Defined one shared Skin Engine contract and a component mapping / quality gate.
+- Updated DESIGN.md, DECISIONS.md, BACKLOG.md, and CHANGELOG.md according to the documentation contract.
+- Created this plan with implementation and verification evidence.
 
 ## Out of scope
 
@@ -59,7 +59,7 @@ A contributor or coding agent can understand each world, implement it without bl
 - ROCKSOUL retains unseen-face / back-view poster direction, red hoodie motif, rain-night atmosphere, alternative-music identity, and narrative provenance.
 - IMPERIUM LUMEN preserves abstract visual symbolism and does not depict or claim to represent ALLAH.
 - LUNAR CHRONICLES distinguishes measured astronomy from fictional / symbolic narrative.
-- All internal links resolve.
+- Internal links and expected repository paths are checked against the remote tree.
 - Documentation updates follow DOCUMENTATION_CONTRACT.md.
 - Feature branch contains a scoped conventional commit and is independently verified.
 - Runtime implementation is explicitly marked pending.
