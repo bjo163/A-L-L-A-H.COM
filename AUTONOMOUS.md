@@ -17,11 +17,12 @@ Operational contract for autonomous AI execution on A-L-L-A-H.COM.
 - Follow `DOCUMENTATION_CONTRACT.md` for every Markdown change; update only affected canonical documents.
 
 ## Execution Loop
-`DISCOVER` -> `AUDIT` -> `PRIORITIZE` -> `IMPLEMENT` -> `VERIFY` -> `DOCUMENT` -> `PUSH`
+`DISCOVER` -> `PLAN (.plans/)` -> `AUDIT` -> `PRIORITIZE` -> `IMPLEMENT` -> `VERIFY` -> `DOCUMENT` -> `PUSH`
 
-### 1. Research & Gap Analysis
+### 1. Research & Spec-Driven Planning
 - Consult `bjo163/*` (`moonwitnessxv`, `echolog`, `ql-orm`, `ql_ai`, `mwx-isp`) + Odoo/OpenDAL standards.
 - Select highest-value safe task from `BACKLOG.md`.
+- Create or update `.plans/<timestamp>-<slug>/` with `spec.md` (architecture & AC) and `task.md` (checklist).
 
 ### 2. Security & Integrity Audit
 - Zero-copy stream pipes (`axum::body::Body::from_stream`).

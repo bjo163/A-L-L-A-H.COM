@@ -1,8 +1,8 @@
 {
   "name": "@allah/vscode-extension",
   "displayName": "A-L-L-A-H.COM (MoonWitness) Developer Tools",
-  "description": "VS Code integration for A-L-L-A-H.COM: LLM Router Gateway, Echolog Immutable Storage, and SDUI Explorer.",
-  "version": "0.1.0",
+  "description": "VS Code integration for A-L-L-A-H.COM: Spec-Driven Project Management (.plans), LLM Router Gateway, Echolog Storage, and SDUI.",
+  "version": "0.2.0",
   "publisher": "a-l-l-a-h",
   "license": "MIT",
   "engines": {
@@ -19,6 +19,16 @@
   ],
   "contributes": {
     "commands": [
+      {
+        "command": "allah.createPlan",
+        "title": "MoonWitness: Create Spec-Driven Plan (.plans)",
+        "category": "A-L-L-A-H"
+      },
+      {
+        "command": "allah.refreshPlans",
+        "title": "MoonWitness: Refresh Project Management Plans",
+        "category": "A-L-L-A-H"
+      },
       {
         "command": "allah.testConnection",
         "title": "MoonWitness: Test Gateway Connection",
@@ -47,6 +57,11 @@
     "views": {
       "allah-explorer": [
         {
+          "id": "allah.views.plans",
+          "name": "Project Manager (.plans)",
+          "icon": "$(checklist)"
+        },
+        {
           "id": "allah.views.storage",
           "name": "Echolog Storage (SHA-256)",
           "icon": "$(database)"
@@ -55,6 +70,20 @@
           "id": "allah.views.models",
           "name": "LLM Router Models",
           "icon": "$(server)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "allah.createPlan",
+          "when": "view == allah.views.plans",
+          "group": "navigation@1"
+        },
+        {
+          "command": "allah.refreshPlans",
+          "when": "view == allah.views.plans",
+          "group": "navigation@2"
         }
       ]
     },
@@ -86,4 +115,3 @@
     "typescript": "^5.7.2"
   }
 }
-

@@ -13,6 +13,7 @@ Contracts: `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `GOAL.md`, `LEGACY_RECO
 
 ## Universal Engineering Rules
 - **Autonomous execution**: Read `AUTONOMOUS.md`. Zero-confirmation loop for safe tasks.
+- **Spec-Driven Planning**: Any multi-step task or architecture change MUST be planned under `.plans/<timestamp>-<slug>/` containing `spec.md` (architecture & AC) and `task.md` (checklist).
 - **Documentation**: Follow `DOCUMENTATION_CONTRACT.md`; update only the canonical docs affected by a change.
 - **Product & legacy integrity**: A-L-L-A-H.COM unifies MoonWitness & Empire of the Light. Follow `LEGACY_RECONCILIATION.md`. Preserve provenance; distinguish verified implementation from narrative/plan.
 - **Architecture**:

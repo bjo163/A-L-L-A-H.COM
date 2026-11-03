@@ -14,6 +14,7 @@ This file records changes that actually happened. It is not a roadmap and must n
 ## [Unreleased]
 
 ### Added
+- Spec-Driven Planning standard (.plans/<timestamp>-<slug>/ with spec.md and task.md) and mini project management engine in @allah/vscode-extension.
 - GitHub Actions workflow to build and publish server/web container images to GHCR, then trigger Coolify deployment. The first production runs published the web image but failed while building the server image; see the deployment task in `BACKLOG.md`.
 - CI validation gate (ci-dev.yml) to automatically test dev branch and auto-promote to main upon 100% test pass.
 - Repository-wide documentation contract and updated app guides with workspace commands.
