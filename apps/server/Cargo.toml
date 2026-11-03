@@ -64,7 +64,6 @@ rand = { version = "0.8", features = ["std"] }
 # AWS SigV4 signing for S3 content-addressed verifier
 hmac = "0.12"
 hex = { version = "0.4", features = ["alloc"] }
-percent-encoding = "2"
 # futures streaming helpers
 futures = { version = "0.3", default-features = false, features = ["std"] }
 

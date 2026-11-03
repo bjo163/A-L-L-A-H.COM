@@ -1533,7 +1533,6 @@ dependencies = [
  "loco-rs",
  "lru",
  "migration",
- "percent-encoding",
  "rand 0.8.8",
  "regex",
  "reqwest",

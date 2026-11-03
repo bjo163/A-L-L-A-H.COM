@@ -1,5 +1,6 @@
 use subtle::ConstantTimeEq;
 use url::Url;
+use ipnet::IpNet;
 use sha2::{Digest, Sha256};
 use std::net::IpAddr;
 
@@ -7,12 +8,17 @@ use std::net::IpAddr;
 /// Prevents timing attacks by ensuring comparison time is independent of
 /// the number of matching bytes.
 pub fn constant_time_compare(a: &[u8], b: &[u8]) -> bool {
-    // Use subtle's ct_eq directly - it handles different lengths safely
-    a.ct_eq(b).into()
+    // Pad to same length if needed
+    let len = a.len().max(b.len());
+    let mut padded = vec![0u8; len];
+    padded[..a.len()].copy_from_slice(a);
+    padded[..b.len()].copy_from_slice(b);
+    padded.ct_eq(&vec![0u8; len]).into()
 }
 
 /// SSRF guard: validates that a URL's host is not a private/internal address.
-/// Blocks loopback, private, link-local, and unique-local addresses.
+/// Blocks localhost, 127.0.0.1/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16,
+/// fc00::/7 (unique local), and link-local addresses.
 pub fn validate_url_ssrf(url_str: &str) -> Result<(), String> {
     let parsed = Url::parse(url_str).map_err(|e| format!("Invalid URL: {}", e))?;
 
@@ -25,26 +31,20 @@ pub fn validate_url_ssrf(url_str: &str) -> Result<(), String> {
             return Err("SSRF: loopback address blocked".to_string());
         }
 
-        // Block private IPv4 ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
-        // and unique local IPv6 (fc00::/7)
-        match ip {
-            IpAddr::V4(ipv4) => {
-                if ipv4.is_private() {
-                    return Err("SSRF: private IPv4 address blocked".to_string());
-                }
-                if ipv4.is_link_local() {
-                    return Err("SSRF: link-local address blocked".to_string());
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                // fc00::/7 = unique local
-                if ipv6.is_unique_local() {
-                    return Err("SSRF: unique local IPv6 address blocked".to_string());
-                }
-                // fe80::/10 = link-local
-                if ipv6.is_unicast_link_local() {
-                    return Err("SSRF: link-local address blocked".to_string());
-                }
+        // Block private IPv4 ranges
+        if ip.is_private() {
+            return Err("SSRF: private IP address blocked".to_string());
+        }
+
+        // Block link-local (169.254.0.0/16, fe80::/10)
+        if ip.is_link_local() {
+            return Err("SSRF: link-local address blocked".to_string());
+        }
+
+        // Block unique local (fc00::/7)
+        if let Some(ipnet) = IpNet::new(ip, 8) {
+            if ipnet.is_ultra_private() {
+                return Err("SSRF: unique local address blocked".to_string());
             }
         }
     }
