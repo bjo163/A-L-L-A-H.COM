@@ -1,8 +1,7 @@
 services:
   server:
-    build:
-      context: .
-      dockerfile: apps/server/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-server:${IMAGE_TAG:-latest}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - "127.0.0.1:5150:5150"
@@ -21,9 +20,8 @@ services:
       start_period: 5s
 
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-web:${IMAGE_TAG:-latest}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"

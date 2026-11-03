@@ -39,6 +39,13 @@ Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELE
 - Outcome: Reproducible backend, frontend, migration, test, and CI baseline.
 - Acceptance: Inspect actual scripts/workflows; run available checks; fix broken CI wiring after confirming commands; record environmental limitations.
 
+### DEP-001 — Publish container images before Coolify deployment
+- Priority: P1
+- Status: IMPLEMENTED
+- Outcome: GitHub Actions publishes versioned server and web images to GHCR and triggers Coolify; production Compose pulls those images.
+- Acceptance: Publish on pushes to `main`, preserve a commit-specific rollback tag, and fail clearly if required Coolify secrets are absent.
+- Verification: Workflow and Compose configuration checks; a successful GitHub Actions run and Coolify deployment remain to be confirmed after repository secrets and GHCR credentials are configured.
+
 ## Task template
 
 ### [ID] — Outcome-focused title

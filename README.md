@@ -33,3 +33,12 @@ Always inspect the current tree and manifests before relying on this summary.
 Inspect `package.json`, `pnpm-workspace.yaml`, `apps/server/Cargo.toml`, and `apps/web/package.json` for exact commands and versions. Use the workspace package manager and app-specific instructions. Do not assume a command exists.
 
 Never commit secrets, `.env` files, local databases, generated build output, or unrelated user changes.
+
+## Production deployment
+The root `docker-compose.yml` runs prebuilt images from GitHub Container Registry (GHCR); it does not build application code on the Coolify host. The `Publish and deploy` GitHub Actions workflow builds the server and web images in parallel, publishes `latest` and commit-specific tags, then triggers Coolify.
+
+Configure these repository secrets in GitHub:
+- `COOLIFY_WEBHOOK_URL` — the deployment webhook URL for the Compose application in Coolify.
+- `COOLIFY_API_TOKEN` — a Coolify API token authorized to deploy that application.
+
+After the first successful publish, set both GHCR packages to public in GitHub's package settings; public packages can be pulled by Coolify without registry credentials, so Docker Hub is not required. If the images stay private, configure GHCR read credentials in Coolify. Disable deployment directly from Git pushes so Coolify does not start before the images are published; use its deployment URL with `force=true` for the post-publish deployment. Set `IMAGE_PREFIX` to `ghcr.io/<owner>/<repository>` only if the image namespace differs from the default, `ghcr.io/bjo163/a-l-l-a-h.com`; set `IMAGE_TAG` to `latest` or a published `sha-<short-commit>` tag for a pinned rollback. Both services use `pull_policy: always`, so each Coolify deployment fetches the selected image.

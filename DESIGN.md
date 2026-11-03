@@ -28,5 +28,8 @@ A-L-L-A-H.COM, MoonWitness, Headquarter, Dock, Cockpit, and Qorpus may share fou
 ## Interaction
 Every visible control performs its advertised action. Provide hover, focus, pressed, disabled, loading, success, and error states. Motion communicates transition or feedback, respects reduced-motion preferences, and never obstructs core tasks.
 
+## Delivery experience
+Production releases should use prebuilt, versioned container images so deployment does not compile application code on the production host. Keep the active image tag explicit and provide a commit-specific tag for rollback.
+
 ## Review checklist
 Review information architecture, task flow, visual hierarchy, responsive behavior, accessibility, keyboard/focus, loading/empty/error/offline states, functional controls, performance, and consistency with Moon UI and product identity. A mockup is not a completed feature; verify the running implementation.

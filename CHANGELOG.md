@@ -6,10 +6,10 @@ This file records changes that actually happened. It is not a roadmap and must n
 ## [Unreleased]
 
 ### Added
-- No verified entries recorded yet.
+- GitHub Actions workflow to build and publish server/web container images to GHCR, then trigger Coolify deployment.
 
 ### Changed
-- No verified entries recorded yet.
+- Production Compose now pulls prebuilt GHCR images instead of building on the Coolify host.
 
 ### Fixed
 - No verified entries recorded yet.
