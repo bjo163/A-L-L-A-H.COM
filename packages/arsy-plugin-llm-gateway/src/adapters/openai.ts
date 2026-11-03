@@ -7,6 +7,9 @@ import type {
   ChatCompletionResponse,
   StreamChunk,
   UsageInfo,
+  ToolDefinition,
+  ToolChoice,
+  ToolCall,
 } from '../types';
 import { validateUrlSsrf } from '../ssrf';
 
@@ -85,13 +88,20 @@ export class OpenAiAdapter implements ProviderAdapter {
       throw new Error(`Upstream URL '${this.baseUrl}' rejected by SSRF guard`);
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       model: upstreamModel,
       messages: req.messages,
       temperature: req.temperature ?? 0.7,
       max_tokens: req.max_tokens,
       stream: false,
     };
+
+    if (req.tools && req.tools.length > 0) {
+      payload.tools = req.tools;
+    }
+    if (req.tool_choice) {
+      payload.tool_choice = req.tool_choice;
+    }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -117,14 +127,27 @@ export class OpenAiAdapter implements ProviderAdapter {
       object: 'chat.completion',
       created: json.created || Math.floor(Date.now() / 1000),
       model: req.model,
-      choices: (json.choices || []).map((c: any, idx: number) => ({
-        index: c.index ?? idx,
-        message: {
+      choices: (json.choices || []).map((c: any, idx: number) => {
+        const message: any = {
           role: c.message?.role || 'assistant',
           content: c.message?.content || '',
-        },
-        finish_reason: c.finish_reason || 'stop',
-      })),
+        };
+        if (c.message?.tool_calls && Array.isArray(c.message.tool_calls)) {
+          message.tool_calls = c.message.tool_calls.map((tc: any) => ({
+            id: tc.id || `call_${crypto.randomBytes(4).toString('hex')}`,
+            type: 'function',
+            function: {
+              name: tc.function?.name || '',
+              arguments: tc.function?.arguments || '{}',
+            },
+          }));
+        }
+        return {
+          index: c.index ?? idx,
+          message,
+          finish_reason: c.finish_reason || 'stop',
+        };
+      }),
       usage: json.usage
         ? {
             prompt_tokens: json.usage.prompt_tokens || 0,
@@ -202,14 +225,28 @@ export class OpenAiAdapter implements ProviderAdapter {
               object: 'chat.completion.chunk',
               created: data.created || Math.floor(Date.now() / 1000),
               model: req.model,
-              choices: (data.choices || []).map((c: any, idx: number) => ({
-                index: c.index ?? idx,
-                delta: {
+              choices: (data.choices || []).map((c: any, idx: number) => {
+                const delta: any = {
                   role: c.delta?.role,
                   content: c.delta?.content || '',
-                },
-                finish_reason: c.finish_reason || null,
-              })),
+                };
+                if (c.delta?.tool_calls && Array.isArray(c.delta.tool_calls)) {
+                  delta.tool_calls = c.delta.tool_calls.map((tc: any) => ({
+                    index: tc.index ?? 0,
+                    id: tc.id,
+                    type: 'function',
+                    function: {
+                      name: tc.function?.name,
+                      arguments: tc.function?.arguments,
+                    },
+                  }));
+                }
+                return {
+                  index: c.index ?? idx,
+                  delta,
+                  finish_reason: c.finish_reason || null,
+                };
+              }),
             };
 
             onChunk(streamChunk);

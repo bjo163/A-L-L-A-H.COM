@@ -1,7 +1,43 @@
+export interface ToolParameter {
+  type: string;
+  description?: string;
+  enum?: string[];
+  items?: ToolParameter;
+  properties?: Record<string, ToolParameter>;
+  required?: string[];
+  default?: unknown;
+}
+
+export interface ToolFunction {
+  name: string;
+  description?: string;
+  parameters: Record<string, ToolParameter>;
+}
+
+export interface ToolDefinition {
+  type: 'function';
+  function: ToolFunction;
+}
+
+export interface ToolCallFunction {
+  name: string;
+  arguments: string;
+}
+
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: ToolCallFunction;
+}
+
+export type ToolChoice = 'none' | 'auto' | 'required' | { type: 'function'; function: { name: string } };
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
   name?: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
 }
 
 export interface ChatCompletionRequest {
@@ -10,6 +46,8 @@ export interface ChatCompletionRequest {
   temperature?: number;
   max_tokens?: number;
   stream?: boolean;
+  tools?: ToolDefinition[];
+  tool_choice?: ToolChoice;
 }
 
 export interface ChatChoice {
@@ -37,6 +75,15 @@ export interface ChatCompletionResponse {
 export interface StreamDelta {
   role?: string;
   content?: string;
+  tool_calls?: Array<{
+    index: number;
+    id?: string;
+    type?: 'function';
+    function: {
+      name?: string;
+      arguments?: string;
+    };
+  }>;
 }
 
 export interface StreamChunk {

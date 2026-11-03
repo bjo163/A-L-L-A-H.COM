@@ -10,6 +10,14 @@ import type {
   GatewayProviderInfo,
   GatewayUsageLog,
   SDUIRoot,
+  ToolDefinition,
+  ToolChoice,
+  ToolCall,
+  ToolResult,
+  JsonRpcRequest,
+  JsonRpcResponse,
+  McpTool,
+  McpToolCallResult,
 } from '@moonwitness/types';
 
 export interface SdkOptions {
@@ -251,6 +259,42 @@ export class MoonWitnessClient {
         method: 'POST',
         body: JSON.stringify(payload),
       });
+    },
+  };
+
+  // Model Context Protocol (MCP) Operations
+  readonly mcp = {
+    listTools: async (): Promise<McpTool[]> => {
+      const res = await this.request<JsonRpcResponse>('/v1/mcp/message', {
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'tools/list',
+          id: `mcp_${Date.now()}`,
+        }),
+      });
+      return (res as any)?.result?.tools || [];
+    },
+
+    callTool: async (
+      name: string,
+      arguments_: Record<string, unknown> = {}
+    ): Promise<McpToolCallResult> => {
+      const res = await this.request<JsonRpcResponse>('/v1/mcp/message', {
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          params: { name, arguments: arguments_ },
+          id: `mcp_${Date.now()}`,
+        }),
+      });
+      return ((res as any)?.result ?? { content: [], isError: true }) as McpToolCallResult;
+    },
+
+    getAuditLog: async (): Promise<any[]> => {
+      const res = await this.request<{ audit: any[]; total: number }>('/v1/mcp/audit');
+      return res?.audit || [];
     },
   };
 

@@ -7,6 +7,9 @@ import type {
   ChatCompletionResponse,
   StreamChunk,
   UsageInfo,
+  ToolDefinition,
+  ToolChoice,
+  ToolCall,
 } from '../types';
 import { validateUrlSsrf } from '../ssrf';
 
@@ -110,6 +113,43 @@ export class GeminiAdapter implements ProviderAdapter {
     };
   }
 
+  private transformGeminiTools(tools?: ToolDefinition[]): Array<{ name: string; description?: string; parameters: Record<string, unknown> }> {
+    if (!tools || tools.length === 0) return [];
+    return tools.map((t) => ({
+      name: t.function.name,
+      description: t.function.description,
+      parameters: t.function.parameters,
+    }));
+  }
+
+  private transformGeminiToolConfig(choice?: ToolChoice): Record<string, unknown> | undefined {
+    if (!choice) return undefined;
+    if (choice === 'none') return { functionCallingConfig: { mode: 'NONE' } };
+    if (choice === 'auto') return { functionCallingConfig: { mode: 'AUTO' } };
+    if (choice === 'required') return { functionCallingConfig: { mode: 'ANY' } };
+    if (choice.type === 'function') {
+      return { functionCallingConfig: { mode: 'ANY', allowedFunctionNames: [choice.function.name] } };
+    }
+    return undefined;
+  }
+
+  private extractGeminiToolCalls(parts: any[]): ToolCall[] {
+    const calls: ToolCall[] = [];
+    for (const part of parts) {
+      if (part.functionCall) {
+        calls.push({
+          id: `call_${crypto.randomBytes(4).toString('hex')}`,
+          type: 'function',
+          function: {
+            name: part.functionCall.name || '',
+            arguments: typeof part.functionCall.args === 'string' ? part.functionCall.args : JSON.stringify(part.functionCall.args || {}),
+          },
+        });
+      }
+    }
+    return calls;
+  }
+
   async chat(req: ChatCompletionRequest, upstreamModel: string): Promise<ChatCompletionResponse> {
     if (!this.apiKey) {
       throw new Error(`Google Gemini API Key not configured for provider [${this.slug}]`);
@@ -129,6 +169,16 @@ export class GeminiAdapter implements ProviderAdapter {
       },
     };
 
+    const geminiTools = this.transformGeminiTools(req.tools);
+    if (geminiTools.length > 0) {
+      payload.tools = [{ functionDeclarations: geminiTools }];
+    }
+
+    const geminiToolConfig = this.transformGeminiToolConfig(req.tool_choice);
+    if (geminiToolConfig) {
+      payload.toolConfig = geminiToolConfig;
+    }
+
     if (systemInstruction) {
       payload.systemInstruction = systemInstruction;
     }
@@ -147,7 +197,9 @@ export class GeminiAdapter implements ProviderAdapter {
 
     const json = (await response.body.json()) as any;
     const candidate = json.candidates?.[0];
-    const textContent = candidate?.content?.parts?.map((p: any) => p.text).join('') || '';
+    const parts = candidate?.content?.parts || [];
+    const textContent = parts.map((p: any) => p.text).join('') || '';
+    const toolCalls = this.extractGeminiToolCalls(parts);
 
     return {
       id: `gemini-${crypto.randomBytes(8).toString('hex')}`,
@@ -160,6 +212,7 @@ export class GeminiAdapter implements ProviderAdapter {
           message: {
             role: 'assistant',
             content: textContent,
+            ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
           },
           finish_reason: candidate?.finishReason === 'STOP' ? 'stop' : candidate?.finishReason || 'stop',
         },
@@ -196,6 +249,16 @@ export class GeminiAdapter implements ProviderAdapter {
         maxOutputTokens: req.max_tokens,
       },
     };
+
+    const geminiTools = this.transformGeminiTools(req.tools);
+    if (geminiTools.length > 0) {
+      payload.tools = [{ functionDeclarations: geminiTools }];
+    }
+
+    const geminiToolConfig = this.transformGeminiToolConfig(req.tool_choice);
+    if (geminiToolConfig) {
+      payload.toolConfig = geminiToolConfig;
+    }
 
     if (systemInstruction) {
       payload.systemInstruction = systemInstruction;
@@ -238,9 +301,21 @@ export class GeminiAdapter implements ProviderAdapter {
             }
 
             const candidate = data.candidates?.[0];
-            const textDelta = candidate?.content?.parts?.map((p: any) => p.text).join('') || '';
+            const parts = candidate?.content?.parts || [];
+            const textDelta = parts.map((p: any) => p.text).join('') || '';
+            const streamToolCalls = this.extractGeminiToolCalls(parts);
 
-            if (textDelta) {
+            const delta: any = { content: textDelta };
+            if (streamToolCalls.length > 0) {
+              delta.tool_calls = streamToolCalls.map((tc, idx) => ({
+                index: idx,
+                id: tc.id,
+                type: 'function',
+                function: { name: tc.function.name, arguments: tc.function.arguments },
+              }));
+            }
+
+            if (textDelta || streamToolCalls.length > 0) {
               onChunk({
                 id: streamId,
                 object: 'chat.completion.chunk',
@@ -249,7 +324,7 @@ export class GeminiAdapter implements ProviderAdapter {
                 choices: [
                   {
                     index: 0,
-                    delta: { content: textDelta },
+                    delta,
                     finish_reason: null,
                   },
                 ],

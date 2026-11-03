@@ -11,44 +11,41 @@ last_verified: "2026-11-03"
 
 This is the target architecture, not a declaration that every component already exists. Reconcile it continuously with actual code and verified runtime behavior.
 
-## Product architecture
-A-L-L-A-H.COM is the central home of the MoonWitness and Empire of the Light ecosystem. It should provide coherent identity, navigation, shared platform capabilities, integration contracts, and product experiences while allowing independent deployment boundaries where justified.
+## Product Architecture
+A-L-L-A-H.COM is the central home of the MoonWitness and Empire of the Light ecosystem. It provides coherent identity, navigation, shared platform capabilities, integration contracts, and product experiences while allowing independent deployment boundaries where justified.
 
-## Product domains to validate
+## Product Domains & Applications
 
-| Domain | Responsibility to investigate |
-|---|---|
-| A-L-L-A-H.COM / Empire of the Light | Central identity, entrypoint, ecosystem navigation |
-| MoonWitness | Universe, narratives, research, timelines, creative works, archives |
-| MoonWitness Reborn | Historical generation and its source/assets to reconcile |
-| MoonWitness XV | Historical/current generation and its source/assets to reconcile |
-| Moon UI | Shared design system and interface foundations |
-| Headquarter | Central operational/administrative experience; validate scope |
-| Dock | Community/user-facing portal; validate scope |
-| Cockpit | Control/management experience; validate scope |
-| Qorpus | Knowledge corpus, ingestion, retrieval, and content organization; validate scope |
+| Domain / Application | Directory | Port | Responsibility |
+|---|---|---|---|
+| Fastify Hub & API Engine | `apps/arsy/` | 5150 | Single backend authority: PGlite ORM, AI Gateway, CAS storage, SDUI, and auth. |
+| Dock Portal | `apps/dock/` | 3001 | Public ecosystem homepage and discovery portal (Next.js 16). |
+| Command Headquarter | `apps/headquarter/` | 3002 | Operational command center, AI Gateway control plane, and knowledge explorer (Next.js 16). |
+| MoonWitness ID | `apps/id/` | 3003 | Unified authentication, registration, and active session authority (Next.js 16). |
+| Shared UI Library | `packages/ui/` | N/A | Mandatory atomic UI system (`@moonwitness/ui`: components, blocks, primitives, tokens). |
+| Universal Client SDK | `packages/sdk/` | N/A | Isomorphic client (`@allah/sdk`) routing all hub calls and session tokens. |
+| Shared Data Contracts | `packages/types/` | N/A | Universal shared type contracts (`@moonwitness/types`). |
+| Architectural Linter | `packages/lint/` | N/A | Monorepo invariant enforcement (`@moonwitness/lint`) executed via `pnpm lint:arch`. |
+| Embedded PGlite ORM | `packages/arsy-orm/` | N/A | In-process PostgreSQL WASM ORM with automatic schema sync and tenant isolation. |
+| AI Gateway & Smart Router | `packages/arsy-plugin-llm-gateway/` | N/A | Multi-provider routing (OpenAI, Anthropic, Gemini, Ollama), SSE streaming, and virtual keys. |
+| Qorpus Knowledge Store | `addons/mw_qorpus/` | N/A | Document chunking, vector embeddings, SHA-256 deduplication, and hybrid retrieval. |
 
-These are working hypotheses. Audit actual requirements and implementations before freezing boundaries.
-
-## Architecture layers
-- Experience: public/authenticated experiences, product-specific interfaces, shared navigation, responsive accessible UI.
+## Architecture Layers
+- Experience: public and authenticated experiences, product-specific interfaces, shared navigation (`EcosystemNavbar`), responsive accessible UI.
 - Applications: domain-specific workflows, explicit ownership, stable API contracts, no duplicated business logic.
-- Platform services: evaluate identity/access, users/organizations, content/media, search/knowledge, notifications, AI routing/usage, audit logs, observability, configuration.
-- Data: authoritative ownership, explicit schemas/migrations, tenant isolation, provenance, retention, backup/recovery.
-- Infrastructure: reproducible local/CI/staging/production environments, health checks, secrets, networking, storage, deployment and rollback.
+- Platform services: identity and access (`apps/id`), AI routing and usage logging, Qorpus knowledge retrieval, content-addressed storage (SHA-256), audit logs, and configuration.
+- Data: single embedded database engine (PGlite WASM via `@allah/arsy-orm`), zero ORM overlap, explicit schemas and migrations, tenant isolation (`company_id`), provenance, and fail-closed retention.
+- Infrastructure: reproducible local, CI, staging, and production environments, health checks (`/health`, `/ready`), secrets, networking, and rollback.
 
-Implement shared services only when reuse and ownership justify them.
+## Monorepo Invariants
+1. All client applications in `apps/` must import interactive components from `@moonwitness/ui`.
+2. All client-to-hub communications must route through `@allah/sdk`.
+3. All shared data contracts must be imported from `@moonwitness/types`.
+4. Only embedded PGlite via `@allah/arsy-orm` is permitted for data persistence.
+5. All commits must pass pre-commit quality gates (`pnpm docs:check`, `pnpm lint:arch`, `pnpm typecheck`).
 
-## Current repository baseline
-The repository has a Fastify/TypeScript ARSY Hub under `apps/arsy/`, a public Next.js Dock under `apps/dock/`, and a Next.js Headquarters under `apps/headquarter/`. Shared shadcn/ui components live in `packages/ui/`. Verify exact versions, routes, modules, endpoints, and capabilities from current manifests and source. Correct unsupported README/changelog claims.
+## Delivery and Deployment
+GitHub Actions builds and publishes dock, headquarter, and id images to GHCR on pushes to `main`. A successful publish triggers Coolify through its deployment URL and API token. Production image selection is controlled by `IMAGE_PREFIX` and `IMAGE_TAG`; Coolify must have read access to GHCR when packages are private.
 
-## Delivery and deployment
-GitHub Actions builds and publishes dock and headquarter images to GHCR on pushes to `main`. A successful publish triggers Coolify through its deployment URL and API token. Production image selection is controlled by `IMAGE_PREFIX` and `IMAGE_TAG`; Coolify must have read access to GHCR when packages are private.
-
-## Integration contracts
-Every cross-application integration defines producer/consumer, data ownership, schema/API/event version, authentication/authorization, error/retry/idempotency/timeout behavior, observability, compatibility, migration, and tests. Do not rely on undocumented shared-database assumptions.
-
-## Architecture decisions
-Before adding a service, application, database, framework, or abstraction: identify the user outcome; inspect existing capability; compare alternatives and operational cost; define ownership; record accepted decisions in DECISIONS.md; add work to BACKLOG.md.
-
-Architecture is progressively realized when product boundaries and data ownership are clear, integration contracts are tested, provenance is preserved, and end-to-end user journeys work reliably.
+## Architecture Decisions
+Before adding a service, application, database, framework, or abstraction: identify the user outcome; inspect existing capability; compare alternatives and operational cost; define ownership; record accepted decisions in `DECISIONS.md`; add work to `BACKLOG.md`.

@@ -145,3 +145,82 @@ export interface StorageItem {
   createDate: string;
 }
 
+/**
+ * LLM Tool Calling Contracts (Phase 3)
+ */
+export interface ToolParameter {
+  type: string;
+  description?: string;
+  enum?: string[];
+  items?: ToolParameter;
+  properties?: Record<string, ToolParameter>;
+  required?: string[];
+  default?: unknown;
+}
+
+export interface ToolFunction {
+  name: string;
+  description?: string;
+  parameters: Record<string, ToolParameter>;
+}
+
+export interface ToolDefinition {
+  type: 'function';
+  function: ToolFunction;
+}
+
+export interface ToolCallFunction {
+  name: string;
+  arguments: string;
+}
+
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: ToolCallFunction;
+}
+
+export type ToolChoice = 'none' | 'auto' | 'required' | { type: 'function'; function: { name: string } };
+
+export interface ToolResult {
+  success: boolean;
+  output: any;
+  error?: string | null;
+  latencyMs?: number;
+}
+
+/**
+ * Model Context Protocol (MCP) Contracts (Phase 3)
+ */
+export interface JsonRpcRequest {
+  jsonrpc: string;
+  method: string;
+  params?: Record<string, unknown> | unknown[];
+  id: string | number | null;
+}
+
+export interface JsonRpcResponse {
+  jsonrpc: '2.0';
+  id: string | number | null;
+  result?: unknown;
+  error?: { code: number; message: string; data?: unknown };
+}
+
+export interface McpTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+}
+
+export interface McpToolsListResult {
+  tools: McpTool[];
+}
+
+export interface McpToolCallResult {
+  content: Array<{ type: string; text?: string }>;
+  isError?: boolean;
+  structuredContent?: Record<string, unknown>;
+}
+
+export const MCP_PROTOCOL_VERSION = '2025-06-12';
+

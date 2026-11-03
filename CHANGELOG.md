@@ -14,6 +14,10 @@ This file records changes that actually happened. It is not a roadmap and must n
 ## [Unreleased]
 
 ### Added
+- **Architectural Linter Gate (`@moonwitness/lint`)**: Implemented standalone invariant checker `node packages/lint/src/check-architecture.mjs` (`pnpm lint:arch`) enforcing zero ORM overlap (embedded PGlite only), strict `@moonwitness/ui` usage in `apps/`, unified `@allah/sdk` client routing, and shared `@moonwitness/types` data contracts.
+- **Strict TypeScript Typechecking (`pnpm typecheck`)**: Integrated deterministic TypeScript compiler gate across all packages and apps (`@allah/arsy-orm`, `@allah/arsy-core`, `@allah/arsy-plugin-llm-gateway`, `@allah/arsy-plugin-auth`, `@allah/arsy-plugin-storage`, `@allah/arsy-plugin-sdui`, `@moonwitness/types`, `@allah/sdk`, `@moonwitness/ui`, `apps/arsy`). Fixed remaining interface mismatches and dead scaffold files.
+- **Enhanced Husky Pre-Commit Gate**: Upgraded `.husky/pre-commit` to synchronously enforce documentation contracts (`pnpm docs:check`), architectural invariants (`pnpm lint:arch`), and strict TypeScript type validation (`pnpm typecheck`) before commit creation.
+- **Canonical Documentation Synchronization**: Synchronized `AGENTS.md`, `QUALITY.md`, `DESIGN.md`, `BLUEPRINT.md`, `BACKLOG.md`, and `DOCUMENTATION_CONTRACT.md` removing legacy rust references and establishing automated self-healing validation standards.
 - **Multi-Provider AI Gateway & Fallback Router (`@allah/arsy-plugin-llm-gateway`)**: Implemented universal OpenAI, Anthropic Claude Messages, Google Gemini, and Ollama protocol adapters with zero-copy Server-Sent Events (SSE) streaming, circuit breaker protection, SSRF guards, and multi-tier fallback sequencing.
 - **Persistent AI Metering & Virtual Keys**: Connected `addons/mw_llm_router` models (`ai.provider`, `ai.model`, `ai.route`, `ai.virtual_key`, `ai.usage_log`) to the gateway runtime, enforcing rate limits and monthly USD budget ceilings with real-time audit logs in PGlite.
 - **Client SDK Streaming & Telemetry (`@allah/sdk`)**: Added `chatStream()`, provider catalogs, telemetry metrics, and virtual key credentials to universal SDK.

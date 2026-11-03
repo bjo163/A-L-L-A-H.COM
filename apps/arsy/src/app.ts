@@ -21,20 +21,20 @@ export interface BuildAppOptions {
   enableLogging?: boolean;
 }
 
-export async function buildArsyApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
+export async function buildArsyApp(options: BuildAppOptions = {}): Promise<FastifyInstance<any, any, any, any, any>> {
   const app = Fastify({
-    loggerInstance: options.enableLogging ? logger : false,
+    loggerInstance: options.enableLogging ? logger : undefined,
   });
 
   // Global Error Handler conforming to Arsy Standard Envelope
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error: any, request, reply) => {
     if (error instanceof AppError) {
       reply.status(error.statusCode).send(fail(error.code, error.message, error.details));
       return;
     }
 
     logger.error({ err: error, url: request.url }, 'Unhandled server exception');
-    reply.status(500).send(fail('INTERNAL_SERVER_ERROR', error.message || 'An unexpected error occurred'));
+    reply.status(500).send(fail('INTERNAL_SERVER_ERROR', error?.message || 'An unexpected error occurred'));
   });
 
   // Register Core Security Plugins
@@ -97,7 +97,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       const chunkRepo = new BaseRepository(chunkModel);
       
       // Check for duplicates
-      const existing = await docRepo.find({ domain: [['sha256', '=', sha256]] as any, limit: 1 });
+      const existing = await docRepo.find({ filters: [{ field: 'sha256', operator: '=', value: sha256 }], limit: 1 });
       if (existing && existing.length > 0) {
         return ok({ message: 'Document already exists', document: existing[0], deduplicated: true });
       }
@@ -229,7 +229,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         return fail('MODEL_NOT_FOUND', 'ai.message model not registered');
       }
       const repo = new BaseRepository(model);
-      const messages = await repo.find({ domain: [['thread_id', '=', parseInt(request.params.id)]] as any, limit: 1000 });
+      const messages = await repo.find({ filters: [{ field: 'thread_id', operator: '=', value: parseInt(request.params.id) }], limit: 1000 });
       return ok(messages, { totalItems: messages.length });
     } catch (err: any) {
       reply.status(500);

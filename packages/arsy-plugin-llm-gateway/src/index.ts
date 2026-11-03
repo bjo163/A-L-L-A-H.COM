@@ -9,7 +9,9 @@ import { UsageManager } from './usage';
 import { OpenAiAdapter } from './adapters/openai';
 import { GeminiAdapter } from './adapters/gemini';
 import { AnthropicAdapter } from './adapters/anthropic';
-import type { LlmGatewayOptions, ChatCompletionRequest } from './types';
+import { toolRegistry } from './tools';
+import { mcpHandler } from './mcp';
+import type { LlmGatewayOptions, ChatCompletionRequest, ToolDefinition, ToolChoice, ToolCall } from './types';
 
 export * from './types';
 export * from './router';
@@ -21,6 +23,7 @@ export * from './adapters/base';
 export * from './adapters/openai';
 export * from './adapters/anthropic';
 export * from './adapters/gemini';
+export * from './tools';
 
 const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   fastify: FastifyInstance,
@@ -269,6 +272,57 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       logger.error({ err }, 'Chat completion failed across all fallback providers');
       reply.status(502);
       return fail('GATEWAY_FALLBACK_EXHAUSTED', 'All upstream providers failed in fallback sequence', err.message);
+    }
+  });
+
+  // --- Model Context Protocol (MCP) Endpoints ---
+  // GET /v1/mcp/sse: Server-Sent Events stream for MCP client connections.
+  fastify.get(`${prefix}/mcp/sse`, async (request, reply) => {
+    reply.raw.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('X-Accel-Buffering', 'no');
+
+    const sessionId = `mcp_${crypto.randomBytes(8).toString('hex')}`;
+    reply.raw.write(`event: endpoint\ndata: ${sessionId}\n\n`);
+
+    const keepAlive = setInterval(() => {
+      try {
+        reply.raw.write(':ping\n\n');
+      } catch {
+        clearInterval(keepAlive);
+      }
+    }, 15000);
+
+    request.raw.on('close', () => clearInterval(keepAlive));
+    request.raw.on('error', () => clearInterval(keepAlive));
+
+    // Keep the stream open; clients POST messages to /v1/mcp/message
+    return reply;
+  });
+
+  // POST /v1/mcp/message: Ingress endpoint for JSON-RPC 2.0 MCP messages.
+  fastify.post<{ Body: { jsonrpc?: string; method?: string; params?: unknown; id?: string | number | null } }>(
+    `${prefix}/mcp/message`,
+    async (request, reply) => {
+      const body = request.body || {};
+      const response = await mcpHandler.handle({
+        jsonrpc: body.jsonrpc ?? '2.0',
+        method: (body.method as string) || '',
+        params: body.params as Record<string, unknown> | undefined,
+        id: (body.id ?? null) as string | number | null,
+      });
+      return response;
+    }
+  );
+
+  // GET /v1/mcp/audit: Tool execution audit log (from ToolRegistry)
+  fastify.get(`${prefix}/mcp/audit`, async (request, reply) => {
+    try {
+      const log = toolRegistry.getLog();
+      return ok({ audit: log, total: log.length });
+    } catch (err: any) {
+      return fail('MCP_AUDIT_ERROR', err.message);
     }
   });
 

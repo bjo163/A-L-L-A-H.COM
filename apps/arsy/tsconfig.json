@@ -10,8 +10,12 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@allah/arsy-orm": ["../../packages/arsy-orm/src/index.ts"],
+      "@allah/arsy-core": ["../../packages/arsy-core/src/index.ts"]
+    }
   },
   "include": ["src/**/*"]
 }
-

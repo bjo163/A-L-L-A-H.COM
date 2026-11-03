@@ -4,7 +4,12 @@
   "description": "Monorepo linting and architectural invariant rules for MoonWitness",
   "main": "src/index.js",
   "type": "module",
+  "bin": {
+    "moonwitness-lint": "./bin/check-architecture.mjs"
+  },
+  "scripts": {
+    "check": "node src/check-architecture.mjs"
+  },
   "dependencies": {},
   "devDependencies": {}
 }
-

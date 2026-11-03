@@ -7,6 +7,9 @@ import type {
   ChatCompletionResponse,
   StreamChunk,
   UsageInfo,
+  ToolDefinition,
+  ToolChoice,
+  ToolCall,
 } from '../types';
 import { validateUrlSsrf } from '../ssrf';
 
@@ -53,6 +56,43 @@ export class AnthropicAdapter implements ProviderAdapter {
     };
   }
 
+  private transformTools(tools?: ToolDefinition[]): Array<{ name: string; description?: string; input_schema: Record<string, unknown> }> {
+    if (!tools || tools.length === 0) return [];
+    return tools.map((t) => ({
+      name: t.function.name,
+      description: t.function.description,
+      input_schema: t.function.parameters,
+    }));
+  }
+
+  private transformToolChoice(choice?: ToolChoice): Record<string, unknown> | undefined {
+    if (!choice) return undefined;
+    if (choice === 'none') return { type: 'none' };
+    if (choice === 'auto') return { type: 'auto' };
+    if (choice === 'required') return { type: 'any' };
+    if (choice.type === 'function') {
+      return { type: 'tool', name: choice.function.name, disable_parallel_tool_use: true };
+    }
+    return undefined;
+  }
+
+  private extractToolCalls(contentBlocks: any[]): ToolCall[] {
+    const calls: ToolCall[] = [];
+    for (const block of contentBlocks) {
+      if (block.type === 'tool_use') {
+        calls.push({
+          id: block.id || `call_${crypto.randomBytes(4).toString('hex')}`,
+          type: 'function',
+          function: {
+            name: block.name || '',
+            arguments: typeof block.input === 'string' ? block.input : JSON.stringify(block.input || {}),
+          },
+        });
+      }
+    }
+    return calls;
+  }
+
   async chat(req: ChatCompletionRequest, upstreamModel: string): Promise<ChatCompletionResponse> {
     if (!this.apiKey) {
       throw new Error(`Anthropic API Key not configured for provider [${this.slug}]`);
@@ -70,6 +110,16 @@ export class AnthropicAdapter implements ProviderAdapter {
       messages: anthropicMessages,
       temperature: req.temperature ?? 0.7,
     };
+
+    const anthropicTools = this.transformTools(req.tools);
+    if (anthropicTools.length > 0) {
+      payload.tools = anthropicTools;
+    }
+
+    const anthropicToolChoice = this.transformToolChoice(req.tool_choice);
+    if (anthropicToolChoice) {
+      payload.tool_choice = anthropicToolChoice;
+    }
 
     if (system) {
       payload.system = system;
@@ -91,10 +141,12 @@ export class AnthropicAdapter implements ProviderAdapter {
     }
 
     const json = (await response.body.json()) as any;
-    const textContent = (json.content || [])
+    const contentBlocks = json.content || [];
+    const textContent = contentBlocks
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join('\n');
+    const toolCalls = this.extractToolCalls(contentBlocks);
 
     return {
       id: json.id || `msg-${crypto.randomBytes(8).toString('hex')}`,
@@ -107,6 +159,7 @@ export class AnthropicAdapter implements ProviderAdapter {
           message: {
             role: 'assistant',
             content: textContent,
+            ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
           },
           finish_reason: json.stop_reason === 'end_turn' ? 'stop' : json.stop_reason || 'stop',
         },
@@ -143,6 +196,16 @@ export class AnthropicAdapter implements ProviderAdapter {
       temperature: req.temperature ?? 0.7,
       stream: true,
     };
+
+    const anthropicTools = this.transformTools(req.tools);
+    if (anthropicTools.length > 0) {
+      payload.tools = anthropicTools;
+    }
+
+    const anthropicToolChoice = this.transformToolChoice(req.tool_choice);
+    if (anthropicToolChoice) {
+      payload.tool_choice = anthropicToolChoice;
+    }
 
     if (system) {
       payload.system = system;
