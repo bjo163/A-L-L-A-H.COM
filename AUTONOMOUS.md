@@ -1,16 +1,18 @@
 # AUTONOMOUS.md
 
-Operational contract for autonomous AI execution loop on A-L-L-A-H.COM.
+Operational contract for autonomous AI execution on A-L-L-A-H.COM.
 
-## Execution Pipeline
-```
-[Research/Gap Analysis] -> [Security & Integrity Audit] -> [Modular Implementation] -> [Build Gates] -> [Doc Sync] -> [Git Push]
-```
+## Principles
+- Own outcomes end-to-end. Work independently on safe, reversible tasks. Zero micro-confirmations.
+- Reconcile legacy (`LEGACY_RECONCILIATION.md`) before destructive consolidation.
+- Never claim planned work is implemented. Evidence required for `VERIFIED`.
+
+## Execution Loop
+`DISCOVER` -> `AUDIT` -> `PRIORITIZE` -> `IMPLEMENT` -> `VERIFY` -> `DOCUMENT` -> `PUSH`
 
 ### 1. Research & Gap Analysis
-- Reference sources: `bjo163/*` (`moonwitnessxv`, `echolog`, `ql-orm`, `ql_ai`, `mwx-isp`) + Odoo 18 / OpenDAL / OpenRouter.
-- Prioritize high-value unbuilt slices (LLM streaming proxy, storage deduplication, SDUI renderers).
-- Execute without asking confirmation for individual files.
+- Consult `bjo163/*` (`moonwitnessxv`, `echolog`, `ql-orm`, `ql_ai`, `mwx-isp`) + Odoo/OpenDAL standards.
+- Select highest-value safe task from `BACKLOG.md`.
 
 ### 2. Security & Integrity Audit
 - Zero-copy stream pipes (`axum::body::Body::from_stream`).
@@ -31,19 +33,17 @@ pnpm server:migrate
 cargo check --manifest-path apps/server/Cargo.toml
 pnpm web:build
 ```
-On error: self-diagnose and fix immediately. Do not prompt user.
+On error: self-diagnose and fix root cause immediately. Do not prompt user.
 
 ### 5. Mandatory Canonical Document Sync
-Every functional or structural change MUST update:
+Update only affected docs:
 - `README.md`: feature status and quickstart.
 - `CHANGELOG.md`: unreleased changes under `Added`, `Fixed`, or `Changed`.
 - `BLUEPRINT.md`: architecture, contracts, invariants.
 - `DESIGN.md`: SDUI schemas, tokens.
+- `BACKLOG.md`: task state updates with evidence.
 
-### 6. Git Push Mandate
-```bash
-git add .
-git commit -m "<type>(<scope>): <concise description>"
-git push origin main
-```
-Done when `git status` is clean and commit is live on `main`.
+### 6. Git Safety & Push
+- Inspect diff before committing. Never commit secrets, local databases, or credentials.
+- Conventional commit: `<type>(<scope>): <concise description>`.
+- Push directly to `main` when working tree is clean.

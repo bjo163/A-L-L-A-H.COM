@@ -1,18 +1,23 @@
 # AGENTS.md
 
 Target: `https://github.com/bjo163/A-L-L-A-H.COM.git` (branch: `main`)
-Contract: `AUTONOMOUS.md`
+Contract: `AUTONOMOUS.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`
 
-## Rules
-- Autonomous execution: read `AUTONOMOUS.md`. Zero-confirmation loop.
-- Modular architecture: Ql-Orm engine in `apps/server/src/core/`, addons in `apps/server/addons/`, controllers in `apps/server/src/controllers/`, UI in `apps/web/`.
-- Invariants: Content-addressed write-once storage (SHA-256), fail-closed retention/holds, parameterized queries, multi-company tenant isolation (`company_id`).
-- Build gates (must pass 100%):
+## Universal Engineering Rules
+- **Autonomous execution**: Read `AUTONOMOUS.md`. Zero-confirmation loop for safe tasks.
+- **Product & legacy integrity**: A-L-L-A-H.COM unifies MoonWitness & Empire of the Light. Follow `LEGACY_RECONCILIATION.md`. Preserve provenance; distinguish verified implementation from narrative/plan.
+- **Architecture**:
+  - `apps/server/src/core/`: Ql-Orm engine, BaseModel, Storage, Router state.
+  - `apps/server/addons/`: Addons modular `base`, `mw_storage`, `mw_llm_router`.
+  - `apps/server/src/controllers/`: Fast-path gateway `/v1/chat/completions`, `/v1/models`, `/v1/sdui`.
+  - `apps/web/`: Next.js 16 (App Router) + React 19 + Tailwind v4.
+- **Invariants**: Content-addressed write-once storage (SHA-256), fail-closed retention/holds, parameterized queries, tenant isolation (`company_id`).
+- **Build gates (must pass 100%)**:
   1. `pnpm server:migrate`
   2. `cargo check --manifest-path apps/server/Cargo.toml`
   3. `pnpm web:build`
-- Auto-sync docs: `README.md`, `CHANGELOG.md`, `BLUEPRINT.md`, `DESIGN.md`.
-- Git: conventional commit + auto push to `main`.
+- **Doc sync**: Concurrently update `README.md`, `CHANGELOG.md`, `BLUEPRINT.md`, `DESIGN.md`, `BACKLOG.md`.
+- **Git safety**: Review staged diff. No secrets/untracked bloat. Conventional commits + push to `main`.
 
 <!-- antislop:start -->
 ## antislop
