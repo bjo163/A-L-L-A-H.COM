@@ -17,10 +17,11 @@ Create one coherent design language for A-L-L-A-H.COM while preserving the disti
 - Distinctive composition: avoid repetitive dashboard grids and generic hero templates.
 - Coherent ecosystem: shared foundations with recognizable product identities.
 - Clarity in navigation, hierarchy, actions, and status.
-- Restraint in glow, gradients, effects, and motion.
+- Effects, glow, gradients, texture, and motion must serve a distinct design purpose.
 - Accessibility: contrast, keyboard support, focus, semantics, reduced motion, readable type.
 - Responsive composition for desktop, tablet, and mobile.
 - Honest loading, empty, error, offline, permission, and success states.
+- Product canon and asset provenance must be preserved.
 
 ## Empire of the Light Visual DNA
 Use cinematic light, atmospheric depth, celestial geometry, refined surfaces, and subtle intentional motion where appropriate. Avoid noisy decoration and generic sci-fi tropes. Reuse approved MoonWitness and A-L-L-A-H.COM canon/assets; do not discard established identity without a documented decision.
@@ -40,7 +41,7 @@ Share components across applications; retain product-specific variants only when
 A-L-L-A-H.COM, MoonWitness, Headquarter, Dock, Cockpit, and Qorpus share atomic foundations but remain visually distinct. Their hierarchy, tone, navigation, and motifs must reflect validated purpose.
 
 ## Interaction
-Every visible control performs its advertised action. Provide hover, focus, pressed, disabled, loading, success, and error states. Motion communicates transition or feedback, respects reduced-motion preferences, and never obstructs core tasks.
+Every visible control performs its advertised action. Provide hover, focus, pressed, disabled, loading, success, and error states. Motion communicates transition or feedback, respects reduced-motion preferences, and never obstructs core tasks. Each skin must preserve keyboard and screen-reader behavior.
 
 ## Delivery Experience
 Production releases use prebuilt, versioned container images so deployment does not compile application code on the production host. Keep the active image tag explicit and provide a commit-specific tag for rollback.

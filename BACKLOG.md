@@ -9,7 +9,7 @@ last_verified: "2026-11-03"
 # BACKLOG.md
 ## Single Source of Actionable Work
 
-Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELEASED`, `BLOCKED`, `DEFERRED`. Priority: P0 critical, P1 high, P2 medium, P3 normal, P4 opportunistic.
+Statuses: DISCOVERED, READY, IN_PROGRESS, IMPLEMENTED, VERIFIED, RELEASED, BLOCKED, DEFERRED. Priority: P0 critical, P1 high, P2 medium, P3 normal, P4 opportunistic.
 
 ## Tasks
 
@@ -46,7 +46,7 @@ Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELE
 - Status: VERIFIED
 - Outcome: Reproducible frontend, extension, and CI baseline.
 - Acceptance: Inspect actual scripts/workflows; run available checks; fix broken CI wiring after confirming commands; record environmental limitations.
-- Verification: Dock, Headquarter, and VS Code extension builds pass. CI gate runs `pnpm dock:build`, `pnpm headquarter:build`, and `pnpm extension:build` in parallel and promotes `dev` to `main` on 100% pass.
+- Verification: Dock, Headquarter, and VS Code extension builds pass. CI gate runs pnpm dock:build, pnpm headquarter:build, and pnpm extension:build in parallel and promotes dev to main on 100% pass.
 
 ### AUTH-003: MoonWitness ID Native Authentication & SSO Center (GitHub Issue #3)
 - Priority: P0
@@ -86,11 +86,11 @@ Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELE
 - Acceptance: Publish on pushes to `main`, preserve a commit-specific rollback tag, and fail clearly if required Coolify secrets are absent.
 - Verification: Pending first production publish of the dock and headquarter images.
 
-### ENG-002: Implement Arsy Modular Ecosystem
+### ENG-002 — Implement Arsy Modular Ecosystem
 - Priority: P1
 - Status: VERIFIED
 - Outcome: Modular Fastify runtime, embedded PGlite ORM, technical plugins (auth, sdui, llm-gateway, storage), and declarative business addons.
-- Verification: End-to-end HTTP smoke tests on `/health`, `/ready`, `/api/auth/register`, `/api/auth/current`, `/v1/models`, `/v1/chat/completions`, `/api/storage/upload`.
+- Verification: End-to-end HTTP smoke tests on /health, /ready, /api/auth/register, /api/auth/current, /v1/models, /v1/chat/completions, /api/storage/upload.
 
 ### EXT-001: Integrate the VS Code plan workbench
 - Priority: P1
