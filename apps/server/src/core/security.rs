@@ -32,19 +32,38 @@ pub fn validate_url_ssrf(url_str: &str) -> Result<(), String> {
         }
 
         // Block private IPv4 ranges
-        if ip.is_private() {
-            return Err("SSRF: private IP address blocked".to_string());
+        match ip {
+            IpAddr::V4(ipv4) => {
+                if ipv4.is_private() {
+                    return Err("SSRF: private IP address blocked".to_string());
+                }
+            },
+            IpAddr::V6(ipv6) => {
+                // Block private IPv6 (fd00::/8, fe80::/10)
+                if ipv6.is_unicast_link_local() || ipv6.is_unicast_unique_local() {
+                    return Err("SSRF: private IP address blocked".to_string());
+                }
+            }
         }
 
         // Block link-local (169.254.0.0/16, fe80::/10)
-        if ip.is_link_local() {
-            return Err("SSRF: link-local address blocked".to_string());
+        match ip {
+            IpAddr::V4(ipv4) => {
+                if ipv4.is_link_local() {
+                    return Err("SSRF: link-local address blocked".to_string());
+                }
+            },
+            IpAddr::V6(ipv6) => {
+                if ipv6.is_unicast_link_local() {
+                    return Err("SSRF: link-local address blocked".to_string());
+                }
+            }
         }
 
         // Block unique local (fc00::/7)
-        if let Some(ipnet) = IpNet::new(ip, 8) {
-            if ipnet.is_ultra_private() {
-                return Err("SSRF: unique local address blocked".to_string());
+        if let Ok(ipnet) = IpNet::new(ip, 8) {
+            if ipnet.is_private() {
+                return Err("SSRF: private IP address blocked".to_string());
             }
         }
     }
