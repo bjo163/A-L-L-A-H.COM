@@ -20,7 +20,7 @@ COPY apps/headquarter ./apps/headquarter
 COPY packages/ui ./packages/ui
 COPY packages/sdk ./packages/sdk
 COPY packages/types ./packages/types
-RUN pnpm --filter @moonwitness/headquarter build
+RUN pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/headquarter build
 
 FROM base AS runner
 WORKDIR /app

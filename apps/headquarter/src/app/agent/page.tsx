@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   EcosystemNavbar,
   Button,
@@ -9,293 +9,384 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  Badge,
   Input,
+  Badge,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
-
-interface AgentStepItem {
-  step: number;
-  thought?: string;
-  tool?: string;
-  arguments?: string;
-  result?: any;
-  latency_ms?: number;
-  success?: boolean;
-}
+import type {
+  AgentThought,
+  AgentToolCallEvent,
+  AgentToolResultEvent,
+  AgentStreamEvent,
+  AgentRunRequest,
+  AgentRunResponse,
+} from '@moonwitness/types';
 
 export default function AgentStudioPage() {
-  const [prompt, setPrompt] = useState('Analisis kesehatan database dan render ringkasan SDUI');
-  const [maxSteps, setMaxSteps] = useState(6);
-  const [isRunning, setIsRunning] = useState(false);
-  const [statusText, setStatusText] = useState('Idle');
-  const [steps, setSteps] = useState<AgentStepItem[]>([]);
-  const [finalAnswer, setFinalAnswer] = useState('');
-  const [sduiPayload, setSduiPayload] = useState<any | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [request, setRequest] = useState<AgentRunRequest | null>(null);
+  const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
+  interface AgentStepUI {
+    step: number;
+    thought?: string;
+    tool_calls?: AgentToolCallEvent[];
+    tool_results?: AgentToolResultEvent[];
+    sdui?: any[];
+    response?: string;
+    finish_reason?: string;
+  }
+
+  const [steps, setSteps] = useState<AgentStepUI[]>([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [sseEvents, setSSEEvents] = useState<Array<{ event: string; data: string }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const streamRef = useRef<ReadableStream | null>(null);
 
-  const startAgentStream = async () => {
-    if (!prompt.trim() || isRunning) return;
+  // Fetch user on mount
+  useEffect(() => {
+    mwClient.auth.getCurrentUser()
+      .then((res) => {
+        if (res?.user) setUser(res.user);
+      })
+      .catch(() => {});
+  }, []);
 
-    setIsRunning(true);
-    setStatusText('Memulai cognitive reasoning...');
+  const handleRunAgent = () => {
+    if (!request) return;
+    setStatus('running');
     setSteps([]);
-    setFinalAnswer('');
-    setSduiPayload(null);
+    setSSEEvents([]);
     setError(null);
 
-    try {
-      await mwClient.agent.stream(
-        {
-          prompt,
-          max_steps: maxSteps,
-        },
-        (event, data) => {
-          if (event === 'thought') {
-            setStatusText(`Step ${data.step}: Berpikir...`);
-            setSteps((prev) => [
-              ...prev,
-              { step: data.step, thought: (data.message as string) || 'Reasoning...' },
-            ]);
-          } else if (event === 'tool_call') {
-            setStatusText(`Step ${data.step}: Memanggil ${data.tool}...`);
-            setSteps((prev) => [
-              ...prev,
-              {
-                step: data.step,
-                tool: data.tool as string,
-                arguments: typeof data.arguments === 'string' ? data.arguments : JSON.stringify(data.arguments),
-              },
-            ]);
-          } else if (event === 'tool_result') {
-            setStatusText(`Step ${data.step}: Observasi selesai (${data.latency_ms || 0}ms)`);
-            setSteps((prev) =>
-              prev.map((s, idx) =>
-                idx === prev.length - 1
-                  ? {
-                      ...s,
-                      result: data.data,
-                      latency_ms: data.latency_ms,
-                      success: data.success,
-                    }
+    mwClient.agent.stream(request, (event, data) => {
+      setSSEEvents(prev => [...prev, { event, data }]);
+
+      // Parse and update steps based on event type
+      try {
+        const parsed = JSON.parse(data);
+        switch (event) {
+          case 'thought': {
+            setSteps(prev => {
+              const newStep = {
+                step: parsed.step,
+                thought: parsed.thought,
+                finish_reason: undefined,
+              };
+              // Insert at current position + 1
+              const newSteps = [...prev];
+              newSteps.splice(currentStep + 1, prev.length - currentStep - 1, newStep);
+              return newSteps;
+            });
+            break;
+          }
+          case 'tool_call': {
+            setSteps(prev => {
+              const newCall: AgentToolCallEvent = {
+                step: parsed.step,
+                call_id: parsed.call_id,
+                tool: parsed.tool,
+                arguments: parsed.arguments,
+              };
+              const newSteps = [...prev];
+              newSteps.splice(currentStep + 1, newSteps.length - currentStep - 1, {
+                ...newSteps[currentStep + 1] || { step: currentStep + 1 },
+                tool_calls: [...(newSteps[currentStep + 1]?.tool_calls || []), newCall],
+              });
+              return newSteps;
+            });
+            break;
+          }
+          case 'tool_result': {
+            setSteps(prev => {
+              const newResult: AgentToolResultEvent = {
+                step: parsed.step,
+                call_id: parsed.call_id,
+                tool: parsed.tool,
+                success: parsed.success,
+                result: parsed.result,
+                error: parsed.error,
+                latency_ms: parsed.latency_ms,
+              };
+              const newSteps = [...prev];
+              newSteps.splice(currentStep + 1, newSteps.length - currentStep - 1, {
+                ...newSteps[currentStep + 1] || { step: currentStep + 1 },
+                tool_results: [...(newSteps[currentStep + 1]?.tool_results || []), newResult],
+              });
+              return newSteps;
+            });
+            break;
+          }
+          case 'sdui': {
+            setSteps(prev => {
+              const newSdui = parsed.data;
+              const newSteps = [...prev];
+              newSteps.splice(currentStep + 1, newSteps.length - currentStep - 1, {
+                ...newSteps[currentStep + 1] || { step: currentStep + 1 },
+                sdui: [...(newSteps[currentStep + 1]?.sdui || []), newSdui],
+              });
+              return newSteps;
+            });
+            break;
+          }
+          case 'chunk': {
+            // Token-level response delta
+            setSteps(prev => {
+              const last = prev[prev.length - 1];
+              if (last && last.finish_reason === 'completed') {
+                return prev;
+              }
+              return prev.map((s, i) =>
+                i === prev.length - 1
+                  ? { ...s, response: (s.response || '') + (parsed.delta || '') }
                   : s
-              )
-            );
-          } else if (event === 'sdui') {
-            setSduiPayload(data.payload);
-          } else if (event === 'chunk') {
-            setFinalAnswer((prev) => prev + (data.delta || ''));
-          } else if (event === 'done') {
-            setStatusText(`Selesai (${data.finish_reason || 'completed'})`);
-            setIsRunning(false);
-          } else if (event === 'error') {
-            setError(data.error as string);
-            setIsRunning(false);
+              );
+            });
+            break;
+          }
+          case 'done': {
+            setStatus('completed');
+            setSteps(prev => {
+              const finishReason = parsed.finish_reason || 'completed';
+              return prev.map(s => ({ ...s, finish_reason: finishReason }));
+            });
+            break;
           }
         }
-      );
-    } catch (err: any) {
-      setError(err.message || 'Gagal menjalankan cognitive agent loop');
-      setIsRunning(false);
-    }
+      } catch (err) {
+        console.error({ err }, 'SSE event parsing failed');
+        setStatus('error');
+        setError(err instanceof Error ? err.message : 'Failed to process agent stream');
+      }
+    });
+  };
+
+  const cancelAgent = () => {
+    setStatus('idle');
+    setSteps([]);
+    setSSEEvents([]);
+    setError(null);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const name = e.target.name;
+    setRequest(prev => prev ? { ...prev, [name]: value === '' ? undefined : value } : {
+      prompt: value,
+      system: undefined,
+      max_steps: name === 'max_steps' ? parseInt(value) || 8 : 8,
+      timeout_ms: undefined,
+      allowed_tools: undefined,
+      temperature: undefined,
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#08090a] text-zinc-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
       <EcosystemNavbar
         currentApp="headquarter"
-        userName={undefined}
-        userEmail={undefined}
+        userName={user?.name}
+        userEmail={user?.email}
+        onSignOut={async () => {
+          await mwClient.auth.signOut();
+          setUser(null);
+        }}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-800/80 pb-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold tracking-tight text-white">
-                Autonomous Cognitive Agent Studio
-              </h1>
-              <Badge variant="active" dot>
-                AGI Phase 4
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
+        {/* Agent Controls */}
+        <section className="mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
+                Agent Studio
+              </h2>
+              <p className="text-zinc-400 mt-1">
+                Autonomous cognitive agent loop with generative SDUI synthesis
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-zinc-300 font-medium">Max Steps:</label>
+              <input
+                type="number"
+                name="max_steps"
+                min="1"
+                max="20"
+                value={request?.max_steps ?? 8}
+                onChange={handleChange}
+                className="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500 w-24"
+              />
+              <span className="text-xs text-zinc-500">1-20</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Mission Input */}
+        <section className="mb-6">
+          <label className="block text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1.5">Mission Goal</label>
+          <Input
+            placeholder="Enter your agent mission (e.g. 'Check attachment in CAS and summarize in SDUI card')"
+            value={request?.prompt || ''}
+            onChange={(e) => handleChange(e)}
+            disabled={status === 'running'}
+          />
+        </section>
+
+        {/* Controls */}
+        <section className="mb-6 flex gap-2">
+          <Button
+            variant={status === 'running' ? 'gold' : 'default'}
+            disabled={status === 'running'}
+            onClick={handleRunAgent}
+          >
+            {status === 'running' ? 'Running...' : 'Run Agent'}
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={status !== 'running'}
+            onClick={cancelAgent}
+          >
+            Terminate
+          </Button>
+        </section>
+
+        {/* Status */}
+        {status === 'running' && (
+          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+            <div className="flex items-center gap-2">
+              <Badge variant="active" dot className="text-emerald-400">
+                LIVE
               </Badge>
+              <span className="text-sm text-zinc-400">Reasoning...</span>
             </div>
-            <p className="text-sm text-zinc-400 mt-1">
-              Multi-step ReAct cognitive loop with native executive tool execution and generative SDUI synthesis.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400">Status Loop:</span>
-            <Badge
-              variant={isRunning ? 'active' : 'default'}
-              dot={isRunning}
-            >
-              {statusText}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Mission Input Form */}
-        <Card className="bg-zinc-900/60 border-zinc-800 shadow-xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold text-white">Mission Goal & Instructions</CardTitle>
-            <CardDescription className="text-zinc-400">
-              Instruksikan tujuan kepada agen kognitif. Agen akan memilih tools (SQL, Storage CAS, Web Fetch, Qorpus, SDUI) secara otonom.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <Input
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Masukkan target misi otonom..."
-                  className="bg-zinc-950 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 focus:border-cyan-500"
-                  disabled={isRunning}
-                />
-              </div>
-              <div className="w-full md:w-36 flex items-center gap-2">
-                <span className="text-xs text-zinc-400 whitespace-nowrap">Max Steps:</span>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={maxSteps}
-                  onChange={(e) => setMaxSteps(parseInt(e.target.value) || 6)}
-                  className="bg-zinc-950 border-zinc-700 text-zinc-100 text-center"
-                  disabled={isRunning}
-                />
-              </div>
-              <Button
-                onClick={startAgentStream}
-                disabled={isRunning || !prompt.trim()}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-6 whitespace-nowrap"
-              >
-                {isRunning ? 'Menjalankan Loop...' : 'Jalankan Agen'}
-              </Button>
+            <div className="mt-2 text-xs text-zinc-500">
+              Max steps: {request?.max_steps ?? 8}
             </div>
-            {error && (
-              <div className="p-3 bg-red-950/40 border border-red-500/20 rounded-md text-sm text-red-400">
-                {error}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
-        {/* Execution Workspace Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Cognitive Reasoning Steps Timeline */}
-          <Card className="bg-zinc-900/60 border-zinc-800 shadow-xl">
-            <CardHeader className="pb-3 border-b border-zinc-800/80">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold text-white">Cognitive Trajectory</CardTitle>
-                <Badge variant="default">
-                  {steps.length} Actions
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-4 max-h-[500px] overflow-y-auto">
-              {steps.length === 0 ? (
-                <div className="text-center py-16 text-zinc-500 text-sm">
-                  Belum ada eksekusi. Masukkan tujuan di atas lalu tekan "Jalankan Agen".
-                </div>
-              ) : (
-                steps.map((st, i) => (
-                  <div
-                    key={i}
-                    className="p-3.5 rounded-lg border border-zinc-800 bg-zinc-950/60 space-y-2 text-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs text-cyan-400">Step {st.step}</span>
-                      {st.tool && (
-                        <Badge
-                          variant={st.success === false ? 'revoked' : 'active'}
-                        >
-                          Tool: {st.tool} {st.latency_ms ? `(${st.latency_ms}ms)` : ''}
-                        </Badge>
-                      )}
-                    </div>
-                    {st.thought && (
-                      <p className="text-zinc-300 text-xs italic">💭 {st.thought}</p>
-                    )}
-                    {st.arguments && (
-                      <div className="bg-black/40 p-2 rounded text-xs font-mono text-zinc-400 overflow-x-auto">
-                        <span className="text-zinc-500">args:</span> {st.arguments}
-                      </div>
-                    )}
-                    {st.result && (
-                      <div className="bg-black/60 p-2 rounded text-xs font-mono text-emerald-300/90 overflow-x-auto">
-                        <span className="text-zinc-500">observation:</span>{' '}
-                        {typeof st.result === 'object' ? JSON.stringify(st.result) : String(st.result)}
-                      </div>
+        {/* Live Reasoning Timeline */}
+        <section className="mb-6">
+          <h3 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
+            Reasoning Timeline
+          </h3>
+          {status === 'idle' && steps.length === 0 && (
+            <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/60 text-zinc-500 text-center">
+              No steps yet. Enter a mission goal and click "Run Agent".
+            </div>
+          )}
+          {status === 'running' || steps.length > 0 && (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {steps.map((step, i) => (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg transition-colors ${
+                    i <= currentStep ? 'bg-zinc-800' : 'bg-zinc-700/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-zinc-300">
+                      Step {step.step}
+                    </span>
+                    {step.finish_reason && (
+                      <Badge
+                        variant={step.finish_reason === 'completed' ? 'active' : 'revoked'}
+                        className="text-[10px]"
+                      >
+                        {step.finish_reason}
+                      </Badge>
                     )}
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Generative SDUI Viewport & Final Answer */}
-          <div className="space-y-6">
-            {/* Generative SDUI Viewport */}
-            <Card className="bg-zinc-900/60 border-zinc-800 shadow-xl">
-              <CardHeader className="pb-3 border-b border-zinc-800/80">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-semibold text-white">
-                    Generative SDUI Viewport
-                  </CardTitle>
-                  {sduiPayload && (
-                    <Badge variant="gold">
-                      {sduiPayload.view_type} synthesized
-                    </Badge>
+                  {step.thought && (
+                    <div className="text-[10px] text-zinc-500 mb-1">
+                      <Badge
+                        variant="active"
+                        className="inline-block px-2 py-0.5 text-[10px] rounded bg-emerald-500/10 text-emerald-400 animate-pulse"
+                      >
+                        Thinking
+                      </Badge>
+                      {step.thought}
+                    </div>
+                  )}
+
+                  {step.tool_calls && step.tool_calls.length > 0 && (
+                    <div className="text-[10px] text-zinc-400 mb-1">
+                      <span className="font-medium">Tools:</span>
+                      {step.tool_calls.map((tc, j) => (
+                        <span
+                          key={j}
+                          className="mr-1 text-[10px] bg-zinc-700/50 border border-zinc-700/60 rounded px-1.5 py-0.5"
+                        >
+                          {tc.tool}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {step.tool_results && step.tool_results.length > 0 && (
+                    <div className="text-[10px] text-zinc-400 mb-1">
+                      <span className="font-medium">Results:</span>
+                      {step.tool_results.map((tr, j) => (
+                        <span
+                          key={j}
+                          className="mr-1 text-[10px] bg-zinc-900/50 rounded px-1 py-0.5"
+                        >
+                          {tr.success ? 'OK' : 'ERR'}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {step.sdui && step.sdui.length > 0 && (
+                    <div className="text-[10px] text-zinc-400 mb-1">
+                      <span className="font-medium">SDUI:</span>
+                      {step.sdui.map((s, j) => (
+                        <span
+                          key={j}
+                          className="mr-1 text-[10px] bg-zinc-900/50 rounded px-1 py-0.5"
+                        >
+                          {s.title || 'view'}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {step.response && (
+                    <div className="mt-2 text-[10px] text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                      {step.response}
+                    </div>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {sduiPayload ? (
-                  <div className="p-4 rounded-lg bg-zinc-950 border border-purple-500/30 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-white text-base">{sduiPayload.title}</h4>
-                      <span className="text-xs text-zinc-500 font-mono">{sduiPayload.id}</span>
-                    </div>
-                    {sduiPayload.props && (
-                      <div className="grid grid-cols-2 gap-2 text-xs bg-black/40 p-3 rounded">
-                        {Object.entries(sduiPayload.props).map(([k, v]) => (
-                          <div key={k} className="flex flex-col">
-                            <span className="text-zinc-500">{k}</span>
-                            <span className="text-zinc-200 font-medium">{String(v)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-zinc-500 text-sm">
-                    Viewport SDUI kosong. Agen akan merender UI secara generatif saat alat `render_sdui` dipanggil.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          )}
+        </section>
 
-            {/* Final Answer Stream */}
-            <Card className="bg-zinc-900/60 border-zinc-800 shadow-xl">
-              <CardHeader className="pb-3 border-b border-zinc-800/80">
-                <CardTitle className="text-base font-semibold text-white">Agent Answer & Synthesis</CardTitle>
+        {/* SDUI Preview */}
+        <section>
+          <h3 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
+            SDUI Preview
+          </h3>
+          {steps.some(s => s.sdui && s.sdui.length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Generated View</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                {finalAnswer ? (
-                  <div className="p-4 rounded-lg bg-zinc-950/80 border border-zinc-800 text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                    {finalAnswer}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-zinc-500 text-sm">
-                    Menunggu sintesis kesimpulan akhir dari agen...
-                  </div>
-                )}
+              <CardContent className="h-[200px] overflow-auto bg-zinc-800/50 border border-zinc-700/60">
+                <pre className="text-[10px] text-zinc-400 whitespace-pre-wrap leading-relaxed">
+{/* SDUI schema would be rendered here */}
+SDUI view rendering - preview not yet connected to backend
+</pre>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          )}
+          {!(steps.some(s => s.sdui && s.sdui.length > 0)) && (
+            <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/60 text-zinc-500 text-center">
+              No SDUI views yet. Run an agent to generate dynamic views.
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

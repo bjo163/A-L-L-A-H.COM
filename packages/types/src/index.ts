@@ -279,6 +279,7 @@ export interface AgentRunRequest {
   timeout_ms?: number;
   allowed_tools?: string[];
   temperature?: number;
+  company_id?: string;
 }
 
 export interface AgentRunResponse {

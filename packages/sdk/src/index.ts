@@ -18,12 +18,55 @@ import type {
   JsonRpcResponse,
   McpTool,
   McpToolCallResult,
+  AgentThought,
+  AgentToolCallEvent,
+  AgentToolResultEvent,
+  AgentSduiEvent,
+  AgentStreamEvent,
+  AgentStep,
+  AgentRunRequest,
+  AgentRunResponse,
 } from '@moonwitness/types';
 
 export interface SdkOptions {
   baseUrl?: string;
   storageKey?: string;
   virtualKey?: string;
+}
+
+export type SwarmRole = 'planner' | 'researcher' | 'builder' | 'verifier';
+
+export interface SwarmAgentMessage {
+  id: string;
+  from: SwarmRole;
+  to: SwarmRole | 'supervisor' | 'all';
+  role: SwarmRole;
+  payload: Record<string, unknown>;
+  timestamp: string;
+  latency_ms?: number;
+}
+
+export interface SwarmStep {
+  step: number;
+  agent: SwarmRole;
+  action: string;
+  thought?: string;
+  input?: Record<string, unknown>;
+  output?: unknown;
+  success: boolean;
+  latency_ms?: number;
+  timestamp: string;
+}
+
+export interface SwarmExecutionResult {
+  success: boolean;
+  mission_id: string;
+  goal: string;
+  summary: string;
+  steps: SwarmStep[];
+  messages: SwarmAgentMessage[];
+  finish_reason: 'completed' | 'verifier_rejected' | 'max_turns' | 'human_intervention' | 'error';
+  error?: string;
 }
 
 export class MoonWitnessClient {
@@ -303,6 +346,91 @@ export class MoonWitnessClient {
   readonly sdui = {
     render: async (viewId: string): Promise<SDUIRoot> => {
       return this.request<SDUIRoot>(`/v1/sdui?view=${encodeURIComponent(viewId)}`);
+    },
+  };
+
+  // Multi-Agent Swarm Orchestration
+  readonly swarm = {
+    run: async (options: {
+      goal: string;
+      system?: string;
+      max_turns?: number;
+      allowed_tools?: string[];
+      temperature?: number;
+      context?: Record<string, unknown>;
+    }): Promise<SwarmExecutionResult> => {
+      return this.request<SwarmExecutionResult>('/v1/swarm/run', {
+        method: 'POST',
+        body: JSON.stringify(options),
+      });
+    },
+
+    stream: async (
+      options: {
+        goal: string;
+        system?: string;
+        max_turns?: number;
+        allowed_tools?: string[];
+        temperature?: number;
+        context?: Record<string, unknown>;
+      },
+      onEvent: (event: string, data: SwarmStep | SwarmAgentMessage | SwarmExecutionResult | { error: string }) => void
+    ): Promise<void> => {
+      const token = this.getSessionToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (this.virtualKey) headers['x-virtual-key'] = this.virtualKey;
+
+      const res = await fetch(`${this.baseUrl}/v1/swarm/stream`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(options),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Swarm stream failed with status ${res.status}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('ReadableStream not supported by runtime');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const block of lines) {
+          const trimmed = block.trim();
+          if (!trimmed) continue;
+
+          let currentEvent = 'message';
+          let currentData = '';
+
+          for (const line of trimmed.split('\n')) {
+            if (line.startsWith('event: ')) {
+              currentEvent = line.replace('event: ', '').trim();
+            } else if (line.startsWith('data: ')) {
+              currentData = line.replace('data: ', '').trim();
+            }
+          }
+
+          if (currentData) {
+            try {
+              onEvent(currentEvent, JSON.parse(currentData));
+            } catch {
+              onEvent(currentEvent, { error: currentData });
+            }
+          }
+        }
+      }
     },
   };
 

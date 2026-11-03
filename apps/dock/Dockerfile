@@ -20,7 +20,7 @@ COPY apps/dock ./apps/dock
 COPY packages/ui ./packages/ui
 COPY packages/sdk ./packages/sdk
 COPY packages/types ./packages/types
-RUN pnpm --filter @moonwitness/dock build
+RUN pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/dock build
 
 FROM base AS runner
 WORKDIR /app

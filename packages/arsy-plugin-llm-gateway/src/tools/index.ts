@@ -17,4 +17,4 @@ export { PgLiteQueryTool, pgliteQueryTool } from './pglite_query';
 export { StorageCasTool, storageCasTool } from './storage_cas';
 export { WebFetchTool, webFetchTool } from './web_fetch';
 export { QorpusRetrieveTool, qorpusRetrieveTool } from './qorpus_retrieve';
-export { RenderSduiTool, renderSduiTool } from './sdui';
+export { RenderSduiTool, renderSduiTool, renderSdui } from './sdui';

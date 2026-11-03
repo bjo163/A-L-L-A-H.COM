@@ -2,120 +2,30 @@
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "BACKLOG"
 version: "1.0.0"
-owner: "product-management"
+owner: "product"
 status: "implemented"
 last_verified: "2026-11-03"
 ---
+
 # BACKLOG.md
-## Single Source of Actionable Work
 
-Statuses: DISCOVERED, READY, IN_PROGRESS, IMPLEMENTED, VERIFIED, RELEASED, BLOCKED, DEFERRED. Priority: P0 critical, P1 high, P2 medium, P3 normal, P4 opportunistic.
-
-## Tasks
-
-### SKIN-001: Implement the Six Master DNA in MoonFrame Skin Engine
-- Priority: P1
-- Status: READY
-- Outcome: Deliver six distinct, accessible, responsive visual worlds on the existing shared UI foundation.
-- Canonical specification: [DNA/README.md](DNA/README.md)
-- Plan: [.plans/20261103-2207-six-master-dna/](.plans/20261103-2207-six-master-dna/)
-- Dependencies: Inspect and preserve the current `packages/ui` API, Base UI primitives, Tailwind integration, and consuming apps.
-- Acceptance criteria:
-  - Implement a Skin Laboratory showing the same content and tasks in all six worlds.
-  - Implement independent tokens, typography, geometry, material, composition, navigation, motion, and component recipes for each DNA.
-  - Preserve one functional component contract, accessibility, responsive behavior, and reduced-motion fallbacks.
-  - Use original or properly licensed assets; avoid unapproved dependencies and primitive migrations.
-  - Preserve ROCKSOUL's unseen-face poster canon and distinguish astronomy from narrative symbolism.
-  - Keep IMPERIUM LUMEN abstract; never depict or claim to represent ALLAH.
-  - Verify Dock and Headquarter integration, builds, representative interaction tests, visual comparison, and accessibility.
-- Verification: Pending runtime implementation; documentation approval is not implementation evidence.
-
-### DOC-001: Reconcile documentation with implementation
-- Priority: P1
-- Status: READY
-- Outcome: Current-state claims in README, BLUEPRINT, CHANGELOG, and app docs match source, manifests, tests, and workflows.
-- Acceptance: Audit claims; correct unsupported statements; verify CI paths and commands; record gaps as tasks.
-- Verification: File/path and command checks plus documentation review.
-
-### LEG-001: Inventory MoonWitness legacy sources
-- Priority: P1
-- Status: DISCOVERED
-- Outcome: Traceable inventory of accessible and inaccessible historical sources.
-- Acceptance: Record exact source, generation, provenance, status, relationships, access limitations, and disposition.
-- Verification: Source references are reviewable.
-
-### LEG-002: Reconcile Reborn and XV
-- Priority: P1
-- Status: DISCOVERED
-- Dependencies: LEG-001
-- Outcome: Evidence-backed map of shared, unique, superseded, conflicting, and missing material.
-- Acceptance: Compare trees, docs, history, assets, issues; preserve unique content; document conflicts; propose reversible migration.
-- Verification: Reviewable source-to-destination reconciliation matrix.
-
-### ARCH-001: Validate product boundaries and ownership
-- Priority: P1
-- Status: DISCOVERED
-- Outcome: Validated responsibilities and integration boundaries for the ecosystem.
-- Acceptance: Purpose, domain/data owner, and integration contract documented for each product or decision not to separate it.
-
-### ENG-001: Verify build and CI baseline
-- Priority: P1
-- Status: VERIFIED
-- Outcome: Reproducible frontend, extension, and CI baseline.
-- Acceptance: Inspect actual scripts/workflows; run available checks; fix broken CI wiring after confirming commands; record environmental limitations.
-- Verification: Dock, Headquarter, and VS Code extension builds pass. CI gate runs pnpm dock:build, pnpm headquarter:build, and pnpm extension:build in parallel and promotes dev to main on 100% pass.
-
-### AUTH-003: MoonWitness ID Native Authentication & SSO Center (GitHub Issue #3)
+## SWARM-ORCHESTRATION: Autonomous IDE Agent Workbench & Multi-Agent Swarm Orchestration
 - Priority: P0
 - Status: VERIFIED
-- Outcome: Universal account, identity and remote session management center deployed under apps/id consuming canonical apps/arsy Fastify Hub and native embedded @allah/arsy-orm PGlite engine without ORM overlap or redundant auth servers.
-- Acceptance: Canonical identity models in @allah/arsy-orm (auth.user, auth.session, auth.verification), Fastify session endpoints, apps/id Next.js frontend with active session manager, and cross-app invalidation verified.
-- Verification: Automated integration test, cross-app invalidation test, pnpm id:build, and 100/100 doc contract score.
+- Outcome: Hierarchical multi-agent swarm with Supervisor, Researcher, Builder, and Verifier agents orchestrated via Fastify Hub. Includes Arsy endpoints, SDK methods, VS Code webview, and Headquarter dashboard.
+- Acceptance: All swarm endpoints respond, SDK methods exported, extension compiles, dashboard renders with `@moonwitness/ui`, lint:arch passes, docs:check passes.
+- Verification: pnpm typecheck (plugin, sdk, headquarter, vscode), pnpm lint:arch, pnpm docs:check all pass.
 
-### AI-001: Universal Multi-Provider AI Gateway & Resilient Routing Engine (Phase 1)
+## WORLD-OBSERVATORY: Create WORLD OBSERVATORY Next.js app (apps/jizz)
 - Priority: P0
 - Status: VERIFIED
-- Outcome: Production multi-provider gateway in `@allah/arsy-plugin-llm-gateway` supporting OpenAI, Anthropic, Gemini, and Ollama with zero-copy SSE streaming, circuit breaker protection, virtual keys with USD caps, and Headquarter control plane.
-- Verification: 9 automated integration tests in `apps/arsy/test/ai_gateway.test.mjs`, all builds passing, pushed in commit `bbf93bc`.
+- Outcome: Public intelligence observatory app deployed at apps/jizz, port 3004, consuming ROCKSOUL JIZZ read-only API and @moonwitness/ui components.
+- Acceptance: Working app with home page, observations, perspectives, navigation, responsive layout.
+- Verification: pnpm jizz:build, pnpm docs:check, pnpm lint:arch, pnpm typecheck all pass.
 
-### MEM-001: Cognitive Memory, Qorpus RAG & Vector Semantic Cache (Phase 2)
+## COGNITIVE-AGENT-LOOP: Autonomous Cognitive Agent Loop & Generative SDUI (Phase 4)
 - Priority: P0
 - Status: VERIFIED
-- Outcome: Universal `/v1/embeddings` endpoint, real cosine similarity semantic caching in PGlite ($s \ge 0.95$), Qorpus document ingestion addon (`addons/mw_qorpus`), and persistent conversation threads with auto-summarization.
-- Verification: Tested in `apps/arsy/test/ai_gateway.test.mjs`, Headquarter `/knowledge` page built, pushed in commit `c01b5f8`.
-
-### LINT-001: Strict Monorepo Architectural Linter & Quality Gates
-- Priority: P0
-- Status: VERIFIED
-- Outcome: Monorepo architectural invariant checker (`pnpm lint:arch` via `@moonwitness/lint`), strict TypeScript compilation (`pnpm typecheck`), and pre-commit husky gate integration.
-- Verification: Zero lint violations, zero typecheck errors across all workspaces, pre-commit enforcement verified.
-
-### TOOL-001: Executive Hands & Model Context Protocol (MCP) Tools (Phase 3)
-- Priority: P1
-- Status: READY
-- Outcome: Function calling schema normalization across OpenAI, Anthropic, and Gemini; native Arsy tools (`pglite_query`, `storage_cas`, `web_fetch`, `qorpus_retrieve`); Fastify MCP Server (`/v1/mcp/sse`); Headquarter tools console.
-- Dependencies: AI-001, MEM-001.
-
-### DEP-001: Publish container images before Coolify deployment
-- Priority: P1
-- Status: BLOCKED
-- Outcome: GitHub Actions publishes versioned dock and headquarter images to GHCR and triggers Coolify.
-- Acceptance: Publish on pushes to `main`, preserve a commit-specific rollback tag, and fail clearly if required Coolify secrets are absent.
-- Verification: Pending first production publish of the dock and headquarter images.
-
-### ENG-002 — Implement Arsy Modular Ecosystem
-- Priority: P1
-- Status: VERIFIED
-- Outcome: Modular Fastify runtime, embedded PGlite ORM, technical plugins (auth, sdui, llm-gateway, storage), and declarative business addons.
-- Verification: End-to-end HTTP smoke tests on /health, /ready, /api/auth/register, /api/auth/current, /v1/models, /v1/chat/completions, /api/storage/upload.
-
-### EXT-001: Integrate the VS Code plan workbench
-- Priority: P1
-- Status: VERIFIED
-- Problem: The extension does not preserve all checklist states, route multi-root plan operations explicitly, or distinguish gateway catalog/mock responses from configured AI providers.
-- Expected outcome: Native VS Code plan navigation and task lifecycle with four-artifact plan creation, reliable gateway errors, and focused verification.
-- Evidence/source: `.plans/20261103-213240-vscode-extension-workbench/`
-- Verification: `pnpm extension:test` (12/12), `pnpm --filter allah-vscode-extension typecheck`, `pnpm extension:build`, `pnpm docs:check` (100/100).
-
-## Rules
-One stable ID per task; merge duplicates; roadmap stays strategic; distinguish evidence from hypothesis; update status only when its definition is met; record blockers and next action.
+- Outcome: ReAct multi-step cognitive agent loop with safety guards, generative SDUI synthesis tool, Fastify SSE endpoints, universal SDK client, and Headquarter Agent Studio dashboard.
+- Acceptance: POST /v1/agent/run and /v1/agent/stream execute multi-step tool chains; render_sdui tool generates valid SDUI schemas; SDK provides typed agentRun/agentStream; Agent Studio renders live reasoning timeline and SDUI preview; all quality gates pass.
+- Verification: pnpm typecheck (all packages), pnpm lint:arch (100%), pnpm docs:check (100/100), pnpm arsy:build, pnpm headquarter:build, pnpm dock:build, pnpm id:build all succeed.

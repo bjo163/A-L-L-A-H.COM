@@ -11,8 +11,9 @@ import { GeminiAdapter } from './adapters/gemini';
 import { AnthropicAdapter } from './adapters/anthropic';
 import { toolRegistry } from './tools';
 import { mcpHandler } from './mcp';
-import { AgentLoop } from './agent';
 import type { LlmGatewayOptions, ChatCompletionRequest, ToolDefinition, ToolChoice, ToolCall } from './types';
+import { agentLoop, runAgent, streamAgent } from './agent/loop';
+import { SwarmCoordinator } from './swarm';
 
 export * from './types';
 export * from './router';
@@ -26,6 +27,7 @@ export * from './adapters/anthropic';
 export * from './adapters/gemini';
 export * from './tools';
 export * from './agent';
+export * from './swarm';
 
 const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   fastify: FastifyInstance,
@@ -329,7 +331,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   });
 
   // --- Autonomous Cognitive Agent Loop Endpoints ---
-  const agentLoop = new AgentLoop(router);
+  // const agentLoop = new AgentLoop(router);
 
   // POST /v1/agent/run: Synchronous execution of cognitive agent loop
   fastify.post<{
@@ -347,7 +349,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
     }
 
     const companyId = (request as any).user?.company_id || 'default';
-    const result = await agentLoop.run({
+    const result = await runAgent({
       prompt,
       system,
       max_steps,
@@ -382,7 +384,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
 
     const companyId = (request as any).user?.company_id || 'default';
 
-    await agentLoop.run(
+    await streamAgent(
       {
         prompt,
         system,
@@ -391,7 +393,86 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
         temperature,
         company_id: companyId,
       },
-      ({ event, data }) => {
+      (event: string, data: string) => {
+        try {
+          reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        } catch {
+          // Client disconnected
+        }
+      }
+    );
+
+    reply.raw.end();
+  });
+
+  // --- Multi-Agent Swarm Orchestration Endpoints ---
+  const swarmCoordinator = new SwarmCoordinator();
+
+  // POST /v1/swarm/run: Synchronous hierarchical multi-agent execution
+  fastify.post<{
+    Body: {
+      goal: string;
+      system?: string;
+      max_turns?: number;
+      allowed_tools?: string[];
+      temperature?: number;
+      context?: Record<string, unknown>;
+    };
+  }>(`${prefix}/swarm/run`, async (request, reply) => {
+    const { goal, system, max_turns, allowed_tools, temperature, context } = request.body || {};
+    if (!goal) {
+      return fail('MISSING_GOAL', 'Goal is required for swarm execution');
+    }
+
+    const companyId = (request as any).user?.company_id || 'default';
+    const result = await swarmCoordinator.run({
+      goal,
+      system,
+      max_turns,
+      allowed_tools,
+      temperature,
+      context,
+      company_id: companyId,
+    });
+
+    return ok(result);
+  });
+
+  // POST /v1/swarm/stream: Aggregated SSE multi-agent trajectory stream
+  fastify.post<{
+    Body: {
+      goal: string;
+      system?: string;
+      max_turns?: number;
+      allowed_tools?: string[];
+      temperature?: number;
+      context?: Record<string, unknown>;
+    };
+  }>(`${prefix}/swarm/stream`, async (request, reply) => {
+    const { goal, system, max_turns, allowed_tools, temperature, context } = request.body || {};
+    if (!goal) {
+      reply.code(400).send({ error: 'Goal is required for swarm execution' });
+      return;
+    }
+
+    reply.raw.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('X-Accel-Buffering', 'no');
+
+    const companyId = (request as any).user?.company_id || 'default';
+
+    await swarmCoordinator.run(
+      {
+        goal,
+        system,
+        max_turns,
+        allowed_tools,
+        temperature,
+        context,
+        company_id: companyId,
+      },
+      (event, data) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch {

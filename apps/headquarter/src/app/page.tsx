@@ -46,6 +46,9 @@ export default function HeadquarterHomePage() {
             <a href="/ai-gateway">
               <Button variant="gold" size="sm">AI Gateway</Button>
             </a>
+            <a href="/swarm">
+              <Button variant="outline" size="sm">Swarm Ops</Button>
+            </a>
             <a href="http://localhost:3003/account">
               <Button variant="outline" size="sm">ID Settings</Button>
             </a>
@@ -152,6 +155,39 @@ export default function HeadquarterHomePage() {
                 <a href="/ai-gateway">
                   <Button variant="outline" size="sm" className="w-full">
                     Open AI Gateway Console
+                  </Button>
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-emerald-500/30 bg-zinc-900/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Autonomous Agent Studio</CardTitle>
+                <Badge variant="active" dot>PHASE 4</Badge>
+              </div>
+              <CardDescription>Cognitive Agent Loop & Generative SDUI Compiler</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-xs font-mono text-zinc-300">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Runtime:</span>
+                  <span className="text-emerald-400">ReAct Multi-Step</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Tools:</span>
+                  <span>SQL, CAS, Web, Qorpus, SDUI</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Guards:</span>
+                  <span className="text-amber-400">Loop Detection</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-zinc-800">
+                <a href="/agent">
+                  <Button variant="default" size="sm" className="w-full">
+                    Open Agent Studio
                   </Button>
                 </a>
               </div>

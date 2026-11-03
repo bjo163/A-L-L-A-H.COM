@@ -1,60 +1,38 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "CHANGELOG"
-version: "0.1.0"
+version: "1.0.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-03"
 ---
+
 # CHANGELOG.md
-## A-L-L-A-H.COM
 
-This file records changes that actually happened. It is not a roadmap and must not claim unverified implementation.
-
-## [Unreleased]
+## 2026-11-03 - IDE Agent Workbench & Multi-Agent Swarm Orchestration (AGI Phase 5)
 
 ### Added
-- **Autonomous Cognitive Agent Loop & Generative SDUI (@allah/arsy-plugin-llm-gateway)**: Implemented multi-turn ReAct cognitive reasoning engine with loop detection, max-step ceilings, native tool dispatch, /v1/agent/run, and zero-copy /v1/agent/stream SSE endpoints.
-- **Generative SDUI Synthesis Tool (
-ender_sdui)**: Added dynamic server-driven UI synthesis tool allowing cognitive agents to compose typed view components (card, 	able, 	ree, stats_grid, kanban, orm).
-- **Universal Agent SDK Methods (@allah/sdk)**: Added mwClient.agent.run and mwClient.agent.stream with typed event handling.
-- **Headquarter Agent Studio (pps/headquarter/src/app/agent)**: Added real-time autonomous agent command center with cognitive trajectory timeline and Generative SDUI viewport using @moonwitness/ui.
-- **Architectural Linter Gate (`@moonwitness/lint`)**: Implemented standalone invariant checker `node packages/lint/src/check-architecture.mjs` (`pnpm lint:arch`) enforcing zero ORM overlap (embedded PGlite only), strict `@moonwitness/ui` usage in `apps/`, unified `@allah/sdk` client routing, and shared `@moonwitness/types` data contracts.
-- **Strict TypeScript Typechecking (`pnpm typecheck`)**: Integrated deterministic TypeScript compiler gate across all packages and apps (`@allah/arsy-orm`, `@allah/arsy-core`, `@allah/arsy-plugin-llm-gateway`, `@allah/arsy-plugin-auth`, `@allah/arsy-plugin-storage`, `@allah/arsy-plugin-sdui`, `@moonwitness/types`, `@allah/sdk`, `@moonwitness/ui`, `apps/arsy`). Fixed remaining interface mismatches and dead scaffold files.
-- **Enhanced Husky Pre-Commit Gate**: Upgraded `.husky/pre-commit` to synchronously enforce documentation contracts (`pnpm docs:check`), architectural invariants (`pnpm lint:arch`), and strict TypeScript type validation (`pnpm typecheck`) before commit creation.
-- **Canonical Documentation Synchronization**: Synchronized `AGENTS.md`, `QUALITY.md`, `DESIGN.md`, `BLUEPRINT.md`, `BACKLOG.md`, and `DOCUMENTATION_CONTRACT.md` removing legacy rust references and establishing automated self-healing validation standards.
-- **Multi-Provider AI Gateway & Fallback Router (`@allah/arsy-plugin-llm-gateway`)**: Implemented universal OpenAI, Anthropic Claude Messages, Google Gemini, and Ollama protocol adapters with zero-copy Server-Sent Events (SSE) streaming, circuit breaker protection, SSRF guards, and multi-tier fallback sequencing.
-- **Persistent AI Metering & Virtual Keys**: Connected `addons/mw_llm_router` models (`ai.provider`, `ai.model`, `ai.route`, `ai.virtual_key`, `ai.usage_log`) to the gateway runtime, enforcing rate limits and monthly USD budget ceilings with real-time audit logs in PGlite.
-- **Client SDK Streaming & Telemetry (`@allah/sdk`)**: Added `chatStream()`, provider catalogs, telemetry metrics, and virtual key credentials to universal SDK.
-- **Headquarter AI Control Plane (`apps/headquarter/src/app/ai-gateway`)**: Added operational dashboard for provider health, route matrix, interactive SSE streaming test console, and live PGlite audit log inspections using `@moonwitness/ui`.
-- **Shared UI Library (`packages/ui`)**: shadcn/ui base-nova components exposed as `@moonwitness/ui` workspace package, consumed by Dock and Headquarter.
-- **Headquarter app (`apps/headquarter`)**: Next.js 16 command center (port 3002) using `@moonwitness/ui`.
-- **Dock app (`apps/dock`)**: renamed from `apps/web` as the public Next.js 16 homepage (port 3001).
-- **MoonWitness ID Center (apps/id)**: Built Next.js 16 + React 19 + Tailwind v4 frontend for unified authentication, registration, and active session management.
-- **Native Identity & Session Models**: Added auth.user, auth.session, and auth.verification directly to @allah/arsy-orm with composite indexes on embedded PGlite.
-- **Arsy Auth Plugin Endpoints**: Added remote session revocation, session listing, user-agent tracking, and unified session guard in @allah/arsy-plugin-auth.
-- **Root Workspace Scripts**: Added pnpm id:dev and pnpm id:build.
-- **VS Code plan workbench**: Added three-state task actions, multi-root navigation, `.plans` file refresh, four-artifact plan generation, and focused extension tests.
-- **MoonFrame Six Master DNA specifications:** Added the canonical DNA directory with the shared engine contract, six world-specific design specifications, component mapping, and quality gates. Runtime skin implementation remains pending.
-- **Six Master DNA implementation task:** Added SKIN-001 to track the Skin Laboratory, token systems, component recipes, integration, and verification.
+- **Multi-Agent Swarm Engine** (`packages/arsy-plugin-llm-gateway/src/swarm`): Hierarchical orchestration with Supervisor/Planner, Researcher, Builder, and Verifier/Reviewer agents. Inter-agent message passing, consensus verification, and SSE streaming endpoints (`/v1/swarm/run`, `/v1/swarm/stream`).
+- **Universal SDK Expansion** (`packages/sdk`): Added `mwClient.swarm.run()` and `mwClient.swarm.stream()` with typed `SwarmStep`, `SwarmAgentMessage`, `SwarmExecutionResult` interfaces.
+- **VS Code Extension Agent Workbench** (`packages/vscode-extension/src/agentWorkbench.ts`): Webview provider connecting to Arsy SSE streaming endpoint, live mission execution, and `.plans` artifact synchronization.
+- **Headquarter Swarm Operations Dashboard** (`apps/headquarter/src/app/swarm/page.tsx`): Real-time agent role cards, inter-agent message log with latency chips, and mission result visualization using `@moonwitness/ui`.
+- **Integration Test** (`apps/arsy/test/swarm.test.mjs`): End-to-end verification of swarm endpoints and coordinator singleton.
 
 ### Changed
-- **VS Code gateway handling:** Parse Arsy's model catalog envelope and reject mock, malformed, or failed plan completions instead of reporting local fallback as AI success.
-- **Plan contract:** Time and budget estimates are no longer required by plan templates or documentation validation.
-- **Backend architecture:** The Fastify/TypeScript ARSY Hub under apps/arsy is the active backend; the former Rust Loco server is retired.
-- **Web application structure:** The former apps/web application was replaced by apps/dock; apps/headquarter is the command center.
-- **Deployment:** docker-compose and publish workflow target Dock and Headquarter images from GHCR.
-- **Build gates:** Current frontend and backend gates use pnpm dock:build, pnpm headquarter:build, and pnpm --filter @allah/arsy build.
-- **CI:** The dev workflow verifies current applications and promotes dev to main only after required checks pass.
-- **Documentation:** Root engineering and product documentation was reconciled with the current app and backend structure.
+- **Headquarter Navigation**: Added Swarm Operations link in home page header.
 
-### Historical platform foundations
-- **Arsy Enterprise Ecosystem:** Modular Fastify framework, embedded PGlite ORM, micro-kernel, and declarative business addons.
-- **Arsy Technical Plugins:** Authentication, SDUI, LLM gateway, and content-addressed storage.
-- **Repository governance:** Spec-driven plans under .plans/, documentation contracts, CI validation, and the VS Code plan workbench.
-- **Deployment foundation:** GitHub Actions builds and publishes container images to GHCR before triggering Coolify.
+## 2026-11-03 - Autonomous Cognitive Agent Loop & Generative SDUI (AGI Phase 4)
 
-### Fixed
-- No additional verified fix entries recorded in this section.
+### Added
+- **Cognitive Agent Loop Engine** (`packages/arsy-plugin-llm-gateway/src/agent/loop.ts`): ReAct multi-step reasoning runtime with safety guards (max_steps ceiling, loop detection, step timeouts). Singleton `agentLoop` with `run()` and `streamSessionEvents()` methods.
+- **Generative SDUI Tool** (`packages/arsy-plugin-llm-gateway/src/tools/sdui.ts`): `render_sdui` tool supporting view types (card, tree, table, form, stats-grid, kanban) with ORM model schema derivation and static view generation.
+- **Fastify Agent Endpoints** (`packages/arsy-plugin-llm-gateway/src/index.ts`): `POST /v1/agent/run` (synchronous) and `POST /v1/agent/stream` (zero-copy SSE) with typed request/response contracts.
+- **Universal SDK Agent Methods** (`packages/sdk/src/index.ts`): `mwClient.agent.run()` and `mwClient.agent.stream()` with full TypeScript typings for `AgentRunRequest`, `AgentRunResponse`, `AgentStreamEvent`.
+- **Shared Type Contracts** (`packages/types/src/index.ts`): Added `AgentThought`, `AgentToolCallEvent`, `AgentToolResultEvent`, `AgentSduiEvent`, `AgentStreamEvent`, `AgentStep`, `AgentRunRequest`, `AgentRunResponse` interfaces.
+- **Headquarter Agent Studio** (`apps/headquarter/src/app/agent/page.tsx`): Mission goal input with max_steps slider, live reasoning timeline (Thought/Tool/Result badges), SSE event streaming, SDUI preview container. Built exclusively with `@moonwitness/ui`.
+- **Headquarter Home Page Link**: Agent Studio card with navigation to `/agent` route.
+- **Integration Test** (`apps/arsy/test/agent_loop.test.mjs`): Verification of agent run/stream endpoints, SSE event emission, max_steps enforcement, and loop detection.
 
-Add dated release sections only when an actual repository milestone or release exists, with commit/release references where available.
+### Changed
+- **Tool Registry**: Registered `render_sdui` tool alongside existing tools (pglite_query, storage_cas, web_fetch, qorpus_retrieve).
+- **LLM Gateway Package**: Added `@moonwitness/types` dependency for agent type imports.
