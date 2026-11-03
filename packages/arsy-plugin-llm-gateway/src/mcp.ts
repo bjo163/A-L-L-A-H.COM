@@ -1,6 +1,7 @@
 import { logger } from '@allah/arsy-core';
 import { toolRegistry } from './tools';
 import type { RegisteredTool, ToolResult } from './tools/base';
+import type { JsonRpcRequest, JsonRpcResponse, McpTool } from '@moonwitness/types';
 
 export const MCP_PROTOCOL_VERSION = '2025-06-12';
 
@@ -12,26 +13,6 @@ export const JSON_RPC_ERRORS = {
   INVALID_PARAMS: { code: -32602, message: 'Invalid params' },
   INTERNAL_ERROR: { code: -32603, message: 'Internal error' },
 } as const;
-
-export interface JsonRpcRequest {
-  jsonrpc: string;
-  method: string;
-  params?: Record<string, unknown> | unknown[];
-  id: string | number | null;
-}
-
-export interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id: string | number | null;
-  result?: unknown;
-  error?: { code: number; message: string; data?: unknown };
-}
-
-export interface McpTool {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-}
 
 function makeErrorResponse(id: string | number | null, error: { code: number; message: string; data?: unknown }): JsonRpcResponse {
   return { jsonrpc: '2.0', id, error };

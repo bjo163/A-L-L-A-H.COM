@@ -8,12 +8,12 @@ import { GatewayCache } from './cache';
 import { UsageManager } from './usage';
 import { OpenAiAdapter } from './adapters/openai';
 import { GeminiAdapter } from './adapters/gemini';
-import { AnthropicAdapter } from './adapters/anthropic';
 import { toolRegistry } from './tools';
 import { mcpHandler } from './mcp';
-import type { LlmGatewayOptions, ChatCompletionRequest, ToolDefinition, ToolChoice, ToolCall } from './types';
-import { agentLoop, runAgent, streamAgent } from './agent/loop';
+import type { LlmGatewayOptions, ChatCompletionRequest } from './types';
+import { runAgent, streamAgent } from './agent/loop';
 import { SwarmCoordinator } from './swarm';
+import { deviceControlPlugin } from './device_control';
 
 export * from './types';
 export * from './router';
@@ -40,15 +40,13 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
 
   // Initialize router models and database defaults
   await router.initialize();
+  await fastify.register(deviceControlPlugin, { prefix });
 
   // GET /v1/models (Universal Model Catalog)
   fastify.get(`${prefix}/models`, async () => {
     try {
       const models = (await dbEngine.query(
-        `SELECT m.model_id, m.name, p.slug as provider_slug, p.name as provider_name 
-         FROM ai_model m 
-         JOIN ai_provider p ON m.provider_id = p.id 
-         WHERE p.is_healthy = true`
+        'SELECT m.model_id, m.name, p.slug as provider_slug, p.name as provider_name FROM ai_model m JOIN ai_provider p ON m.provider_id = p.id WHERE p.is_healthy = true'
       )) as Array<{ model_id: string; name: string; provider_slug: string; provider_name: string }>;
 
       const routes = (await dbEngine.query('SELECT alias, name FROM ai_route')) as Array<{
@@ -308,7 +306,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   // POST /v1/mcp/message: Ingress endpoint for JSON-RPC 2.0 MCP messages.
   fastify.post<{ Body: { jsonrpc?: string; method?: string; params?: unknown; id?: string | number | null } }>(
     `${prefix}/mcp/message`,
-    async (request, reply) => {
+    async (request) => {
       const body = request.body || {};
       const response = await mcpHandler.handle({
         jsonrpc: body.jsonrpc ?? '2.0',
@@ -321,7 +319,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   );
 
   // GET /v1/mcp/audit: Tool execution audit log (from ToolRegistry)
-  fastify.get(`${prefix}/mcp/audit`, async (request, reply) => {
+  fastify.get(`${prefix}/mcp/audit`, async () => {
     try {
       const log = toolRegistry.getLog();
       return ok({ audit: log, total: log.length });
@@ -491,12 +489,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   fastify.get(`${prefix}/gateway/telemetry`, async () => {
     try {
       const stats = (await dbEngine.query(
-        `SELECT 
-          COUNT(*) as total_requests,
-          COALESCE(SUM(total_tokens), 0) as total_tokens,
-          COALESCE(SUM(cost_usd), 0) as total_cost_usd,
-          COALESCE(AVG(latency_ms), 0) as avg_latency_ms
-         FROM ai_usage_log`
+        'SELECT COUNT(*) as total_requests, COALESCE(SUM(total_tokens), 0) as total_tokens, COALESCE(SUM(cost_usd), 0) as total_cost_usd, COALESCE(AVG(latency_ms), 0) as avg_latency_ms FROM ai_usage_log'
       )) as Array<{
         total_requests: number | string;
         total_tokens: number | string;
@@ -534,12 +527,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   fastify.get(`${prefix}/gateway/usage`, async () => {
     try {
       const logs = await dbEngine.query(
-        `SELECT l.*, p.name as provider_name, m.name as model_name, k.name as key_name 
-         FROM ai_usage_log l
-         LEFT JOIN ai_provider p ON l.provider_id = p.id
-         LEFT JOIN ai_model m ON l.model_id = m.id
-         LEFT JOIN ai_virtual_key k ON l.virtual_key_id = k.id
-         ORDER BY l.id DESC LIMIT 100`
+        'SELECT l.*, p.name as provider_name, m.name as model_name, k.name as key_name FROM ai_usage_log l LEFT JOIN ai_provider p ON l.provider_id = p.id LEFT JOIN ai_model m ON l.model_id = m.id LEFT JOIN ai_virtual_key k ON l.virtual_key_id = k.id ORDER BY l.id DESC LIMIT 100'
       );
       return ok(logs);
     } catch (err: any) {

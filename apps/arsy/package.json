@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Arsy Fastify Gateway Runtime Server",
   "main": "dist/main.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsup src/main.ts --format cjs --clean",

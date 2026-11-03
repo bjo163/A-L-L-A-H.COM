@@ -175,4 +175,30 @@ describe('RADIUS Packet Codec', () => {
     assert.strictEqual(vsAttr.vendorType, 2);
     assert.strictEqual(vsAttr.value.toString('utf8'), '10M/20M');
   });
+
+  it('should encode and decode MikroTik rate-limit Vendor-Specific attribute', (t) => {
+    const packet = {
+      code: RadiusCode.AccessRequest,
+      identifier: 1,
+      length: 0,
+      authenticator: Buffer.alloc(16, 0),
+      attributes: [
+        {
+          type: RadiusAttributeType.VendorSpecific,
+          vendorType: 2, // MikrotikRateLimit
+          vendorId: 14988, // Mikrotik vendor ID
+          value: Buffer.from('25M/50M', 'utf8'),
+        },
+      ],
+    };
+
+    const encoded = RadiusCodec.encodePacket(packet, SHARED_SECRET);
+    const decoded = RadiusCodec.parsePacket(encoded);
+
+    const vsAttr = decoded.attributes.find(a => a.type === RadiusAttributeType.VendorSpecific);
+    assert.ok(vsAttr);
+    assert.strictEqual(vsAttr.vendorId, 14988);
+    assert.strictEqual(vsAttr.vendorType, 2);
+    assert.strictEqual(vsAttr.value.toString('utf8'), '25M/50M');
+  });
 });

@@ -1,76 +1,14 @@
-export interface ToolParameter {
-  type: string;
-  description?: string;
-  enum?: string[];
-  items?: ToolParameter;
-  properties?: Record<string, ToolParameter>;
-  required?: string[];
-  default?: unknown;
-}
-
-export interface ToolFunction {
-  name: string;
-  description?: string;
-  parameters: Record<string, ToolParameter>;
-}
-
-export interface ToolDefinition {
-  type: 'function';
-  function: ToolFunction;
-}
-
-export interface ToolCallFunction {
-  name: string;
-  arguments: string;
-}
-
-export interface ToolCall {
-  id: string;
-  type: 'function';
-  function: ToolCallFunction;
-}
-
-export type ToolChoice = 'none' | 'auto' | 'required' | { type: 'function'; function: { name: string } };
-
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-  name?: string;
-  tool_calls?: ToolCall[];
-  tool_call_id?: string;
-}
-
-export interface ChatCompletionRequest {
-  model: string;
-  messages: ChatMessage[];
-  temperature?: number;
-  max_tokens?: number;
-  stream?: boolean;
-  tools?: ToolDefinition[];
-  tool_choice?: ToolChoice;
-}
-
-export interface ChatChoice {
-  index: number;
-  message: ChatMessage;
-  finish_reason: string;
-}
-
-export interface UsageInfo {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-  estimated_cost_usd?: number;
-}
-
-export interface ChatCompletionResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: ChatChoice[];
-  usage?: UsageInfo;
-}
+export type {
+  ChatMessage,
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+  ToolCall,
+  ToolCallFunction,
+  ToolChoice,
+  ToolDefinition,
+  ToolFunction,
+  ToolParameter,
+} from '@moonwitness/types';
 
 export interface StreamDelta {
   role?: string;
@@ -97,6 +35,13 @@ export interface StreamChunk {
     finish_reason: string | null;
   }>;
   usage?: UsageInfo;
+}
+
+export interface UsageInfo {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd?: number;
 }
 
 export interface ProviderRecord {
@@ -146,4 +91,3 @@ export interface LlmGatewayOptions {
   geminiApiKey?: string;
   ollamaBaseUrl?: string;
 }
-

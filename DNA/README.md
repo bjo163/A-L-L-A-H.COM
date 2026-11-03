@@ -19,7 +19,9 @@ These are not six color themes. Each Master DNA defines a world model, visual gr
 - **Creative direction:** APPROVED.
 - **Specification:** DOCUMENTED in this directory.
 - **Shared UI foundation:** EXISTS at `../packages/ui/`; inspect its actual source before extending it.
-- **Six runtime skins:** NOT YET IMPLEMENTED or verified.
+- **Shared skin engine and semantic recipes:** IMPLEMENTED in `../packages/ui/` for all six DNA IDs.
+- **Application root assignments:** IMPLEMENTED for Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, and WORLD OBSERVATORY / Mycelium.
+- **Six complete runtime experiences:** NOT YET VERIFIED; app-specific composition and Skin Laboratory comparison remain pending.
 - **Showcase / Skin Laboratory:** NOT YET IMPLEMENTED or verified.
 
 A documented direction must never be reported as a shipped feature.
@@ -72,3 +74,5 @@ The shared UI package is the functional foundation. The six DNA specifications a
 4. Extend the component catalogue in controlled batches.
 5. Verify accessibility, responsive behavior, performance, reduced motion, and functional parity.
 6. Promote only evidence-backed capabilities from documented to implemented and verified.
+
+The shared package and four application roots now provide the implementation foundation before the Skin Laboratory, at the user's direction. This foundation does not replace the deferred comparison or full verification steps.

@@ -1,127 +1,65 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { EcosystemNavbar, Badge, Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@moonwitness/ui';
-import { mwClient } from '@allah/sdk';
-// JIZZ API types (adapting from @moonwitness/types for read-only data)
-interface Observation {
-  id: string;
-  title: string;
-  source: string;
-  publishedAt: string;
-  coverage: 'high' | 'medium' | 'low';
-}
-
-interface Perspective {
-  id: string;
-  actor: string;
-  framing: string;
-  position: string;
-  sources: number;
-}
-
-// Use these types instead of importing non-existent ones
+import Image from 'next/image';
 
 export default function WorldObservatoryHome() {
-  const [observations, setObservations] = useState<Observation[]>([]);
-  const [perspectives, setPerspectives] = useState<Perspective[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-
-  useEffect(() => {
-    // Initial data load (will be replaced with real API calls)
-    setTimeout(() => {
-      setObservations([
-        { id: 'obs-001', title: 'Global Climate Report', source: 'NASA', publishedAt: '2024-11-01', coverage: 'high' },
-        { id: 'obs-002', title: 'Tech Industry Layoffs', source: 'Reuters', publishedAt: '2024-10-28', coverage: 'medium' },
-        { id: 'obs-003', title: 'UN Climate Summit', source: 'UN', publishedAt: '2024-11-02', coverage: 'high' },
-      ]);
-      setPerspectives([
-        { id: 'pers-001', actor: 'US', framing: 'economic', position: 'supportive', sources: 12 },
-        { id: 'pers-002', actor: 'EU', framing: 'environmental', position: 'concerned', sources: 8 },
-        { id: 'pers-003', actor: 'China', framing: 'development', position: 'neutral', sources: 5 },
-      ]);
-      setIsLoading(false);
-    }, 500);
-  }, []);
-
-  const handlePerspectiveClick = (perspectiveId: string) => {
-    // Navigate to perspective comparison view
-    console.log('Navigating to perspective:', perspectiveId);
-  };
-
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-amber-500/20 selection:text-amber-200">
-      <EcosystemNavbar
-        currentApp="jizz"
-        userName={user?.name}
-        userEmail={user?.email}
-      />
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-12">
-        {/* Hero Section */}
-        <section className="text-center py-12 space-y-4">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Badge variant="gold" dot>Powered by ROCKSOUL JIZZ</Badge>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500 bg-clip-text text-transparent">
-            WORLD OBSERVATORY
-          </h1>
-          <p className="text-zinc-400 max-w-2xl mx-auto text-base md:text-lg">
-            Source-grounded global intelligence. How is the world seeing it?
+    <div className="jizz-home">
+      <section className="jizz-hero" aria-labelledby="observatory-title">
+        <div className="jizz-hero__copy">
+          <p className="jizz-kicker">WORLD OBSERVATORY / RESEARCH DESK</p>
+          <h1 id="observatory-title">Evidence before perspective.</h1>
+          <p>
+            A space for source-grounded observations and the perspectives
+            attached to them. Every record must keep its provenance visible.
           </p>
-        </section>
-
-        {/* Observations Section */}
-        <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-zinc-100">Recent Observations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {observations.map((obs) => (
-              <Card key={obs.id} className="hover:border-amber-500/30 transition-colors">
-                <CardHeader>
-                  <CardTitle className="text-lg">{obs.title}</CardTitle>
-                  <CardDescription className="text-xs">{obs.source} • {obs.publishedAt}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-xs text-zinc-400">
-                    <span>Coverage: {obs.coverage}</span>
-                    <Button variant="outline" size="sm" onClick={() => console.log('View observation')}>View</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="jizz-hero__principle">
+            <span className="jizz-hero__node" aria-hidden="true" />
+            <span>No unverified sample records are shown.</span>
           </div>
-        </section>
+        </div>
+        <figure className="jizz-hero__art">
+          <Image
+            src="/artwork/mycelium.png"
+            alt=""
+            width={1600}
+            height={900}
+            priority
+            className="jizz-hero__image"
+          />
+          <figcaption className="jizz-hero__caption">
+            <span>MYCELIUM / NETWORK ATLAS</span>
+            <span>01 / OPEN SPACE</span>
+          </figcaption>
+        </figure>
+      </section>
 
-        {/* Perspectives Section */}
-        <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-zinc-100">Perspectives by Actor</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {perspectives.map((pers) => (
-              <Card key={pers.id} className="hover:border-amber-500/30 transition-colors">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{pers.actor}</CardTitle>
-                    <Badge variant="default">{pers.framing}</Badge>
-                  </div>
-                  <CardDescription>{pers.position}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-zinc-400">
-                    <div className="flex justify-between mb-2">
-                      <span>Sources: {pers.sources}</span>
-                      <span className="text-emerald-400">✓ Verified</span>
-                    </div>
-                    <Button variant="default" size="sm" onClick={() => handlePerspectiveClick(pers.id)}>
-                      Compare Perspectives
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      <section className="jizz-records" aria-labelledby="record-heading">
+        <div className="jizz-records__heading">
+          <div>
+            <p className="jizz-kicker">OBSERVATION INDEX / 00</p>
+            <h2 id="record-heading">Source-backed records</h2>
           </div>
-        </section>
-      </main>
+          <p>Records appear here only after a connected source returns them.</p>
+        </div>
+
+        <div className="jizz-empty" role="status">
+          <span className="jizz-empty__glyph" aria-hidden="true">
+            <svg viewBox="0 0 96 96" fill="none">
+              <circle cx="48" cy="48" r="31" />
+              <circle cx="48" cy="48" r="18" />
+              <path d="M48 5v18m0 50v18M5 48h18m50 0h18M18 18l13 13m34 34 13 13m0-60L65 31m-34 34L18 78" />
+              <circle cx="48" cy="48" r="4" />
+            </svg>
+          </span>
+          <div>
+            <p className="jizz-empty__state">No source connection</p>
+            <h3>No observations are available yet.</h3>
+            <p>
+              This workspace is not connected to an observation feed. The list
+              will remain empty until a real source integration is available.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

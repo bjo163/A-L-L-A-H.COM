@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#181713"/>
+      <stop offset=".62" stop-color="#11110F"/>
+      <stop offset="1" stop-color="#08090A"/>
+    </linearGradient>
+    <linearGradient id="light" x1="800" y1="170" x2="800" y2="740" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1C7" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#C99D53" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="450" y1="200" x2="1040" y2="780" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3C3931"/>
+      <stop offset="1" stop-color="#171817"/>
+    </linearGradient>
+    <radialGradient id="horizon" cx="0" cy="0" r="1" gradientTransform="matrix(0 360 -680 0 800 630)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C69A54" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#C69A54" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h1600v900H0z"/>
+  <path fill="url(#horizon)" d="M0 0h1600v900H0z"/>
+  <path fill="url(#light)" d="m800 118 396 622H404l396-622Z" opacity=".19"/>
+  <path fill="#101111" d="M0 520h318v380H0z"/>
+  <path fill="url(#stone)" d="M205 900V404l164-118v614H205Z"/>
+  <path fill="#24231F" d="M369 900V286l82-61v675h-82Z"/>
+  <path fill="#141615" d="M1600 496h-317v404h317z"/>
+  <path fill="url(#stone)" d="M1395 900V404l-164-118v614h164Z"/>
+  <path fill="#292720" d="M1231 900V286l-82-61v675h82Z"/>
+  <path stroke="#BDA06D" stroke-opacity=".44" d="M206 405 369 286m862 0 163 119M370 287l81-62m699 0 81 62"/>
+  <path stroke="#D8C99D" stroke-opacity=".24" d="M0 520h205m1185 0h210M0 701h205m1185 0h210"/>
+  <path fill="#0B0D0E" stroke="#C9AE76" stroke-opacity=".72" stroke-width="2" d="M514 748V389c0-158 128-286 286-286s286 128 286 286v359H514Z"/>
+  <path fill="#121313" stroke="#8E784F" stroke-opacity=".65" d="M585 748V400c0-119 96-215 215-215s215 96 215 215v348H585Z"/>
+  <path fill="#0A0C0D" stroke="#E8D5A5" stroke-opacity=".62" stroke-width="2" d="M672 748V419c0-71 57-128 128-128s128 57 128 128v329H672Z"/>
+  <path fill="url(#light)" d="M800 291c71 0 128 57 128 128v329H672V419c0-71 57-128 128-128Z" opacity=".38"/>
+  <path stroke="#E8D5A5" stroke-opacity=".5" d="M800 103v645M514 748h572M585 748h430M672 748h256"/>
+  <path stroke="#D8C99D" stroke-opacity=".23" d="M0 820h1600M0 861h1600M80 900l540-152m900 152L980 748"/>
+  <circle cx="800" cy="132" r="3" fill="#FFF2D0"/>
+</svg>

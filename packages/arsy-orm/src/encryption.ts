@@ -69,7 +69,7 @@ export function decryptSecret(encryptedB64: string): string | null {
   }
 }
 
-export function redactSecret(value: string): string {
+export function redactSecret(_value: string): string {
   return '[REDACTED]';
 }
 

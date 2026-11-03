@@ -4,7 +4,7 @@ id: "DESIGN"
 version: "1.0.0"
 owner: "product-design"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 ---
 # DESIGN.md
 ## Empire of the Light: Product Experience & Moon UI Doctrine
@@ -24,6 +24,14 @@ Create one coherent design foundation for A-L-L-A-H.COM while preserving the dis
 - Product canon and asset provenance must be preserved.
 
 ## Empire of the Light visual direction
+
+- IMPERIUM LUMEN: A-L-L-A-H.COM / Empire of the Light
+- LUNAR CHRONICLES: MoonWitness Universe
+- ROCKSOUL: the established silent-storyteller poster identity
+- NEXUS PARADOX: diegetic future-game HUD and spatial technology
+- RIOT ANARCHY: manga, xerox punk, underground poster, and controlled anti-design
+- MYCELIUM: biomorphic, generative, interconnected organic systems
+- WORLD OBSERVATORY: premium cinematic intelligence observatory
 Use monumental composition, abstract architectural language, controlled illumination, atmospheric depth, celestial geometry, refined surfaces, and subtle intentional motion where appropriate. Avoid noisy decoration and generic sci-fi clichés. Reuse approved MoonWitness and A-L-L-A-H.COM canon/assets; do not discard established identity without a documented decision. Never depict or claim to represent ALLAH.
 
 ## Moon UI and six Master DNA
@@ -39,7 +47,7 @@ These are distinct visual and interaction grammars, not color themes. Each owns 
 
 All client applications (`apps/dock`, `apps/headquarter`, `apps/id`) must consume interactive elements and layouts from `@moonwitness/ui`. The shared UI package provides components, blocks, primitives, raw semantic layout foundations, SFX, tokens, and utilities. Raw un-themed HTML controls in `apps/` are blocked by `@moonwitness/lint`; retain product-specific variants only when behavior genuinely differs.
 
-Inspect the existing UI package and app integrations before extending it. Its current primitive implementation uses Base UI; do not assume Radix is installed or migrate the primitive layer as part of skin work. Runtime skin implementations and the Skin Laboratory remain pending until source code, integration, and verification evidence exist.
+Inspect the existing UI package and app integrations before extending it. Its current primitive implementation uses Base UI; do not assume Radix is installed or migrate the primitive layer as part of skin work. The package now provides typed tokens and shared component recipes for all six skin IDs, with root assignments for Dock, Headquarter, ID, and WORLD OBSERVATORY. Those four apps now have distinct route compositions, responsive navigation, and app-specific artwork. A dedicated Skin Laboratory comparison remains pending; the implemented app routes have been verified separately.
 
 ## Product identity
 A-L-L-A-H.COM, MoonWitness, Headquarter, Dock, Cockpit, Qorpus, and ROCKSOUL may share atomic foundations but must remain visually distinct. Their hierarchy, tone, navigation, and motifs must reflect validated purpose and preserved canon.

@@ -5,6 +5,7 @@ export const ResPartner = defineModel({
   tableName: 'res_partner',
   displayName: 'Contact',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Name', required: true }),
     is_company: fields.boolean({ label: 'Is a Company', default: false }),
     parent_id: fields.many2one('res.partner', { label: 'Parent Contact' }),

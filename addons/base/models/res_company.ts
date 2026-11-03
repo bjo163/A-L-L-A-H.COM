@@ -5,6 +5,7 @@ export const ResCompany = defineModel({
   tableName: 'res_company',
   displayName: 'Company',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Company Name', required: true }),
     currency_id: fields.many2one('res.currency', { label: 'Currency' }),
     country_id: fields.many2one('res.country', { label: 'Country' }),

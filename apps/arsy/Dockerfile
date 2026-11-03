@@ -16,6 +16,7 @@ COPY packages/arsy-plugin-auth/package.json ./packages/arsy-plugin-auth/
 COPY packages/arsy-plugin-storage/package.json ./packages/arsy-plugin-storage/
 COPY packages/arsy-plugin-llm-gateway/package.json ./packages/arsy-plugin-llm-gateway/
 COPY packages/arsy-plugin-sdui/package.json ./packages/arsy-plugin-sdui/
+COPY packages/types/package.json ./packages/types/
 
 RUN pnpm install --frozen-lockfile
 
@@ -25,10 +26,12 @@ COPY packages/arsy-plugin-auth ./packages/arsy-plugin-auth
 COPY packages/arsy-plugin-storage ./packages/arsy-plugin-storage
 COPY packages/arsy-plugin-llm-gateway ./packages/arsy-plugin-llm-gateway
 COPY packages/arsy-plugin-sdui ./packages/arsy-plugin-sdui
+COPY packages/types ./packages/types
 COPY apps/arsy ./apps/arsy
 
 RUN pnpm --filter @allah/arsy-core build \
  && pnpm --filter @allah/arsy-orm build \
+ && pnpm --filter @moonwitness/types build \
  && pnpm --filter @allah/arsy-plugin-auth build \
  && pnpm --filter @allah/arsy-plugin-storage build \
  && pnpm --filter @allah/arsy-plugin-llm-gateway build \

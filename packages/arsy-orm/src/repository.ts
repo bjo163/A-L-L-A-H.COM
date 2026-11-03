@@ -3,13 +3,13 @@ import { ModelDefinition } from './model';
 import { QueryBuilder, QueryOptions } from './query_builder';
 
 export class BaseRepository<T = Record<string, unknown>> {
-  private queryBuilder: QueryBuilder<T>;
+  private queryBuilder: QueryBuilder;
 
   constructor(
     public readonly model: ModelDefinition,
     private readonly engine: PGliteEngine = dbEngine
   ) {
-    this.queryBuilder = new QueryBuilder<T>(model);
+    this.queryBuilder = new QueryBuilder(model);
   }
 
   async find(options: QueryOptions = {}): Promise<T[]> {
@@ -30,7 +30,19 @@ export class BaseRepository<T = Record<string, unknown>> {
   async create(data: Record<string, unknown>, companyId?: string | number | null): Promise<T> {
     const { sql, params } = this.queryBuilder.buildInsert(data, companyId);
     const rows = await this.engine.query<T>(sql, params);
-    return rows[0];
+    const created = rows[0];
+    if (!created) throw new Error(`Failed to create a record in '${this.model.tableName}'.`);
+    return created;
+  }
+
+  async updateById(
+    id: string | number,
+    data: Record<string, unknown>,
+    companyId: string | number,
+    expected: Record<string, unknown> = {}
+  ): Promise<T | null> {
+    const { sql, params } = this.queryBuilder.buildUpdate(id, data, companyId, expected);
+    const rows = await this.engine.query<T>(sql, params);
+    return rows[0] || null;
   }
 }
-

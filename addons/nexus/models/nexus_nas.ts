@@ -5,6 +5,7 @@ export const NexusNas = defineModel({
   tableName: 'nexus_nas',
   displayName: 'NAS Client',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     nas_identifier: fields.char({ label: 'NAS Identifier', required: true, unique: true }),
     ip_address: fields.char({ label: 'IP Address', required: true }),
     secret_encrypted: fields.char({ label: 'Encrypted Secret', required: true }),

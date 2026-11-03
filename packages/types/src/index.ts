@@ -27,19 +27,76 @@ export interface AuthResponse {
   token?: string;
 }
 
+export type AgentMode = 'ask' | 'plan' | 'code' | 'debug' | 'ideate' | 'autopilot';
+export type AgentSessionState =
+  | 'queued'
+  | 'running'
+  | 'awaiting_approval'
+  | 'completed'
+  | 'cancel_requested'
+  | 'cancelled'
+  | 'failed'
+  | 'blocked';
+export type AgentToolName =
+  | 'workspace.read'
+  | 'workspace.search'
+  | 'workspace.edit'
+  | 'terminal.powershell'
+  | 'git.write'
+  | 'system.write';
+export type AgentToolDecision = 'allow' | 'ask' | 'deny';
+
+export interface AgentToolPolicy {
+  mode: AgentMode;
+  tool: AgentToolName;
+  decision: AgentToolDecision;
+}
+
+export interface PairedAgentDevice {
+  id: string;
+  name: string;
+  platform: 'windows';
+  status: 'online' | 'offline' | 'revoked';
+  lastSeenAt?: string;
+}
+
+export interface RemoteAgentMission {
+  id: string;
+  deviceId: string;
+  mode: AgentMode;
+  goal: string;
+  state: AgentSessionState;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentSessionEvent {
+  id: string;
+  sessionId: string;
+  type: string;
+  createdAt: string;
+  payload: Record<string, unknown>;
+}
+
 /**
  * Smart LLM Router Contracts
  */
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  name?: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
 }
 
 export interface ChatCompletionRequest {
   model?: string;
   messages: ChatMessage[];
   temperature?: number;
+  max_tokens?: number;
   stream?: boolean;
+  tools?: ToolDefinition[];
+  tool_choice?: ToolChoice;
 }
 
 export interface ChatCompletionResponse {
@@ -447,4 +504,3 @@ export interface AgentRunResponse {
     estimated_cost_usd?: number;
   };
 }
-

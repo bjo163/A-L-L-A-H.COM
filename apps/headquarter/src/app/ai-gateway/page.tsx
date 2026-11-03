@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  EcosystemNavbar,
   Button,
   Card,
   CardHeader,
@@ -20,7 +19,6 @@ import type {
 } from '@moonwitness/types';
 
 export default function AiGatewayPage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [telemetry, setTelemetry] = useState<GatewayTelemetry | null>(null);
   const [providers, setProviders] = useState<GatewayProviderInfo[]>([]);
   const [usageLogs, setUsageLogs] = useState<GatewayUsageLog[]>([]);
@@ -29,7 +27,7 @@ export default function AiGatewayPage() {
 
   // Test Console State
   const [testModel, setTestModel] = useState('dx-default');
-  const [testPrompt, setTestPrompt] = useState('Explain the MoonWitness architecture in one sentence.');
+  const [testPrompt, setTestPrompt] = useState('');
   const [testOutput, setTestOutput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
@@ -39,28 +37,23 @@ export default function AiGatewayPage() {
       setLoading(true);
       setError(null);
       const [tData, pData, uData] = await Promise.all([
-        mwClient.router.getTelemetry().catch(() => null),
-        mwClient.router.getProviders().catch(() => []),
-        mwClient.router.getUsageLogs().catch(() => []),
+        mwClient.router.getTelemetry(),
+        mwClient.router.getProviders(),
+        mwClient.router.getUsageLogs(),
       ]);
 
-      if (tData) setTelemetry(tData);
-      if (Array.isArray(pData)) setProviders(pData);
-      if (Array.isArray(uData)) setUsageLogs(uData);
-    } catch (err: any) {
-      setError(err.message || 'Failed connecting to Arsy AI Gateway');
+      setTelemetry(tData);
+      setProviders(pData);
+      setUsageLogs(uData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed connecting to Arsy AI Gateway');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    mwClient.auth.getCurrentUser()
-      .then((res) => {
-        if (res?.user) setUser(res.user);
-      })
-      .catch(() => {});
-
+    document.title = 'AI Gateway | Headquarter';
     fetchData();
   }, []);
 
@@ -86,25 +79,15 @@ export default function AiGatewayPage() {
       setTestStatus('Stream completed');
       // Refresh telemetry & logs after test call
       fetchData();
-    } catch (err: any) {
-      setTestStatus(`Stream failed: ${err.message}`);
+    } catch (err) {
+      setTestStatus(`Stream failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsStreaming(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-200">
-      <EcosystemNavbar
-        currentApp="headquarter"
-        userName={user?.name}
-        userEmail={user?.email}
-        onSignOut={async () => {
-          await mwClient.auth.signOut();
-          setUser(null);
-        }}
-      />
-
+    <div className="hq-route hq-ai-gateway">
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
           <div>
@@ -112,10 +95,9 @@ export default function AiGatewayPage() {
               <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
                 AI Gateway Control Plane
               </h1>
-              <Badge variant="active" dot>GATEWAY ACTIVE</Badge>
             </div>
             <p className="text-xs text-zinc-400 mt-1">
-              Multi-provider routing, zero-copy streaming, virtual keys & cost telemetry
+              Multi-provider routing, zero-copy streaming, virtual keys, and cost telemetry
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -129,7 +111,7 @@ export default function AiGatewayPage() {
         </div>
 
         {error && (
-          <div className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
+          <div role="alert" className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
             <span>{error}</span>
             <Button variant="outline" size="sm" onClick={fetchData}>Retry</Button>
           </div>
@@ -141,11 +123,11 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Total Routed Requests</CardDescription>
               <CardTitle className="text-2xl font-mono text-zinc-100">
-                {telemetry?.metrics?.totalRequests ?? 0}
+                {loading ? 'Loading...' : telemetry ? telemetry.metrics.totalRequests.toLocaleString() : 'Not reported'}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <span className="text-[10px] text-zinc-500">Live request counters</span>
+              <span className="text-[10px] text-zinc-500">Reported by connected gateway</span>
             </CardContent>
           </Card>
 
@@ -153,7 +135,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Total Tokens Processed</CardDescription>
               <CardTitle className="text-2xl font-mono text-amber-400">
-                {telemetry?.metrics?.totalTokens?.toLocaleString() ?? 0}
+                {loading ? 'Loading...' : telemetry ? telemetry.metrics.totalTokens.toLocaleString() : 'Not reported'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -165,7 +147,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Accrued Cost (USD)</CardDescription>
               <CardTitle className="text-2xl font-mono text-emerald-400">
-                ${telemetry?.metrics?.totalCostUsd?.toFixed(4) ?? '0.0000'}
+                {loading ? 'Loading...' : telemetry ? `$${telemetry.metrics.totalCostUsd.toFixed(4)}` : 'Not reported'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -177,7 +159,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Avg Response Latency</CardDescription>
               <CardTitle className="text-2xl font-mono text-zinc-100">
-                {telemetry?.metrics?.avgLatencyMs ?? 0}ms
+                {loading ? 'Loading...' : telemetry ? `${telemetry.metrics.avgLatencyMs}ms` : 'Not reported'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -192,45 +174,48 @@ export default function AiGatewayPage() {
             <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
               Active Providers & Fallback Pipeline
             </h2>
-            <span className="text-xs text-zinc-400 font-mono">
-              Auto-Failover Sequence Enabled
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {providers.map((p) => {
-              const circuit = telemetry?.circuits?.[p.slug];
-              const isAvailable = circuit ? circuit.healthy : p.is_healthy;
+          {providers.length === 0 ? (
+            <p className="text-sm text-zinc-400">
+              {loading ? 'Loading provider records...' : 'No providers were returned by the connected gateway.'}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {providers.map((p) => {
+                const circuit = telemetry?.circuits?.[p.slug];
+                const isAvailable = circuit ? circuit.healthy : p.is_healthy;
 
-              return (
-                <Card key={p.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium">{p.name}</CardTitle>
-                      <Badge variant={isAvailable ? 'active' : 'revoked'} dot>
-                        {isAvailable ? 'HEALTHY' : 'CIRCUIT OPEN'}
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-xs font-mono">{p.slug}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-xs font-mono text-zinc-300">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Type:</span>
-                      <span>{p.provider_type}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Priority:</span>
-                      <span>Tier {p.priority}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Endpoint:</span>
-                      <span className="truncate max-w-[140px] text-zinc-400">{p.base_url}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                return (
+                  <Card key={p.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">{p.name}</CardTitle>
+                        <Badge variant={isAvailable ? 'active' : 'revoked'} dot>
+                          {isAvailable ? 'HEALTHY' : 'CIRCUIT OPEN'}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-xs font-mono">{p.slug}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-xs font-mono text-zinc-300">
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Type:</span>
+                        <span>{p.provider_type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Priority:</span>
+                        <span>Tier {p.priority}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Endpoint:</span>
+                        <span className="truncate max-w-[140px] text-zinc-400">{p.base_url}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Interactive Gateway Test Console */}
@@ -268,6 +253,7 @@ export default function AiGatewayPage() {
               <Input
                 value={testPrompt}
                 onChange={(e) => setTestPrompt(e.target.value)}
+                label="Prompt to stream"
                 placeholder="Enter prompt to stream..."
                 className="flex-1 font-mono text-xs"
               />
@@ -337,12 +323,12 @@ export default function AiGatewayPage() {
                       <tr key={log.id} className="hover:bg-zinc-900/40 transition-colors">
                         <td className="py-2.5 px-4 text-zinc-500">#{log.id}</td>
                         <td className="py-2.5 px-4">
-                          <span className="text-zinc-100 font-semibold">{log.model_name || 'dx-default'}</span>
+                          <span className="text-zinc-100 font-semibold">{log.model_name || 'Not reported'}</span>
                           {log.provider_name && (
                             <span className="text-zinc-500 block text-[10px]">{log.provider_name}</span>
                           )}
                         </td>
-                        <td className="py-2.5 px-4 text-zinc-400">{log.key_name || 'master'}</td>
+                        <td className="py-2.5 px-4 text-zinc-400">{log.key_name || 'Not reported'}</td>
                         <td className="py-2.5 px-4">
                           <span>{log.total_tokens}</span>
                           <span className="text-[10px] text-zinc-500 block">

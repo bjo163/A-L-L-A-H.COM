@@ -1,200 +1,94 @@
-'use client';
+import Image from 'next/image';
+import type { Metadata } from 'next';
 
-import { useState, useEffect } from 'react';
-import { EcosystemNavbar, Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '@moonwitness/ui';
-import { mwClient } from '@allah/sdk';
+export const metadata: Metadata = {
+  title: 'Overview | Headquarter',
+};
+
+const modules = [
+  {
+    index: '01',
+    name: 'AI Gateway',
+    note: 'Provider routing, telemetry, and a live request console.',
+    href: '/ai-gateway',
+  },
+  {
+    index: '02',
+    name: 'Agent Studio',
+    note: 'Submit a run and inspect its streamed steps.',
+    href: '/agent',
+  },
+  {
+    index: '03',
+    name: 'Swarm Operations',
+    note: 'Coordinate a bounded multi-agent run.',
+    href: '/swarm',
+  },
+  {
+    index: '04',
+    name: 'Tool Registry',
+    note: 'Inspect available tools and their audit records.',
+    href: '/tools',
+  },
+  {
+    index: '05',
+    name: 'Knowledge Explorer',
+    note: 'Search the connected Qorpus knowledge base.',
+    href: '/knowledge',
+  },
+];
 
 export default function HeadquarterHomePage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-
-  useEffect(() => {
-    mwClient.auth.getCurrentUser()
-      .then(res => {
-        if (res?.user) setUser(res.user);
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleSignOut = async () => {
-    await mwClient.auth.signOut();
-    setUser(null);
-  };
-
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-200">
-      <EcosystemNavbar
-        currentApp="headquarter"
-        userName={user?.name}
-        userEmail={user?.email}
-        onSignOut={handleSignOut}
-      />
+    <main className="hq-home">
+      <header className="hq-home__heading">
+        <p className="hq-kicker">NEXUS PARADOX / COMMAND SPACE</p>
+        <h1>Headquarter</h1>
+        <p>Choose an operational workspace. Runtime status appears only where it is returned by the connected service.</p>
+      </header>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 sm:p-8 space-y-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
-                Command Headquarter
-              </h1>
-              <Badge variant="gold" dot>LIVE</Badge>
-            </div>
-            <p className="text-xs text-zinc-400 mt-1">
-              Operations, tenant policies & runtime telemetry
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <a href="/ai-gateway">
-              <Button variant="gold" size="sm">AI Gateway</Button>
-            </a>
-            <a href="/swarm">
-              <Button variant="outline" size="sm">Swarm Ops</Button>
-            </a>
-            <a href="http://localhost:3003/account">
-              <Button variant="outline" size="sm">ID Settings</Button>
-            </a>
-            <a href="http://localhost:3001">
-              <Button variant="default" size="sm">Open Dock</Button>
-            </a>
-          </div>
+      <section className="hq-home__hero" aria-labelledby="hq-hero-title">
+        <div className="hq-home__hero-copy">
+          <span className="hq-home__coordinates">CONTROL SURFACE / 01</span>
+          <h2 id="hq-hero-title">A clear view of the systems you can operate.</h2>
+          <p>
+            Move directly to the gateway, agent, swarm, tool, or knowledge
+            workspace. Each module reports its own connection and execution state.
+          </p>
+          <a className="hq-home__link" href="/ai-gateway">
+            Open AI Gateway <span aria-hidden="true">↗</span>
+          </a>
         </div>
+        <Image
+          src="/artwork/nexus-paradox.png"
+          alt=""
+          width={1600}
+          height={900}
+          priority
+          className="hq-home__art"
+        />
+        <span className="hq-home__frame-label" aria-hidden="true">N / 04 / SYSTEM MAP</span>
+      </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fastify Gateway Runtime</CardTitle>
-              <CardDescription>Primary API & In-Memory PGlite Authority</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-xs font-mono text-zinc-300">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Status:</span>
-                  <span className="text-emerald-400">ONLINE</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Port:</span>
-                  <span>5150</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Database:</span>
-                  <span>PGlite WASM</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Session Authority</CardTitle>
-              <CardDescription>Remote Session Revocation Engine</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-xs font-mono text-zinc-300">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">SSO Provider:</span>
-                  <span className="text-amber-400">MoonWitness ID</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Token Format:</span>
-                  <span>sess_* (64-byte)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Guard:</span>
-                  <span className="text-emerald-400">Cross-App Fail-Closed</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Invariants</CardTitle>
-              <CardDescription>Quality & Anti-Slop Enforcement</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-xs font-mono text-zinc-300">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Design System:</span>
-                  <span className="text-amber-400">@moonwitness/ui</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">SDK:</span>
-                  <span className="text-emerald-400">@allah/sdk</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Doc Score:</span>
-                  <span className="text-emerald-400">100 / 100</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-amber-500/30 bg-zinc-900/30">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>AI Gateway Engine</CardTitle>
-                <Badge variant="active" dot>ACTIVE</Badge>
-              </div>
-              <CardDescription>Multi-Provider & Resilient Fallback Substrate</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-xs font-mono text-zinc-300">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Providers:</span>
-                  <span className="text-emerald-400">OpenAI, Anthropic, Gemini, Ollama</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Streaming:</span>
-                  <span>Zero-Copy SSE</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Quotas:</span>
-                  <span className="text-amber-400">Virtual Keys & USD Caps</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-zinc-800">
-                <a href="/ai-gateway">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Open AI Gateway Console
-                  </Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-emerald-500/30 bg-zinc-900/30">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Autonomous Agent Studio</CardTitle>
-                <Badge variant="active" dot>PHASE 4</Badge>
-              </div>
-              <CardDescription>Cognitive Agent Loop & Generative SDUI Compiler</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-xs font-mono text-zinc-300">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Runtime:</span>
-                  <span className="text-emerald-400">ReAct Multi-Step</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Tools:</span>
-                  <span>SQL, CAS, Web, Qorpus, SDUI</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Guards:</span>
-                  <span className="text-amber-400">Loop Detection</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-zinc-800">
-                <a href="/agent">
-                  <Button variant="default" size="sm" className="w-full">
-                    Open Agent Studio
-                  </Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      </main>
-    </div>
+      <section className="hq-modules" aria-labelledby="hq-modules-title">
+        <div className="hq-modules__heading">
+          <div>
+            <p className="hq-kicker">DESTINATIONS / 01-05</p>
+            <h2 id="hq-modules-title">Operational modules</h2>
+          </div>
+          <p>Open a workspace to inspect its real data or run an action.</p>
+        </div>
+        <nav className="hq-module-grid" aria-label="Operational modules">
+          {modules.map((module) => (
+            <a className="hq-module" href={module.href} key={module.index}>
+              <span className="hq-module__index">{module.index}</span>
+              <h3>{module.name}</h3>
+              <p>{module.note}</p>
+              <span className="hq-module__arrow" aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </nav>
+      </section>
+    </main>
   );
 }

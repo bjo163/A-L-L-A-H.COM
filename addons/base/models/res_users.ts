@@ -5,6 +5,7 @@ export const ResUsers = defineModel({
   tableName: 'res_users',
   displayName: 'User',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Full Name', required: true }),
     email: fields.char({ label: 'Email', required: true, unique: true }),
     password: fields.char({ label: 'Hashed Password', required: true }),

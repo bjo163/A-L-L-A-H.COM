@@ -5,6 +5,7 @@ export const QorpusDocument = defineModel({
   tableName: 'qorpus_document',
   displayName: 'Qorpus Document',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     title: fields.char({ label: 'Title', required: true }),
     category: fields.selection(
       {
@@ -27,6 +28,7 @@ export const QorpusChunk = defineModel({
   tableName: 'qorpus_chunk',
   displayName: 'Qorpus Chunk',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     document_id: fields.many2one('qorpus.document', { label: 'Document', required: true }),
     chunk_index: fields.integer({ label: 'Chunk Index', required: true }),
     content: fields.text({ label: 'Content', required: true }),

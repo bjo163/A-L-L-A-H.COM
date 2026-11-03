@@ -63,35 +63,35 @@ export class SmartRouter {
 
         // Seed Providers
         await dbEngine.query(
-          `INSERT INTO ai_provider (name, slug, provider_type, base_url, priority, is_healthy) VALUES
-           ('OpenAI Platform', 'openai', 'openai_compatible', 'https://api.openai.com/v1', 10, true),
-           ('Anthropic Cloud', 'anthropic', 'anthropic', 'https://api.anthropic.com/v1', 20, true),
-           ('Google Gemini', 'gemini', 'gemini', 'https://generativelanguage.googleapis.com/v1beta', 30, true),
-           ('Local Ollama', 'ollama', 'ollama', 'http://localhost:11434/v1', 40, true)`
+          'INSERT INTO ai_provider (name, slug, provider_type, base_url, priority, is_healthy) VALUES ' +
+          "('OpenAI Platform', 'openai', 'openai_compatible', 'https://api.openai.com/v1', 10, true), " +
+          "('Anthropic Cloud', 'anthropic', 'anthropic', 'https://api.anthropic.com/v1', 20, true), " +
+          "('Google Gemini', 'gemini', 'gemini', 'https://generativelanguage.googleapis.com/v1beta', 30, true), " +
+          "('Local Ollama', 'ollama', 'ollama', 'http://localhost:11434/v1', 40, true)"
         );
 
         // Seed Models
         await dbEngine.query(
-          `INSERT INTO ai_model (name, model_id, provider_id, context_window, input_cost_per_m, output_cost_per_m) VALUES
-           ('GPT-4o', 'gpt-4o', 1, 128000, 2.5, 10.0),
-           ('GPT-4o Mini', 'gpt-4o-mini', 1, 128000, 0.15, 0.6),
-           ('Claude 3.5 Sonnet', 'claude-3-5-sonnet-20241022', 2, 200000, 3.0, 15.0),
-           ('Gemini 2.5 Flash', 'gemini-2.5-flash', 3, 1000000, 0.075, 0.3),
-           ('Llama 3.3 70B Local', 'llama3.3', 4, 32768, 0, 0)`
+          'INSERT INTO ai_model (name, model_id, provider_id, context_window, input_cost_per_m, output_cost_per_m) VALUES ' +
+          "('GPT-4o', 'gpt-4o', 1, 128000, 2.5, 10.0), " +
+          "('GPT-4o Mini', 'gpt-4o-mini', 1, 128000, 0.15, 0.6), " +
+          "('Claude 3.5 Sonnet', 'claude-3-5-sonnet-20241022', 2, 200000, 3.0, 15.0), " +
+          "('Gemini 2.5 Flash', 'gemini-2.5-flash', 3, 1000000, 0.075, 0.3), " +
+          "('Llama 3.3 70B Local', 'llama3.3', 4, 32768, 0, 0)"
         );
 
         // Seed Routes
         await dbEngine.query(
-          `INSERT INTO ai_route (name, alias, strategy) VALUES
-           ('Default Adaptive Route', 'dx-default', 'fallback'),
-           ('Ultra Fast Route', 'dx-fast', 'lowest_cost'),
-           ('Deep Reasoning Route', 'dx-reasoning', 'fallback')`
+          'INSERT INTO ai_route (name, alias, strategy) VALUES ' +
+          "('Default Adaptive Route', 'dx-default', 'fallback'), " +
+          "('Ultra Fast Route', 'dx-fast', 'lowest_cost'), " +
+          "('Deep Reasoning Route', 'dx-reasoning', 'fallback')"
         );
 
         // Seed Default Virtual Key for platform
         await dbEngine.query(
-          `INSERT INTO ai_virtual_key (name, key_prefix, key_hash, budget_limit, rate_limit_rpm, rate_limit_tpm) VALUES
-           ('MoonWitness Master Key', 'mw_live_master', 'mw_live_master_hash', 1000.0, 120, 200000)`
+          'INSERT INTO ai_virtual_key (name, key_prefix, key_hash, budget_limit, rate_limit_rpm, rate_limit_tpm) VALUES ' +
+          "('MoonWitness Master Key', 'mw_live_master', 'mw_live_master_hash', 1000.0, 120, 200000)"
         );
 
         logger.info('Successfully bootstrapped default AI Gateway routing models in PGlite');

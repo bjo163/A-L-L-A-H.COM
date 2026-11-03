@@ -10,31 +10,57 @@ import type {
   GatewayProviderInfo,
   GatewayUsageLog,
   SDUIRoot,
-  ToolDefinition,
-  ToolChoice,
-  ToolCall,
-  ToolResult,
-  JsonRpcRequest,
   JsonRpcResponse,
   McpTool,
   McpToolCallResult,
-  AgentThought,
-  AgentToolCallEvent,
-  AgentToolResultEvent,
-  AgentSduiEvent,
-  AgentStreamEvent,
-  AgentStep,
-  AgentRunRequest,
-  AgentRunResponse,
+  AgentMode,
+  AgentSessionEvent,
+  PairedAgentDevice,
+  RemoteAgentMission,
 } from '@moonwitness/types';
 
 export interface SdkOptions {
   baseUrl?: string;
   storageKey?: string;
   virtualKey?: string;
+  sessionStore?: SessionTokenStore;
+}
+
+export interface SessionTokenStore {
+  get(): Promise<string | null>;
+  set(token: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
+export interface AgentPairingResult {
+  id: string;
+  code: string;
+  deviceName: string;
+  expiresAt: string;
+}
+
+export interface ClaimedAgentDevice {
+  deviceId: string;
+  deviceToken: string;
+  deviceName: string;
+  platform: 'windows';
 }
 
 export type SwarmRole = 'planner' | 'researcher' | 'builder' | 'verifier';
+
+function isMcpTool(value: unknown): value is McpTool {
+  if (typeof value !== 'object' || value === null) return false;
+  return (
+    'name' in value &&
+    typeof value.name === 'string' &&
+    'description' in value &&
+    typeof value.description === 'string' &&
+    'inputSchema' in value &&
+    typeof value.inputSchema === 'object' &&
+    value.inputSchema !== null &&
+    !Array.isArray(value.inputSchema)
+  );
+}
 
 export interface SwarmAgentMessage {
   id: string;
@@ -72,11 +98,14 @@ export interface SwarmExecutionResult {
 export class MoonWitnessClient {
   private readonly baseUrl: string;
   private readonly storageKey: string;
-  private virtualKey?: string;
+  private readonly sessionStore: SessionTokenStore | undefined;
+  private cachedSessionToken: string | null | undefined;
+  private virtualKey: string | undefined;
 
   constructor(options: SdkOptions = {}) {
     this.baseUrl = options.baseUrl || 'http://localhost:5150';
     this.storageKey = options.storageKey || 'mw_session_token';
+    this.sessionStore = options.sessionStore;
     this.virtualKey = options.virtualKey;
   }
 
@@ -86,20 +115,56 @@ export class MoonWitnessClient {
 
   // Session Token State
   getSessionToken(): string | null {
+    if (this.sessionStore) {
+      return this.cachedSessionToken ?? null;
+    }
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(this.storageKey);
   }
 
   setSessionToken(token: string): void {
+    if (this.sessionStore) {
+      throw new Error('Use setSessionTokenAsync when a session store is configured.');
+    }
     if (typeof window === 'undefined') return;
     localStorage.setItem(this.storageKey, token);
     document.cookie = `arsy_session=${token}; path=/; max-age=2592000; SameSite=Lax`;
   }
 
   clearSessionToken(): void {
+    if (this.sessionStore) {
+      throw new Error('Use clearSessionTokenAsync when a session store is configured.');
+    }
     if (typeof window === 'undefined') return;
     localStorage.removeItem(this.storageKey);
     document.cookie = 'arsy_session=; path=/; max-age=0; SameSite=Lax';
+  }
+
+  async setSessionTokenAsync(token: string): Promise<void> {
+    if (this.sessionStore) {
+      await this.sessionStore.set(token);
+      this.cachedSessionToken = token;
+      return;
+    }
+    this.setSessionToken(token);
+  }
+
+  async clearSessionTokenAsync(): Promise<void> {
+    if (this.sessionStore) {
+      await this.sessionStore.clear();
+      this.cachedSessionToken = null;
+      return;
+    }
+    this.clearSessionToken();
+  }
+
+  private async getSessionTokenForRequest(): Promise<string | null> {
+    if (this.sessionStore) {
+      const token = await this.sessionStore.get();
+      this.cachedSessionToken = token;
+      return token;
+    }
+    return this.getSessionToken();
   }
 
   private async request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
@@ -108,7 +173,7 @@ export class MoonWitnessClient {
       headers.set('Content-Type', 'application/json');
     }
 
-    const token = this.getSessionToken();
+    const token = await this.getSessionTokenForRequest();
     if (token && !headers.has('x-session-token')) {
       headers.set('x-session-token', token);
     }
@@ -137,7 +202,7 @@ export class MoonWitnessClient {
         body: JSON.stringify(credentials),
       });
       if (data?.sessionToken) {
-        this.setSessionToken(data.sessionToken);
+        await this.setSessionTokenAsync(data.sessionToken);
       }
       return data;
     },
@@ -171,16 +236,17 @@ export class MoonWitnessClient {
       } catch {
         // Suppress network errors on exit
       }
-      this.clearSessionToken();
+      await this.clearSessionTokenAsync();
     },
   };
 
   // Router LLM Operations
   readonly router = {
-    chat: async (req: ChatCompletionRequest): Promise<ChatCompletionResponse> => {
+    chat: async (req: ChatCompletionRequest, signal?: AbortSignal): Promise<ChatCompletionResponse> => {
       return this.request<ChatCompletionResponse>('/v1/chat/completions', {
         method: 'POST',
         body: JSON.stringify({ ...req, stream: false }),
+        ...(signal ? { signal } : {}),
       });
     },
 
@@ -191,7 +257,7 @@ export class MoonWitnessClient {
       const headers = new Headers();
       headers.set('Content-Type', 'application/json');
 
-      const token = this.getSessionToken();
+      const token = await this.getSessionTokenForRequest();
       if (token) headers.set('x-session-token', token);
       if (this.virtualKey) headers.set('x-virtual-key', this.virtualKey);
 
@@ -264,6 +330,86 @@ export class MoonWitnessClient {
 
     getUsageLogs: async (): Promise<GatewayUsageLog[]> => {
       return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
+    },
+  };
+
+  readonly health = {
+    check: async (): Promise<Record<string, unknown>> => {
+      return this.request<Record<string, unknown>>('/health');
+    },
+    ready: async (): Promise<Record<string, unknown>> => {
+      return this.request<Record<string, unknown>>('/ready');
+    },
+  };
+
+  readonly agentControl = {
+    createPairing: async (deviceName: string): Promise<AgentPairingResult> => {
+      return this.request<AgentPairingResult>('/v1/agent/pairings', {
+        method: 'POST',
+        body: JSON.stringify({ deviceName }),
+      });
+    },
+
+    claimPairing: async (code: string, deviceName: string): Promise<ClaimedAgentDevice> => {
+      return this.request<ClaimedAgentDevice>('/v1/agent/pairings/claim', {
+        method: 'POST',
+        body: JSON.stringify({ code, deviceName, platform: 'windows' }),
+      });
+    },
+
+    listDevices: async (): Promise<PairedAgentDevice[]> => {
+      return this.request<PairedAgentDevice[]>('/v1/agent/devices');
+    },
+
+    revokeDevice: async (deviceId: string): Promise<{ deviceId: string; status: 'revoked' }> => {
+      return this.request(`/v1/agent/devices/${encodeURIComponent(deviceId)}/revoke`, {
+        method: 'POST',
+      });
+    },
+
+    submitMission: async (payload: {
+      deviceId: string;
+      mode: AgentMode;
+      goal: string;
+    }): Promise<RemoteAgentMission> => {
+      return this.request<RemoteAgentMission>('/v1/agent/missions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    listMissions: async (deviceId?: string): Promise<RemoteAgentMission[]> => {
+      const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+      return this.request<RemoteAgentMission[]>(`/v1/agent/missions${query}`);
+    },
+
+    cancelMission: async (missionId: string): Promise<{ missionId: string; state: 'cancel_requested' }> => {
+      return this.request(`/v1/agent/missions/${encodeURIComponent(missionId)}/cancel`, {
+        method: 'POST',
+      });
+    },
+
+    getMissionEvents: async (missionId: string): Promise<AgentSessionEvent[]> => {
+      return this.request<AgentSessionEvent[]>(`/v1/agent/missions/${encodeURIComponent(missionId)}/events`);
+    },
+
+    nextMission: async (deviceToken: string): Promise<{ mission: RemoteAgentMission | null }> => {
+      return this.request('/v1/agent/device/missions/next', {
+        headers: { 'x-agent-device-token': deviceToken },
+      });
+    },
+
+    reportMissionEvent: async (
+      deviceToken: string,
+      missionId: string,
+      event: string,
+      payload: Record<string, unknown> = {}
+    ): Promise<{ missionId: string; event: string }> => {
+      return this.request(`/v1/agent/device/missions/${encodeURIComponent(missionId)}/events`, {
+        method: 'POST',
+        headers: { 'x-agent-device-token': deviceToken },
+        body: JSON.stringify({ event, payload }),
+      });
     },
   };
 
@@ -404,7 +550,14 @@ export class MoonWitnessClient {
           id: `mcp_${Date.now()}`,
         }),
       });
-      return (res as any)?.result?.tools || [];
+      if (res.error) throw new Error(`MCP tools/list failed: ${res.error.message}`);
+      const tools: unknown = typeof res.result === 'object' && res.result !== null && 'tools' in res.result
+        ? res.result.tools
+        : undefined;
+      if (!Array.isArray(tools) || !tools.every(isMcpTool)) {
+        throw new Error('MCP tools/list returned an invalid response.');
+      }
+      return tools;
     },
 
     callTool: async (
@@ -424,8 +577,11 @@ export class MoonWitnessClient {
     },
 
     getAuditLog: async (): Promise<any[]> => {
-      const res = await this.request<{ audit: any[]; total: number }>('/v1/mcp/audit');
-      return res?.audit || [];
+      const res = await this.request<{ audit: unknown; total: number }>('/v1/mcp/audit');
+      if (!Array.isArray(res.audit)) {
+        throw new Error('MCP audit endpoint returned an invalid response.');
+      }
+      return res.audit;
     },
   };
 
@@ -462,9 +618,10 @@ export class MoonWitnessClient {
         temperature?: number;
         context?: Record<string, unknown>;
       },
-      onEvent: (event: string, data: SwarmStep | SwarmAgentMessage | SwarmExecutionResult | { error: string }) => void
+      onEvent: (event: string, data: SwarmStep | SwarmAgentMessage | SwarmExecutionResult | { error: string }) => void,
+      signal?: AbortSignal
     ): Promise<void> => {
-      const token = this.getSessionToken();
+      const token = await this.getSessionTokenForRequest();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -475,6 +632,7 @@ export class MoonWitnessClient {
         method: 'POST',
         headers,
         body: JSON.stringify(options),
+        ...(signal ? { signal } : {}),
       });
 
       if (!res.ok) {
@@ -556,7 +714,7 @@ export class MoonWitnessClient {
       },
       onEvent: (event: string, data: any) => void
     ): Promise<void> => {
-      const token = this.getSessionToken();
+      const token = await this.getSessionTokenForRequest();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };

@@ -14,18 +14,24 @@
     "id:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/id build",
     "jizz:dev": "pnpm --filter @moonwitness/jizz dev",
     "jizz:build": "pnpm --filter @moonwitness/jizz build",
-    "extension:build": "pnpm --filter allah-vscode-extension build",
-    "extension:test": "tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts",
+    "extension:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter allah-vscode-extension build",
+    "extension:test": "tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts packages/vscode-extension/src/agentPolicy.test.ts packages/vscode-extension/src/localAgentCore.test.ts packages/sdk/src/index.test.ts packages/arsy-orm/src/query_builder.test.ts",
     "docs:check": "tsx scripts/check-doc-contracts.ts",
     "lint:arch": "node packages/lint/src/check-architecture.mjs",
-    "typecheck": "tsc --noEmit --project packages/arsy-orm/tsconfig.json && tsc --noEmit --project packages/arsy-core/tsconfig.json && tsc --noEmit --project packages/arsy-plugin-llm-gateway/tsconfig.json && tsc --noEmit --project packages/arsy-plugin-auth/tsconfig.json && tsc --noEmit --project packages/arsy-plugin-storage/tsconfig.json && tsc --noEmit --project packages/arsy-plugin-sdui/tsconfig.json && tsc --noEmit --project packages/types/tsconfig.json && tsc --noEmit --project packages/sdk/tsconfig.json && tsc --noEmit --project packages/ui/tsconfig.json && tsc --noEmit --project apps/arsy/tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsx scripts/typecheck.ts",
     "arsy:dev": "pnpm --filter @allah/arsy dev",
     "arsy:build": "pnpm --filter @allah/arsy build"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "concurrently": "^10.0.6",
+    "eslint": "^9.39.5",
     "tsx": "^4.23.15",
     "typescript": "^5.8.2",
+    "typescript-eslint": "^8.72.1",
     "wait-on": "^9.5.1"
   }
 }

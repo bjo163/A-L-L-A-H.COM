@@ -5,6 +5,7 @@ export const NexusIpPool = defineModel({
   tableName: 'nexus_ip_pool',
   displayName: 'IP Pool',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Pool Name', required: true }),
     cidr: fields.char({ label: 'CIDR', required: true }),
     gateway: fields.char({ label: 'Gateway', required: true }),

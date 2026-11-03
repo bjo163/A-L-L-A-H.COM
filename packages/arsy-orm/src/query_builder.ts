@@ -15,7 +15,7 @@ export interface QueryOptions {
   orderDirection?: 'ASC' | 'DESC';
 }
 
-export class QueryBuilder<T = unknown> {
+export class QueryBuilder {
   constructor(private readonly model: ModelDefinition) {}
 
   buildSelect(options: QueryOptions = {}): { sql: string; params: unknown[] } {
@@ -79,5 +79,45 @@ export class QueryBuilder<T = unknown> {
 
     return { sql, params };
   }
-}
 
+  buildUpdate(
+    id: string | number,
+    data: Record<string, unknown>,
+    companyId: string | number,
+    expected: Record<string, unknown> = {}
+  ): { sql: string; params: unknown[] } {
+    const params: unknown[] = [];
+    const assignments: string[] = [];
+    const conditions = ['active = true'];
+    const validFields = new Set(Object.keys(this.model.fields));
+
+    for (const [field, value] of Object.entries(data)) {
+      if (!validFields.has(field)) {
+        throw new Error(`Cannot update unknown field '${field}' on '${this.model.name}'.`);
+      }
+      params.push(value);
+      assignments.push(`"${field}" = $${params.length}`);
+    }
+    if (assignments.length === 0) {
+      throw new Error('An update must include at least one field.');
+    }
+
+    params.push(id);
+    conditions.push(`id = $${params.length}`);
+    params.push(companyId);
+    conditions.push(`company_id = $${params.length}`);
+
+    for (const [field, value] of Object.entries(expected)) {
+      if (!validFields.has(field)) {
+        throw new Error(`Cannot match unknown field '${field}' on '${this.model.name}'.`);
+      }
+      params.push(value);
+      conditions.push(`"${field}" = $${params.length}`);
+    }
+
+    return {
+      sql: `UPDATE "${this.model.tableName}" SET ${assignments.join(', ')}, write_date = CURRENT_TIMESTAMP WHERE ${conditions.join(' AND ')} RETURNING *;`,
+      params,
+    };
+  }
+}

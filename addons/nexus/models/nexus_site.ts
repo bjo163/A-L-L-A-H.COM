@@ -5,6 +5,7 @@ export const NexusSite = defineModel({
   tableName: 'nexus_site',
   displayName: 'Network Site',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Site Name', required: true }),
     code: fields.char({ label: 'Site Code', required: true, unique: true }),
     address: fields.text({ label: 'Address' }),

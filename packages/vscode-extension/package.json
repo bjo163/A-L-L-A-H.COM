@@ -55,6 +55,16 @@
         "category": "A-L-L-A-H"
       },
       {
+        "command": "allah.setApiKey",
+        "title": "MoonWitness: Set API Key",
+        "category": "A-L-L-A-H"
+      },
+      {
+        "command": "allah.pairAgentDevice",
+        "title": "Agent: Pair This Windows Device",
+        "category": "A-L-L-A-H"
+      },
+      {
         "command": "allah.listModels",
         "title": "MoonWitness: List Registered LLM Models",
         "category": "A-L-L-A-H"
@@ -98,7 +108,11 @@
         },
         {
           "id": "allah.agentWorkbench",
-          "name": "Agent Workbench",
+          "name": "Swarm Operations"
+        },
+        {
+          "id": "allah.localAgentWorkbench",
+          "name": "Workspace Agent",
           "icon": "$(hubot)"
         }
       ]
@@ -179,10 +193,15 @@
           "default": "dx-reasoning",
           "description": "LLM model used to generate project plans."
         },
+        "allah.agentModel": {
+          "type": "string",
+          "default": "",
+          "description": "Optional model identifier used by workspace agent sessions."
+        },
         "allah.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Optional API Key for authenticated endpoints."
+          "deprecationMessage": "Use the MoonWitness: Set API Key command. Credentials are stored in VS Code SecretStorage."
         }
       }
     }
@@ -191,6 +210,10 @@
     "build": "tsup src/extension.ts --format cjs --external vscode --no-shims --clean",
     "watch": "tsup src/extension.ts --format cjs --external vscode --watch",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@allah/sdk": "workspace:*",
+    "@moonwitness/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

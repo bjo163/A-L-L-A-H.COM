@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  EcosystemNavbar,
   Button,
   Card,
   CardHeader,
@@ -11,12 +10,12 @@ import {
   CardContent,
   Badge,
   Input,
+  Textarea,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type { McpTool, McpToolCallResult } from '@moonwitness/types';
 
 export default function ToolsPage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [tools, setTools] = useState<McpTool[]>([]);
   const [mcpConnected, setMcpConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,16 +30,17 @@ export default function ToolsPage() {
 
   // Audit log state
   const [auditLog, setAuditLog] = useState<any[]>([]);
+  const [auditError, setAuditError] = useState<string | null>(null);
 
   const fetchTools = async () => {
     try {
       setError(null);
-      const listed = await mwClient.mcp.listTools().catch(() => [] as McpTool[]);
-      setTools(Array.isArray(listed) ? listed : []);
+      const listed = await mwClient.mcp.listTools();
+      setTools(listed);
       setMcpConnected(true);
-    } catch (err: any) {
+    } catch (err) {
       setMcpConnected(false);
-      setError(err.message || 'Unable to reach MCP endpoint');
+      setError(err instanceof Error ? err.message : 'Unable to reach MCP endpoint');
     } finally {
       setLoading(false);
     }
@@ -48,37 +48,28 @@ export default function ToolsPage() {
 
   const fetchAudit = async () => {
     try {
-      const data = await mwClient.mcp.getAuditLog().catch(() => [] as any[]);
-      if (Array.isArray(data)) setAuditLog(data);
-    } catch {
-      // Audit endpoint may not be available yet; keep empty log
+      setAuditError(null);
+      const data = await mwClient.mcp.getAuditLog();
+      setAuditLog(data);
+    } catch (err) {
+      setAuditError(err instanceof Error ? err.message : 'Unable to load the execution audit log.');
     }
   };
 
   useEffect(() => {
-    mwClient.auth.getCurrentUser()
-      .then((res) => {
-        if (res?.user) setUser(res.user);
-      })
-      .catch(() => {});
-
+    document.title = 'Tool Registry | Headquarter';
     fetchTools();
     fetchAudit();
   }, []);
 
   const defaultArgsFor = (tool: McpTool): string => {
-    const schema = tool.inputSchema as any;
+    const schema = tool.inputSchema as { properties?: Record<string, unknown>; required?: string[] };
     const props = schema?.properties || {};
     const required = schema?.required || [];
     const example: Record<string, unknown> = {};
     for (const [key] of Object.entries(props)) {
       if (required.includes(key)) {
-        if (key === 'query') example[key] = tool.name === 'qorpus_retrieve' ? 'MoonWitness architecture' : 'SELECT count(*) FROM res_users';
-        else if (key === 'url') example[key] = 'https://example.com';
-        else if (key === 'action') example[key] = 'put';
-        else if (key === 'content') example[key] = 'hello world';
-        else if (key === 'digest') example[key] = '';
-        else example[key] = '';
+        example[key] = '';
       } else if (key === 'params') {
         example[key] = [];
       } else if (key === 'max_bytes') {
@@ -130,13 +121,7 @@ export default function ToolsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-200">
-      <EcosystemNavbar
-        currentApp="headquarter"
-        userName={user?.name}
-        userEmail={user?.email}
-      />
-
+    <div className="hq-route hq-tools">
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
           <div>
@@ -144,8 +129,8 @@ export default function ToolsPage() {
               <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
                 Tools & Model Context Protocol
               </h1>
-              <Badge variant={mcpConnected ? 'active' : 'revoked'} dot>
-                {mcpConnected ? 'MCP READY' : 'MCP OFFLINE'}
+              <Badge variant={mcpConnected ? 'active' : loading ? 'default' : 'revoked'} dot>
+                {loading ? 'CONNECTING' : mcpConnected ? 'MCP READY' : 'MCP UNAVAILABLE'}
               </Badge>
             </div>
             <p className="text-xs text-zinc-400 mt-1">
@@ -163,7 +148,7 @@ export default function ToolsPage() {
         </div>
 
         {error && (
-          <div className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
+          <div role="alert" className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
             <span>{error}</span>
             <Button variant="outline" size="sm" onClick={fetchTools}>Retry</Button>
           </div>
@@ -175,12 +160,12 @@ export default function ToolsPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">MCP Endpoint</CardTitle>
-                <Badge variant={mcpConnected ? 'active' : 'revoked'} dot>
-                  {mcpConnected ? 'CONNECTED' : 'DISCONNECTED'}
+                <Badge variant={mcpConnected ? 'active' : loading ? 'default' : 'revoked'} dot>
+                  {loading ? 'CONNECTING' : mcpConnected ? 'CONNECTED' : 'UNAVAILABLE'}
                 </Badge>
               </div>
               <CardDescription className="text-xs font-mono">
-                POST /v1/mcp/message &bull; GET /v1/mcp/sse &bull; Protocol {mcpConnected ? '2025-06-12' : '—'}
+                POST /v1/mcp/message &bull; GET /v1/mcp/sse
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-xs font-mono text-zinc-300">
@@ -258,8 +243,9 @@ export default function ToolsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-300 uppercase tracking-wider">Tool</label>
+              <label htmlFor="tools-selected-tool" className="text-xs font-medium text-zinc-300 uppercase tracking-wider">Tool</label>
               <select
+                id="tools-selected-tool"
                 value={selectedTool}
                 onChange={(e) => {
                   const t = tools.find((tool) => tool.name === e.target.value);
@@ -284,17 +270,17 @@ export default function ToolsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-zinc-300 uppercase tracking-wider">Arguments (JSON)</label>
-            <Input
+            <Textarea
+              label="Arguments (JSON)"
               value={toolArgs}
               onChange={(e) => setToolArgs(e.target.value)}
               placeholder='{"query": "SELECT count(*) FROM res_users"}'
-              className="font-mono text-xs min-h-[200px] resize-y"
+              className="font-mono text-xs"
             />
           </div>
 
           {callError && (
-            <div className="p-3 rounded bg-red-950/40 border border-red-800 text-red-300 text-xs">
+            <div role="alert" className="p-3 rounded bg-red-950/40 border border-red-800 text-red-300 text-xs">
               {callError}
             </div>
           )}
@@ -323,6 +309,11 @@ export default function ToolsPage() {
               Last {auditLog.length} execution record(s)
             </span>
           </div>
+          {auditError && (
+             <p className="text-sm text-red-400" role="alert">
+               Audit log unavailable: {auditError}
+             </p>
+          )}
 
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
@@ -349,7 +340,7 @@ export default function ToolsPage() {
                       <tr key={entry.id} className="hover:bg-zinc-900/40 transition-colors">
                         <td className="py-2.5 px-4 text-zinc-500">{new Date(entry.timestamp).toLocaleTimeString()}</td>
                         <td className="py-2.5 px-4 text-zinc-100 font-semibold">{entry.tool}</td>
-                        <td className="py-2.5 px-4 text-zinc-500">{entry.actor || '—'}</td>
+                        <td className="py-2.5 px-4 text-zinc-500">{entry.actor || 'Not reported'}</td>
                         <td className="py-2.5 px-4 text-zinc-400">{entry.latencyMs}ms</td>
                         <td className="py-2.5 px-4">
                           <Badge variant={entry.status === 'ok' ? 'active' : 'revoked'}>
@@ -357,7 +348,7 @@ export default function ToolsPage() {
                           </Badge>
                         </td>
                         <td className="py-2.5 px-4 text-zinc-500 truncate max-w-[200px]">
-                          {entry.error || '—'}
+                          {entry.error || 'No error'}
                         </td>
                       </tr>
                     ))

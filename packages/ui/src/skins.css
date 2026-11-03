@@ -208,12 +208,34 @@
   font: inherit;
 }
 
+.mw-skin-root .mw-textarea {
+  width: 100%;
+  min-height: 8rem;
+  border: var(--mw-border-width) solid var(--mw-border);
+  border-radius: var(--mw-control-radius);
+  padding: 0.75rem 0.875rem;
+  background: var(--mw-surface);
+  color: var(--mw-text);
+  font: inherit;
+  resize: vertical;
+}
+
 .mw-skin-root .mw-input::placeholder {
   color: var(--mw-muted-text);
   opacity: 1;
 }
 
+.mw-skin-root .mw-textarea::placeholder {
+  color: var(--mw-muted-text);
+  opacity: 1;
+}
+
 .mw-skin-root .mw-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.mw-skin-root .mw-textarea:disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }

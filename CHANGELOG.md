@@ -4,10 +4,23 @@ id: "CHANGELOG"
 version: "1.0.0"
 owner: "engineering"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 ---
 
 # CHANGELOG.md
+
+## 2026-11-04 - DNA App Visual Transformation
+
+### Added
+- **App-specific compositions and original artwork** for Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, and WORLD OBSERVATORY / Mycelium.
+- **Accessible shared textarea** with connected labels and inline error announcements.
+- **Opt-in sound controls and mobile navigation** across the four app shells, with keyboard dismissal and focus return.
+
+### Changed
+- Redesigned all 12 in-scope routes with distinct application identities, responsive layouts, and honest loading, empty, authentication, and unavailable states.
+- Added descriptive Headquarter page titles, explicit form labels, semantic main landmarks, and primary page headings.
+- Removed unsupported AGI capability claims and nonfunctional presentation controls.
+- Verified the four required production build gates; architecture lint currently reports unrelated violations in other worktree files.
 
 ## 2026-11-03 - Six DNA Shared UI Skin Foundation
 

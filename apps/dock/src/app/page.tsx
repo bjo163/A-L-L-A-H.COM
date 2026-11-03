@@ -1,27 +1,60 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { EcosystemNavbar, Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '@moonwitness/ui';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { EcosystemNavbar } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
+
+const destinations = [
+  {
+    number: '01',
+    name: 'Headquarter',
+    role: 'Operations',
+    description: 'Inspect the gateway, agent tools, and knowledge workspace.',
+    href: 'http://localhost:3002',
+  },
+  {
+    number: '02',
+    name: 'MoonWitness ID',
+    role: 'Identity',
+    description: 'Manage your account and active device sessions.',
+    href: 'http://localhost:3003/account',
+  },
+  {
+    number: '03',
+    name: 'WORLD OBSERVATORY',
+    role: 'Research',
+    description: 'Explore a source-grounded intelligence workspace.',
+    href: 'http://localhost:3004',
+  },
+];
 
 export default function DockHomePage() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   useEffect(() => {
     mwClient.auth.getCurrentUser()
-      .then(res => {
+      .then((res) => {
         if (res?.user) setUser(res.user);
       })
-      .catch(() => {});
+      .catch((error: unknown) => {
+        setAuthNotice(error instanceof Error ? error.message : 'Session status is unavailable.');
+      });
   }, []);
 
   const handleSignOut = async () => {
-    await mwClient.auth.signOut();
-    setUser(null);
+    try {
+      await mwClient.auth.signOut();
+      setUser(null);
+      setAuthNotice(null);
+    } catch (error) {
+      setAuthNotice(error instanceof Error ? error.message : 'Unable to sign out.');
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-200">
+    <>
       <EcosystemNavbar
         currentApp="dock"
         userName={user?.name}
@@ -29,75 +62,64 @@ export default function DockHomePage() {
         onSignOut={handleSignOut}
       />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 sm:p-8 space-y-12">
-        <section className="text-center py-12 space-y-4">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Badge variant="gold" dot>Ecosystem Discovery</Badge>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500 bg-clip-text text-transparent">
-            A-L-L-A-H Dock & Gateway
-          </h1>
-          <p className="text-zinc-400 max-w-2xl mx-auto text-base md:text-lg">
-            Unified developer platform powered by Fastify Hub, native embedded PGlite WASM,
-            and shared MoonWitness ID SSO authority.
+      <main className="dock-page">
+        {authNotice && (
+          <p className="dock-auth-notice" role="status">
+            Session status: {authNotice}
           </p>
-          <div className="pt-4 flex items-center justify-center gap-3">
-            <a href="http://localhost:3002">
-              <Button variant="default" size="lg">Open Headquarter</Button>
-            </a>
-            <a href="http://localhost:3003/account">
-              <Button variant="outline" size="lg">Manage MoonWitness ID</Button>
+        )}
+
+        <section className="dock-hero" aria-labelledby="dock-title">
+          <div className="dock-hero__copy">
+            <p className="dock-kicker">A-L-L-A-H.COM / ENTRY</p>
+            <h1 id="dock-title">A platform with room to explore.</h1>
+            <p className="dock-hero__summary">
+              Enter the MoonWitness ecosystem through a clear map of its
+              discovery, identity, operations, and observatory spaces.
+            </p>
+            <a className="dock-hero__link" href="http://localhost:3002">
+              Enter Headquarter <span aria-hidden="true">↗</span>
             </a>
           </div>
+
+          <figure className="dock-hero__art">
+            <Image
+              src="/artwork/imperium-lumen.png"
+              alt=""
+              width={1600}
+              height={900}
+              priority
+              className="dock-hero__image"
+            />
+            <figcaption className="dock-hero__caption">
+              <span>IMPERIUM LUMEN</span>
+              <span>01 / THE THRESHOLD</span>
+            </figcaption>
+          </figure>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Smart LLM Router</CardTitle>
-                <Badge variant="active" dot>Active</Badge>
-              </div>
-              <CardDescription>OpenAI-compatible gateway endpoint at Fastify Hub</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-zinc-400 font-mono">
-                Port 5150 • Multi-tier fallback & caching
-              </p>
-            </CardContent>
-          </Card>
+        <section className="dock-index" aria-labelledby="dock-index-title">
+          <div className="dock-index__heading">
+            <div>
+              <p className="dock-kicker">WAYFINDING / 01-03</p>
+              <h2 id="dock-index-title">Choose a destination</h2>
+            </div>
+            <p>Each space has its own purpose and point of entry.</p>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>MoonWitness ID</CardTitle>
-                <Badge variant="gold" dot>SSO Center</Badge>
-              </div>
-              <CardDescription>Centralized session & device grant manager</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-zinc-400 font-mono">
-                Port 3003 • Zero ORM overlap with PGlite
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Headquarter</CardTitle>
-                <Badge variant="default">Port 3002</Badge>
-              </div>
-              <CardDescription>Enterprise operations, command & analytics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-zinc-400 font-mono">
-                Live metrics & unified platform monitoring
-              </p>
-            </CardContent>
-          </Card>
+          <nav className="dock-destinations" aria-label="Platform destinations">
+            {destinations.map((destination) => (
+              <a className="dock-destination" href={destination.href} key={destination.number}>
+                <span className="dock-destination__number">{destination.number}</span>
+                <span className="dock-destination__role">{destination.role}</span>
+                <h3>{destination.name}</h3>
+                <p>{destination.description}</p>
+                <span className="dock-destination__arrow" aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </nav>
         </section>
       </main>
-    </div>
+    </>
   );
 }

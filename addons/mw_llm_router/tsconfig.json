@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@allah/arsy-orm": ["../../packages/arsy-orm/src/index.ts"]
+    }
+  },
+  "include": ["**/*.ts"]
+}

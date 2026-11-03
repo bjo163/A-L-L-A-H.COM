@@ -1,14 +1,10 @@
+import type { ToolResult } from '@moonwitness/types';
+export type { ToolResult } from '@moonwitness/types';
+
 export interface ToolContext {
   virtualKeyId?: number | null;
   actor?: string | null;
   requestId?: string | null;
-}
-
-export interface ToolResult {
-  success: boolean;
-  output: any;
-  error?: string | null;
-  latencyMs?: number;
 }
 
 export interface Tool {

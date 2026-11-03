@@ -5,6 +5,7 @@ export const IrUiView = defineModel({
   tableName: 'ir_ui_view',
   displayName: 'SDUI View',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'View Name', required: true }),
     model: fields.char({ label: 'Target Model', required: true }),
     view_type: fields.selection(

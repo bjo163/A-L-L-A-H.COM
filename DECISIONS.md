@@ -44,6 +44,16 @@ Record accepted decisions and rationale only. Proposals and unresolved questions
 - Consequences: Canonical specifications live in DNA/. Runtime implementation is tracked separately in BACKLOG.md. Current shared package remains packages/ui/; no primitive-library migration is implied. Documentation approval does not mean the six runtime skins are implemented or verified.
 - Related tasks: SKIN-001.
 
+### D-007 — One Shared Runtime Skin Engine
+- Status: ACCEPTED
+- Date: 2026-11-03
+- Context: Six approved Master DNA must shape shared components without forking interaction, accessibility, or business behavior.
+- Decision: Implement all six skin IDs, semantic tokens, and component recipes in `packages/ui/`. Applications select a typed skin at a server-rendered root; package styles remain scoped to that root, with deterministic Imperium Lumen fallback.
+- Alternatives: A global style switch, client-only skin detection, or six independent component libraries.
+- Rationale: Keep the package API and initial render deterministic while preserving distinct product identities and one semantic component engine.
+- Consequences: Dock selects Imperium Lumen, Headquarter selects Nexus Paradox, ID selects Lunar Chronicles, and WORLD OBSERVATORY selects Mycelium. ROCKSOUL and RIOT ANARCHY remain available for future consumers. Skin Laboratory comparison and complete visual verification remain pending.
+- Related tasks: MOONFRAME-SIX-DNA-UI-SKINS.
+
 ## Decision template
 ### D-XXX — Title
 - Status: PROPOSED / ACCEPTED / SUPERSEDED

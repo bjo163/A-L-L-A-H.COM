@@ -30,7 +30,7 @@ export function parseModelCatalogResponse(payload: unknown): GatewayModel[] {
     if (owner !== undefined && typeof owner !== 'string') {
       throw new Error(`Gateway model catalog entry ${index + 1} has an invalid owner.`);
     }
-    return owner === undefined ? { id: model.id } : { id: model.id, owned_by: owner };
+    return owner === undefined ? { id: model.id } : { id: model.id, owned_by: owner as string };
   });
 }
 

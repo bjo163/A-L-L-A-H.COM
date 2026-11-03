@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
-  EcosystemNavbar,
   Button,
   Card,
   CardHeader,
@@ -63,13 +62,17 @@ interface LogEntry {
 let logSeq = 0;
 
 export default function SwarmOperationsPage() {
-  const [goal, setGoal] = useState('Analisis kesehatan database dan render ringkasan SDUI');
+  const [goal, setGoal] = useState('');
   const [maxTurns, setMaxTurns] = useState(8);
   const [isRunning, setIsRunning] = useState(false);
-  const [statusText, setStatusText] = useState('Idle');
+  const [statusText, setStatusText] = useState('Ready');
   const [log, setLog] = useState<LogEntry[]>([]);
   const [result, setResult] = useState<SwarmExecutionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = 'Swarm Operations | Headquarter';
+  }, []);
 
   const pushLog = useCallback((entry: Omit<LogEntry, 'id' | 'timestamp'>) => {
     setLog((prev) => [...prev, { ...entry, id: ++logSeq, timestamp: new Date().toISOString() }]);
@@ -79,7 +82,7 @@ export default function SwarmOperationsPage() {
     if (!goal.trim() || isRunning) return;
 
     setIsRunning(true);
-    setStatusText('Memulai swarm orchestration...');
+    setStatusText('Running swarm orchestration...');
     setLog([]);
     setResult(null);
     setError(null);
@@ -90,7 +93,7 @@ export default function SwarmOperationsPage() {
         max_turns: maxTurns,
       });
       setResult(res);
-      setStatusText(res.success ? 'Mission selesai & terverifikasi' : `Selesai: ${res.finish_reason}`);
+      setStatusText(res.success ? 'Completed' : `Stopped: ${res.finish_reason}`);
       for (const step of res.steps) {
         pushLog({
           event: 'swarm_agent_step',
@@ -100,9 +103,9 @@ export default function SwarmOperationsPage() {
           payload: { output: step.output },
         });
       }
-    } catch (err: any) {
-      setError(err.message || 'Gagal menjalankan swarm');
-      setStatusText('Error');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to run the swarm.');
+      setStatusText('Failed');
     } finally {
       setIsRunning(false);
     }
@@ -131,18 +134,15 @@ export default function SwarmOperationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#08090a] text-zinc-100 flex flex-col font-sans">
-      <EcosystemNavbar currentApp="headquarter" userName={undefined} userEmail={undefined} />
-
+    <div className="hq-route hq-swarm">
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-800/80 pb-6">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-extrabold tracking-tight text-white">Swarm Operations</h1>
-              <Badge variant="active" dot>AGI Phase 5</Badge>
             </div>
             <p className="text-sm text-zinc-400 mt-1">
-              Hierarchical multi-agent orchestration — Supervisor, Researcher, Builder, Reviewer.
+              Hierarchical multi-agent orchestration with supervisor, researcher, builder, and reviewer roles.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -158,24 +158,25 @@ export default function SwarmOperationsPage() {
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold text-white">Mission Goal</CardTitle>
             <CardDescription className="text-zinc-400">
-              Definisikan tujuan operasional. Swarm akan mendekomposisi, meneliti, membangun, dan memverifikasi.
+              Enter an operational goal. The swarm will plan, research, build, and report its result.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <Input
+                  label="Mission goal"
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  placeholder="Masukkan target misi swarm..."
+                  placeholder="Describe the task for the swarm"
                   className="bg-zinc-950 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 focus:border-amber-500"
                   disabled={isRunning}
                 />
               </div>
-              <div className="w-full md:w-36 flex items-center gap-2">
-                <span className="text-xs text-zinc-400 whitespace-nowrap">Max Turns:</span>
+              <div className="w-full md:w-36">
                 <Input
                   type="number"
+                  label="Max turns"
                   min={1}
                   max={24}
                   value={maxTurns}
@@ -189,11 +190,11 @@ export default function SwarmOperationsPage() {
                 disabled={isRunning || !goal.trim()}
                 className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-medium px-6 whitespace-nowrap"
               >
-                {isRunning ? 'Menjalankan Swarm...' : 'Luncurkan Swarm'}
+                {isRunning ? 'Running Swarm...' : 'Run Swarm'}
               </Button>
             </div>
             {error && (
-              <div className="p-3 bg-red-950/40 border border-red-500/20 rounded-md text-sm text-red-400">
+              <div role="alert" className="p-3 bg-red-950/40 border border-red-500/20 rounded-md text-sm text-red-400">
                 {error}
               </div>
             )}

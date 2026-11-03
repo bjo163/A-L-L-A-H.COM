@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
-  EcosystemNavbar,
   Button,
   Card,
   CardHeader,
@@ -23,7 +22,6 @@ import type {
 } from '@moonwitness/types';
 
 export default function AgentStudioPage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [request, setRequest] = useState<AgentRunRequest | null>(null);
   const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
   interface AgentStepUI {
@@ -42,13 +40,8 @@ export default function AgentStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const streamRef = useRef<ReadableStream | null>(null);
 
-  // Fetch user on mount
   useEffect(() => {
-    mwClient.auth.getCurrentUser()
-      .then((res) => {
-        if (res?.user) setUser(res.user);
-      })
-      .catch(() => {});
+    document.title = 'Agent Studio | Headquarter';
   }, []);
 
   const handleRunAgent = () => {
@@ -181,50 +174,40 @@ export default function AgentStudioPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
-      <EcosystemNavbar
-        currentApp="headquarter"
-        userName={user?.name}
-        userEmail={user?.email}
-        onSignOut={async () => {
-          await mwClient.auth.signOut();
-          setUser(null);
-        }}
-      />
-
+    <div className="hq-route hq-agent">
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
         {/* Agent Controls */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
                 Agent Studio
-              </h2>
+              </h1>
               <p className="text-zinc-400 mt-1">
                 Autonomous cognitive agent loop with generative SDUI synthesis
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-300 font-medium">Max Steps:</label>
-              <input
+            <div className="flex items-start gap-2">
+              <Input
                 type="number"
+                label="Max Steps"
                 name="max_steps"
                 min="1"
                 max="20"
                 value={request?.max_steps ?? 8}
                 onChange={handleChange}
-                className="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500 w-24"
+                className="w-24"
               />
-              <span className="text-xs text-zinc-500">1-20</span>
+              <span className="pt-7 text-xs text-zinc-500">1-20</span>
             </div>
           </div>
         </section>
 
         {/* Mission Input */}
         <section className="mb-6">
-          <label className="block text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1.5">Mission Goal</label>
           <Input
+            label="Mission Goal"
             placeholder="Enter your agent mission (e.g. 'Check attachment in CAS and summarize in SDUI card')"
             value={request?.prompt || ''}
             onChange={(e) => handleChange(e)}
@@ -255,7 +238,7 @@ export default function AgentStudioPage() {
           <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
             <div className="flex items-center gap-2">
               <Badge variant="active" dot className="text-emerald-400">
-                LIVE
+                RUNNING
               </Badge>
               <span className="text-sm text-zinc-400">Reasoning...</span>
             </div>

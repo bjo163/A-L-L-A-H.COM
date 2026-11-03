@@ -17,6 +17,78 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-lint-arch:
+    name: Verify Architectural Lint (@moonwitness/lint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Architectural Lint Gate
+        run: pnpm lint:arch
+
+  verify-typecheck:
+    name: Verify TypeScript Type-Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Strict TypeScript Typecheck
+        run: pnpm typecheck
+
+  verify-lint:
+    name: Verify ESLint Code-Style
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint Gate
+        run: pnpm lint
+
   verify-dock:
     name: Verify Dock (Next.js)
     runs-on: ubuntu-latest
@@ -65,6 +137,78 @@ jobs:
       - name: Build Headquarter App
         run: pnpm headquarter:build
 
+  verify-id:
+    name: Verify ID (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ID App
+        run: pnpm id:build
+
+  verify-jizz:
+    name: Verify Jizz (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Jizz App
+        run: pnpm jizz:build
+
+  verify-arsy:
+    name: Verify Arsy Fastify Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Arsy Hub
+        run: pnpm --filter @allah/arsy build
+
   verify-extension:
     name: Verify VS Code Extension
     runs-on: ubuntu-latest
@@ -88,6 +232,30 @@ jobs:
 
       - name: Build Extension
         run: pnpm extension:build
+
+  verify-tests:
+    name: Verify Extension Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Extension Tests
+        run: pnpm extension:test
 
   verify-docs:
     name: Verify Documentation Contract & Scoring
@@ -116,7 +284,7 @@ jobs:
   promote-to-main:
     name: Promote dev to main
     runs-on: ubuntu-latest
-    needs: [verify-dock, verify-headquarter, verify-extension, verify-docs]
+    needs: [verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-arsy, verify-extension, verify-tests, verify-docs]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - name: Check out dev branch

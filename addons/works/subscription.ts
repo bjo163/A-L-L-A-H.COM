@@ -9,6 +9,7 @@ export type IspSubscriptionStatus =
   | 'suspended'
   | 'expired'
   | 'cancelled'
+  | 'reactivated'
   | 'reactivation_pending';
 
 export interface IspSubscriptionEvent {
@@ -53,6 +54,7 @@ export async function transitionSubscription(
     suspended: ['reactivation_pending', 'cancelled', 'active'],
     expired: ['cancelled'],
     cancelled: [],
+    reactivated: ['active', 'cancelled'],
     reactivation_pending: ['active', 'cancelled'],
   };
 

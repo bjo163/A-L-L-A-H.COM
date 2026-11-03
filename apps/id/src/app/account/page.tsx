@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { mwClient } from '@allah/sdk';
 import type { UserSubject, ActiveSession } from '@moonwitness/types';
-import { EcosystemNavbar, SessionCard, Button, Badge, Card, CardHeader, CardTitle, CardDescription, CardContent, sfx } from '@moonwitness/ui';
+import { SessionCard, Button, Badge, Card, CardHeader, CardTitle, CardDescription, CardContent, sfx } from '@moonwitness/ui';
 import { ShieldCheck, CheckCircle2, Layers, ExternalLink, Loader2 } from 'lucide-react';
 
 export default function AccountCenterPage() {
@@ -12,29 +12,32 @@ export default function AccountCenterPage() {
   const [user, setUser] = useState<UserSubject | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const res = await mwClient.auth.getCurrentUser();
       if (!res?.user) {
-        router.push('/login');
+        router.replace('/login');
         return;
       }
       setUser(res.user);
 
       const sessList = await mwClient.auth.getSessions();
-      setSessions(sessList || []);
-    } catch {
-      router.push('/login');
+      setSessions(sessList);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load account data.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    document.title = 'Account | MoonWitness ID';
     loadData();
   }, []);
 
@@ -51,8 +54,8 @@ export default function AccountCenterPage() {
         mwClient.clearSessionToken();
         router.push('/login');
       }
-    } catch {
-      setMessage('Failed to revoke session');
+    } catch (error) {
+      setMessage(error instanceof Error ? `Unable to revoke session: ${error.message}` : 'Unable to revoke session.');
     } finally {
       setRevokingId(null);
       setTimeout(() => setMessage(null), 3000);
@@ -60,13 +63,17 @@ export default function AccountCenterPage() {
   };
 
   const handleSignOut = async () => {
-    await mwClient.auth.signOut();
-    router.push('/login');
+    try {
+      await mwClient.auth.signOut();
+      router.push('/login');
+    } catch (error) {
+      setMessage(error instanceof Error ? `Unable to sign out: ${error.message}` : 'Unable to sign out.');
+    }
   };
 
   if (isLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-100">
+      <main className="id-loading">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
           <p className="text-sm text-zinc-400">Loading Account Center...</p>
@@ -75,16 +82,26 @@ export default function AccountCenterPage() {
     );
   }
 
-  return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-amber-500/20 selection:text-amber-200">
-      <EcosystemNavbar
-        currentApp="id"
-        userName={user?.name}
-        userEmail={user?.email}
-        onSignOut={handleSignOut}
-      />
+  if (loadError) {
+    return (
+      <main className="id-loading">
+        <div className="w-full max-w-md space-y-4 rounded-2xl border border-red-500/30 bg-zinc-900/80 p-6">
+          <h1 className="text-xl font-semibold text-zinc-100">Account data unavailable</h1>
+          <p className="text-sm text-red-300" role="alert">{loadError}</p>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={loadData} disabled={isLoading}>Try Again</Button>
+            <a className="inline-flex min-h-11 items-center px-3 text-sm text-zinc-300 underline underline-offset-4" href="/login">
+              Go to Sign In
+            </a>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+  return (
+    <main className="id-account-page">
+      <div className="id-account-content">
         {message && (
           <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -92,7 +109,7 @@ export default function AccountCenterPage() {
           </div>
         )}
 
-        <section className="p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <section className="id-account-profile p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-amber-400/5 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-2xl shadow-inner">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
@@ -110,13 +127,16 @@ export default function AccountCenterPage() {
           <div className="flex flex-wrap gap-2 text-xs">
             <div className="px-3 py-2 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-300">
               <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Authority</span>
-              Fastify Hub (Port 5150)
+              Fastify Hub
             </div>
             <div className="px-3 py-2 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-300">
               <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Client SDK</span>
-              @allah/sdk Isomorphic
+              @allah/sdk
             </div>
           </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign Out
+          </Button>
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -168,13 +188,13 @@ export default function AccountCenterPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>MoonWitness Dock</CardTitle>
-                    <Badge variant="default">Port 3001</Badge>
+                    <Badge variant="default">Discovery</Badge>
                   </div>
                   <CardDescription>Public discovery & client presentation</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-emerald-400 font-medium">SSO Connected</span>
+                    <span className="text-zinc-400 font-medium">Open workspace</span>
                     <a href="http://localhost:3001" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-amber-400 flex items-center gap-1">
                       <span>Launch</span>
                       <ExternalLink className="w-3 h-3" />
@@ -187,14 +207,32 @@ export default function AccountCenterPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>MoonWitness HQ</CardTitle>
-                    <Badge variant="default">Port 3002</Badge>
+                    <Badge variant="default">Operations</Badge>
                   </div>
                   <CardDescription>Enterprise operations & command center</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-emerald-400 font-medium">SSO Connected</span>
+                    <span className="text-zinc-400 font-medium">Open workspace</span>
                     <a href="http://localhost:3002" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-amber-400 flex items-center gap-1">
+                      <span>Launch</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>WORLD OBSERVATORY</CardTitle>
+                    <Badge variant="default">Research</Badge>
+                  </div>
+                  <CardDescription>Source-grounded observation workspace</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400 font-medium">Open workspace</span>
+                    <a href="http://localhost:3004" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-amber-400 flex items-center gap-1">
                       <span>Launch</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>

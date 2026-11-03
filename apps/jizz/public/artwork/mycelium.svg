@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="deep" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14221F"/>
+      <stop offset=".58" stop-color="#0D1715"/>
+      <stop offset="1" stop-color="#09100F"/>
+    </linearGradient>
+    <radialGradient id="membrane" cx="0" cy="0" r="1" gradientTransform="matrix(0 370 -480 0 930 462)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#91C6A0" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#91C6A0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="branch" x1="446" y1="730" x2="1120" y2="169" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C58970"/>
+      <stop offset=".5" stop-color="#8FC7A5"/>
+      <stop offset="1" stop-color="#B6D18A"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#deep)" d="M0 0h1600v900H0z"/>
+  <path fill="url(#membrane)" d="M0 0h1600v900H0z"/>
+  <g stroke="#A7C9B0" stroke-opacity=".14">
+    <path d="M0 218c239 82 365 79 560 0s346-82 540 0 301 82 500 0M0 286c239 82 365 79 560 0s346-82 540 0 301 82 500 0M0 710c239-82 365-79 560 0s346 82 540 0 301-82 500 0"/>
+  </g>
+  <g stroke="url(#branch)" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="8" d="M220 748c184-34 195-188 361-210s188 62 322 7 125-248 294-265 212 66 302-62"/>
+    <path stroke-width="5" d="M320 718c-42-126-7-196 92-244s123-7 169-99m-93 149c-34-72-9-112 60-143m-18 159c80-62 123-36 168 5m-117 21c-16 105 27 151 126 140m158-153c-68-103-36-164 97-181m-36 144c77-17 113 12 111 88m-47-207c-7-117 55-178 186-182m-89 116c104-52 179-38 227 43m-20 177c48 89 116 113 204 72"/>
+    <path stroke-width="3" d="M411 474c-19-58-5-101 42-129m-21 245c44-12 75 4 94 49m102-239c26-71 77-98 153-82m-86 146c21 56 63 77 127 63m164-258c52-25 98-18 139 22m-83 188c53-29 102-23 146 19m-14-51c93-28 157-11 192 52"/>
+  </g>
+  <g fill="#D9E7C8" stroke="#0C1714" stroke-width="5">
+    <circle cx="220" cy="748" r="14"/><circle cx="581" cy="538" r="12"/><circle cx="903" cy="545" r="13"/><circle cx="1197" cy="280" r="14"/><circle cx="1499" cy="153" r="11"/>
+    <circle cx="412" cy="474" r="9"/><circle cx="488" cy="375" r="8"/><circle cx="581" cy="488" r="8"/><circle cx="707" cy="326" r="9"/><circle cx="793" cy="405" r="8"/><circle cx="989" cy="335" r="8"/><circle cx="1043" cy="266" r="8"/><circle cx="1211" cy="374" r="9"/><circle cx="1391" cy="226" r="8"/>
+  </g>
+  <g fill="#C58D74">
+    <circle cx="312" cy="684" r="4"/><circle cx="768" cy="589" r="4"/><circle cx="1081" cy="413" r="4"/><circle cx="1326" cy="332" r="4"/>
+  </g>
+</svg>

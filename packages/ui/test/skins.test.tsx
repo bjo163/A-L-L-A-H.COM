@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { Textarea } from '../src/components/textarea';
 import { SkinRoot } from '../src/skins/root';
 import {
   defaultSkinId,
@@ -65,6 +66,17 @@ test('SkinRoot renders the selected skin in server markup', () => {
   assert.match(markup, /data-moonframe-skin="lunar-chronicles"/);
   assert.match(markup, /--mw-canvas:#101923/);
   assert.match(markup, /<span>Archive<\/span>/);
+});
+
+test('Textarea exposes its visible label and associated error state', () => {
+  const markup = renderToStaticMarkup(
+    <Textarea label="Tool arguments" error="Enter valid JSON." />
+  );
+
+  assert.match(markup, /<label[^>]+for="([^"]+)"[^>]*>Tool arguments<\/label>/);
+  assert.match(markup, /<textarea[^>]+aria-invalid="true"/);
+  assert.match(markup, /aria-describedby="[^"]+-error"/);
+  assert.match(markup, /role="alert">Enter valid JSON\.<\/p>/);
 });
 
 test('component recipes remain scoped to SkinRoot', () => {

@@ -5,6 +5,7 @@ export const AuthUser = defineModel({
   tableName: 'auth_user',
   displayName: 'Authentication User',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     email: fields.char({ label: 'Email', required: true, unique: true }),
     password_hash: fields.char({ label: 'Password Hash', required: true }),
     name: fields.char({ label: 'Display Name', required: true }),
@@ -29,6 +30,7 @@ export const AuthSession = defineModel({
   tableName: 'auth_session',
   displayName: 'Authentication Session',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     user_id: fields.many2one('auth.user', { label: 'User ID', required: true }),
     session_token: fields.char({ label: 'Session Token', required: true, unique: true }),
     ip_address: fields.char({ label: 'IP Address' }),
@@ -48,6 +50,7 @@ export const AuthVerification = defineModel({
   tableName: 'auth_verification',
   displayName: 'Verification Token',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     identifier: fields.char({ label: 'Identifier (Email/ID)', required: true }),
     token: fields.char({ label: 'Verification Token', required: true, unique: true }),
     token_type: fields.selection(

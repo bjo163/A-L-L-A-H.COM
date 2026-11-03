@@ -5,6 +5,8 @@ import { ArsyStatusTreeDataProvider, ModelTreeDataProvider } from './treeProvide
 import { PlanTreeDataProvider } from './planTreeProvider';
 import { PlanManager } from './planManager';
 import { AgentWorkbenchProvider } from './agentWorkbench';
+import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
+import { RemoteMissionService } from './remoteMissionService';
 import type { PlanItem, TaskItem, TaskStatus } from './planManager';
 
 function isTaskItem(value: unknown): value is TaskItem {
@@ -174,13 +176,22 @@ async function updateStatusBar(
   return health;
 }
 
-export function activate(context: vscode.ExtensionContext): void {
-  const client = new MoonWitnessClient();
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const client = new MoonWitnessClient(context);
+  try {
+    await client.migrateLegacyApiKey();
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Could not move the legacy MoonWitness API key to SecretStorage: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
   const planProvider = new PlanTreeDataProvider();
   const modelProvider = new ModelTreeDataProvider(client);
   const arsyStatusProvider = new ArsyStatusTreeDataProvider(client);
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  const workbenchProvider = new AgentWorkbenchProvider(context.extensionUri);
+  const workbenchProvider = new AgentWorkbenchProvider(client);
+  const localAgentProvider = new LocalAgentWorkbenchProvider(context, client);
+  const remoteMissionService = new RemoteMissionService(client, localAgentProvider);
 
   statusBarItem.command = 'allah.testConnection';
   context.subscriptions.push(
@@ -188,12 +199,15 @@ export function activate(context: vscode.ExtensionContext): void {
     planProvider,
     modelProvider,
     arsyStatusProvider,
+    remoteMissionService,
     vscode.window.registerWebviewViewProvider(AgentWorkbenchProvider.viewType, workbenchProvider),
+    vscode.window.registerWebviewViewProvider(LocalAgentWorkbenchProvider.viewType, localAgentProvider),
     vscode.window.registerTreeDataProvider('allah.views.plans', planProvider),
     vscode.window.registerTreeDataProvider('allah.views.models', modelProvider),
     vscode.window.registerTreeDataProvider('allah.views.arsy', arsyStatusProvider)
   );
   registerPlanWatchers(context, planProvider);
+  remoteMissionService.start();
   void updateStatusBar(statusBarItem, client);
 
   context.subscriptions.push(
@@ -296,6 +310,55 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.showWarningMessage(`MoonWitness gateway unavailable: ${health.message || 'Unknown error'}.`);
       }
       modelProvider.refresh();
+    }),
+    vscode.commands.registerCommand('allah.setApiKey', async () => {
+      const apiKey = await vscode.window.showInputBox({
+        prompt: 'Enter the MoonWitness virtual API key. It will be stored in VS Code SecretStorage.',
+        password: true,
+        ignoreFocusOut: true,
+      });
+      if (apiKey === undefined) return;
+      try {
+        await client.setApiKey(apiKey);
+        vscode.window.showInformationMessage(apiKey.trim()
+          ? 'MoonWitness API key saved securely.'
+          : 'MoonWitness API key removed.');
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Could not update the MoonWitness API key: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }),
+    vscode.commands.registerCommand('allah.pairAgentDevice', async () => {
+      if (process.platform !== 'win32') {
+        vscode.window.showWarningMessage('Remote agent pairing is currently supported only by the Windows extension host.');
+        return;
+      }
+      const code = await vscode.window.showInputBox({
+        prompt: 'Enter the short-lived pairing code from Headquarter.',
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (value) => (/^[a-f0-9]{48}$/i.test(value.trim())
+          ? undefined
+          : 'Enter the 48-character pairing code shown in Headquarter.'),
+      });
+      if (!code) return;
+      const deviceName = await vscode.window.showInputBox({
+        prompt: 'Choose a name for this paired Windows device.',
+        value: 'Windows VS Code',
+        validateInput: (value) => (value.trim().length > 0 && value.trim().length <= 100
+          ? undefined
+          : 'Device name must be between 1 and 100 characters.'),
+      });
+      if (!deviceName) return;
+      try {
+        const deviceId = await client.claimAgentDevice(code, deviceName);
+        vscode.window.showInformationMessage(`This Windows extension is paired as device ${deviceId}.`);
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Could not pair this Windows device: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }),
     vscode.commands.registerCommand('allah.listModels', async () => {
       try {

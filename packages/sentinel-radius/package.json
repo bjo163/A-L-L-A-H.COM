@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Native SENTINEL RADIUS Protocol Engine (RFC 2865/2866) - Node.js UDP socket server with packet codec",
   "main": "dist/index.js",
+  "type": "module",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { mwClient } from '@allah/sdk';
@@ -15,6 +16,10 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    document.title = 'Register | MoonWitness ID';
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,16 +42,34 @@ export default function RegisterPage() {
       await mwClient.auth.signIn({ email, password, deviceName: 'Primary Session' });
       sfx.success();
       router.push('/account');
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black">
-      <div className="w-full max-w-md">
+    <main className="id-auth-page">
+      <div className="id-auth-layout">
+        <aside className="id-auth-aside">
+          <Image
+            src="/artwork/lunar-chronicles.png"
+            alt=""
+            width={1600}
+            height={900}
+            priority
+            className="id-auth-aside__art"
+          />
+          <div className="id-auth-aside__copy">
+            <p className="id-kicker">MOONWITNESS / IDENTITY ARCHIVE</p>
+            <h2>Begin with a secure account.</h2>
+            <p>Create the identity used to access your MoonWitness destinations.</p>
+          </div>
+          <span className="id-auth-aside__index" aria-hidden="true">L / 02 / ARCHIVE</span>
+        </aside>
+
+        <div className="id-auth-form">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-4 shadow-lg shadow-amber-500/5">
             <UserPlus className="w-7 h-7" />
@@ -74,7 +97,7 @@ export default function RegisterPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Muhammad Tariq"
+              placeholder="Your name"
             />
 
             <Input
@@ -83,7 +106,7 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@moonwitness.com"
+              placeholder="you@example.com"
             />
 
             <Input
@@ -132,6 +155,7 @@ export default function RegisterPage() {
             </p>
           </div>
         </Card>
+        </div>
       </div>
     </main>
   );

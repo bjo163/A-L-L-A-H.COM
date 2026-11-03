@@ -5,6 +5,7 @@ export const MwStorageBackend = defineModel({
   tableName: 'mw_storage_backend',
   displayName: 'Storage Backend',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Backend Name', required: true }),
     backend_type: fields.selection(
       {
@@ -28,6 +29,7 @@ export const IrAttachment = defineModel({
   tableName: 'ir_attachment',
   displayName: 'Attachment',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'File Name', required: true }),
     digest: fields.char({ label: 'SHA-256 Digest', required: true, unique: true }),
     file_size: fields.integer({ label: 'File Size Bytes', required: true }),
@@ -46,6 +48,7 @@ export const IrLegalHold = defineModel({
   tableName: 'ir_legal_hold',
   displayName: 'Legal Hold',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Hold Reference', required: true }),
     res_model: fields.char({ label: 'Resource Model' }),
     res_id: fields.integer({ label: 'Resource ID' }),

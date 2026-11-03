@@ -1,4 +1,4 @@
-import { dbEngine, modelRegistry, BaseRepository } from '@allah/arsy-orm';
+import { modelRegistry, BaseRepository } from '@allah/arsy-orm';
 import { logger } from '@allah/arsy-core';
 import type { Tool, ToolContext, ToolResult } from './base';
 

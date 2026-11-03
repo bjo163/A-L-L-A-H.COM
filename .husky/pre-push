@@ -1,8 +1,46 @@
 #!/bin/sh
 
 echo "[HUSKY] Running Full Monorepo Build Gate..."
-pnpm dock:build && pnpm headquarter:build && pnpm id:build && pnpm arsy:build || {
-  echo "[HUSKY ERROR] Build gate failed. Push aborted."
+
+echo "[HUSKY] 1/5 Re-running Strict TypeScript Typecheck..."
+pnpm typecheck || {
+  echo "[HUSKY ERROR] TypeScript compilation failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] 2/5 Building Dock App..."
+pnpm dock:build || {
+  echo "[HUSKY ERROR] Dock build failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] 3/5 Building Headquarter App..."
+pnpm headquarter:build || {
+  echo "[HUSKY ERROR] Headquarter build failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] 4/5 Building ID App..."
+pnpm id:build || {
+  echo "[HUSKY ERROR] ID build failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] 5/5 Building Jizz App..."
+pnpm jizz:build || {
+  echo "[HUSKY ERROR] Jizz build failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] 6/6 Building Arsy Fastify Hub..."
+pnpm arsy:build || {
+  echo "[HUSKY ERROR] Arsy build failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] 7/7 Building VS Code Extension..."
+pnpm extension:build || {
+  echo "[HUSKY ERROR] Extension build failed. Push aborted."
   exit 1
 }
 

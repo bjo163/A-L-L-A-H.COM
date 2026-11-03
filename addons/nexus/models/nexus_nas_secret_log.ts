@@ -5,6 +5,7 @@ export const NexusNasSecretLog = defineModel({
   tableName: 'nexus_nas_secret_log',
   displayName: 'NAS Secret Rotation Log',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     nas_id: fields.many2one('nexus.nas', { label: 'NAS', required: true }),
     rotated_by: fields.many2one('auth.user', { label: 'Rotated By', required: true }),
     rotated_at: fields.datetime({ label: 'Rotated At', required: true }),

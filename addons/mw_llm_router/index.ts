@@ -5,6 +5,7 @@ export const AiProvider = defineModel({
   tableName: 'ai_provider',
   displayName: 'AI Provider',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Provider Name', required: true }),
     slug: fields.char({ label: 'Slug', required: true, unique: true }),
     provider_type: fields.selection(
@@ -28,6 +29,7 @@ export const AiModel = defineModel({
   tableName: 'ai_model',
   displayName: 'AI Model',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Display Name', required: true }),
     model_id: fields.char({ label: 'Upstream Model ID', required: true }),
     provider_id: fields.many2one('ai.provider', { label: 'Provider', required: true }),
@@ -42,6 +44,7 @@ export const AiRoute = defineModel({
   tableName: 'ai_route',
   displayName: 'AI Route',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Route Name', required: true }),
     alias: fields.char({ label: 'Alias', required: true, unique: true }),
     strategy: fields.selection(
@@ -61,6 +64,7 @@ export const AiVirtualKey = defineModel({
   tableName: 'ai_virtual_key',
   displayName: 'AI Virtual Key',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Key Name', required: true }),
     key_prefix: fields.char({ label: 'Prefix', required: true }),
     key_hash: fields.char({ label: 'Key Hash', required: true, unique: true }),
@@ -76,6 +80,7 @@ export const AiUsageLog = defineModel({
   tableName: 'ai_usage_log',
   displayName: 'AI Usage Log',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     virtual_key_id: fields.many2one('ai.virtual_key', { label: 'Virtual Key' }),
     provider_id: fields.many2one('ai.provider', { label: 'Provider' }),
     model_id: fields.many2one('ai.model', { label: 'Model' }),
@@ -94,6 +99,7 @@ export const AiSemanticCache = defineModel({
   tableName: 'ai_semantic_cache',
   displayName: 'AI Semantic Cache',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     prompt_hash: fields.char({ label: 'Prompt Hash', required: true, unique: true }),
     prompt_text: fields.text({ label: 'Prompt Text' }),
     embedding: fields.json({ label: 'Embedding Vector' }),
@@ -109,6 +115,7 @@ export const AiThread = defineModel({
   tableName: 'ai_thread',
   displayName: 'AI Thread',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     user_id: fields.many2one('res.user', { label: 'User' }),
     title: fields.char({ label: 'Title' }),
     active_model: fields.char({ label: 'Active Model' }),
@@ -121,6 +128,7 @@ export const AiMessage = defineModel({
   tableName: 'ai_message',
   displayName: 'AI Message',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     thread_id: fields.many2one('ai.thread', { label: 'Thread', required: true }),
     role: fields.selection({ user: 'User', assistant: 'Assistant', system: 'System', tool: 'Tool' }, { label: 'Role', required: true }),
     content: fields.text({ label: 'Content', required: true }),

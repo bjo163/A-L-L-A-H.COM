@@ -5,6 +5,7 @@ export const ResCountry = defineModel({
   tableName: 'res_country',
   displayName: 'Country',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Country Name', required: true }),
     code: fields.char({ label: 'ISO Code', required: true, unique: true }),
     phone_code: fields.char({ label: 'Phone Code' }),

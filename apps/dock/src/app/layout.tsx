@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A-L-L-A-H.COM — Dock",
+  title: "A-L-L-A-H.COM | Dock",
   description: "Public discovery homepage for the A-L-L-A-H.COM MoonWitness platform",
 };
 

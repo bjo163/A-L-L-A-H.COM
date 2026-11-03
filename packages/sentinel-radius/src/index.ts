@@ -93,6 +93,7 @@ export const RadiusVendorSpecificType = {
   MikrotikDeadTime: 6,
   MikrotikAddressList: 7,
   MikrotikAddressPool: 8,
+  MikrotikSubscribers: 9,
 } as const;
 
 export type RadiusVendorSpecificType = typeof RadiusVendorSpecificType[keyof typeof RadiusVendorSpecificType];
@@ -172,8 +173,8 @@ export class RadiusCodec {
          throw new Error(`Attribute exceeds packet bounds at position ${pos}`);
        }
 
-       if (type === RadiusAttributeType.VendorSpecific) {
-         // Vendor-Specific attribute format: Vendor-ID (4), Vendor-Type (1), Vendor-Length (1), Value
+if (type === RadiusAttributeType.VendorSpecific) {
+         // Vendor-Specific attribute
          if (attrLength < 6) {
            throw new Error(`Vendor-Specific attribute too short: ${attrLength} (min 6)`);
          }
@@ -247,7 +248,7 @@ export class RadiusCodec {
     buffer.writeUInt16BE(totalLength, pos); pos += 2;
     packet.authenticator.copy(buffer, pos); pos += 16;
 
-    // Write attributes
+// Write attributes
     for (const attr of packet.attributes) {
       if (attr.vendorType !== undefined) {
         // Vendor-specific attribute
@@ -490,7 +491,7 @@ const usernameStr = username.value.toString('utf8');
 
     logger.debug({ nasIp: nasIpStr, nasPort: nasPortNum, calledStationId: calledStationIdStr, callingStationId: callingStationIdStr }, `RADIUS Auth attempt: ${usernameStr} from ${rinfo.address}`);
 
-    // TODO: Query database for user credentials and access policy
+    // TODO: Query database for user credentials and access policy (refactor)
     // For now, we'll reject all requests - this is Phase 1 (packet codec only)
     return this.createAccessReject(packet.identifier, 'Authentication not implemented');
   }
@@ -522,7 +523,7 @@ const usernameStr = username.value.toString('utf8');
 
     logger.info({ userName: userNameStr, nasIp: nasIpStr2, nasPort: nasPortNum, acctSessionTime: acctSessionTimeNum, acctInputOctets: acctInputOctetsNum, acctOutputOctets: acctOutputOctetsNum }, `RADIUS Acct: ${statusTypeNum} session ${sessionIdStr} from ${rinfo.address}`);
 
-    // TODO: Store accounting data in PGlite (sentinel.session)
+    // TODO: Store accounting data in PGlite (sentinel.session) (refactor)
   }
 
   private createAccessReject(identifier: number, reason: string): Buffer {

@@ -7,9 +7,6 @@ import type {
   ChatCompletionResponse,
   StreamChunk,
   UsageInfo,
-  ToolDefinition,
-  ToolChoice,
-  ToolCall,
 } from '../types';
 import { validateUrlSsrf } from '../ssrf';
 
@@ -347,4 +344,3 @@ export class OpenAiAdapter implements ProviderAdapter {
     };
   }
 }
-

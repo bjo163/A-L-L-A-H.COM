@@ -5,6 +5,7 @@ export const NexusDevice = defineModel({
   tableName: 'nexus_device',
   displayName: 'Network Device',
   fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Device Name', required: true }),
     vendor: fields.selection(
       {

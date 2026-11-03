@@ -1,4 +1,3 @@
-import { toolRegistry } from './registry';
 import { modelRegistry } from '@allah/arsy-orm';
 import { logger } from '@allah/arsy-core';
 import type { Tool, ToolContext, ToolResult } from './base';
@@ -260,7 +259,7 @@ export class RenderSduiTool implements Tool {
                 type: 'tbody',
                 children: data.map((row: any, i: number) => ({
                   type: 'tr',
-                  children: Object.entries(row).map(([key, value]) => ({
+                  children: Object.entries(row).map(([, value]) => ({
                     type: 'td',
                     key: i,
                     children: [value],

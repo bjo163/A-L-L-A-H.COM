@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { SkinRoot } from '@moonwitness/ui';
+import { EcosystemNavbar, SkinRoot } from '@moonwitness/ui';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'MoonWitness ID — Unified Authentication & SSO',
+  title: 'MoonWitness ID | Unified Authentication & SSO',
   description: 'Enterprise Identity, Account & Session Center for MoonWitness & Empire of the Light',
 };
 
@@ -15,7 +15,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-amber-500/20 selection:text-amber-200">
-        <SkinRoot skin="lunar-chronicles">{children}</SkinRoot>
+        <SkinRoot skin="lunar-chronicles">
+          <EcosystemNavbar currentApp="id" showAuthActions={false} />
+          {children}
+        </SkinRoot>
       </body>
     </html>
   );
