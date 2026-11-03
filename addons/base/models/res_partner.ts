@@ -14,3 +14,4 @@ export const ResPartner = defineModel({
   },
   indexes: [{ fields: ['email'] }],
 });
+

@@ -33,3 +33,4 @@ export class BaseRepository<T = Record<string, unknown>> {
     return rows[0];
   }
 }
+

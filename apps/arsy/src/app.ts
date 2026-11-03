@@ -5,8 +5,14 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ok, fail, AppError, logger } from '@allah/arsy-core';
 import { dbEngine, SchemaMigrator, modelRegistry, BaseRepository } from '@allah/arsy-orm';
+import { authPlugin } from '@allah/arsy-plugin-auth';
 import { sduiPlugin } from '@allah/arsy-plugin-sdui';
+import { llmGatewayPlugin } from '@allah/arsy-plugin-llm-gateway';
+import { storagePlugin } from '@allah/arsy-plugin-storage';
+
 import { registerBaseAddon } from '../../../addons/base';
+import { registerMlLlmRouterAddon } from '../../../addons/mw_llm_router';
+import { registerMwStorageAddon } from '../../../addons/mw_storage';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;
@@ -44,24 +50,28 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
   await app.register(swaggerUi, { routePrefix: '/docs' });
 
-  // Boot embedded PGlite Database & Register Addons
+  // Boot embedded PGlite Database & Register All Addons
   await dbEngine.connect();
   registerBaseAddon();
+  registerMlLlmRouterAddon();
+  registerMwStorageAddon();
 
-  // Run schema auto-sync
+  // Run schema auto-sync across all registered models
   const migrator = new SchemaMigrator(dbEngine);
   await migrator.sync();
 
   // Health and Readiness Check
   app.get('/health', async () => ok({ status: 'ok', engine: 'arsy' }));
   app.get('/ready', async () => {
-    // Ping PGlite with a lightweight query
     const rows = await dbEngine.query('SELECT 1 as alive');
     return ok({ ready: true, database: 'pglite', check: rows[0] });
   });
 
-  // Register Arsy Plugins
+  // Register Arsy Technical Plugins
+  await app.register(authPlugin, { prefix: '/api/auth' });
   await app.register(sduiPlugin, { prefix: '/v1/sdui' });
+  await app.register(llmGatewayPlugin, { prefix: '/v1' });
+  await app.register(storagePlugin, { prefix: '/api/storage' });
 
   // Generic REST Model CRUD Engine
   app.get<{ Params: { model_name: string } }>('/api/v1/models/:model_name', async (request, reply) => {

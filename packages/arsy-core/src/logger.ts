@@ -18,3 +18,4 @@ export function createLogger(options?: LoggerOptions): ArsyLogger {
 }
 
 export const logger = createLogger();
+

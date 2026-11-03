@@ -11,3 +11,4 @@ export const ResCurrency = defineModel({
     decimal_places: fields.integer({ label: 'Decimal Places', default: 2 }),
   },
 });
+

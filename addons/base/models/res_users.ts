@@ -16,3 +16,4 @@ export const ResUsers = defineModel({
   },
   indexes: [{ fields: ['email'], unique: true }],
 });
+

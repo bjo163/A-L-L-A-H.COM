@@ -45,3 +45,4 @@ export function defineModel<TFields extends Record<string, FieldDefinition>>(
 ): ModelDefinition<TFields> {
   return new ModelDefinition(config);
 }
+

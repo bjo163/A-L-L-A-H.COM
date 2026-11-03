@@ -66,3 +66,4 @@ export function fail(code: string, message: string, details?: unknown): ApiRespo
     },
   };
 }
+

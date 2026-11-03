@@ -58,3 +58,4 @@ export class PGliteEngine {
 export const dbEngine = new PGliteEngine({
   dataDir: process.env.PG_DATA_DIR,
 });
+

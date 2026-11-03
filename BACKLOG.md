@@ -55,6 +55,12 @@ Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELE
 - Acceptance: Publish on pushes to `main`, preserve a commit-specific rollback tag, and fail clearly if required Coolify secrets are absent.
 - Verification: Compose configuration is valid and the web image published. Production workflow run `41626988966` failed building the server because Rust found `llm_gateway` at both `src/controllers/llm_gateway.rs` and `src/controllers/llm_gateway/mod.rs`; Coolify deployment was skipped. The corrected dev branch passes Rust checks and tests, but promotion is blocked by `ENG-001`. Resume after CI promotes the fix and the production server image builds successfully.
 
+### ENG-002: Implement Arsy Modular Ecosystem
+- Priority: P1
+- Status: VERIFIED
+- Outcome: Modular Fastify runtime, embedded PGlite ORM, technical plugins (auth, sdui, llm-gateway, storage), and declarative business addons.
+- Verification: End-to-end HTTP smoke tests on `/health`, `/ready`, `/api/auth/register`, `/api/auth/current`, `/v1/models`, `/v1/chat/completions`, `/api/storage/upload`.
+
 ## Task template
 
 ### [ID] â€” Outcome-focused title

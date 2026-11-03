@@ -1,0 +1,22 @@
+{
+  "name": "@allah/arsy-plugin-llm-gateway",
+  "version": "0.1.0",
+  "description": "Arsy LLM Gateway Plugin: rate limiting, semantic caching, SSRF safe upstream proxy",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "dependencies": {
+    "@allah/arsy-core": "workspace:*",
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1",
+    "undici": "^7.5.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}
+

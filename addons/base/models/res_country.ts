@@ -11,3 +11,4 @@ export const ResCountry = defineModel({
     currency_id: fields.many2one('res.currency', { label: 'Currency' }),
   },
 });
+

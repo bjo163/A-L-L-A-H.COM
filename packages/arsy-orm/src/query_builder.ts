@@ -80,3 +80,4 @@ export class QueryBuilder<T = unknown> {
     return { sql, params };
   }
 }
+

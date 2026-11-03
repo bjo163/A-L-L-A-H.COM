@@ -2,7 +2,7 @@
 title: "Arsy: Master Architecture Specification (Micro-kernel, Plugins, Addons, PGlite ORM & Migration)"
 date: "2026-11-03"
 author: "Antigravity Engineering"
-status: "in_progress"
+status: "completed"
 target: "apps/arsy, packages/arsy-*, addons/*, apps/server"
 ---
 

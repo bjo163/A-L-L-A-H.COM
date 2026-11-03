@@ -12,3 +12,4 @@ export const ResCompany = defineModel({
     metadata: fields.json({ label: 'Metadata' }),
   },
 });
+

@@ -1,0 +1,11 @@
+{
+  "name": "mw_storage",
+  "version": "1.0.0",
+  "category": "Storage",
+  "summary": "MoonWitness Content-Addressed Storage models & legal retention hold",
+  "depends": ["base"],
+  "models": ["mw.storage.backend", "ir.attachment", "ir.legal.hold"],
+  "views": [],
+  "installable": true,
+  "application": true
+}

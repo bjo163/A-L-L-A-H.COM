@@ -24,22 +24,22 @@ plan: "20261103-1946-arsy-fastify-api"
 - [x] 2.7. Implement `registry.ts`: Global model registry & metadata introspection
 
 ### Phase 3: Technical Plugins (`packages/arsy-plugin-*`)
-- [ ] 3.1. Create `packages/arsy-plugin-auth`:
-  - [ ] Password hashing via Argon2id / Bcrypt
-  - [ ] JWT token issuance & verification
-  - [ ] Endpoints: `/api/auth/register`, `/api/auth/login`, `/api/auth/current`, `/api/auth/magic-link`
+- [x] 3.1. Create `packages/arsy-plugin-auth`:
+  - [x] Password hashing via Argon2id / Bcrypt
+  - [x] JWT token issuance & verification
+  - [x] Endpoints: `/api/auth/register`, `/api/auth/login`, `/api/auth/current`, `/api/auth/magic-link`
 - [x] 3.2. Create `packages/arsy-plugin-sdui`:
   - [x] View schema resolver for `tree`, `form`, `kanban`, `search` views
   - [x] Endpoint: `/v1/sdui/{model}/{view_type}`
-- [ ] 3.3. Create `packages/arsy-plugin-llm-gateway`:
-  - [ ] Upstream client with SSRF validation
-  - [ ] Token-bucket rate limiter
-  - [ ] Semantic SHA-256 cache
-  - [ ] Endpoints: `/v1/chat/completions`, `/v1/models`
-- [ ] 3.4. Create `packages/arsy-plugin-storage`:
-  - [ ] Content-Addressed Storage (SHA-256 CAS)
-  - [ ] Legal hold retention checks
-  - [ ] SigV4 AWS S3 authentication utilities
+- [x] 3.3. Create `packages/arsy-plugin-llm-gateway`:
+  - [x] Upstream client with SSRF validation
+  - [x] Token-bucket rate limiter
+  - [x] Semantic SHA-256 cache
+  - [x] Endpoints: `/v1/chat/completions`, `/v1/models`
+- [x] 3.4. Create `packages/arsy-plugin-storage`:
+  - [x] Content-Addressed Storage (SHA-256 CAS)
+  - [x] Legal hold retention checks
+  - [x] SigV4 AWS S3 authentication utilities
 
 ### Phase 4: Business Domain Addons (`addons/*`)
 - [x] 4.1. Define Addon contract & dynamic loader scanning `__manifest__.json`
@@ -47,13 +47,13 @@ plan: "20261103-1946-arsy-fastify-api"
   - [x] Manifest: `addons/base/__manifest__.json`
   - [x] Models: `res.company`, `res.partner`, `res.users`, `res.currency`, `res.country`, `ir.ui.view`
   - [x] Views: SDUI JSON definitions for `res.partner` (tree & form) and `res.company`
-  - [ ] Data: Initial seed fixtures
-- [ ] 4.3. Implement `addons/mw_llm_router`:
-  - [ ] Manifest: `addons/mw_llm_router/__manifest__.json`
-  - [ ] Models: `ai.provider`, `ai.model`, `ai.route`, `ai.virtual_key`, `ai.usage_log`
-- [ ] 4.4. Implement `addons/mw_storage`:
-  - [ ] Manifest: `addons/mw_storage/__manifest__.json`
-  - [ ] Models: `mw.storage.backend`, `ir.attachment`, `ir.legal.hold`
+  - [x] Data: Initial seed fixtures
+- [x] 4.3. Implement `addons/mw_llm_router`:
+  - [x] Manifest: `addons/mw_llm_router/__manifest__.json`
+  - [x] Models: `ai.provider`, `ai.model`, `ai.route`, `ai.virtual_key`, `ai.usage_log`
+- [x] 4.4. Implement `addons/mw_storage`:
+  - [x] Manifest: `addons/mw_storage/__manifest__.json`
+  - [x] Models: `mw.storage.backend`, `ir.attachment`, `ir.legal.hold`
 
 ### Phase 5: Main Runtime Server & Monorepo Integration (`apps/arsy`)
 - [x] 5.1. Initialize `apps/arsy/package.json` and `tsconfig.json`
@@ -66,5 +66,5 @@ plan: "20261103-1946-arsy-fastify-api"
 ### Phase 6: Verification, Doc Contracts & Parity Testing
 - [x] 6.1. Build all packages (`packages/arsy-*`, `apps/arsy`)
 - [x] 6.2. Verify PGlite in-memory boot & DDL auto-migration
-- [ ] 6.3. Update canonical documentation (`README.md`, `CHANGELOG.md`, `BACKLOG.md`)
+- [x] 6.3. Update canonical documentation (`README.md`, `CHANGELOG.md`, `BACKLOG.md`)
 - [x] 6.4. Run `pnpm docs:check` and confirm 100/100 score

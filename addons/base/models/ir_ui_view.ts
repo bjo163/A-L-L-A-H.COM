@@ -20,3 +20,4 @@ export const IrUiView = defineModel({
   },
   indexes: [{ fields: ['model', 'view_type'] }],
 });
+
