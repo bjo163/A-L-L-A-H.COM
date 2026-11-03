@@ -1,0 +1,9 @@
+{
+  "name": "@moonwitness/lint",
+  "version": "0.1.0",
+  "description": "Monorepo linting and architectural invariant rules for MoonWitness",
+  "main": "src/index.js",
+  "type": "module",
+  "dependencies": {},
+  "devDependencies": {}
+}

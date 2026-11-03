@@ -113,3 +113,4 @@ export class IdApiClient {
     this.clearSessionToken();
   }
 }
+

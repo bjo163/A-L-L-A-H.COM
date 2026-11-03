@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "[HUSKY] Running Full Monorepo Build Gate..."
+pnpm dock:build && pnpm headquarter:build && pnpm id:build && pnpm arsy:build || {
+  echo "[HUSKY ERROR] Build gate failed. Push aborted."
+  exit 1
+}
+
+echo "[HUSKY] Pre-push gate passed successfully."

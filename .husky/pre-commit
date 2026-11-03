@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "[HUSKY] Running Documentation Contract & Compliance Gate..."
+node -r tsx scripts/check-doc-contracts.ts || {
+  echo "[HUSKY ERROR] Documentation contract check failed. Commit aborted."
+  exit 1
+}
+
+echo "[HUSKY] Pre-commit quality verification passed successfully."

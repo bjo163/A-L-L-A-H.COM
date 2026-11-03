@@ -33,12 +33,18 @@ Contracts: `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `GOAL.md`, `LEGACY_RECO
   - `apps/arsy/src/controllers/`: Fast-path gateway `/v1/chat/completions`, `/v1/models`, `/v1/sdui`.
   - `apps/dock/`: Next.js 16 (App Router) + React 19 + Tailwind v4 — public homepage (port 3001).
   - `apps/headquarter/`: Next.js 16 (App Router) + React 19 + Tailwind v4 — command center (port 3002).
-  - `packages/ui/`: shadcn/ui shared component library (`@moonwitness/ui`).
-- **Invariants**: Content-addressed write-once storage (SHA-256), fail-closed retention/holds, parameterized queries, tenant isolation (`company_id`).
+  - `apps/id/`: Next.js 16 (App Router) + React 19 + Tailwind v4 — unified account & SSO center (port 3003).
+  - `packages/ui/`: Mandatory atomic UI system (`@moonwitness/ui`: `components`, `blocks`, `primitives`, `raw`, `sfx`, `tokens`, `css`). All client apps MUST import interactive elements from here. Raw ad-hoc styled buttons/inputs in `apps/` are forbidden.
+  - `packages/sdk/`: Universal isomorphic client (`@allah/sdk`). All client-to-Fastify Hub communications and SSO session tokens MUST route through this SDK.
+  - `packages/types/`: Universal shared data contracts (`@moonwitness/types`).
+  - `packages/lint/`: Monorepo architectural rule linter (`@moonwitness/lint`).
+  - `.husky/`: Mandatory local pre-commit (`pnpm docs:check`, typechecks) and pre-push gates.
+- **Invariants**: Content-addressed write-once storage (SHA-256), fail-closed retention/holds, parameterized queries, tenant isolation (`company_id`), zero ORM overlap (embedded PGlite only).
 - **Build gates (must pass 100%)**:
   1. `pnpm dock:build`
   2. `pnpm headquarter:build`
-  3. `pnpm --filter @allah/arsy build`
+  3. `pnpm id:build`
+  4. `pnpm --filter @allah/arsy build`
 - **Doc sync**: Follow the change-to-document matrix in `DOCUMENTATION_CONTRACT.md`.
 - **Git safety**: Review staged diff. No secrets/untracked bloat. Conventional commits + push to `dev` (CI auto-promotes to `main` upon 100% pass).
 

@@ -1,0 +1,15 @@
+{
+  "name": "@moonwitness/types",
+  "version": "0.1.0",
+  "description": "Unified data contracts and types for MoonWitness & A-L-L-A-H.COM ecosystem",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}

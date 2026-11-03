@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { IdApiClient } from '@/lib/api';
+import { mwClient } from '@allah/sdk';
+import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, sfx } from '@moonwitness/ui';
 import { ShieldCheck, KeyRound, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -20,14 +21,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await IdApiClient.signIn({ email, password, deviceName });
-      if (res.success) {
-        router.push('/account');
-      } else {
-        setError(res.error?.message || res.message || 'Invalid email or password');
-      }
+      await mwClient.auth.signIn({ email, password, deviceName });
+      sfx.success();
+      router.push('/account');
     } catch (err: any) {
-      setError(err.message || 'Network error connecting to Arsy Gateway');
+      setError(err.message || 'Invalid credentials or connection error');
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +46,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <Card>
           {error && (
             <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2.5">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -57,53 +55,36 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5 uppercase tracking-wider">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@moonwitness.com"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all"
-              />
-            </div>
+            <Input
+              label="Email Address"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@moonwitness.com"
+            />
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-zinc-300 uppercase tracking-wider">
-                  Password
-                </label>
-              </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all"
-              />
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+            />
 
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wider">
-                Session Device Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={deviceName}
-                onChange={(e) => setDeviceName(e.target.value)}
-                placeholder="e.g. Workstation Chrome"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all"
-              />
-            </div>
+            <Input
+              label="Session Device Name (Optional)"
+              type="text"
+              value={deviceName}
+              onChange={(e) => setDeviceName(e.target.value)}
+              placeholder="e.g. Workstation Chrome"
+            />
 
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-3 px-4 rounded-xl font-medium text-sm text-zinc-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full mt-2"
             >
               {isLoading ? (
                 <>
@@ -116,7 +97,7 @@ export default function LoginPage() {
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-6 pt-6 border-t border-zinc-800/80 text-center">
@@ -127,7 +108,7 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-        </div>
+        </Card>
 
         <div className="mt-8 flex items-center justify-center gap-2 text-xs text-zinc-500">
           <ShieldCheck className="w-4 h-4 text-emerald-500/70" />

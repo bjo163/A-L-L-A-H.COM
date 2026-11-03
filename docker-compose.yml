@@ -1,37 +1,56 @@
 services:
-  server:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-server:${IMAGE_TAG:-latest}
-    pull_policy: always
+  arsy:
+    build:
+      context: .
+      dockerfile: apps/arsy/Dockerfile
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5150:5150"
+      - "5150:5150"
     environment:
-      - LOCO_ENV=production
       - PORT=5150
-      - BINDING=0.0.0.0
-      - DATABASE_URL=sqlite:///app/data/moonwitness.sqlite?mode=rwc
+      - HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-arsy-master-secret-key}
     volumes:
-      - server_data:/app/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:5150/api/v1/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+      - arsy_data:/app/data
 
-  web:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-web:${IMAGE_TAG:-latest}
-    pull_policy: always
+  dock:
+    build:
+      context: .
+      dockerfile: apps/dock/Dockerfile
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3001:3001"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://server:5150
+      - PORT=3001
+      - NEXT_PUBLIC_ARSY_API_URL=http://localhost:5150
     depends_on:
-      server:
-        condition: service_started
+      - arsy
+
+  headquarter:
+    build:
+      context: .
+      dockerfile: apps/headquarter/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NEXT_PUBLIC_ARSY_API_URL=http://localhost:5150
+    depends_on:
+      - arsy
+
+  id:
+    build:
+      context: .
+      dockerfile: apps/id/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - NEXT_PUBLIC_ARSY_API_URL=http://localhost:5150
+    depends_on:
+      - arsy
 
 volumes:
-  server_data:
+  arsy_data:
