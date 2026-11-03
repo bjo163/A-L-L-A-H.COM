@@ -1,7 +1,7 @@
 # TASK — SIX MASTER DNA
 
 Target: feature/moonframe-six-master-dna  
-Status: IN_PROGRESS until push and final report are verified.
+Status: COMPLETED — documentation/specification delivery only.
 
 ## Repository discovery
 
@@ -28,7 +28,14 @@ Status: IN_PROGRESS until push and final report are verified.
 - [x] Add runtime implementation work to BACKLOG.md.
 - [x] Record actual documentation additions in CHANGELOG.md.
 - [x] Keep changes scoped to DNA specifications and related documentation.
-- [ ] Commit the scoped changes.
-- [ ] Push / advance the feature branch and verify its remote head.
-- [ ] Verify all new files and internal links after push.
-- [ ] Finalize this plan and add report.md with commit evidence.
+- [x] Commit the scoped changes.
+- [x] Push / advance the feature branch and verify its remote head.
+- [x] Verify the expected DNA and plan files in the remote tree.
+- [x] Perform a manual internal-link/path review and record verification limitations in report.md.
+
+## Explicitly not delivered
+
+- [ ] Runtime skin selector, token runtime, six component recipe implementations, or Skin Laboratory.
+- [ ] App integration, build verification, production release, or merge to dev/main.
+
+See report.md for commit evidence and verification boundaries.

@@ -46,7 +46,7 @@ Owns product-specific information architecture, content, domain behavior, and ca
 
 ## 3. Current repository compatibility
 
-The current shared UI package is `packages/ui/`, published internally as `@moonwitness/ui`. Its existing source uses Base UI primitives and Tailwind-oriented component recipes. Treat this as the observed baseline.
+The current shared UI package is `../packages/ui/`, published internally as `@moonwitness/ui`. Its existing source uses Base UI primitives and Tailwind-oriented component recipes. Treat this as the observed baseline.
 
 Implementation rules:
 

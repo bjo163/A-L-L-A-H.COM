@@ -18,7 +18,7 @@ These are not six color themes. Each Master DNA defines a world model, visual gr
 
 - **Creative direction:** APPROVED.
 - **Specification:** DOCUMENTED in this directory.
-- **Shared UI foundation:** EXISTS at `packages/ui/`; inspect its actual source before extending it.
+- **Shared UI foundation:** EXISTS at `../packages/ui/`; inspect its actual source before extending it.
 - **Six runtime skins:** NOT YET IMPLEMENTED or verified.
 - **Showcase / Skin Laboratory:** NOT YET IMPLEMENTED or verified.
 
@@ -62,7 +62,7 @@ A documented direction must never be reported as a shipped feature.
 
 ## Relationship to Moon UI
 
-The shared UI package is the functional foundation. The six DNA specifications are the visual and experiential layer. Before implementation, inspect current component exports, tokens, Tailwind integration, and the actual primitive library in `packages/ui/`. Current repository code uses Base UI primitives in its shared package; do not assume Radix is installed or migrate the primitive layer as part of skin implementation.
+The shared UI package is the functional foundation. The six DNA specifications are the visual and experiential layer. Before implementation, inspect current component exports, tokens, Tailwind integration, and the actual primitive library in `../packages/ui/`. Current repository code uses Base UI primitives in its shared package; do not assume Radix is installed or migrate the primitive layer as part of skin implementation.
 
 ## Delivery sequence
 
