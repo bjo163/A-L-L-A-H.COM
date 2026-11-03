@@ -4,12 +4,14 @@ import * as React from 'react';
 import { Button, buttonVariants } from '../components/button';
 import { Badge } from '../components/badge';
 import { cn } from '../lib/utils';
+import { SoundToggle } from './sound-toggle';
 
 export interface EcosystemNavbarProps {
   currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz';
   userName?: string;
   userEmail?: string;
   onSignOut?: () => void;
+  showAuthActions?: boolean;
   className?: string;
 }
 
@@ -18,6 +20,7 @@ export function EcosystemNavbar({
   userName,
   userEmail,
   onSignOut,
+  showAuthActions = true,
   className,
 }: EcosystemNavbarProps) {
   const isSignedIn = Boolean(userEmail);
@@ -95,7 +98,8 @@ export function EcosystemNavbar({
 
         {/* User Identity SSO / Launch Action */}
         <div className="mw-navbar__actions">
-          {isSignedIn ? (
+          <SoundToggle />
+          {showAuthActions && isSignedIn ? (
             <div className="mw-navbar__action-group">
               <a
                 href="http://localhost:3003/account"
@@ -109,7 +113,7 @@ export function EcosystemNavbar({
                 </Button>
               )}
             </div>
-          ) : (
+          ) : showAuthActions ? (
             <div className="mw-navbar__action-group">
               <a
                 href="http://localhost:3003/login"
@@ -124,7 +128,7 @@ export function EcosystemNavbar({
                 Get ID
               </a>
             </div>
-          )}
+          ) : null}
         </div>
         <button
           ref={menuButtonRef}
