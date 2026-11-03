@@ -72,5 +72,52 @@ export class MoonWitnessClient {
       return [];
     }
   }
+
+  async generatePlanSpec(featurePrompt: string): Promise<{ specMd: string; taskMd: string } | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          model: 'dx-reasoning',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are the MoonWitness Spec-Driven Architecture planner. Generate structured spec and tasks.',
+            },
+            {
+              role: 'user',
+              content: `Generate a Spec-Driven Development plan for: "${featurePrompt}". Return JSON with keys "spec" and "tasks" containing markdown text.`,
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const jsonRes = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      const content = jsonRes?.choices?.[0]?.message?.content;
+      if (!content) return null;
+
+      // Try parsing JSON response if model returned json, else format content
+      try {
+        const parsed = JSON.parse(content) as { spec?: string; tasks?: string };
+        if (parsed.spec && parsed.tasks) {
+          return { specMd: parsed.spec, taskMd: parsed.tasks };
+        }
+      } catch {
+        // Fallback to formatted response
+      }
+
+      return {
+        specMd: `# Feature Specification: ${featurePrompt}\n\n## 1. Context & Motivation\n${content}\n\n## 2. Acceptance Criteria\n- [ ] AC1: Feature implemented.\n- [ ] AC2: Verification gates pass.`,
+        taskMd: `# Execution Checklist\n\n- [ ] 1. Implement core components for ${featurePrompt}\n- [ ] 2. Run automated test suites\n- [ ] 3. Update canonical documentation`,
+      };
+    } catch {
+      return null;
+    }
+  }
 }
 

@@ -22,6 +22,7 @@ This file records changes that actually happened. It is not a roadmap and must n
 
 ### Changed
 - Production Compose now pulls prebuilt GHCR images instead of building on the Coolify host.
+- `pnpm dev` now starts the backend first and waits for its HTTP endpoint before starting the web app.
 
 ### Fixed
 - No verified entries recorded yet.

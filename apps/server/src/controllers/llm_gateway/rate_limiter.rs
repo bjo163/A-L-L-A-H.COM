@@ -56,16 +56,19 @@ impl TokenBucketRegistry {
     /// Check and consume tokens for a key. Returns true if allowed.
     pub async fn allow(&self, key: &str, tokens: f64, max_tokens: f64, refill_rate: f64) -> bool {
         let mut buckets = self.buckets.write().await;
-        let bucket = buckets.get_or_insert(
-            key.to_string(),
-            || BucketState {
+        if let Some(bucket) = buckets.get_mut(key) {
+            bucket.try_consume(tokens).is_ok()
+        } else {
+            let mut bucket = BucketState {
                 tokens: max_tokens,
                 max_tokens,
                 refill_rate,
                 last_refill: Instant::now(),
-            },
-        );
-        bucket.try_consume(tokens).is_ok()
+            };
+            let allowed = bucket.try_consume(tokens).is_ok();
+            buckets.push(key.to_string(), bucket);
+            allowed
+        }
     }
 
     /// Return the current token count for a key (after refill).

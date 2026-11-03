@@ -187,5 +187,32 @@ plan_id: "PLAN-${ts}"
 
     return targetDir;
   }
+
+  /**
+   * Creates a plan folder with custom/generated content
+   */
+  static createPlanWithContent(
+    workspaceRoot: string,
+    title: string,
+    specContent: string,
+    taskContent: string
+  ): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'ai-plan';
+
+    const folderName = `${ts}-${slug}`;
+    const targetDir = path.join(workspaceRoot, '.plans', folderName);
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    fs.writeFileSync(path.join(targetDir, 'spec.md'), specContent, 'utf-8');
+    fs.writeFileSync(path.join(targetDir, 'task.md'), taskContent, 'utf-8');
+
+    return targetDir;
+  }
 }
 

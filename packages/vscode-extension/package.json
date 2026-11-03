@@ -25,6 +25,11 @@
         "category": "A-L-L-A-H"
       },
       {
+        "command": "allah.generatePlanWithAI",
+        "title": "MoonWitness: Generate Spec-Driven Plan with AI",
+        "category": "A-L-L-A-H"
+      },
+      {
         "command": "allah.refreshPlans",
         "title": "MoonWitness: Refresh Project Management Plans",
         "category": "A-L-L-A-H"
@@ -76,14 +81,19 @@
     "menus": {
       "view/title": [
         {
-          "command": "allah.createPlan",
+          "command": "allah.generatePlanWithAI",
           "when": "view == allah.views.plans",
           "group": "navigation@1"
         },
         {
-          "command": "allah.refreshPlans",
+          "command": "allah.createPlan",
           "when": "view == allah.views.plans",
           "group": "navigation@2"
+        },
+        {
+          "command": "allah.refreshPlans",
+          "when": "view == allah.views.plans",
+          "group": "navigation@3"
         }
       ]
     },

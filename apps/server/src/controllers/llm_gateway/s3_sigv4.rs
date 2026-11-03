@@ -6,6 +6,7 @@
 use crate::core::security::{constant_time_compare};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
+use hmac::digest::KeyInit;
 use hex;
 
 /// Context for SigV4 signing operations.
@@ -35,8 +36,7 @@ pub fn sign_hmac_sha256(key: &[u8], data: &[u8]) -> Vec<u8> {
     let mut mac = Hmac::<Sha256>::new_from_slice(key).expect("HMAC can take key of any size");
     mac.update(data);
     let result = mac.finalize();
-    let code_bytes = result.into_bytes();
-    code_bytes.to_vec()
+    result.into_bytes().to_vec()
 }
 
 /// URL-encode a string according to AWS SigV4 specifications.

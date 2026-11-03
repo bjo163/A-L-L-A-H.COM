@@ -1,6 +1,5 @@
 use subtle::ConstantTimeEq;
 use url::Url;
-use ipnet::IpNet;
 use sha2::{Digest, Sha256};
 use std::net::IpAddr;
 
@@ -40,7 +39,7 @@ pub fn validate_url_ssrf(url_str: &str) -> Result<(), String> {
             },
             IpAddr::V6(ipv6) => {
                 // Block private IPv6 (fd00::/8, fe80::/10)
-                if ipv6.is_unicast_link_local() || ipv6.is_unicast_unique_local() {
+                if ipv6.is_unicast_link_local() || ipv6.is_unique_local() {
                     return Err("SSRF: private IP address blocked".to_string());
                 }
             }
@@ -57,13 +56,6 @@ pub fn validate_url_ssrf(url_str: &str) -> Result<(), String> {
                 if ipv6.is_unicast_link_local() {
                     return Err("SSRF: link-local address blocked".to_string());
                 }
-            }
-        }
-
-        // Block unique local (fc00::/7)
-        if let Ok(ipnet) = IpNet::new(ip, 8) {
-            if ipnet.is_private() {
-                return Err("SSRF: private IP address blocked".to_string());
             }
         }
     }

@@ -2,9 +2,10 @@
   "name": "moonwitness-platform",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.16.1",
   "scripts": {
     "build": "pnpm -r run build",
-    "dev": "pnpm -r --parallel run dev",
+    "dev": "concurrently --kill-others --success first \"pnpm server\" \"wait-on --timeout 600000 http://127.0.0.1:5150/ && pnpm web:dev\"",
     "web:dev": "pnpm --filter web dev",
     "web:build": "pnpm --filter web build",
     "extension:build": "pnpm --filter @allah/vscode-extension build",
@@ -13,6 +14,8 @@
     "server:migrate": "powershell -Command \"Set-Location apps/server; cargo loco db migrate\""
   },
   "devDependencies": {
-    "tsx": "^4.23.15"
+    "concurrently": "^10.0.6",
+    "tsx": "^4.23.15",
+    "wait-on": "^9.5.1"
   }
 }

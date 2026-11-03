@@ -20,6 +20,8 @@ Run these from the repository root:
 | `pnpm web:build` | Create a production build |
 | `pnpm --filter web lint` | Run the web package linter |
 
+Use root `pnpm dev` to start the server first and launch the web app only after the server responds.
+
 ## Project guidance
 
 - [Web agent guide](AGENTS.md) contains Next.js-specific instructions.

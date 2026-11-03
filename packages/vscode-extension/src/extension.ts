@@ -51,6 +51,52 @@ export function activate(context: vscode.ExtensionContext): void {
     });
   });
 
+  const generatePlanWithAICmd = vscode.commands.registerCommand('allah.generatePlanWithAI', async () => {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      vscode.window.showErrorMessage('No workspace folder open. Open a folder to generate a plan.');
+      return;
+    }
+
+    const featurePrompt = await vscode.window.showInputBox({
+      prompt: 'Describe the feature or problem you want MoonWitness AI to plan',
+      placeHolder: 'e.g. Integrate PostgreSQL replication with failover and retention audit',
+      validateInput: (val) => (!val || !val.trim() ? 'Description cannot be empty' : null),
+    });
+
+    if (!featurePrompt) return;
+
+    vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'MoonWitness: Generating Spec-Driven Plan with AI...',
+        cancellable: false,
+      },
+      async () => {
+        const generated = await client.generatePlanSpec(featurePrompt.trim());
+        let targetDir: string;
+        if (generated) {
+          targetDir = PlanManager.createPlanWithContent(
+            workspaceFolders[0].uri.fsPath,
+            featurePrompt.trim(),
+            generated.specMd,
+            generated.taskMd
+          );
+        } else {
+          // Graceful fallback to local template
+          targetDir = PlanManager.createPlan(workspaceFolders[0].uri.fsPath, featurePrompt.trim());
+        }
+
+        planProvider.refresh();
+        vscode.window.showInformationMessage(`Plan generated: ${targetDir}`);
+        const specUri = vscode.Uri.file(`${targetDir}/spec.md`);
+        vscode.workspace.openTextDocument(specUri).then((doc) => {
+          vscode.window.showTextDocument(doc);
+        });
+      }
+    );
+  });
+
   const refreshPlansCmd = vscode.commands.registerCommand('allah.refreshPlans', () => {
     planProvider.refresh();
     vscode.window.showInformationMessage('Project Management (.plans) refreshed.');
@@ -102,6 +148,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     createPlanCmd,
+    generatePlanWithAICmd,
     refreshPlansCmd,
     toggleTaskCmd,
     testConnCmd,

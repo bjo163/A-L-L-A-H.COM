@@ -41,6 +41,8 @@ Always inspect the current tree and manifests before relying on this summary.
 ## Development
 Inspect `package.json`, `pnpm-workspace.yaml`, `apps/server/Cargo.toml`, and `apps/web/package.json` for exact commands and versions. Use the workspace package manager and app-specific instructions. Do not assume a command exists.
 
+Run `pnpm dev` to start the Rust server, wait until `http://127.0.0.1:5150/` returns successfully (up to 10 minutes for a cold build), and then start the Next.js web app. If the server exits or never becomes ready, the web app will not start. Stopping the web process also stops the server. To run only one side, use `pnpm server` or `pnpm web:dev`.
+
 Never commit secrets, `.env` files, local databases, generated build output, or unrelated user changes.
 
 ## Production deployment
