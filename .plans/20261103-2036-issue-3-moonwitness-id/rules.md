@@ -26,3 +26,4 @@ plan: "20261103-2036-issue-3-moonwitness-id"
 ## 5. Anti-Slop & Quality
 - **Rule 5.1**: Zero placeholder stub files. Every route, view, and component must be fully implemented with real types.
 - **Rule 5.2**: Keyboard accessible (Tab, Enter, Escape), responsive across mobile and desktop, bilingual support (ID/EN).
+

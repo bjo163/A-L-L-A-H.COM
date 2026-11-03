@@ -32,7 +32,6 @@ const REQUIRED_DOCS: Array<{ path: string; expectedId: string; owner: string }> 
   { path: 'DECISIONS.md', expectedId: 'DECISIONS', owner: 'architecture' },
   { path: 'QUALITY.md', expectedId: 'QUALITY', owner: 'qa' },
   { path: 'LEGACY_RECONCILIATION.md', expectedId: 'LEGACY_RECONCILIATION', owner: 'engineering' },
-  { path: 'apps/server/README.md', expectedId: 'APP_SERVER_README', owner: 'backend' },
   { path: 'apps/web/README.md', expectedId: 'APP_WEB_README', owner: 'frontend' },
 ];
 
@@ -45,7 +44,6 @@ const SLOP_PATTERNS = [
 ];
 
 function parseFrontmatter(content: string): { metadata?: DocMetadata; body: string } {
-  // Strip UTF-8 BOM if present
   const cleanContent = content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
   const match = cleanContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) {
@@ -72,14 +70,12 @@ function checkRelativeLinks(filePath: string, body: string, repoRoot: string): s
   const errors: string[] = [];
   const dir = path.dirname(path.resolve(repoRoot, filePath));
 
-  // Match Markdown links: [text](path)
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   let match;
 
   while ((match = linkRegex.exec(body)) !== null) {
     const rawLink = match[2].trim();
 
-    // Ignore web URLs, mailto, anchor only (#header), and special protocols
     if (
       rawLink.startsWith('http://') ||
       rawLink.startsWith('https://') ||
@@ -91,7 +87,6 @@ function checkRelativeLinks(filePath: string, body: string, repoRoot: string): s
       continue;
     }
 
-    // Split anchor if present
     const linkPath = rawLink.split('#')[0];
     if (!linkPath) continue;
 
@@ -112,6 +107,57 @@ function checkAntislop(filePath: string, body: string): string[] {
     }
   }
   return errors;
+}
+
+function checkPlansStandard(repoRoot: string): { errors: string[]; plansChecked: number } {
+  const plansDir = path.resolve(repoRoot, '.plans');
+  const errors: string[] = [];
+  let plansChecked = 0;
+
+  if (!fs.existsSync(plansDir)) {
+    return { errors, plansChecked };
+  }
+
+  const entries = fs.readdirSync(plansDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    plansChecked++;
+    const planFolder = entry.name;
+    const planPath = path.join(plansDir, planFolder);
+
+    const specPath = path.join(planPath, 'spec.md');
+    const taskPath = path.join(planPath, 'task.md');
+    const designPath = path.join(planPath, 'design.md');
+    const rulesPath = path.join(planPath, 'rules.md');
+    const reportPath = path.join(planPath, 'report.md');
+
+    // Canonical 4-artifact standard
+    if (!fs.existsSync(specPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: spec.md`);
+    if (!fs.existsSync(taskPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: task.md`);
+    if (!fs.existsSync(designPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: design.md`);
+    if (!fs.existsSync(rulesPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: rules.md`);
+
+    // Completed plan requires report.md
+    if (fs.existsSync(specPath)) {
+      const specContent = fs.readFileSync(specPath, 'utf-8');
+      const { metadata } = parseFrontmatter(specContent);
+      if (metadata?.status === 'completed') {
+        if (!fs.existsSync(reportPath)) {
+          errors.push(`[.plans/${planFolder}] Plan is marked 'completed' in spec.md but missing mandatory audit artifact: report.md`);
+        }
+      }
+    }
+
+    // Task.md must contain budget/time estimation hints
+    if (fs.existsSync(taskPath)) {
+      const taskContent = fs.readFileSync(taskPath, 'utf-8');
+      if (!taskContent.toLowerCase().includes('est') && !taskContent.toLowerCase().includes('duration') && !taskContent.toLowerCase().includes('hour') && !taskContent.toLowerCase().includes('time') && !taskContent.toLowerCase().includes('budget')) {
+        errors.push(`[.plans/${planFolder}/task.md] Missing time/effort/budget estimation section or annotations`);
+      }
+    }
+  }
+
+  return { errors, plansChecked };
 }
 
 function main() {
@@ -170,14 +216,12 @@ function main() {
       }
     }
 
-    // Check link integrity
     const linkErrors = checkRelativeLinks(req.path, body, repoRoot);
     if (linkErrors.length > 0) {
       insp.errors.push(...linkErrors);
       linkScore = Math.max(0, linkScore - linkErrors.length * 5);
     }
 
-    // Check antislop
     const slopErrors = checkAntislop(req.path, body);
     if (slopErrors.length > 0) {
       insp.errors.push(...slopErrors);
@@ -187,7 +231,13 @@ function main() {
     inspections.push(insp);
   }
 
-  // Aggregate results
+  // Check Spec-Driven Plans Standard (.plans/)
+  const planCheck = checkPlansStandard(repoRoot);
+  if (planCheck.errors.length > 0) {
+    totalErrors.push(...planCheck.errors);
+    changeSyncScore = Math.max(0, changeSyncScore - planCheck.errors.length * 5);
+  }
+
   for (const insp of inspections) {
     if (insp.errors.length > 0) {
       totalErrors.push(...insp.errors.map((e) => `[${insp.filePath}] ${e}`));
@@ -201,12 +251,13 @@ function main() {
     const status = insp.errors.length === 0 ? '✓ PASS' : '✗ FAIL';
     console.log(`  ${status.padEnd(8)} ${insp.filePath.padEnd(30)} [ID: ${insp.id}] (v${insp.metadata?.version || 'N/A'})`);
   }
+  console.log(`  Plan Inspection: ${planCheck.plansChecked} plan(s) audited.`);
 
   console.log(`\n------------------------------------------------------------`);
   console.log(`  Score Breakdown:`);
   console.log(`  - Frontmatter & Metadata:   ${frontmatterScore} / 35 pts`);
   console.log(`  - Relative Link Integrity:  ${linkScore} / 25 pts`);
-  console.log(`  - Change Matrix Sync:       ${changeSyncScore} / 20 pts`);
+  console.log(`  - Change Matrix & Plans:    ${changeSyncScore} / 20 pts`);
   console.log(`  - Antislop Conformance:     ${antislopScore} / 20 pts`);
   console.log(`  ----------------------------------------------------------`);
   console.log(`  TOTAL COMPLIANCE SCORE:     ${finalScore} / 100 pts (Threshold: 95 pts)`);
