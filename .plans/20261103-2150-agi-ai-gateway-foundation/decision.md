@@ -21,3 +21,4 @@ We decided to build the **Multi-Provider AI Gateway & Unified Routing Engine** a
 ## Consequences
 - All subsequent AGI layers (Memory, Tools, Agent Loop) will execute reliably through the Gateway without risk of provider lock-in or unhandled rate limits.
 - Upstream costs and token consumption will be strictly tracked and capped per virtual key in PGlite.
+

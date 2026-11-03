@@ -6,6 +6,9 @@ import { dbEngine } from '@allah/arsy-orm';
 import { SmartRouter } from './router';
 import { GatewayCache } from './cache';
 import { UsageManager } from './usage';
+import { OpenAiAdapter } from './adapters/openai';
+import { GeminiAdapter } from './adapters/gemini';
+import { AnthropicAdapter } from './adapters/anthropic';
 import type { LlmGatewayOptions, ChatCompletionRequest } from './types';
 
 export * from './types';
@@ -77,6 +80,48 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
           { id: 'dx-reasoning', object: 'model', created: Date.now(), owned_by: 'moonwitness' },
         ],
       });
+    }
+  });
+
+  // POST /v1/embeddings (Multi-provider embeddings normalization)
+  fastify.post<{
+    Body: { model: string; input: string | string[]; encoding_format?: 'float' | 'base64' };
+  }>(`${prefix}/embeddings`, async (request, reply) => {
+    const body = request.body || ({} as any);
+    const { model, input, encoding_format } = body;
+
+    if (!model || !input) {
+      reply.status(400);
+      return fail('VALIDATION_ERROR', 'model and input are required');
+    }
+
+    try {
+      // Try to find provider based on model name
+      const modelName = model.toLowerCase();
+      if (modelName.includes('gemini') || modelName === 'text-embedding-004') {
+        const adapter = new GeminiAdapter('gemini', undefined, options.geminiApiKey);
+        const result = await adapter.embeddings({ model, input, encoding_format });
+        return result;
+      } else if (modelName.includes('openai') || modelName.includes('text-embedding')) {
+        const adapter = new OpenAiAdapter('openai', options.defaultUpstreamUrl || 'https://api.openai.com/v1', options.upstreamApiKey);
+        const result = await adapter.embeddings({ model, input, encoding_format });
+        return result;
+      } else {
+        // Default to OpenAI style if unknown, try OpenAI adapter
+        const adapter = new OpenAiAdapter('openai', options.defaultUpstreamUrl || 'https://api.openai.com/v1', options.upstreamApiKey);
+        try {
+          const result = await adapter.embeddings({ model, input, encoding_format });
+          return result;
+        } catch {
+          const adapter2 = new GeminiAdapter('gemini', undefined, options.geminiApiKey);
+          const result = await adapter2.embeddings({ model, input, encoding_format });
+          return result;
+        }
+      }
+    } catch (err: any) {
+      logger.error({ err }, 'Embeddings request failed');
+      reply.status(502);
+      return fail('EMBEDDINGS_ERROR', err.message || 'Embeddings generation failed');
     }
   });
 

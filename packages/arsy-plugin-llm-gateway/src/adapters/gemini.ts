@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { request as undiciRequest } from 'undici';
 import { logger } from '@allah/arsy-core';
-import type { ProviderAdapter } from './base';
+import type { ProviderAdapter, EmbeddingsRequest, EmbeddingsResponse } from './base';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -27,6 +27,59 @@ export class GeminiAdapter implements ProviderAdapter {
 
   isConfigured(): boolean {
     return Boolean(this.apiKey);
+  }
+
+  async embeddings(req: EmbeddingsRequest): Promise<EmbeddingsResponse> {
+    if (!this.apiKey) {
+      throw new Error(`Google Gemini API Key not configured for provider [${this.slug}]`);
+    }
+
+    if (!validateUrlSsrf(this.baseUrl)) {
+      throw new Error(`Gemini Base URL '${this.baseUrl}' rejected by SSRF guard`);
+    }
+
+    const input = Array.isArray(req.input) ? req.input : [req.input];
+    const data: Array<{ object: 'embedding'; index: number; embedding: number[] }> = [];
+
+    for (let idx = 0; idx < input.length; idx++) {
+      const text = input[idx];
+      const payload = {
+        model: `models/${req.model}`,
+        content: {
+          parts: [{ text }],
+        },
+      };
+
+      const url = `${this.baseUrl}/models/${req.model}:embedContent?key=${encodeURIComponent(this.apiKey)}`;
+      const response = await undiciRequest(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        const errorText = await response.body.text().catch(() => '');
+        throw new Error(`Gemini Embeddings Provider returned HTTP ${response.statusCode}: ${errorText}`);
+      }
+
+      const json = (await response.body.json()) as any;
+      const embedding: number[] = Array.isArray(json.embedding?.values) ? json.embedding.values : [];
+      data.push({
+        object: 'embedding',
+        index: idx,
+        embedding,
+      });
+    }
+
+    return {
+      object: 'list',
+      data,
+      model: req.model,
+      usage: {
+        prompt_tokens: input.reduce((acc, t) => acc + Math.ceil((t?.length || 0) / 4), 0),
+        total_tokens: input.reduce((acc, t) => acc + Math.ceil((t?.length || 0) / 4), 0),
+      },
+    };
   }
 
   private transformMessages(messages: ChatCompletionRequest['messages']): {
@@ -232,3 +285,4 @@ export class GeminiAdapter implements ProviderAdapter {
     };
   }
 }
+

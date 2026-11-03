@@ -187,6 +187,13 @@ export class MoonWitnessClient {
       }
     },
 
+    embeddings: async (req: { model: string; input: string | string[]; encoding_format?: 'float' | 'base64' }) => {
+      return this.request('/v1/embeddings', {
+        method: 'POST',
+        body: JSON.stringify(req),
+      });
+    },
+
     listModels: async (): Promise<GatewayModelInfo[]> => {
       const res = await this.request<{ object: string; data: GatewayModelInfo[] }>('/v1/models');
       return res.data || [];
@@ -200,10 +207,53 @@ export class MoonWitnessClient {
       return this.request<GatewayProviderInfo[]>('/v1/gateway/providers');
     },
 
+    getUsage: async (): Promise<GatewayUsageLog[]> => {
+      return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
+    },
+
     getUsageLogs: async (): Promise<GatewayUsageLog[]> => {
       return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
     },
   };
+
+  // Threads & Memory Operations
+  readonly threads = {
+    list: async () => {
+      return this.request('/v1/threads');
+    },
+    create: async (payload: { title?: string; active_model?: string }) => {
+      return this.request('/v1/threads', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    getMessages: async (threadId: string | number) => {
+      return this.request(`/v1/threads/${threadId}/messages`);
+    },
+    addMessage: async (threadId: string | number, payload: { role: string; content: string }) => {
+      return this.request(`/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+  };
+
+  // Qorpus Operations
+  readonly qorpus = {
+    ingest: async (payload: { title: string; category: string; content: string; source?: string }) => {
+      return this.request('/v1/qorpus/ingest', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    search: async (payload: { query: string; limit?: number; min_score?: number }) => {
+      return this.request('/v1/qorpus/search', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+  };
+
 
   // Server-Driven UI (SDUI)
   readonly sdui = {

@@ -99,3 +99,4 @@ export interface LlmGatewayOptions {
   geminiApiKey?: string;
   ollamaBaseUrl?: string;
 }
+

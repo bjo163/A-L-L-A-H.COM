@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { request as undiciRequest } from 'undici';
 import { logger } from '@allah/arsy-core';
-import type { ProviderAdapter } from './base';
+import type { ProviderAdapter, EmbeddingsRequest, EmbeddingsResponse } from './base';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -23,6 +23,56 @@ export class OpenAiAdapter implements ProviderAdapter {
 
   isConfigured(): boolean {
     return Boolean(this.apiKey) || this.baseUrl.includes('localhost') || this.baseUrl.includes('127.0.0.1');
+  }
+
+  async embeddings(req: EmbeddingsRequest): Promise<EmbeddingsResponse> {
+    if (!this.apiKey && !this.baseUrl.includes('localhost') && !this.baseUrl.includes('127.0.0.1')) {
+      throw new Error(`OpenAI API Key not configured for provider [${this.slug}]`);
+    }
+
+    if (!validateUrlSsrf(this.baseUrl)) {
+      throw new Error(`Upstream URL '${this.baseUrl}' rejected by SSRF guard`);
+    }
+
+    const input = Array.isArray(req.input) ? req.input : [req.input];
+    const payload = {
+      model: req.model,
+      input,
+      encoding_format: req.encoding_format || 'float',
+    };
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
+    const response = await undiciRequest(`${this.baseUrl}/embeddings`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      const errorText = await response.body.text().catch(() => '');
+      throw new Error(`OpenAI Embeddings Provider [${this.slug}] returned HTTP ${response.statusCode}: ${errorText}`);
+    }
+
+    const json = (await response.body.json()) as any;
+    return {
+      object: 'list',
+      data: (json.data || []).map((d: any, idx: number) => ({
+        object: 'embedding',
+        index: d.index ?? idx,
+        embedding: d.embedding || [],
+      })),
+      model: json.model || req.model,
+      usage: {
+        prompt_tokens: json.usage?.prompt_tokens || 0,
+        total_tokens: json.usage?.total_tokens || json.usage?.prompt_tokens || 0,
+      },
+    };
   }
 
   async chat(req: ChatCompletionRequest, upstreamModel: string): Promise<ChatCompletionResponse> {
@@ -260,3 +310,4 @@ export class OpenAiAdapter implements ProviderAdapter {
     };
   }
 }
+
