@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { createClient } from './index';
 
 test('session tokens use the injected asynchronous store for auth and requests', async () => {
+  const storedToken = 'unit-test-session-4321';
   let token: string | null = null;
   const calls: Array<{ url: string; headers: Headers }> = [];
   const originalFetch = globalThis.fetch;
@@ -12,7 +13,7 @@ test('session tokens use the injected asynchronous store for auth and requests',
       headers: new Headers(init?.headers),
     });
     const data = String(input).endsWith('/api/auth/sign-in')
-      ? { sessionToken: 'test-mock-token' }
+      ? { sessionToken: storedToken }
       : { id: 'user-1' };
     return new Response(JSON.stringify({ success: true, data }), {
       status: 200,
@@ -31,10 +32,10 @@ test('session tokens use the injected asynchronous store for auth and requests',
     });
 
     await client.auth.signIn({ email: 'user@example.test', password: 'not-a-real-password' });
-    assert.equal(token, 'secure-session-token');
+    assert.equal(token, storedToken);
 
     await client.auth.getCurrentUser();
-    assert.equal(calls[1]?.headers.get('x-session-token'), 'secure-session-token');
+    assert.equal(calls[1]?.headers.get('x-session-token'), storedToken);
 
     await client.auth.signOut();
     assert.equal(token, null);

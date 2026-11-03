@@ -15,6 +15,7 @@ import { runAgent, streamAgent } from './agent/loop';
 import { SwarmCoordinator } from './swarm';
 import { deviceControlPlugin } from './device_control';
 
+export { deviceControlPlugin } from './device_control';
 export * from './types';
 export * from './router';
 export * from './cache';

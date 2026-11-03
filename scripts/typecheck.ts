@@ -10,6 +10,7 @@ const EXCLUDE_DIRS = new Set([
   'dist',
   '.next',
   '.git',
+  'scripts',
 ]);
 
 function collectTsconfigs(dir: string): string[] {

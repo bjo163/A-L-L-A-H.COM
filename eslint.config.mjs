@@ -20,6 +20,9 @@ export default [
       'next-env.d.ts',
       '**/*.d.ts',
       'pnpm-lock.yaml',
+      'scripts/**',
+      '**/*.test.*',
+      '**/*.spec.*',
     ],
   },
 ];

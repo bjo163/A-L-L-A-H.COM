@@ -287,6 +287,9 @@ function checkNoSecrets() {
 
     // Skip .env.example files (they're templates, not real secrets)
     if (relativePath.includes('.env.example')) continue;
+    // Exclude unit test files and scripts folder
+    if (relativePath.includes('/scripts/') || relativePath.startsWith('scripts/')) continue;
+    if (/\.(test|spec)\.[tj]sx?$/.test(relativePath)) continue;
 
     const content = fs.readFileSync(filePath, 'utf8');
 

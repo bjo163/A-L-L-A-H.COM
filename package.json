@@ -15,7 +15,7 @@
     "jizz:dev": "pnpm --filter @moonwitness/jizz dev",
     "jizz:build": "pnpm --filter @moonwitness/jizz build",
     "extension:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter allah-vscode-extension build",
-    "extension:test": "tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts packages/vscode-extension/src/agentPolicy.test.ts packages/vscode-extension/src/localAgentCore.test.ts packages/sdk/src/index.test.ts packages/arsy-orm/src/query_builder.test.ts",
+    "extension:test": "tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts packages/vscode-extension/src/agentPolicy.test.ts packages/vscode-extension/src/localAgentCore.test.ts packages/sdk/src/index.test.ts packages/arsy-orm/src/query_builder.test.ts packages/arsy-plugin-llm-gateway/test/device_control.test.ts",
     "docs:check": "tsx scripts/check-doc-contracts.ts",
     "lint:arch": "node packages/lint/src/check-architecture.mjs",
     "lint": "eslint . --max-warnings 0",
