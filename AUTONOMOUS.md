@@ -1,3 +1,11 @@
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "AUTONOMOUS"
+version: "1.0.0"
+owner: "engineering"
+status: "implemented"
+last_verified: "2026-11-03"
+---
 # AUTONOMOUS.md
 
 Operational contract for autonomous AI execution on A-L-L-A-H.COM.
@@ -6,6 +14,7 @@ Operational contract for autonomous AI execution on A-L-L-A-H.COM.
 - Own outcomes end-to-end. Work independently on safe, reversible tasks. Zero micro-confirmations.
 - Reconcile legacy (`LEGACY_RECONCILIATION.md`) before destructive consolidation.
 - Never claim planned work is implemented. Evidence required for `VERIFIED`.
+- Follow `DOCUMENTATION_CONTRACT.md` for every Markdown change; update only affected canonical documents.
 
 ## Execution Loop
 `DISCOVER` -> `AUDIT` -> `PRIORITIZE` -> `IMPLEMENT` -> `VERIFY` -> `DOCUMENT` -> `PUSH`
@@ -36,12 +45,12 @@ pnpm web:build
 On error: self-diagnose and fix root cause immediately. Do not prompt user.
 
 ### 5. Mandatory Canonical Document Sync
-Update only affected docs:
-- `README.md`: feature status and quickstart.
-- `CHANGELOG.md`: unreleased changes under `Added`, `Fixed`, or `Changed`.
-- `BLUEPRINT.md`: architecture, contracts, invariants.
-- `DESIGN.md`: SDUI schemas, tokens.
-- `BACKLOG.md`: task state updates with evidence.
+Apply the change-to-document matrix in `DOCUMENTATION_CONTRACT.md`. Keep document ownership distinct and update only affected docs. In particular:
+- `README.md`: verified capabilities, setup, and deployment entry point.
+- `CHANGELOG.md`: changes that actually happened.
+- `BLUEPRINT.md` and `DESIGN.md`: architecture and product experience respectively.
+- `BACKLOG.md`: task state and verification evidence.
+- `DECISIONS.md`, `QUALITY.md`, `ROADMAP.md`, and `LEGACY_RECONCILIATION.md`: update only when their respective subjects change.
 
 ### 6. Git Safety & Push
 - Inspect diff before committing. Never commit secrets, local databases, or credentials.

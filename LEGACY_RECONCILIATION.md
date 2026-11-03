@@ -1,3 +1,11 @@
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "LEGACY_RECONCILIATION"
+version: "1.0.0"
+owner: "engineering"
+status: "implemented"
+last_verified: "2026-11-03"
+---
 # LEGACY_RECONCILIATION.md
 ## MoonWitness Legacy Discovery, Preservation & Unification
 

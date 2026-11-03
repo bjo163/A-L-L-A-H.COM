@@ -82,10 +82,32 @@ jobs:
       - name: Build Extension
         run: pnpm extension:build
 
+  verify-docs:
+    name: Verify Documentation Contract & Scoring
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check Doc Contract & Scoring Gate
+        run: pnpm docs:check
+
   promote-to-main:
     name: Promote dev to main
     runs-on: ubuntu-latest
-    needs: [verify-server, verify-web, verify-extension]
+    needs: [verify-server, verify-web, verify-extension, verify-docs]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - name: Check out dev branch
@@ -105,3 +127,4 @@ jobs:
           git checkout main || git checkout -b main origin/main
           git merge --ff-only dev
           git push origin main
+

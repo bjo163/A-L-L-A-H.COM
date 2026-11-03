@@ -1,58 +1,30 @@
-# Welcome to Loco :train:
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "APP_SERVER_README"
+version: "0.1.0"
+owner: "backend"
+status: "implemented"
+last_verified: "2026-11-03"
+---
+# Server Application
 
-[Loco](https://loco.rs) is a web and API framework running on Rust.
+The Rust backend is in this directory. The application uses Loco and SeaORM; check `Cargo.toml`, source, and migrations for the current modules and capabilities.
 
-This is the **SaaS starter** which includes a `User` model and authentication based on JWT.
-It also include configuration sections that help you pick either a frontend or a server-side template set up for your fullstack server.
+## Commands
 
+Run these from the repository root:
 
-## Quick Start
+| Command | Purpose |
+|---|---|
+| `pnpm server` | Start the development server |
+| `pnpm server:migrate` | Apply database migrations |
+| `cargo check --manifest-path apps/server/Cargo.toml` | Check Rust compilation |
+| `cargo test --manifest-path apps/server/Cargo.toml` | Run server tests |
 
-```sh
-cargo loco start
-```
+## Project guidance
 
-```sh
-$ cargo loco start
-Finished dev [unoptimized + debuginfo] target(s) in 21.63s
-    Running `target/debug/myapp start`
+- [Server agent guide](AGENTS.md) contains Loco-specific implementation guidance.
+- [Loco skill](.claude/skills/loco/SKILL.md) and its linked recipes document framework workflows.
+- [Root quality standards](../../QUALITY.md) define the shared verification requirements.
 
-    :
-    :
-    :
-
-controller/app_routes.rs:203: [Middleware] Adding log trace id
-
-                      ▄     ▀
-                                 ▀  ▄
-                  ▄       ▀     ▄  ▄ ▄▀
-                                    ▄ ▀▄▄
-                        ▄     ▀    ▀  ▀▄▀█▄
-                                          ▀█▄
-▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▀▀█
- ██████  █████   ███ █████   ███ █████   ███ ▀█
- ██████  █████   ███ █████   ▀▀▀ █████   ███ ▄█▄
- ██████  █████   ███ █████       █████   ███ ████▄
- ██████  █████   ███ █████   ▄▄▄ █████   ███ █████
- ██████  █████   ███  ████   ███ █████   ███ ████▀
-   ▀▀▀██▄ ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀ ██▀
-       ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-                https://loco.rs
-
-environment: development
-   database: automigrate
-     logger: debug
-compilation: debug
-      modes: server
-
-listening on http://localhost:5150
-```
-
-## Full Stack Serving
-
-You can check your [configuration](config/development.yaml) to pick either frontend setup or server-side rendered template, and activate the relevant configuration sections.
-
-
-## Getting help
-
-Check out [a quick tour](https://loco.rs/docs/tutorials/the-tour/) or [build your first app](https://loco.rs/docs/tutorials/your-first-app/).
+Configuration, models, controllers, migrations, tests, and assets are maintained in this application directory. Verify current paths in the source tree before relying on examples.

@@ -1,10 +1,19 @@
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "AGENTS"
+version: "1.0.0"
+owner: "engineering"
+status: "implemented"
+last_verified: "2026-11-03"
+---
 # AGENTS.md
 
 Target: `https://github.com/bjo163/A-L-L-A-H.COM.git` (branch: `dev`)
-Contract: `AUTONOMOUS.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`
+Contracts: `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`
 
 ## Universal Engineering Rules
 - **Autonomous execution**: Read `AUTONOMOUS.md`. Zero-confirmation loop for safe tasks.
+- **Documentation**: Follow `DOCUMENTATION_CONTRACT.md`; update only the canonical docs affected by a change.
 - **Product & legacy integrity**: A-L-L-A-H.COM unifies MoonWitness & Empire of the Light. Follow `LEGACY_RECONCILIATION.md`. Preserve provenance; distinguish verified implementation from narrative/plan.
 - **Architecture**:
   - `apps/server/src/core/`: Ql-Orm engine, BaseModel, Storage, Router state.
@@ -16,7 +25,7 @@ Contract: `AUTONOMOUS.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`
   1. `pnpm server:migrate`
   2. `cargo check --manifest-path apps/server/Cargo.toml`
   3. `pnpm web:build`
-- **Doc sync**: Concurrently update `README.md`, `CHANGELOG.md`, `BLUEPRINT.md`, `DESIGN.md`, `BACKLOG.md`.
+- **Doc sync**: Follow the change-to-document matrix in `DOCUMENTATION_CONTRACT.md`.
 - **Git safety**: Review staged diff. No secrets/untracked bloat. Conventional commits + push to `dev` (CI auto-promotes to `main` upon 100% pass).
 
 <!-- antislop:start -->

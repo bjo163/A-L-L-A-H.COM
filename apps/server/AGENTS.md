@@ -1,5 +1,7 @@
 # Agent guide for this Loco app
 
+Follow the repository-wide [AGENTS.md](../../AGENTS.md) and [documentation contract](../../DOCUMENTATION_CONTRACT.md). This guide adds Loco-specific instructions.
+
 This is a [Loco](https://loco.rs) app — **Rails for Rust**. When you are unsure
 how something should work here, the answer is almost always "the way Rails does
 it." Where Loco diverges, it is because Rust forced it.

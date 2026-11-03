@@ -1,8 +1,16 @@
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "DESIGN"
+version: "1.0.0"
+owner: "product-design"
+status: "implemented"
+last_verified: "2026-11-03"
+---
 # DESIGN.md
-## Empire of the Light — Product Experience & Moon UI Doctrine
+## Empire of the Light â€” Product Experience & Moon UI Doctrine
 
 ## Purpose
-Create one coherent design language for A-L-L-A-H.COM while preserving the distinct identity of MoonWitness and each product. The target is a distinctive, premium, cinematic, carefully crafted interface—not a generic SaaS dashboard or default component-library layout.
+Create one coherent design language for A-L-L-A-H.COM while preserving the distinct identity of MoonWitness and each product. The target is a distinctive, premium, cinematic, carefully crafted interfaceâ€”not a generic SaaS dashboard or default component-library layout.
 
 ## Principles
 - Purpose before decoration; every element communicates hierarchy, state, or meaning.
@@ -15,7 +23,7 @@ Create one coherent design language for A-L-L-A-H.COM while preserving the disti
 - Honest loading, empty, error, offline, permission, and success states.
 
 ## Empire of the Light visual DNA
-Use cinematic light, atmospheric depth, celestial geometry, refined surfaces, and subtle intentional motion where appropriate. Avoid noisy decoration and generic sci-fi clichés. Reuse approved MoonWitness and A-L-L-A-H.COM canon/assets; do not discard established identity without a documented decision.
+Use cinematic light, atmospheric depth, celestial geometry, refined surfaces, and subtle intentional motion where appropriate. Avoid noisy decoration and generic sci-fi clichÃ©s. Reuse approved MoonWitness and A-L-L-A-H.COM canon/assets; do not discard established identity without a documented decision.
 
 ## Moon UI
 Evaluate Moon UI as the shared foundation. Maintain tokens for color, typography, spacing, radii, elevation, motion; layout primitives; accessible components; iconography; data visualization; navigation/overlays; theme behavior; responsive rules; and component states.

@@ -8,8 +8,11 @@
     "web:dev": "pnpm --filter web dev",
     "web:build": "pnpm --filter web build",
     "extension:build": "pnpm --filter @allah/vscode-extension build",
+    "docs:check": "tsx scripts/check-doc-contracts.ts",
     "server": "powershell -Command \"Set-Location apps/server; cargo loco start\"",
     "server:migrate": "powershell -Command \"Set-Location apps/server; cargo loco db migrate\""
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }
-

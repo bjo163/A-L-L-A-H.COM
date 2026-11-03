@@ -1,3 +1,11 @@
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "QUALITY"
+version: "1.0.0"
+owner: "qa"
+status: "implemented"
+last_verified: "2026-11-03"
+---
 # QUALITY.md
 ## Quality Standards & Definition of Done
 
