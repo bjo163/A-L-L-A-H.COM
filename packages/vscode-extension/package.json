@@ -15,7 +15,9 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:allah.listModels",
+    "onCommand:allah.testConnection"
   ],
   "contributes": {
     "commands": [
@@ -207,8 +209,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/extension.ts --format cjs --external vscode --no-shims --clean",
-    "watch": "tsup src/extension.ts --format cjs --external vscode --watch",
+    "build": "tsup --config tsup.config.ts",
+    "watch": "tsup --config tsup.config.ts --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

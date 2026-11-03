@@ -1,9 +1,8 @@
-import type { ToolResult } from '@moonwitness/types';
+import type { ToolResult, AgentThought, AgentToolCallEvent, AgentToolResultEvent, AgentSduiEvent, AgentRunRequest, AgentRunResponse } from '@moonwitness/types';
 import { SmartRouter } from '../router';
 import { toolRegistry } from '../tools';
 import crypto from 'crypto';
 import { logger } from '@allah/arsy-core';
-import type { AgentThought, AgentToolCallEvent, AgentToolResultEvent, AgentSduiEvent, AgentRunRequest, AgentRunResponse } from '@moonwitness/types';
 
 type SSECallback = (event: string, data: string) => void;
 

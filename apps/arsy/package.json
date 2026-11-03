@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsup src/main.ts --format cjs --clean",
-    "start": "node dist/main.js"
+    "start": "node dist/main.cjs"
   },
   "dependencies": {
     "@allah/arsy-core": "workspace:*",

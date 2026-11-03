@@ -76,3 +76,4 @@ sequenceDiagram
   - `code`: Machine-readable code (e.g. `ERR_IR_CYCLIC_DEPENDENCY`, `ERR_INVALID_PROPERTY_TYPE`).
   - `path`: JSON pointer to the offending node (e.g. `/children/2/attributes/source`).
   - `message`: Clear, actionable explanation without slop.
+

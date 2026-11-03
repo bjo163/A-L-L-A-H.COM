@@ -48,7 +48,19 @@ export class SchemaMigrator {
         'company_id INTEGER',
       ];
 
+      const reservedColumns = new Set([
+        'id',
+        'active',
+        'create_date',
+        'write_date',
+        'create_uid',
+        'write_uid',
+        'company_id',
+      ]);
       for (const [fieldName, fieldDef] of Object.entries(model.fields)) {
+        if (reservedColumns.has(fieldName)) {
+          continue;
+        }
         const sqlType = this.mapFieldToSqlType(fieldDef);
         const nullable = fieldDef.required ? 'NOT NULL' : '';
         const unique = fieldDef.unique ? 'UNIQUE' : '';
@@ -83,4 +95,3 @@ export class SchemaMigrator {
     logger.info('Schema sync complete.');
   }
 }
-

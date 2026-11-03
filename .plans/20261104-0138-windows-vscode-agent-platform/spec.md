@@ -1,6 +1,6 @@
 ---
 title: "Windows VS Code Agent and Remote Operations"
-status: "in_progress"
+status: "completed"
 timestamp: "2026-11-04T01:38:00+07:00"
 author: "Copilot"
 target_branch: "dev"

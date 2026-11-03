@@ -25,3 +25,4 @@ parent_issue: 5
 ## 3. Code Purity & Antislop
 - Zero `any` or ambiguous typing in `@moonwitness/types/ir`.
 - No raw console statements; all compilation logs must flow through structured pino loggers.
+

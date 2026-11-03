@@ -72,3 +72,4 @@ flowchart LR
   });
   ```
 - Optimistic UI updates update component state immediately with automatic rollback on network error.
+
