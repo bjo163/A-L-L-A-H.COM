@@ -641,6 +641,22 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/sentinel-radius:
+    dependencies:
+      '@allah/arsy-core':
+        specifier: workspace:*
+        version: link:../arsy-core
+      '@allah/arsy-orm':
+        specifier: workspace:*
+        version: link:../arsy-orm
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.23)(supports-color@10.2.2)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/types:
     devDependencies:
       tsup:
