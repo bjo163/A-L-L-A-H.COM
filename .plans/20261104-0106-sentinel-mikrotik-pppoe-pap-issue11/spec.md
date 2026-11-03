@@ -1,6 +1,6 @@
 ---
 title: "SENTINEL Phase 2: MikroTik PPPoE PAP Authentication End-to-End (Issue #11)"
-status: "proposed"
+status: "completed"
 timestamp: "2026-11-04T01:06:00+07:00"
 author: "Antigravity Assistant"
 target_branch: "dev"
