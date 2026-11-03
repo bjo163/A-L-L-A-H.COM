@@ -9,6 +9,17 @@ last_verified: "2026-11-03"
 
 # CHANGELOG.md
 
+## 2026-11-03 - Six DNA Shared UI Skin Foundation
+
+### Added
+- **MoonFrame skin registry** (`packages/ui/src/skins`): typed IDs, semantic tokens, SSR-safe root selection, and package-owned style recipes for all six approved DNA worlds.
+- **Application skin assignments**: Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, and WORLD OBSERVATORY / Mycelium.
+- **Skin contract tests**: registry/fallback, server-rendered skin selection, and semantic contrast checks.
+
+### Changed
+- Shared UI primitives and navigation now consume root-scoped skin recipes; the existing Base UI foundation and component behavior remain shared.
+- Skin Laboratory comparison and full visual verification remain pending.
+
 ## 2026-11-03 - IDE Agent Workbench & Multi-Agent Swarm Orchestration (AGI Phase 5)
 
 ### Added

@@ -191,7 +191,7 @@ class AgentLoop {
     }
   }
 
-  streamSessionEvents(sessionId: string, callback: SSECallback): void {
+  async streamSessionEvents(sessionId: string, callback: SSECallback): Promise<void> {
     const session = this.getSession(sessionId);
     if (!session) return;
 
@@ -202,7 +202,7 @@ class AgentLoop {
     }));
 
     // Execute step-by-step, emitting events via callback
-    this.executeStepWithCallbacks(sessionId, callback);
+    await this.executeStepWithCallbacks(sessionId, callback);
   }
 
   private async executeStepWithCallbacks(sessionId: string, callback: SSECallback): Promise<void> {

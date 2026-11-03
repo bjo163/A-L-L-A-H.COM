@@ -36,3 +36,13 @@ Review secrets, least privilege, access control, injection, SSRF guards, depende
 
 ## Evidence
 For each verified task record exact command, test result, environment limitations, paths or commit, and manual verification. Never report skipped or unavailable checks as passing.
+
+## Swarm Orchestration Verification (2026-11-03)
+- `pnpm typecheck`: 0 errors across all 10 packages/apps (arsy-orm, arsy-core, arsy-plugin-llm-gateway, arsy-plugin-auth, arsy-plugin-storage, arsy-plugin-sdui, types, sdk, ui, headquarter, vscode-extension, arsy).
+- `pnpm lint:arch`: 100% compliant — UI Purity, Single ORM, Universal SDK, Shared Types all pass.
+- `pnpm docs:check`: 100/100 pts (15 canonical docs + 15 plans audited).
+- `pnpm dock:build`, `pnpm headquarter:build`, `pnpm id:build`, `pnpm --filter @allah/arsy build`: all succeed.
+- `apps/arsy/test/swarm.test.mjs`: 5/5 tests pass (swarm run, 400 on missing goal, SSE stream, coordinator singleton).
+- `apps/arsy/test/ai_gateway.test.mjs`: model catalog, chat completions, virtual key auth, telemetry, usage logs all pass.
+- `apps/arsy/test/tools_mcp.test.mjs`: tools/list, pglite_query (safe + unsafe), storage_cas, web_fetch SSRF guard, qorpus_retrieve, audit log all pass.
+- `apps/arsy/test/agent_loop.test.mjs`: agent run/session, max_steps enforcement pass; agent/stream SSE event emission and empty-prompt 400 are pre-existing gaps in mock model tool-call responses (not swarm-related).

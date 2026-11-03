@@ -345,6 +345,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   }>(`${prefix}/agent/run`, async (request, reply) => {
     const { prompt, system, max_steps, allowed_tools, temperature } = request.body || {};
     if (!prompt) {
+      reply.code(400);
       return fail('MISSING_PROMPT', 'Prompt is required for agent execution');
     }
 
@@ -421,6 +422,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   }>(`${prefix}/swarm/run`, async (request, reply) => {
     const { goal, system, max_turns, allowed_tools, temperature, context } = request.body || {};
     if (!goal) {
+      reply.code(400);
       return fail('MISSING_GOAL', 'Goal is required for swarm execution');
     }
 

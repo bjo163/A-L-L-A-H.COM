@@ -9,6 +9,13 @@ last_verified: "2026-11-03"
 
 # BACKLOG.md
 
+## MOONFRAME-SIX-DNA-UI-SKINS: Shared UI skin engine and app assignments
+- Priority: P0
+- Status: IMPLEMENTED; VISUAL VERIFICATION PENDING
+- Outcome: `@moonwitness/ui` exposes six typed skin definitions, semantic token roles, a deterministic server-rendered `SkinRoot`, and shared component recipes. Dock uses Imperium Lumen, Headquarter uses Nexus Paradox, ID uses Lunar Chronicles, and WORLD OBSERVATORY uses Mycelium. The Skin Laboratory and app-specific composition remain deferred.
+- Acceptance: All six IDs are registered; shared component behavior remains semantic and accessible; four consumer roots select the approved skin; `apps/web` remains unchanged; no full verification claim without Skin Laboratory evidence.
+- Verification: See `.plans/20261103-2359-six-dna-ui-skins/report.md` when complete.
+
 ## SWARM-ORCHESTRATION: Autonomous IDE Agent Workbench & Multi-Agent Swarm Orchestration
 - Priority: P0
 - Status: VERIFIED
