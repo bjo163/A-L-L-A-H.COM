@@ -4,6 +4,7 @@ import { MoonWitnessClient } from './client';
 import { ArsyStatusTreeDataProvider, ModelTreeDataProvider } from './treeProvider';
 import { PlanTreeDataProvider } from './planTreeProvider';
 import { PlanManager } from './planManager';
+import { AgentWorkbenchProvider } from './agentWorkbench';
 import type { PlanItem, TaskItem, TaskStatus } from './planManager';
 
 function isTaskItem(value: unknown): value is TaskItem {
@@ -179,6 +180,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const modelProvider = new ModelTreeDataProvider(client);
   const arsyStatusProvider = new ArsyStatusTreeDataProvider(client);
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  const workbenchProvider = new AgentWorkbenchProvider(context.extensionUri);
 
   statusBarItem.command = 'allah.testConnection';
   context.subscriptions.push(
@@ -186,6 +188,7 @@ export function activate(context: vscode.ExtensionContext): void {
     planProvider,
     modelProvider,
     arsyStatusProvider,
+    vscode.window.registerWebviewViewProvider(AgentWorkbenchProvider.viewType, workbenchProvider),
     vscode.window.registerTreeDataProvider('allah.views.plans', planProvider),
     vscode.window.registerTreeDataProvider('allah.views.models', modelProvider),
     vscode.window.registerTreeDataProvider('allah.views.arsy', arsyStatusProvider)

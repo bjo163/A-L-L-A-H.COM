@@ -95,6 +95,11 @@
           "id": "allah.views.models",
           "name": "Gateway Model Catalog",
           "icon": "$(symbol-property)"
+        },
+        {
+          "id": "allah.agentWorkbench",
+          "name": "Agent Workbench",
+          "icon": "$(hubot)"
         }
       ]
     },
