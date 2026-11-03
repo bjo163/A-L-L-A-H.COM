@@ -3,10 +3,9 @@ services:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
-    container_name: moonwitness-server
     restart: unless-stopped
     ports:
-      - "5150:5150"
+      - "127.0.0.1:5150:5150"
     environment:
       - LOCO_ENV=production
       - PORT=5150
@@ -14,21 +13,27 @@ services:
       - DATABASE_URL=sqlite:///app/data/moonwitness.sqlite?mode=rwc
     volumes:
       - server_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:5150/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    container_name: moonwitness-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - NODE_ENV=production
+      - PORT=3000
       - NEXT_PUBLIC_API_URL=http://server:5150
     depends_on:
-      - server
+      server:
+        condition: service_started
 
 volumes:
   server_data:
-    driver: local
