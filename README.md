@@ -79,3 +79,4 @@ Stack ini dioptimasi penuh untuk **Coolify**:
 - Gunakan Git Repository: `https://github.com/bjo163/A-L-L-A-H.COM.git` (Branch: `main`).
 - Build Pack otomatis: **Docker Compose**.
 - Port loopback terisolasi (`127.0.0.1:5150` & `127.0.0.1:3000`) yang aman di balik reverse proxy Traefik Coolify.
+

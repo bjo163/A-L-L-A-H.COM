@@ -45,6 +45,27 @@ unic-langid = { version = "0.9" }
 # /view engine
 axum-extra = { version = "0.10", features = ["form"] }
 sha2 = "0.11.1"
+# /LLM gateway upstream proxy + streaming
+reqwest = { version = "0.12", default-features = false, features = [
+  "rustls-tls",
+  "json",
+  "stream",
+  "http2",
+] }
+# constant-time comparison for digests & API-key hashes
+subtle = "2"
+# URL parsing + SSRF guard
+url = "2"
+ipnet = "2"
+# in-memory LRU for semantic cache
+lru = "0.13"
+# random token generation
+rand = { version = "0.8", features = ["std"] }
+# AWS SigV4 signing for S3 content-addressed verifier
+hmac = "0.12"
+hex = { version = "0.4", features = ["alloc"] }
+# futures streaming helpers
+futures = { version = "0.3", default-features = false, features = ["std"] }
 
 [[bin]]
 name = "dx_server-cli"

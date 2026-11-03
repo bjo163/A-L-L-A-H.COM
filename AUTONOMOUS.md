@@ -72,3 +72,4 @@ Setiap ada perubahan kode atau penambahan fitur, **4 dokumen kanonik berikut WAJ
 - Push langsung ke remote:
   `git push origin main`
 - **Definition of Done**: Tugas hanya selesai jika git status menunjukkan `working tree clean` dan commit telah mendarat di branch `main` repositori `https://github.com/bjo163/A-L-L-A-H.COM.git`.
+

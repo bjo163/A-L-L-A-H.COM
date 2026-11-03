@@ -28,3 +28,4 @@ Dokumen ini mendefinisikan cetak biru arsitektur menyeluruh, batas domain, kontr
    - Permintaan chat completion diarahkan menggunakan hash map in-memory (`Arc<RwLock<RoutingTable>>`). Database hanya diakses saat booting atau event cache invalidation.
 3. **Multi-Company Data Isolation**:
    - Setiap transaksi dan token key terikat pada `company_id`. Row-level security menjamin ketiadaan kebocoran data antar tenant.
+

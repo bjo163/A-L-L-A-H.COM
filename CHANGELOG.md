@@ -36,3 +36,4 @@ Seluruh perubahan, penambahan fitur, audit keamanan, dan pembaruan arsitektur pa
 ### Security & Optimization
 - Base image Docker di-upgrade ke Debian Bookworm untuk mengatasi masalah mirror 404 security lama.
 - Integrasi loopback ports untuk mencegah pembocoran port plaintext HTTP di luar proxy Traefik Coolify.
+

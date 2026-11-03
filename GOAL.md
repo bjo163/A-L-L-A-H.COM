@@ -48,3 +48,4 @@ Tugas hanya dianggap selesai jika seluruh verifikasi lolos, 4 dokumen terupdate,
 - **Untuk Target Khusus / Sprint Spesifik**: Anda bisa menambahkan 1 baris target di baris paling atas prompt, contoh:
   > `TARGET SPRINT: Hubungkan live provider DeepSeek & Groq dengan streaming SSE chunk di LLM Router controller.`
 - Agen akan secara otonom mengintegrasikan target tersebut ke dalam seluruh siklus `AUTONOMOUS.md` hingga ter-push ke GitHub.
+
