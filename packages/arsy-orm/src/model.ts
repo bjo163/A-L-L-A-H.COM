@@ -40,6 +40,42 @@ export class ModelDefinition<TFields extends Record<string, FieldDefinition> = R
   }
 }
 
+export class Model<TFields extends Record<string, FieldDefinition> = Record<string, FieldDefinition>> {
+  protected readonly $fields: TFields;
+  protected readonly $indexes: ModelIndex[];
+  protected readonly $name: string;
+  protected readonly $tableName: string;
+  protected readonly $displayName: string;
+
+  constructor(fields: TFields, indexes: ModelIndex[] = [], config: { name: string; tableName: string; displayName?: string } = { name: '', tableName: '', displayName: '' }) {
+    this.$fields = fields;
+    this.$indexes = indexes;
+    this.$name = config.name;
+    this.$tableName = config.tableName;
+    this.$displayName = config.displayName || config.name;
+  }
+
+  get name(): string {
+    return this.$name;
+  }
+
+  get tableName(): string {
+    return this.$tableName;
+  }
+
+  get displayName(): string {
+    return this.$displayName;
+  }
+
+  get fields(): TFields {
+    return this.$fields;
+  }
+
+  get indexes(): ModelIndex[] {
+    return this.$indexes;
+  }
+}
+
 export function defineModel<TFields extends Record<string, FieldDefinition>>(
   config: ModelConfig<TFields>
 ): ModelDefinition<TFields> {

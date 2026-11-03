@@ -1,4 +1,5 @@
-import { defineModel, fields, modelRegistry } from './index';
+import { defineModel, fields } from './';
+import { modelRegistry } from './registry';
 
 export const AuthUser = defineModel({
   name: 'auth.user',
