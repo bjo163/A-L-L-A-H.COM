@@ -19,14 +19,17 @@ Operational contract for autonomous AI execution on A-L-L-A-H.COM.
 ## Execution Loop
 `DISCOVER` -> `PLAN (.plans/)` -> `AUDIT` -> `PRIORITIZE` -> `IMPLEMENT` -> `VERIFY` -> `DOCUMENT` -> `PUSH`
 
-### 1. Research & Spec-Driven Planning (4-Artifact Standard)
+### 1. Research & Spec-Driven Planning (Canonical Artifact Standard)
 - Consult `bjo163/*` (`moonwitnessxv`, `echolog`, `ql-orm`, `ql_ai`, `mwx-isp`) + Odoo/OpenDAL standards.
 - Select highest-value safe task from `BACKLOG.md`.
-- Create or update `.plans/<timestamp>-<slug>/` containing exactly 4 canonical artifacts:
+- Create or update `.plans/<timestamp>-<slug>/` containing:
   1. `spec.md`: Functional architecture, requirements, and acceptance criteria.
-  2. `task.md`: Actionable checklist with real-time status checkoff.
+  2. `task.md`: Actionable checklist with estimated durations/budget and real-time status checkoff (`- [ ]` to `- [/]` or `- [x]`).
   3. `design.md`: UX/UI composition, interaction states, and API contract specifications.
   4. `rules.md`: Invariants, security constraints, and boundary rules (e.g. tenant isolation, anti-slop, SSRF guard).
+  5. `conflict.md`: (Optional/When needed) For unresolved questions, ambiguous legacy code, or architectural conflicts requiring human confirmation with explicit option checkboxes.
+  6. `decision.md`: (Optional/When needed) Architectural Decision Records (ADR).
+  7. `report.md`: (Mandatory on completion) Final verification report with actual durations, budget variance, and proof evidence.
 - **Mandatory Live Task Checkoff**: Update `task.md` checkboxes (`- [x]`) and `spec.md` frontmatter status (`in_progress`, `completed`) as tasks transition so VS Code Extension and human operators see real-time progress.
 
 ### 2. Security & Integrity Audit
