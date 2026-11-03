@@ -3,7 +3,7 @@ id: WORLD-OBSERVATORY-TASKS
 version: 1.0.0
 owner: engineering
 status: proposed
-progress: 0/140
+progress: 0/258
 ---
 
 # WORLD OBSERVATORY — Granular Execution Checklist
