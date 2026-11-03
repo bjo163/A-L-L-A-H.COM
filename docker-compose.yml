@@ -14,8 +14,6 @@ services:
       - DATABASE_URL=sqlite:///app/data/moonwitness.sqlite?mode=rwc
     volumes:
       - server_data:/app/data
-    networks:
-      - moonwitness-net
 
   web:
     build:
@@ -30,13 +28,7 @@ services:
       - NEXT_PUBLIC_API_URL=http://server:5150
     depends_on:
       - server
-    networks:
-      - moonwitness-net
 
 volumes:
   server_data:
     driver: local
-
-networks:
-  moonwitness-net:
-    driver: bridge
