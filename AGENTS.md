@@ -1,39 +1,39 @@
-# AGENTS.md: Project Guidance for AI Coding Agents
+# AGENTS.md
+## Universal Engineering Rules
 
-Repository: **A-L-L-A-H.COM** (MoonWitness Unified Platform)  
-Target Remote: `https://github.com/bjo163/A-L-L-A-H.COM.git` (Branch: `main`)
+All agents must follow GOAL.md and AUTONOMOUS.md. Read app-level AGENTS.md before changing that app.
 
-Semua agen coding yang bekerja di repositori ini harus mematuhi aturan berikut:
+## Product and legacy integrity
+- A-L-L-A-H.COM is the unified home and continuation of the MoonWitness journey and Empire of the Light ecosystem.
+- Preserve MoonWitness Reborn, MoonWitness XV, and earlier-generation provenance.
+- Follow LEGACY_RECONCILIATION.md before migration, rewrite, archive, or retirement.
+- Do not force every product into one application.
+- Do not recreate existing functionality before checking whether it can be reused.
+- Distinguish verified facts, implementation, plans, creative narrative, interpretation, and hypotheses.
 
----
+## Engineering
+- Inspect actual source, manifests, framework versions, tests, and runtime behavior.
+- Follow local framework documentation and app-level AGENTS.md.
+- Prefer focused, testable changes and root-cause fixes.
+- Avoid unnecessary dependencies, duplicate abstractions, dead code, and fake integrations.
+- Validate inputs and enforce authorization at trust boundaries.
+- Protect tenant/user data and use least privilege.
+- Never expose secrets in source, logs, examples, or commits.
 
-## 📜 Canonical Operating Contract: `AUTONOMOUS.md`
+## Documentation
+- BACKLOG.md is the single actionable task list.
+- ROADMAP.md is strategic and must not duplicate task-level detail.
+- DECISIONS.md records accepted decisions only.
+- CHANGELOG.md records actual changes only.
+- Update affected docs and record evidence; never fabricate verification.
 
-Sebelum mengeksekusi tugas apa pun di repositori ini, baca dan terapkan seluruh kontrak kerja yang tertulis di [**`AUTONOMOUS.md`**](./AUTONOMOUS.md).
+## Git safety
+- Inspect git status before and after changes.
+- Preserve unrelated work; do not create unnecessary branches.
+- Never force-push or rewrite shared history.
+- Review the exact staged diff; never blindly stage the whole repository.
+- Never commit secrets, local environment files, local databases, or generated output.
+- Production deployment, destructive data changes, DNS/billing changes, and archive deletion require explicit authorization.
 
-### Inti Kontrak Kerja:
-1. **Zero-Confirmation Autonomous Execution**: Jalankan tugas dari riset hingga selesai tanpa menanyakan hal-hal kecil per file.
-2. **Deep-Research & Gap Analysis**: Eksplorasi ekosistem `bjo163/*` dan referensi Odoo / Echolog sebelum merancang fitur.
-3. **Audit Keamanan & Integritas**: Terapkan zero-copy streaming, query parameterized, dan proteksi SSRF / legal holds.
-4. **Mandatory Documentation Synchronization**: Setiap kali ada perubahan fungsional atau refactoring, **wajib** memperbarui 4 dokumen kanonik:
-   - `README.md`
-   - `CHANGELOG.md`
-   - `BLUEPRINT.md`
-   - `DESIGN.md`
-5. **Self-Healing Build Gate**:
-   - `pnpm server:migrate`
-   - `cargo check --manifest-path apps/server/Cargo.toml`
-   - `pnpm web:build`
-   Jika ada error, perbaiki sendiri sampai lolos zero-error.
-6. **Automatic Git Push**: Stage, commit conventional, dan push langsung ke branch `main`.
-
----
-
-## 🛠️ Stack & Directory Mapping
-- **`apps/server/`**: Rust / Loco / SeaORM / Axum
-  - `src/core/`: Abstraksi Ql-Orm, BaseModel, Content-Addressed Storage, In-memory Router State.
-  - `src/controllers/`: Endpoint gateway `/v1/chat/completions`, `/v1/models`, `/v1/sdui`.
-  - `addons/`: Addons modular `base`, `mw_storage`, `mw_llm_router`.
-- **`apps/web/`**: Next.js 16 (App Router) + React 19 + Tailwind CSS v4.
-- **`docker-compose.yml`**: Deployment produksi Coolify (loopback bindings `127.0.0.1:5150` & `127.0.0.1:3000`).
-
+## Definition of Done
+Acceptance criteria met; applicable checks executed; diff reviewed; relevant documentation/backlog updated; evidence recorded. VERIFIED requires evidence.
