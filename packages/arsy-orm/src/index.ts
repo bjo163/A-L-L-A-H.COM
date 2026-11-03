@@ -6,4 +6,5 @@ export * from './query_builder';
 export * from './repository';
 export * from './migrator';
 export * from './auth_models';
+export * from './vector';
 

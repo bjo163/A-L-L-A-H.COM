@@ -48,3 +48,4 @@ export function validateUrlSsrf(urlStr: string): boolean {
     return false;
   }
 }
+

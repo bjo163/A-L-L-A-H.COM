@@ -89,11 +89,53 @@ export const AiUsageLog = defineModel({
   },
 });
 
+export const AiSemanticCache = defineModel({
+  name: 'ai.semantic_cache',
+  tableName: 'ai_semantic_cache',
+  displayName: 'AI Semantic Cache',
+  fields: {
+    prompt_hash: fields.char({ label: 'Prompt Hash', required: true, unique: true }),
+    prompt_text: fields.text({ label: 'Prompt Text' }),
+    embedding: fields.json({ label: 'Embedding Vector' }),
+    response_json: fields.json({ label: 'Cached Response JSON', required: true }),
+    model: fields.char({ label: 'Model' }),
+    hit_count: fields.integer({ label: 'Hit Count', default: 0 }),
+    expires_at: fields.datetime({ label: 'Expires At' }),
+  },
+});
+
+export const AiThread = defineModel({
+  name: 'ai.thread',
+  tableName: 'ai_thread',
+  displayName: 'AI Thread',
+  fields: {
+    user_id: fields.many2one('res.user', { label: 'User' }),
+    title: fields.char({ label: 'Title' }),
+    active_model: fields.char({ label: 'Active Model' }),
+    metadata: fields.json({ label: 'Metadata' }),
+  },
+});
+
+export const AiMessage = defineModel({
+  name: 'ai.message',
+  tableName: 'ai_message',
+  displayName: 'AI Message',
+  fields: {
+    thread_id: fields.many2one('ai.thread', { label: 'Thread', required: true }),
+    role: fields.selection({ user: 'User', assistant: 'Assistant', system: 'System', tool: 'Tool' }, { label: 'Role', required: true }),
+    content: fields.text({ label: 'Content', required: true }),
+    token_count: fields.integer({ label: 'Token Count', default: 0 }),
+  },
+});
+
 export function registerMlLlmRouterAddon(): void {
   modelRegistry.register(AiProvider);
   modelRegistry.register(AiModel);
   modelRegistry.register(AiRoute);
   modelRegistry.register(AiVirtualKey);
   modelRegistry.register(AiUsageLog);
+  modelRegistry.register(AiSemanticCache);
+  modelRegistry.register(AiThread);
+  modelRegistry.register(AiMessage);
 }
 
