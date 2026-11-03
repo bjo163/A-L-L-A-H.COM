@@ -1,82 +1,35 @@
-# A-L-L-A-H.COM (MoonWitness Platform)
-**Autonomous Developer Platform & AI Gateway Engine**  
-[![Build](https://github.com/bjo163/A-L-L-A-H.COM/actions/workflows/ci.yml/badge.svg)](https://github.com/bjo163/A-L-L-A-H.COM)
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-[![Deployment: Coolify](https://img.shields.io/badge/Deploy-Coolify-blue.svg)](docker-compose.yml)
+# A-L-L-A-H.COM
+## Unified MoonWitness & Empire of the Light Ecosystem
 
-A-L-L-A-H.COM ("Accountable Life, Learning & Action Hub") adalah platform pengembang modular berkinerja tinggi yang menyatukan arsitektur **Odoo-Style Enterprise OS**, **Echolog Content-Addressed Storage**, dan **Smart LLM Router 2.0** ke dalam satu kesatuan monorepo Rust/Next.js.
+A-L-L-A-H.COM is the central home for the continued evolution of the MoonWitness universe and the broader Empire of the Light ecosystem.
 
----
+Its mission is to preserve the legacy, reconcile generations, connect products and applications, consolidate useful technology, and provide one coherent platform without erasing the identity or history of earlier work.
 
-## 🏛️ Arsitektur Inti (Pillars)
+This repository currently contains a Rust/Loco backend and a Next.js web application. Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
 
-1. **Enterprise OS Core (Odoo/Ql-Orm in Rust)**:
-   - Pola Mixin & Audit fields bawaan (`id`, `name`, `active`, `create_date`, `write_date`, `create_uid`, `write_uid`, `owner_id`, `metadata` JSON).
-   - Multi-Company / Team Workspace hierarkis (`res.company`).
-   - Partner, Developer & Billing Ledger (`res.partner`).
-   - Dynamic Currency & Rate Exchange untuk kalkulasi biaya token (`res.currency`).
-   - Server-Driven Dynamic UI Engine (`ir.ui.view` -> Tree, Form, Kanban).
+## Start here
+1. [GOAL.md](GOAL.md) — master mission and local AI entrypoint.
+2. [AUTONOMOUS.md](AUTONOMOUS.md) — autonomous development operating contract.
+3. [AGENTS.md](AGENTS.md) — universal engineering rules.
+4. [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md) — preservation and reconciliation protocol.
+5. [BLUEPRINT.md](BLUEPRINT.md) — target product and system architecture.
+6. [DESIGN.md](DESIGN.md) — product experience and Moon UI principles.
+7. [ROADMAP.md](ROADMAP.md) and [BACKLOG.md](BACKLOG.md) — strategic stages and actionable work.
+8. [QUALITY.md](QUALITY.md) — verification and Definition of Done.
+9. [DECISIONS.md](DECISIONS.md) — accepted decisions.
+10. [CHANGELOG.md](CHANGELOG.md) — actual repository changes.
 
-2. **All-in-One Content-Addressed Storage (Echolog Engine)**:
-   - File disimpan beralamatkan **SHA-256 digest** (`objects/<digest>`).
-   - Idempotent write-once: Re-upload file identik tidak memakan disk tambahan (zero byte duplication).
-   - Fail-closed retention deadlines & legal holds (`ir.attachment`).
-   - Dual-surface: REST API + Bounded S3 SigV4 endpoint.
+## Ecosystem scope
+Discover and reconcile MoonWitness historical generations, Reborn, XV, narrative canon, ROCKSOUL, MYLUFT, research, creative assets, Moon UI, Headquarter, Dock, Cockpit, Qorpus, and related repositories or technical work where accessible. This is a discovery scope, not a claim that every item is implemented here or must be a separate application.
 
-3. **Smart LLM Router 2.0**:
-   - Zero-copy streaming proxy berstandar OpenAI API (`/v1/chat/completions`).
-   - Multi-tier routing strategies: Automatic Failover (Circuit Breaker), Lowest Cost, Lowest Latency, Weighted Round-Robin.
-   - Cross-Provider Protocol Transformer (OpenAI standard <-> Anthropic Claude <-> Gemini).
-   - In-memory routing state (`Arc<RwLock<RoutingTable>>`) untuk response ultra cepat (< 2ms proxy overhead).
-   - Exact hash & semantic prompt caching.
+## Repository layout
+- `apps/server/` — Rust backend using Loco and its associated ecosystem.
+- `apps/web/` — Next.js frontend.
+- Root manifests, deployment configuration, and canonical documentation.
 
----
+Always inspect the current tree and manifests before relying on this summary.
 
-## 📂 Struktur Monorepo
+## Development
+Inspect `package.json`, `pnpm-workspace.yaml`, `apps/server/Cargo.toml`, and `apps/web/package.json` for exact commands and versions. Use the workspace package manager and app-specific instructions. Do not assume a command exists.
 
-```text
-A-L-L-A-H.COM/
-├── apps/
-│   ├── server/           # Backend Engine (Rust / Loco / SeaORM / Axum)
-│   │   ├── src/core/     # Ql-Orm engine, BaseModel, Storage, Router State
-│   │   ├── addons/       # Modular Addons (base, mw_storage, mw_llm_router)
-│   │   └── migration/    # SeaORM automated database migrations
-│   └── web/              # Frontend Platform (Next.js 16 + React 19 + Tailwind v4)
-├── docker-compose.yml    # Coolify-optimized zero-hassle deployment
-├── BLUEPRINT.md          # Master architecture and technical specification
-├── DESIGN.md             # Visual design system & Server-Driven UI specification
-├── CHANGELOG.md          # Continuous release and update history
-└── package.json          # Root workspace scripts (pnpm)
-```
-
----
-
-## 🚀 Memulai Cepat (Quick Start)
-
-### Kebutuhan:
-- **Node.js** >= 22 & **pnpm** >= 10
-- **Rust** >= 1.85 & **Cargo**
-
-```bash
-# 1. Install dependencies
-pnpm install
-
-# 2. Migrasi database server
-pnpm server:migrate
-
-# 3. Jalankan development server
-pnpm dev              # menjalankan server & web secara paralel
-# atau jalankan terpisah:
-pnpm server           # Backend aktif di http://localhost:5150
-pnpm web:dev          # Frontend aktif di http://localhost:3000
-```
-
----
-
-## 🐳 Deployment di Coolify (Production)
-
-Stack ini dioptimasi penuh untuk **Coolify**:
-- Gunakan Git Repository: `https://github.com/bjo163/A-L-L-A-H.COM.git` (Branch: `main`).
-- Build Pack otomatis: **Docker Compose**.
-- Port loopback terisolasi (`127.0.0.1:5150` & `127.0.0.1:3000`) yang aman di balik reverse proxy Traefik Coolify.
-
+Never commit secrets, `.env` files, local databases, generated build output, or unrelated user changes.
