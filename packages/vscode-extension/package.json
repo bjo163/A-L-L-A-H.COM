@@ -1,5 +1,5 @@
 {
-  "name": "@allah/vscode-extension",
+  "name": "allah-vscode-extension",
   "displayName": "A-L-L-A-H.COM (MoonWitness) Developer Tools",
   "description": "VS Code integration for A-L-L-A-H.COM: Spec-Driven Project Management (.plans), LLM Router Gateway, Echolog Storage, and SDUI.",
   "version": "0.2.0",

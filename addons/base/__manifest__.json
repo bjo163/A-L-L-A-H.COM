@@ -1,0 +1,11 @@
+{
+  "name": "base",
+  "version": "1.0.0",
+  "category": "Core",
+  "summary": "Core enterprise entity registry for Arsy (companies, partners, users, currency)",
+  "depends": [],
+  "models": ["res.company", "res.currency", "res.country", "res.partner", "res.users", "ir.ui.view"],
+  "views": ["res_partner_views.json", "res_company_views.json"],
+  "installable": true,
+  "application": true
+}

@@ -23,6 +23,7 @@ Operational contract for autonomous AI execution on A-L-L-A-H.COM.
 - Consult `bjo163/*` (`moonwitnessxv`, `echolog`, `ql-orm`, `ql_ai`, `mwx-isp`) + Odoo/OpenDAL standards.
 - Select highest-value safe task from `BACKLOG.md`.
 - Create or update `.plans/<timestamp>-<slug>/` with `spec.md` (architecture & AC) and `task.md` (checklist).
+- **Mandatory Live Task Checkoff**: Update `task.md` checkboxes (`- [x]`) and `spec.md` frontmatter status (`in_progress`, `completed`) as tasks transition so VS Code Extension and human operators see real-time progress.
 
 ### 2. Security & Integrity Audit
 - Zero-copy stream pipes (`axum::body::Body::from_stream`).

@@ -1,0 +1,21 @@
+{
+  "name": "@allah/arsy-plugin-sdui",
+  "version": "0.1.0",
+  "description": "Arsy Server-Driven UI (SDUI) fastify plugin for dynamic view schema resolution",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "dependencies": {
+    "@allah/arsy-core": "workspace:*",
+    "@allah/arsy-orm": "workspace:*",
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}

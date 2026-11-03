@@ -1,0 +1,24 @@
+{
+  "model": "res.partner",
+  "views": {
+    "tree": {
+      "title": "Contacts",
+      "fields": [
+        { "name": "name", "label": "Name", "sortable": true },
+        { "name": "email", "label": "Email" },
+        { "name": "phone", "label": "Phone" },
+        { "name": "is_company", "label": "Company", "badge": true }
+      ]
+    },
+    "form": {
+      "title": "Contact Details",
+      "fields": [
+        { "name": "name", "label": "Name", "col_span": 12 },
+        { "name": "is_company", "label": "Is Company", "col_span": 6 },
+        { "name": "email", "label": "Email", "widget": "email", "col_span": 6 },
+        { "name": "phone", "label": "Phone", "widget": "phone", "col_span": 6 },
+        { "name": "credit_balance", "label": "Credit Balance", "widget": "monetary", "col_span": 6 }
+      ]
+    }
+  }
+}
