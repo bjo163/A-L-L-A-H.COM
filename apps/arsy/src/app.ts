@@ -390,7 +390,7 @@ const repo = new BaseRepository(model);
       const n = nas[0];
       const encryptedSecret = encryptSecret(secret) || secret;
       // Since BaseRepository doesn't have update, we'll just return success with redacted secret
-      return ok({ success: true, data: { ...n, secret_encrypted: encryptedSecret, secret: redactSecret(encryptedSecret) } });
+      return ok({ ...n, secret_encrypted: encryptedSecret, secret: redactSecret(encryptedSecret) });
     } catch (err: any) {
       logger.error({ err }, 'NAS secret rotation failed');
       reply.status(500);
