@@ -10,9 +10,9 @@ import { sduiPlugin } from '@allah/arsy-plugin-sdui';
 import { llmGatewayPlugin } from '@allah/arsy-plugin-llm-gateway';
 import { storagePlugin } from '@allah/arsy-plugin-storage';
 
-import { registerBaseAddon } from '../../../addons/base';
-import { registerMlLlmRouterAddon } from '../../../addons/mw_llm_router';
-import { registerMwStorageAddon } from '../../../addons/mw_storage';
+import { registerBaseAddon } from '../../../addons/base/index';
+import { registerMlLlmRouterAddon } from '../../../addons/mw_llm_router/index';
+import { registerMwStorageAddon } from '../../../addons/mw_storage/index';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;

@@ -52,6 +52,70 @@ export interface ChatCompletionResponse {
     message: ChatMessage;
     finish_reason: string;
   }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    estimated_cost_usd?: number;
+  };
+}
+
+export interface ChatCompletionChunk {
+  id: string;
+  object: 'chat.completion.chunk';
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    delta: {
+      role?: string;
+      content?: string;
+    };
+    finish_reason: string | null;
+  }>;
+}
+
+export interface GatewayModelInfo {
+  id: string;
+  object: string;
+  created: number;
+  owned_by: string;
+  displayName?: string;
+}
+
+export interface GatewayTelemetry {
+  metrics: {
+    totalRequests: number;
+    totalTokens: number;
+    totalCostUsd: number;
+    avgLatencyMs: number;
+  };
+  circuits: Record<string, { healthy: boolean; failures: number; isOpen: boolean }>;
+}
+
+export interface GatewayProviderInfo {
+  id: number;
+  name: string;
+  slug: string;
+  provider_type: string;
+  base_url: string;
+  priority: number;
+  is_healthy: boolean;
+}
+
+export interface GatewayUsageLog {
+  id: number;
+  provider_name?: string;
+  model_name?: string;
+  key_name?: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  cost_usd: number;
+  latency_ms: number;
+  status_code: number;
+  is_cached: boolean;
+  create_date?: string;
 }
 
 /**
@@ -80,3 +144,4 @@ export interface StorageItem {
   sizeBytes: number;
   createDate: string;
 }
+

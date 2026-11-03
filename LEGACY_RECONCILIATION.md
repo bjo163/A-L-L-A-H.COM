@@ -20,6 +20,11 @@ For each source record exact repository/path/URL, generation/date where known, p
 ## Disposition
 Classify each item as: preserve as canonical; preserve as historical; integrate; migrate; reference; consolidate; archive; retire (document rationale and obtain explicit authorization if irreversible); or unresolved.
 
+| Source | Disposition | Rationale and provenance |
+|---|---|---|
+| `apps/server/` (Rust/Loco) | Retired | Replaced by the Arsy Fastify backend; implementation history remains available in Git and the completed migration plan. |
+| `apps/web/` (legacy Next.js app) | Retired | Superseded by Dock; the completed identity report retains historical references and does not establish current Dock integration. |
+
 ## Canon integrity
 Never silently rewrite original canon. Keep original and corrected versions traceable. Distinguish narrative fiction, dream accounts, creative interpretation, research claims, and independently verified facts. Preserve titles, chapter order, chronology, motifs, and established naming corrections. When versions conflict, preserve both and document the conflict before selecting a canonical interpretation.
 

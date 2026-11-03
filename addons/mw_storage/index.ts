@@ -62,3 +62,4 @@ export function registerMwStorageAddon(): void {
   modelRegistry.register(IrAttachment);
   modelRegistry.register(IrLegalHold);
 }
+

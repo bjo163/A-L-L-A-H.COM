@@ -1,0 +1,379 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import {
+  EcosystemNavbar,
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Badge,
+  Input,
+} from '@moonwitness/ui';
+import { mwClient } from '@allah/sdk';
+import type {
+  GatewayTelemetry,
+  GatewayProviderInfo,
+  GatewayUsageLog,
+} from '@moonwitness/types';
+
+export default function AiGatewayPage() {
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [telemetry, setTelemetry] = useState<GatewayTelemetry | null>(null);
+  const [providers, setProviders] = useState<GatewayProviderInfo[]>([]);
+  const [usageLogs, setUsageLogs] = useState<GatewayUsageLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Test Console State
+  const [testModel, setTestModel] = useState('dx-default');
+  const [testPrompt, setTestPrompt] = useState('Explain the MoonWitness architecture in one sentence.');
+  const [testOutput, setTestOutput] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [testStatus, setTestStatus] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [tData, pData, uData] = await Promise.all([
+        mwClient.router.getTelemetry().catch(() => null),
+        mwClient.router.getProviders().catch(() => []),
+        mwClient.router.getUsageLogs().catch(() => []),
+      ]);
+
+      if (tData) setTelemetry(tData);
+      if (Array.isArray(pData)) setProviders(pData);
+      if (Array.isArray(uData)) setUsageLogs(uData);
+    } catch (err: any) {
+      setError(err.message || 'Failed connecting to Arsy AI Gateway');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    mwClient.auth.getCurrentUser()
+      .then((res) => {
+        if (res?.user) setUser(res.user);
+      })
+      .catch(() => {});
+
+    fetchData();
+  }, []);
+
+  const handleTestChatStream = async () => {
+    if (!testPrompt.trim()) return;
+    setIsStreaming(true);
+    setTestOutput('');
+    setTestStatus('Initiating SSE stream...');
+
+    try {
+      await mwClient.router.chatStream(
+        {
+          model: testModel,
+          messages: [{ role: 'user', content: testPrompt }],
+        },
+        (chunk) => {
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            setTestOutput((prev) => prev + delta);
+          }
+        }
+      );
+      setTestStatus('Stream completed');
+      // Refresh telemetry & logs after test call
+      fetchData();
+    } catch (err: any) {
+      setTestStatus(`Stream failed: ${err.message}`);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-200">
+      <EcosystemNavbar
+        currentApp="headquarter"
+        userName={user?.name}
+        userEmail={user?.email}
+        onSignOut={async () => {
+          await mwClient.auth.signOut();
+          setUser(null);
+        }}
+      />
+
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
+                AI Gateway Control Plane
+              </h1>
+              <Badge variant="active" dot>GATEWAY ACTIVE</Badge>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1">
+              Multi-provider routing, zero-copy streaming, virtual keys & cost telemetry
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="/">
+              <Button variant="outline" size="sm">Back to HQ</Button>
+            </a>
+            <Button variant="default" size="sm" onClick={fetchData} disabled={loading}>
+              {loading ? 'Refreshing...' : 'Refresh Telemetry'}
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={fetchData}>Retry</Button>
+          </div>
+        )}
+
+        {/* Telemetry Metric Cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Routed Requests</CardDescription>
+              <CardTitle className="text-2xl font-mono text-zinc-100">
+                {telemetry?.metrics?.totalRequests ?? 0}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <span className="text-[10px] text-zinc-500">Live request counters</span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Tokens Processed</CardDescription>
+              <CardTitle className="text-2xl font-mono text-amber-400">
+                {telemetry?.metrics?.totalTokens?.toLocaleString() ?? 0}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <span className="text-[10px] text-zinc-500">Prompt + completion tokens</span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Accrued Cost (USD)</CardDescription>
+              <CardTitle className="text-2xl font-mono text-emerald-400">
+                ${telemetry?.metrics?.totalCostUsd?.toFixed(4) ?? '0.0000'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <span className="text-[10px] text-zinc-500">Model tariff calculation</span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Avg Response Latency</CardDescription>
+              <CardTitle className="text-2xl font-mono text-zinc-100">
+                {telemetry?.metrics?.avgLatencyMs ?? 0}ms
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <span className="text-[10px] text-zinc-500">TTFT & total elapsed roundtrip</span>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Active Providers & Circuit Breaker Status */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+              Active Providers & Fallback Pipeline
+            </h2>
+            <span className="text-xs text-zinc-400 font-mono">
+              Auto-Failover Sequence Enabled
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {providers.map((p) => {
+              const circuit = telemetry?.circuits?.[p.slug];
+              const isAvailable = circuit ? circuit.healthy : p.is_healthy;
+
+              return (
+                <Card key={p.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">{p.name}</CardTitle>
+                      <Badge variant={isAvailable ? 'active' : 'revoked'} dot>
+                        {isAvailable ? 'HEALTHY' : 'CIRCUIT OPEN'}
+                      </Badge>
+                    </div>
+                    <CardDescription className="text-xs font-mono">{p.slug}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs font-mono text-zinc-300">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Type:</span>
+                      <span>{p.provider_type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Priority:</span>
+                      <span>Tier {p.priority}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Endpoint:</span>
+                      <span className="truncate max-w-[140px] text-zinc-400">{p.base_url}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Interactive Gateway Test Console */}
+        <section className="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100">
+                Interactive Gateway Tester
+              </h2>
+              <p className="text-xs text-zinc-400">
+                Live Server-Sent Events (SSE) streaming validation directly against the Arsy AI Gateway
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="model-select" className="text-xs text-zinc-400">Route Alias:</label>
+              <select
+                id="model-select"
+                aria-label="Route Alias"
+                value={testModel}
+                onChange={(e) => setTestModel(e.target.value)}
+                className="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500"
+              >
+                <option value="dx-default">dx-default (Fallback sequence)</option>
+                <option value="dx-fast">dx-fast (Lowest latency/cost)</option>
+                <option value="dx-reasoning">dx-reasoning (Deep intelligence)</option>
+                <option value="gpt-4o">gpt-4o (Direct upstream)</option>
+                <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet (Anthropic)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Google)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={testPrompt}
+                onChange={(e) => setTestPrompt(e.target.value)}
+                placeholder="Enter prompt to stream..."
+                className="flex-1 font-mono text-xs"
+              />
+              <Button
+                variant="gold"
+                onClick={handleTestChatStream}
+                disabled={isStreaming || !testPrompt.trim()}
+              >
+                {isStreaming ? 'Streaming...' : 'Stream Completion'}
+              </Button>
+            </div>
+
+            {testStatus && (
+              <div className="text-[11px] font-mono text-zinc-500 flex items-center gap-2">
+                <span>Status:</span>
+                <span className={testStatus.includes('failed') ? 'text-red-400' : 'text-emerald-400'}>
+                  {testStatus}
+                </span>
+              </div>
+            )}
+
+            <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800/80 min-h-[90px] text-xs font-mono text-zinc-200 whitespace-pre-wrap leading-relaxed">
+              {testOutput || (
+                <span className="text-zinc-600 italic">
+                  Stream output will render here in real-time...
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Live Persistent Usage Log Table */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+              Live Gateway Usage Logs (PGlite)
+            </h2>
+            <span className="text-xs text-zinc-500 font-mono">
+              Last {usageLogs.length} audit records
+            </span>
+          </div>
+
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
+                <thead className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800">
+                  <tr>
+                    <th className="py-2.5 px-4">Log ID</th>
+                    <th className="py-2.5 px-4">Model / Provider</th>
+                    <th className="py-2.5 px-4">Key Prefix</th>
+                    <th className="py-2.5 px-4">Tokens</th>
+                    <th className="py-2.5 px-4">Latency</th>
+                    <th className="py-2.5 px-4">Cost (USD)</th>
+                    <th className="py-2.5 px-4">Cache</th>
+                    <th className="py-2.5 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+                  {usageLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-zinc-500">
+                        No requests logged yet. Issue a chat completion to generate audit logs.
+                      </td>
+                    </tr>
+                  ) : (
+                    usageLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-zinc-900/40 transition-colors">
+                        <td className="py-2.5 px-4 text-zinc-500">#{log.id}</td>
+                        <td className="py-2.5 px-4">
+                          <span className="text-zinc-100 font-semibold">{log.model_name || 'dx-default'}</span>
+                          {log.provider_name && (
+                            <span className="text-zinc-500 block text-[10px]">{log.provider_name}</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4 text-zinc-400">{log.key_name || 'master'}</td>
+                        <td className="py-2.5 px-4">
+                          <span>{log.total_tokens}</span>
+                          <span className="text-[10px] text-zinc-500 block">
+                            {log.prompt_tokens} in / {log.completion_tokens} out
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-4 text-zinc-400">{log.latency_ms}ms</td>
+                        <td className="py-2.5 px-4 text-emerald-400 font-medium">
+                          ${Number(log.cost_usd || 0).toFixed(5)}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          {log.is_cached ? (
+                            <Badge variant="gold">CACHE HIT</Badge>
+                          ) : (
+                            <span className="text-zinc-600">PASS</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <Badge variant={log.status_code === 200 ? 'active' : 'revoked'}>
+                            {log.status_code}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </section>
+      </main>
+    </div>
+  );
+}

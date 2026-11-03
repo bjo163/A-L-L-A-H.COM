@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - component: server
-            dockerfile: apps/server/Dockerfile
-          - component: web
-            dockerfile: apps/web/Dockerfile
+          - component: dock
+            dockerfile: apps/dock/Dockerfile
+          - component: headquarter
+            dockerfile: apps/headquarter/Dockerfile
     steps:
       - name: Check out source
         uses: actions/checkout@v4

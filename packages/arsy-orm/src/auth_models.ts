@@ -69,3 +69,4 @@ export function registerAuthModels(): void {
   modelRegistry.register(AuthSession);
   modelRegistry.register(AuthVerification);
 }
+

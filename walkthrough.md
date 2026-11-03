@@ -1,45 +1,36 @@
-# A-L-L-A-H.COM Platform - Technical Walkthrough
+# A-L-L-A-H.COM Platform — Walkthrough
 
 ## Overview
-A-L-L-A-H.COM is a modular platform featuring:
-- **Loco.rs 1.2.0** backend with Axum web framework
-- **SeaORM** for database ORM
-- **Next.js 16 / React 19** frontend
-- **Docker** containerization with Coolify deployment support
+
+A-L-L-A-H.COM is a modular monorepo platform featuring:
+
+- **ARSY Hub** (`apps/arsy`) — Fastify Hub with embedded PGlite ORM, technical plugins, and declarative business addons
+- **Dock** (`apps/dock`) — Next.js 16 public homepage (port 3001)
+- **Headquarter** (`apps/headquarter`) — Next.js 16 command center (port 3002)
+- **Shared UI** (`packages/ui`) — shadcn/ui component library (`@moonwitness/ui`)
+- **VS Code Extension** (`packages/vscode-extension`) — `.plans` workflow, MoonWitness LLM gateway, Arsy Fastify API views
+- **Docker** — containerization with Coolify deployment support
 
 ## Recent Changes (Autonomous Evolution Engine)
 
-### LLM Gateway Upgrade
-- **File**: `apps/server/src/controllers/llm_gateway/` (new module)
-- **Controller**: `controller.rs` - OpenAI-compatible chat completions API
-- **Rate Limiting**: `rate_limiter.rs` - Token bucket algorithm with `lru::LruCache`
-- **Semantic Caching**: `semantic_cache.rs` - SHA-256 canonical request hashing
-- **Upstream Proxy**: `upstream.rs` - SSRF-guarded proxy with retries
-- **S3 SigV4**: `s3_sigv4.rs` - AWS SigV4 signing for content-addressed storage
+### Rust Server Removed
+- **Retired**: `apps/server/` (Rust/Loco backend) and `apps/web/` (legacy web app), in favour of Arsy, Dock, and Headquarter
+- **Added**: `apps/headquarter/` Next.js command center, `apps/id/` MoonWitness ID account & SSO center, `packages/types/`, `packages/sdk/`, and `packages/lint/`
+- **Added**: `packages/arsy-plugin-*` (auth, sdui, llm-gateway, storage) technical plugins
 
-### Core Security Fixes
-- **File**: `apps/server/src/core/security.rs`
-- **SSRF Guard**: Fixed IP address validation for IPv4/IPv6 (private, link-local, unique local)
-- **Constant-time comparison**: SHA-256 digest verification for timing attack resistance
-
-### Module Organization
-- Added `pub mod security;` to `core/mod.rs`
-- Created `llm_gateway/mod.rs` with all 5 sub-modules
-- Updated `app.rs` route registration to use `controllers::llm_gateway::controller::routes()`
-
-### Dependencies Updated
-- `lru = "0.13"` - LRU cache with `NonZeroUsize` capacity
-- `hmac = "0.12"`, `hex = "0.4"` - SigV4 signing
-- `reqwest = "0.12"` with rustls-tls, json, stream, http2 features
-- `subtle = "2"` - Constant-time comparison
+### Arsy Modular Ecosystem
+- **Hub**: `apps/arsy/` Fastify + embedded PGlite ORM
+- **Plugins**: auth, sdui, llm-gateway, storage
+- **Addons**: `addons/base`, `addons/mw_storage`, `addons/mw_llm_router`
 
 ### Build Status
-- ✅ Rust compilation: `cargo check` passes
-- ✅ Frontend build: `pnpm web:build` passes
-- ✅ Database migrations: `pnpm server:migrate` passes
-- ✅ Docker compose: `docker-compose.yml` valid
+- ✅ Dock build: `pnpm dock:build` passes
+- ✅ Headquarter build: `pnpm headquarter:build` passes
+- ✅ ARSY build: `pnpm --filter @allah/arsy build` passes
+- ✅ VS Code extension build: `pnpm extension:build` passes
 
 ## Next Steps
+- Publish dock and headquarter images to GHCR
 - Deploy to Coolify with custom domains
 - Configure upstream LLM providers
 - Enable SDUI dynamic form components

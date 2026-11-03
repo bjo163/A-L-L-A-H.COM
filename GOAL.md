@@ -11,7 +11,7 @@ last_verified: "2026-11-03"
 Autonomous Engineering Directive for A-L-L-A-H.COM.
 
 ## Mission
-Unify MoonWitness & Empire of the Light ecosystem into high-performance Rust + Next.js platform without narrative or technical erasure (`LEGACY_RECONCILIATION.md`).
+Unify MoonWitness & Empire of the Light ecosystem into high-performance Fastify/Next.js platform without narrative or technical erasure (`LEGACY_RECONCILIATION.md`).
 
 ## Prompt Directive
 ```markdown
@@ -23,9 +23,9 @@ MANDATORY RULES:
 2. RESEARCH: Harvest bjo163/* repositories & Odoo/OpenDAL standards. Pick next task from BACKLOG.md.
 3. SECURITY AUDIT: Verify zero-copy streaming, parameterized SQL, SSRF guards, and fail-closed retention.
 4. GATES: Must pass 100%:
-   - pnpm server:migrate
-   - cargo check --manifest-path apps/server/Cargo.toml
-   - pnpm web:build
+   - pnpm dock:build
+   - pnpm headquarter:build
+   - pnpm --filter @allah/arsy build
    Self-heal all errors autonomously.
 5. DOC SYNC: Update only affected canonical documents as defined by DOCUMENTATION_CONTRACT.md.
 6. GIT: Review the scoped diff, use a conventional commit, and push changes to dev. CI promotes dev to main only after all required checks pass.

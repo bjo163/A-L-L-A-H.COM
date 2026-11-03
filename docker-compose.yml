@@ -54,3 +54,4 @@ services:
 
 volumes:
   arsy_data:
+

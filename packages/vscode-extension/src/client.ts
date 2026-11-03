@@ -1,4 +1,11 @@
 import * as vscode from 'vscode';
+import {
+  getGatewayErrorMessage,
+  parseModelCatalogResponse,
+  parsePlanCompletionResponse,
+} from './gatewayContracts';
+import type { GatewayModel } from './gatewayContracts';
+import type { PlanMarkdownBodies } from './planManager';
 
 interface HealthResponse {
   status?: string;
@@ -6,14 +13,17 @@ interface HealthResponse {
   [key: string]: unknown;
 }
 
-interface ModelsResponse {
-  object: string;
-  data: Array<{
-    id: string;
-    object: string;
-    created?: number;
-    owned_by?: string;
-  }>;
+interface ServiceCheck {
+  ok: boolean;
+  message: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export class MoonWitnessClient {
@@ -22,102 +32,160 @@ export class MoonWitnessClient {
     return (config.get<string>('gatewayUrl') || 'http://127.0.0.1:5150').replace(/\/+$/, '');
   }
 
+  private get arsyBaseUrl(): string {
+    const config = vscode.workspace.getConfiguration('allah');
+    return (config.get<string>('arsyUrl') || 'http://127.0.0.1:5150').replace(/\/+$/, '');
+  }
+
   private get apiKey(): string {
     const config = vscode.workspace.getConfiguration('allah');
     return config.get<string>('apiKey') || '';
   }
 
+  get arsyDocsUrl(): string {
+    return `${this.arsyBaseUrl}/docs`;
+  }
+
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     };
     if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      headers.Authorization = `Bearer ${this.apiKey}`;
     }
     return headers;
   }
 
-  async checkHealth(): Promise<{ ok: boolean; latencyMs: number; details?: HealthResponse }> {
+  private async createHttpError(response: Response, operation: string): Promise<Error> {
+    const body = await response.text();
+    let payload: unknown;
+    if (body.trim()) {
+      try {
+        payload = JSON.parse(body);
+      } catch {
+        payload = undefined;
+      }
+    }
+
+    const detail = getGatewayErrorMessage(payload);
+    return new Error(
+      detail ? `${operation} failed (HTTP ${response.status}): ${detail}` : `${operation} failed (HTTP ${response.status}).`
+    );
+  }
+
+  async checkHealth(): Promise<{ ok: boolean; latencyMs: number; details?: HealthResponse; message?: string }> {
     const start = Date.now();
     try {
-      const res = await fetch(`${this.baseUrl}/health`, {
+      const response = await fetch(`${this.baseUrl}/health`, {
         method: 'GET',
         headers: this.getHeaders(),
+        signal: AbortSignal.timeout(5000),
       });
       const latencyMs = Date.now() - start;
-      if (res.ok) {
-        const details = (await res.json().catch(() => ({}))) as HealthResponse;
-        return { ok: true, latencyMs, details };
+      if (!response.ok) {
+        return { ok: false, latencyMs, message: `HTTP ${response.status}` };
       }
-      return { ok: false, latencyMs };
-    } catch {
-      return { ok: false, latencyMs: Date.now() - start };
+
+      const payload: unknown = await response.json();
+      if (!isRecord(payload) || payload.success !== true || !isRecord(payload.data)) {
+        const detail = getGatewayErrorMessage(payload);
+        return { ok: false, latencyMs, message: detail || 'Invalid health response envelope.' };
+      }
+
+      const details = payload.data as HealthResponse;
+      if (details.status !== 'ok') {
+        return { ok: false, latencyMs, message: 'Health endpoint did not report status "ok".' };
+      }
+      return { ok: true, latencyMs, details };
+    } catch (error) {
+      return { ok: false, latencyMs: Date.now() - start, message: errorMessage(error) };
     }
   }
 
-  async fetchModels(): Promise<Array<{ id: string; owned_by?: string }>> {
-    try {
-      const res = await fetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch models: HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as ModelsResponse;
-      return data.data || [];
-    } catch (err) {
-      vscode.window.showErrorMessage(`MoonWitness LLM Router error: ${err instanceof Error ? err.message : String(err)}`);
-      return [];
-    }
-  }
-
-  async generatePlanSpec(featurePrompt: string): Promise<{ specMd: string; taskMd: string } | null> {
-    try {
-      const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          model: 'dx-reasoning',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are the MoonWitness Spec-Driven Architecture planner. Generate structured spec and tasks.',
-            },
-            {
-              role: 'user',
-              content: `Generate a Spec-Driven Development plan for: "${featurePrompt}". Return JSON with keys "spec" and "tasks" containing markdown text.`,
-            },
-          ],
-        }),
-      });
-
-      if (!res.ok) {
-        return null;
-      }
-
-      const jsonRes = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-      const content = jsonRes?.choices?.[0]?.message?.content;
-      if (!content) return null;
-
-      // Try parsing JSON response if model returned json, else format content
+  async checkArsyReadiness(): Promise<{
+    health: ServiceCheck;
+    readiness: ServiceCheck;
+  }> {
+    const check = async (endpoint: '/health' | '/ready'): Promise<ServiceCheck> => {
       try {
-        const parsed = JSON.parse(content) as { spec?: string; tasks?: string };
-        if (parsed.spec && parsed.tasks) {
-          return { specMd: parsed.spec, taskMd: parsed.tasks };
+        const response = await fetch(`${this.arsyBaseUrl}${endpoint}`, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) {
+          return { ok: false, message: `HTTP ${response.status}` };
         }
-      } catch {
-        // Fallback to formatted response
-      }
 
-      return {
-        specMd: `# Feature Specification: ${featurePrompt}\n\n## 1. Context & Motivation\n${content}\n\n## 2. Acceptance Criteria\n- [ ] AC1: Feature implemented.\n- [ ] AC2: Verification gates pass.`,
-        taskMd: `# Execution Checklist\n\n- [ ] 1. Implement core components for ${featurePrompt}\n- [ ] 2. Run automated test suites\n- [ ] 3. Update canonical documentation`,
-      };
-    } catch {
-      return null;
+        const payload: unknown = await response.json();
+        if (!isRecord(payload) || payload.success !== true || !isRecord(payload.data)) {
+          const detail = getGatewayErrorMessage(payload);
+          return { ok: false, message: detail || 'Invalid Arsy response envelope.' };
+        }
+
+        if (endpoint === '/health' && payload.data.status !== 'ok') {
+          return { ok: false, message: 'Health endpoint did not report status "ok".' };
+        }
+        if (endpoint === '/ready' && payload.data.ready !== true) {
+          return { ok: false, message: 'Readiness endpoint did not report ready.' };
+        }
+        return { ok: true, message: 'HTTP 200' };
+      } catch (error) {
+        return { ok: false, message: errorMessage(error) };
+      }
+    };
+
+    const [health, readiness] = await Promise.all([check('/health'), check('/ready')]);
+    return { health, readiness };
+  }
+
+  async fetchModels(): Promise<GatewayModel[]> {
+    const response = await fetch(`${this.baseUrl}/v1/models`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) {
+      throw await this.createHttpError(response, 'Fetching the gateway model catalog');
     }
+    return parseModelCatalogResponse(await response.json());
+  }
+
+  async generatePlanSpec(featurePrompt: string): Promise<PlanMarkdownBodies> {
+    const model = vscode.workspace.getConfiguration('allah').get<string>('plannerModel') || 'dx-reasoning';
+    const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      signal: AbortSignal.timeout(60000),
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are the MoonWitness spec-driven architecture planner. Never invent time, duration, or budget estimates. Omit estimates when no reliable evidence exists.',
+          },
+          {
+            role: 'user',
+            content: [
+              `Create a repository-compliant implementation plan for: ${featurePrompt}`,
+              'Return only a JSON object with four non-empty Markdown body strings: "spec", "tasks", "design", and "rules".',
+              'Do not include YAML frontmatter or a top-level heading; the extension supplies canonical metadata and headings.',
+              'The spec body must describe context, scope, constraints, and observable acceptance criteria.',
+              'The tasks body must be an actionable checklist using - [ ] items.',
+              'The design body must state the interaction model and reasons for major design choices.',
+              'The rules body must state invariants, security boundaries, and out-of-scope behavior.',
+              'Do not claim that a gateway model has an upstream provider unless the response proves it.',
+            ].join('\n'),
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw await this.createHttpError(response, 'Generating a plan');
+    }
+
+    return parsePlanCompletionResponse(await response.json());
   }
 }
-

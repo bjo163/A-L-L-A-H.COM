@@ -29,9 +29,8 @@ Keep one canonical source for each kind of information. Link to it instead of co
 | `DECISIONS.md` | Accepted decisions, rationale, and consequences |
 | `QUALITY.md` | Definition of done and quality evidence |
 | `LEGACY_RECONCILIATION.md` | Source inventory, preservation, provenance, and disposition |
-| `apps/*/README.md` | Application-specific purpose, verified commands, and links to detailed guidance |
+| `apps/*/README.md` (optional) | Application-specific purpose, verified commands, and links to detailed guidance when an app needs its own guide |
 | `apps/*/AGENTS.md` | Application-specific instructions that extend the root guidance |
-| `apps/server/.claude/skills/loco/` | Loco framework reference and task recipes |
 
 When sources disagree, use source code, manifests, tests, and observed workflow/runtime behavior for current implementation; use `DECISIONS.md` for accepted product decisions; use `BACKLOG.md` for task state. This contract defines documentation rules, not product behavior.
 
@@ -41,6 +40,7 @@ When sources disagree, use source code, manifests, tests, and observed workflow/
 - Give each document one descriptive top-level heading. Use heading levels in order, and keep section names specific to the document's purpose.
 - State scope near the top when the title does not make it clear. Keep documents focused; split only when a distinct owner or audience needs a separate source.
 - Prefer short paragraphs, concrete terms, and lists or tables when they improve scanning. Avoid filler, unsupported claims, and repeated policy text.
+- Time and budget estimates are not required in plans or reports. Never invent them; omit them when they are not requested and evidence-backed.
 - Use repository-relative links for files and directories. Use descriptive link text, verify the target exists, and avoid machine-specific absolute paths.
 - Format commands, paths, identifiers, statuses, and environment variable names as code. Include only commands that are defined by the current manifests or workflows.
 - Mark proposed, implemented, verified, released, and deployed states distinctly. Do not describe a plan or a failed check as a completed capability.
@@ -73,4 +73,4 @@ Do not duplicate task lists, implementation inventories, or full procedures acro
 
 ## Generated and imported documentation
 
-Framework-generated files and the Loco reference under `apps/server/.claude/skills/loco/` may follow their upstream format. Do not reformat or rewrite generated API indexes, framework-owned instructions, or imported reference material just to match this contract. Preserve their provenance, avoid local claims that conflict with them, and edit generated material only through its source or generator when practical.
+Framework-generated files and the ARSY Hub reference under `apps/arsy/` may follow their upstream format. Do not reformat or rewrite generated API indexes, framework-owned instructions, or imported reference material just to match this contract. Preserve their provenance, avoid local claims that conflict with them, and edit generated material only through its source or generator when practical.

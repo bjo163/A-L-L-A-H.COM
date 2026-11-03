@@ -9,6 +9,8 @@ estimated_cost_tokens: "~25k"
 
 # Tasks
 
+Historical context: The `apps/web` references in Phase 3 describe the completion-era test target. The app has since been retired; the recorded test does not establish current integration with Dock or Headquarter.
+
 ### Phase 1: Native Identity & Session Engine in `@allah/arsy-orm` & `@allah/arsy-plugin-auth` (Est: 30 mins)
 - [x] 1.1. Define canonical identity models in `@allah/arsy-orm`: `auth.user`, `auth.session`, `auth.verification`
 - [x] 1.2. Update PGlite `SchemaMigrator` to provision identity & session tables with composite indexes

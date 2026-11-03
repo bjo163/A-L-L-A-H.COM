@@ -43,6 +43,9 @@ export default function HeadquarterHomePage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <a href="/ai-gateway">
+              <Button variant="gold" size="sm">AI Gateway</Button>
+            </a>
             <a href="http://localhost:3003/account">
               <Button variant="outline" size="sm">ID Settings</Button>
             </a>
@@ -118,6 +121,39 @@ export default function HeadquarterHomePage() {
                   <span className="text-zinc-500">Doc Score:</span>
                   <span className="text-emerald-400">100 / 100</span>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-amber-500/30 bg-zinc-900/30">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>AI Gateway Engine</CardTitle>
+                <Badge variant="active" dot>ACTIVE</Badge>
+              </div>
+              <CardDescription>Multi-Provider & Resilient Fallback Substrate</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-xs font-mono text-zinc-300">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Providers:</span>
+                  <span className="text-emerald-400">OpenAI, Anthropic, Gemini, Ollama</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Streaming:</span>
+                  <span>Zero-Copy SSE</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Quotas:</span>
+                  <span className="text-amber-400">Virtual Keys & USD Caps</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-zinc-800">
+                <a href="/ai-gateway">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Open AI Gateway Console
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>

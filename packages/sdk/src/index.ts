@@ -4,21 +4,33 @@ import type {
   AuthResponse,
   ChatCompletionRequest,
   ChatCompletionResponse,
+  ChatCompletionChunk,
+  GatewayModelInfo,
+  GatewayTelemetry,
+  GatewayProviderInfo,
+  GatewayUsageLog,
   SDUIRoot,
 } from '@moonwitness/types';
 
 export interface SdkOptions {
   baseUrl?: string;
   storageKey?: string;
+  virtualKey?: string;
 }
 
 export class MoonWitnessClient {
   private readonly baseUrl: string;
   private readonly storageKey: string;
+  private virtualKey?: string;
 
   constructor(options: SdkOptions = {}) {
     this.baseUrl = options.baseUrl || 'http://localhost:5150';
     this.storageKey = options.storageKey || 'mw_session_token';
+    this.virtualKey = options.virtualKey;
+  }
+
+  setVirtualKey(key: string): void {
+    this.virtualKey = key;
   }
 
   // Session Token State
@@ -48,6 +60,10 @@ export class MoonWitnessClient {
     const token = this.getSessionToken();
     if (token && !headers.has('x-session-token')) {
       headers.set('x-session-token', token);
+    }
+
+    if (this.virtualKey && !headers.has('x-virtual-key')) {
+      headers.set('x-virtual-key', this.virtualKey);
     }
 
     const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
@@ -113,8 +129,79 @@ export class MoonWitnessClient {
     chat: async (req: ChatCompletionRequest): Promise<ChatCompletionResponse> => {
       return this.request<ChatCompletionResponse>('/v1/chat/completions', {
         method: 'POST',
-        body: JSON.stringify(req),
+        body: JSON.stringify({ ...req, stream: false }),
       });
+    },
+
+    chatStream: async (
+      req: ChatCompletionRequest,
+      onChunk: (chunk: ChatCompletionChunk) => void
+    ): Promise<void> => {
+      const headers = new Headers();
+      headers.set('Content-Type', 'application/json');
+
+      const token = this.getSessionToken();
+      if (token) headers.set('x-session-token', token);
+      if (this.virtualKey) headers.set('x-virtual-key', this.virtualKey);
+
+      const url = `${this.baseUrl}/v1/chat/completions`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...req, stream: true }),
+      });
+
+      if (!response.ok || !response.body) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Streaming request failed with status ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith(':')) continue;
+          if (trimmed === 'data: [DONE]') return;
+
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const chunk = JSON.parse(trimmed.slice(6));
+              if (chunk.choices) {
+                onChunk(chunk as ChatCompletionChunk);
+              }
+            } catch {
+              // Ignore partial chunk decode
+            }
+          }
+        }
+      }
+    },
+
+    listModels: async (): Promise<GatewayModelInfo[]> => {
+      const res = await this.request<{ object: string; data: GatewayModelInfo[] }>('/v1/models');
+      return res.data || [];
+    },
+
+    getTelemetry: async (): Promise<GatewayTelemetry> => {
+      return this.request<GatewayTelemetry>('/v1/gateway/telemetry');
+    },
+
+    getProviders: async (): Promise<GatewayProviderInfo[]> => {
+      return this.request<GatewayProviderInfo[]>('/v1/gateway/providers');
+    },
+
+    getUsageLogs: async (): Promise<GatewayUsageLog[]> => {
+      return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
     },
   };
 
@@ -128,3 +215,4 @@ export class MoonWitnessClient {
 
 export const createClient = (options?: SdkOptions) => new MoonWitnessClient(options);
 export const mwClient = createClient();
+

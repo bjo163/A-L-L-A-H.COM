@@ -40,10 +40,10 @@ These are working hypotheses. Audit actual requirements and implementations befo
 Implement shared services only when reuse and ownership justify them.
 
 ## Current repository baseline
-The repository has a Rust/Loco server under apps/server/ and a Next.js web application under apps/web/. Verify exact versions, routes, modules, endpoints, and capabilities from current manifests and source. Correct unsupported README/changelog claims.
+The repository has a Fastify/TypeScript ARSY Hub under `apps/arsy/`, a public Next.js Dock under `apps/dock/`, and a Next.js Headquarters under `apps/headquarter/`. Shared shadcn/ui components live in `packages/ui/`. Verify exact versions, routes, modules, endpoints, and capabilities from current manifests and source. Correct unsupported README/changelog claims.
 
 ## Delivery and deployment
-GitHub Actions builds and publishes server and web images to GHCR on pushes to `main`. The root Compose deployment consumes those images, and a successful publish triggers Coolify through its deployment URL and API token. Production image selection is controlled by `IMAGE_PREFIX` and `IMAGE_TAG`; Coolify must have read access to GHCR when packages are private.
+GitHub Actions builds and publishes dock and headquarter images to GHCR on pushes to `main`. A successful publish triggers Coolify through its deployment URL and API token. Production image selection is controlled by `IMAGE_PREFIX` and `IMAGE_TAG`; Coolify must have read access to GHCR when packages are private.
 
 ## Integration contracts
 Every cross-application integration defines producer/consumer, data ownership, schema/API/event version, authentication/authorization, error/retry/idempotency/timeout behavior, observability, compatibility, migration, and tests. Do not rely on undocumented shared-database assumptions.

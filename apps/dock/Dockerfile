@@ -11,11 +11,15 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/dock/package.json ./apps/dock/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/types/package.json ./packages/types/
 
 RUN pnpm install --frozen-lockfile
 
 COPY apps/dock ./apps/dock
 COPY packages/ui ./packages/ui
+COPY packages/sdk ./packages/sdk
+COPY packages/types ./packages/types
 RUN pnpm --filter @moonwitness/dock build
 
 FROM base AS runner

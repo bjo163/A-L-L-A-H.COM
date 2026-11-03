@@ -18,6 +18,8 @@ In strict compliance with user instructions:
 - **Single Auth Authority**: `apps/arsy` Fastify Hub serves as the only authority for credentials, session token minting (`sess_<64 hex chars>`), and remote revocation.
 - **Frontend BFF**: `apps/id` is purely a Next.js 16 + React 19 + Tailwind v4 presentation consumer communicating with the canonical Fastify Hub.
 
+Retirement note: The connected-app list and cross-app test names below record the implementation snapshot reported at completion. `apps/web` has since been retired; Dock and Headquarter are the current web applications. The historical test reference does not verify SSO integration in Dock or Headquarter.
+
 ---
 
 ### 2. Verified Deliverables & Artifacts

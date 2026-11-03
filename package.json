@@ -12,9 +12,8 @@
     "headquarter:build": "pnpm --filter @moonwitness/headquarter build",
     "id:dev": "pnpm --filter @moonwitness/id dev",
     "id:build": "pnpm --filter @moonwitness/id build",
-    "web:dev": "pnpm dock:dev",
-    "web:build": "pnpm dock:build",
     "extension:build": "pnpm --filter allah-vscode-extension build",
+    "extension:test": "tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts",
     "docs:check": "tsx scripts/check-doc-contracts.ts",
     "arsy:dev": "pnpm --filter @allah/arsy dev",
     "arsy:build": "pnpm --filter @allah/arsy build"

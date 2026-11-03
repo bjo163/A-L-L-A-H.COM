@@ -68,6 +68,17 @@ Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELE
 - Outcome: Modular Fastify runtime, embedded PGlite ORM, technical plugins (auth, sdui, llm-gateway, storage), and declarative business addons.
 - Verification: End-to-end HTTP smoke tests on `/health`, `/ready`, `/api/auth/register`, `/api/auth/current`, `/v1/models`, `/v1/chat/completions`, `/api/storage/upload`.
 
+### EXT-001 - Integrate the VS Code plan workbench
+- Priority: P1
+- Status: VERIFIED
+- Problem: The extension does not preserve all checklist states, route multi-root plan operations explicitly, or distinguish gateway catalog/mock responses from configured AI providers.
+- Expected outcome: Native VS Code plan navigation and task lifecycle with four-artifact plan creation, reliable gateway errors, and focused verification.
+- Evidence/source: `.plans/20261103-213240-vscode-extension-workbench/`
+- Dependencies: Plan artifact contract and docs checker alignment.
+- Acceptance criteria: Pending, in-progress, and completed task actions are distinct; plan/task navigation and `.plans` watching work across workspace roots; local and AI plans contain four required files; mock or invalid responses never create a success-shaped AI plan.
+- Verification: `pnpm extension:test` (12/12), `pnpm --filter allah-vscode-extension typecheck`, `pnpm extension:build`, `pnpm docs:check` (100/100), VSIX packaging and default-profile installation, and isolated extension-host activation smoke check passed.
+- Result/evidence: `.plans/20261103-213240-vscode-extension-workbench/report.md`.
+
 ## Task template
 
 ### [ID] â€” Outcome-focused title

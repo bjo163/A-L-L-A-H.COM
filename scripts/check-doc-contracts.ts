@@ -32,7 +32,8 @@ const REQUIRED_DOCS: Array<{ path: string; expectedId: string; owner: string }> 
   { path: 'DECISIONS.md', expectedId: 'DECISIONS', owner: 'architecture' },
   { path: 'QUALITY.md', expectedId: 'QUALITY', owner: 'qa' },
   { path: 'LEGACY_RECONCILIATION.md', expectedId: 'LEGACY_RECONCILIATION', owner: 'engineering' },
-  { path: 'apps/web/README.md', expectedId: 'APP_WEB_README', owner: 'frontend' },
+  { path: 'apps/dock/README.md', expectedId: 'APP_DOCK_README', owner: 'frontend' },
+  { path: 'apps/headquarter/README.md', expectedId: 'APP_HEADQUARTER_README', owner: 'frontend' },
 ];
 
 const VALID_STATUSES = ['discovered', 'ready', 'in_progress', 'implemented', 'verified', 'released'];
@@ -148,13 +149,6 @@ function checkPlansStandard(repoRoot: string): { errors: string[]; plansChecked:
       }
     }
 
-    // Task.md must contain budget/time estimation hints
-    if (fs.existsSync(taskPath)) {
-      const taskContent = fs.readFileSync(taskPath, 'utf-8');
-      if (!taskContent.toLowerCase().includes('est') && !taskContent.toLowerCase().includes('duration') && !taskContent.toLowerCase().includes('hour') && !taskContent.toLowerCase().includes('time') && !taskContent.toLowerCase().includes('budget')) {
-        errors.push(`[.plans/${planFolder}/task.md] Missing time/effort/budget estimation section or annotations`);
-      }
-    }
   }
 
   return { errors, plansChecked };

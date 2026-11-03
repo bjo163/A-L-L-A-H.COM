@@ -16,13 +16,13 @@ Contracts: `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `GOAL.md`, `LEGACY_RECO
 - **Spec-Driven Planning & Realtime Tracking (Canonical Artifact Standard)**:
   - Any multi-step task or architecture change MUST be planned under `.plans/<timestamp>-<slug>/` containing:
     1. `spec.md`: Functional architecture, requirements, and acceptance criteria.
-    2. `task.md`: Actionable checklist with estimated durations/budget and real-time status checkoff (`- [ ]` to `- [/]` or `- [x]`).
+    2. `task.md`: Actionable checklist with real-time status checkoff (`- [ ]` to `- [/]` or `- [x]`). Time and budget estimates are not required.
     3. `design.md`: UX/UI composition, interaction states, and API contract specifications.
     4. `rules.md`: Invariants, security constraints, and boundary rules (e.g. tenant isolation, anti-slop, SSRF guard).
   - **Resolution & Feedback Artifacts (Conditional / Completion)**:
     5. `conflict.md`: Mandatory whenever a plan encounters ambiguous requirements, conflicting legacy code, trade-offs, or blockers requiring human steering/approval, featuring structured options and confirmation checkboxes (`- [ ] Confirmed by User`).
     6. `decision.md`: Mandatory for recorded Architectural Decision Records (ADR) detailing rationale, alternatives considered, and consensus.
-    7. `report.md`: Mandatory upon completion (`status: "completed"` in `spec.md`), detailing execution start/end timestamps, actual duration vs. budget estimate, verified deliverables, and evidence.
+    7. `report.md`: Mandatory upon completion (`status: "completed"` in `spec.md`), detailing verified deliverables and evidence. Do not invent time or budget figures.
   - **Live Task Status Checkoff (Mandatory)**: During execution, the agent MUST update `task.md` checkboxes in realtime and update frontmatter `status:` in `spec.md` (`proposed` -> `in_progress` -> `completed`). Never leave finished items unchecked.
   - Compatible with the `allah-vscode-extension` Project Management tree view.
 - **Documentation**: Follow `DOCUMENTATION_CONTRACT.md`; update only the canonical docs affected by a change.
