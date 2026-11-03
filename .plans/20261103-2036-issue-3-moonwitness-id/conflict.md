@@ -17,3 +17,4 @@ There is a trade-off regarding the default session lifetime for MoonWitness ID (
 - [ ] **Option B**: Strict 24-hour fixed expiration with immediate logout upon expiry.
 
 *Note: Option A is pre-selected as the standard modern SaaS pattern, but user can toggle to Option B at any time.*
+

@@ -19,3 +19,4 @@ interface ApiResponse<T> {
   meta?: { timestamp: string; [key: string]: unknown };
 }
 ```
+

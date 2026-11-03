@@ -19,3 +19,4 @@ GitHub Issue #3 suggested Better Auth with Drizzle ORM. However, the system alre
 ## 3. Consequences
 - **Positive**: Zero ORM overlap, single PostgreSQL connection, unified model registry and automatic DDL migrations.
 - **Positive**: Clean repository boundary; `apps/id` remains purely a frontend client.
+

@@ -14,6 +14,13 @@ This file records changes that actually happened. It is not a roadmap and must n
 ## [Unreleased]
 
 ### Added
+- **MoonWitness ID Center (pps/id)**: Built Next.js 16 + React 19 + Tailwind v4 frontend for unified authentication, registration, and active session management.
+- **Native Identity & Session Models**: Added uth.user, uth.session, and uth.verification directly to @allah/arsy-orm with composite indexes on embedded PGlite.
+- **Arsy Auth Plugin Endpoints**: Added remote session revocation, session listing, user-agent tracking, and unified session guard in @allah/arsy-plugin-auth.
+- **Root Workspace Scripts**: Added pnpm id:dev and pnpm id:build.
+
+
+### Added
 - **Arsy Enterprise Ecosystem**: Ultra-modular Fastify framework replacing Rust Loco backend.
 - **Embedded PGlite ORM Engine (`@allah/arsy-orm`)**: In-process PostgreSQL WASM with automatic DDL schema synchronization and fail-closed multi-tenant (`company_id`) isolation.
 - **Arsy Micro-kernel (`@allah/arsy-core`)**: Standardized response envelope `{ success, data, error, meta }`, DI container, error hierarchy, and structured Pino logger.

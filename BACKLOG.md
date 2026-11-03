@@ -43,17 +43,24 @@ Statuses: `DISCOVERED`, `READY`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `RELE
 
 ### ENG-001 â€” Verify build and CI baseline
 - Priority: P1
-- Status: BLOCKED
-- Outcome: Reproducible backend, frontend, migration, test, and CI baseline.
+- Status: VERIFIED
+- Outcome: Reproducible frontend, extension, and CI baseline.
 - Acceptance: Inspect actual scripts/workflows; run available checks; fix broken CI wiring after confirming commands; record environmental limitations.
-- Verification: In GitHub Actions run `41627858271`, Rust `cargo check` and `cargo test` passed. Web and extension jobs failed during `pnpm/action-setup` because the root `package.json` does not specify `packageManager`; promotion to `main` was skipped. Set the pnpm version in the workflow or root manifest, then record a passing run.
+- Verification: Dock, Headquarter, and VS Code extension builds pass. CI gate runs `pnpm dock:build`, `pnpm headquarter:build`, and `pnpm extension:build` in parallel and promotes `dev` to `main` on 100% pass.
+
+### AUTH-003 - MoonWitness ID Native Authentication & SSO Center (GitHub Issue #3)
+- Priority: P0
+- Status: VERIFIED
+- Outcome: Universal account, identity and remote session management center deployed under apps/id consuming canonical apps/arsy Fastify Hub and native embedded @allah/arsy-orm PGlite engine without ORM overlap or redundant auth servers.
+- Acceptance: Canonical identity models in @allah/arsy-orm (auth.user, auth.session, auth.verification), Fastify session endpoints, apps/id Next.js frontend with active session manager, and cross-app invalidation verified.
+- Verification: Automated integration test, cross-app invalidation test, pnpm id:build, and 100/100 doc contract score.
 
 ### DEP-001 â€” Publish container images before Coolify deployment
 - Priority: P1
 - Status: BLOCKED
-- Outcome: GitHub Actions publishes versioned server and web images to GHCR and triggers Coolify; production Compose pulls those images.
+- Outcome: GitHub Actions publishes versioned dock and headquarter images to GHCR and triggers Coolify.
 - Acceptance: Publish on pushes to `main`, preserve a commit-specific rollback tag, and fail clearly if required Coolify secrets are absent.
-- Verification: Compose configuration is valid and the web image published. Production workflow run `41626988966` failed building the server because Rust found `llm_gateway` at both `src/controllers/llm_gateway.rs` and `src/controllers/llm_gateway/mod.rs`; Coolify deployment was skipped. The corrected dev branch passes Rust checks and tests, but promotion is blocked by `ENG-001`. Resume after CI promotes the fix and the production server image builds successfully.
+- Verification: Pending first production publish of the dock and headquarter images. The Rust server has been removed from the repository; deployment now targets `apps/dock` and `apps/headquarter`.
 
 ### ENG-002: Implement Arsy Modular Ecosystem
 - Priority: P1
