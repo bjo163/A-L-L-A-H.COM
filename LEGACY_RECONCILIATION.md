@@ -10,22 +10,13 @@ Investigate accessible MoonWitness generations and archives, Reborn, XV, related
 For each source record exact repository/path/URL, generation/date where known, purpose, provenance, status, key content/capabilities, dependencies, relationships, disposition, and verification evidence.
 
 ## Disposition
-Classify each item as:
-- **Preserve as canonical**
-- **Preserve as historical**
-- **Integrate**
-- **Migrate**
-- **Reference**
-- **Consolidate**
-- **Archive**
-- **Retire** (requires documented rationale and explicit authorization if irreversible)
-- **Unresolved**
+Classify each item as: preserve as canonical; preserve as historical; integrate; migrate; reference; consolidate; archive; retire (document rationale and obtain explicit authorization if irreversible); or unresolved.
 
 ## Canon integrity
 Never silently rewrite original canon. Keep original and corrected versions traceable. Distinguish narrative fiction, dream accounts, creative interpretation, research claims, and independently verified facts. Preserve titles, chapter order, chronology, motifs, and established naming corrections. When versions conflict, preserve both and document the conflict before selecting a canonical interpretation.
 
 ## Technical consolidation
-Before porting or rebuilding: inspect source/license/runtime/dependencies/data/API/tests; evaluate reuse/integration/migration/replacement; define a reversible plan; preserve source references and mapping; validate data and behavior; document omissions. Never delete an original source merely because a copy exists in A-L-L-A-H.COM.
+Before porting or rebuilding, inspect source, license, runtime, dependencies, data, APIs, and tests; evaluate reuse/integration/migration/replacement; define a reversible plan; preserve source references and mapping; validate data and behavior; document omissions. Never delete an original source merely because a copy exists in A-L-L-A-H.COM.
 
 ## Completion
 Reconciliation is complete only when accessible sources are inventoried, inaccessible sources are explicitly listed, important content/capabilities have a disposition, conflicts are traceable, migration provenance is retained, migrated content is validated, and no unauthorized destructive cleanup occurred.
