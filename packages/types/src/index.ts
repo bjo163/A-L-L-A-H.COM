@@ -225,6 +225,154 @@ export interface McpToolCallResult {
 export const MCP_PROTOCOL_VERSION = '2025-06-12';
 
 /**
+ * ISP Product Contracts (Phase 1)
+ */
+
+/**
+ * WORKS Commercial Domain — Plan Definition
+ */
+export interface IspPlanRecord {
+  id: number;
+  company_id: number;
+  name: string;
+  description?: string;
+  download_speed_kbps: number;
+  upload_speed_kbps: number;
+  burst_download_kbps?: number;
+  burst_upload_kbps?: number;
+  burst_threshold_kbps?: number;
+  burst_time_seconds?: number;
+  fup_threshold_gb?: number;
+  fup_throttled_download_kbps?: number;
+  fup_throttled_upload_kbps?: number;
+  price_cents: number;
+  currency: string;
+  billing_cycle_days: number;
+  grace_period_days: number;
+  is_active: boolean;
+  create_date: string;
+  write_date: string;
+}
+
+/**
+ * WORKS Commercial Domain — Subscription Lifecycle
+ */
+export type IspSubscriptionStatus =
+  | 'draft'
+  | 'pending_payment'
+  | 'active'
+  | 'grace'
+  | 'suspended'
+  | 'expired'
+  | 'cancelled'
+  | 'reactivation_pending';
+
+export interface IspSubscriptionRecord {
+  id: number;
+  company_id: number;
+  partner_id: number;
+  plan_id: number;
+  status: IspSubscriptionStatus;
+  username: string;
+  start_date: string;
+  end_date?: string;
+  grace_until?: string;
+  suspended_reason?: string;
+  auto_renew: boolean;
+  payment_method_id?: number;
+  create_date: string;
+  write_date: string;
+}
+
+/**
+ * NEXUS Device Inventory Domain — NAS Registry
+ */
+export interface NexusNasRecord {
+  id: number;
+  company_id: number;
+  name: string;
+  ip_address: string;
+  secret_encrypted: string;
+  nas_identifier?: string;
+  vendor: 'mikrotik' | 'other';
+  coa_port: number;
+  disconnect_port: number;
+  is_active: boolean;
+  create_date: string;
+  write_date: string;
+}
+
+/**
+ * NEXUS Device Inventory Domain — IP Pools
+ */
+export interface NexusIpPoolRecord {
+  id: number;
+  company_id: number;
+  name: string;
+  cidr: string;
+  gateway: string;
+  dns_primary?: string;
+  dns_secondary?: string;
+  vlan_id?: number;
+  nas_id?: number;
+  is_active: boolean;
+  create_date: string;
+  write_date: string;
+}
+
+/**
+ * SENTINEL Protocol & Access Domain — Network Credentials
+ */
+export interface SentinelAccountRecord {
+  id: number;
+  company_id: number;
+  subscription_id: number;
+  username: string;
+  credential_encrypted: string;
+  auth_type: 'pap' | 'chap' | 'mschapv2';
+  ip_pool_id?: number;
+  static_ip?: string;
+  is_active: boolean;
+  create_date: string;
+  write_date: string;
+}
+
+/**
+ * SENTINEL Protocol & Access Domain — Access Decision
+ */
+export interface SentinelAccessDecision {
+  allowed: boolean;
+  reply_code: 'Access-Accept' | 'Access-Reject';
+  reject_reason?: string;
+  framed_ip_address?: string;
+  mikrotik_rate_limit?: string;
+  session_timeout_seconds?: number;
+}
+
+/**
+ * SENTINEL Protocol & Access Domain — Live Session
+ */
+export interface SentinelSessionRecord {
+  id: number;
+  company_id: number;
+  account_id: number;
+  nas_id: number;
+  acct_session_id: string;
+  framed_ip_address: string;
+  calling_station_id?: string;
+  called_station_id?: string;
+  start_time: string;
+  stop_time?: string;
+  input_octets: number;
+  output_octets: number;
+  session_time_seconds: number;
+  terminate_cause?: string;
+  is_active: boolean;
+  create_date: string;
+  write_date: string;
+}
+
+/**
  * Autonomous Cognitive Agent Loop Contracts (Phase 4)
  */
 export interface AgentThought {
