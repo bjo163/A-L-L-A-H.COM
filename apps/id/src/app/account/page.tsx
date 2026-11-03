@@ -74,9 +74,12 @@ export default function AccountCenterPage() {
   if (isLoading) {
     return (
       <main className="id-loading">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-          <p className="text-sm text-zinc-400">Loading Account Center...</p>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <h1 className="text-xl font-semibold text-zinc-100">Account</h1>
+          <div className="flex flex-col items-center gap-3" role="status">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+            <p className="text-sm text-zinc-400">Loading Account Center...</p>
+          </div>
         </div>
       </main>
     );
@@ -116,7 +119,7 @@ export default function AccountCenterPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-zinc-100">{user?.name}</h2>
+                <h1 className="text-xl font-bold text-zinc-100">{user?.name || 'Account overview'}</h1>
                 <Badge variant="active" dot>Active ID</Badge>
               </div>
               <p className="text-xs text-zinc-400 font-mono mt-0.5">{user?.email}</p>
@@ -157,18 +160,24 @@ export default function AccountCenterPage() {
             </div>
 
             <div className="space-y-3">
-              {sessions.map((sess) => (
-                <SessionCard
-                  key={sess.id}
-                  id={sess.id}
-                  deviceName={sess.deviceName}
-                  ipAddress={sess.ipAddress}
-                  expiresAt={sess.expiresAt}
-                  isCurrent={sess.isCurrent}
-                  isLoading={revokingId === sess.id}
-                  onRevoke={handleRevoke}
-                />
-              ))}
+              {sessions.length === 0 ? (
+                <p className="text-sm text-zinc-400" role="status">
+                  No active sessions are registered for this account.
+                </p>
+              ) : (
+                sessions.map((sess) => (
+                  <SessionCard
+                    key={sess.id}
+                    id={sess.id}
+                    deviceName={sess.deviceName}
+                    ipAddress={sess.ipAddress}
+                    expiresAt={sess.expiresAt}
+                    isCurrent={sess.isCurrent}
+                    isLoading={revokingId === sess.id}
+                    onRevoke={handleRevoke}
+                  />
+                ))
+              )}
             </div>
           </section>
 

@@ -37,7 +37,7 @@ Reading this as: an ecosystem of public entry, operations, identity, and researc
 - The six skin identities remain distinguishable through typography, geometry, surfaces, and motion recipes so they do not collapse into palette-only themes.
 - Ambient light and line fields stay behind content because they give each named world atmosphere without inventing operational or observational data.
 - The Dock destination layout gives Headquarter more area because it is the primary operations entry; the other two destinations remain equal-weight secondary routes.
-- The shared compact navigation stacks identity, actions, and the menu on narrow screens so the controls remain named and thumb-sized instead of compressing the desktop row.
+- The shared compact navigation keeps the brand and labeled menu on one narrow-screen row, then reveals cross-app links, controls, and account actions together.
 - Entrance movement is limited to short route transitions; focus, hover, and pressed states handle direct interaction feedback.
 
 ## Responsive and interaction states

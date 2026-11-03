@@ -44,6 +44,7 @@ A-L-L-A-H.COM is the central home of the MoonWitness and Empire of the Light eco
   - **VS Code**: `AgentWorkbenchProvider` webview consuming Arsy SSE; role-badged live trajectory.
   - **Headquarter**: `/swarm` page with `@moonwitness/ui` — agent role cards, live message log with latency chips, mission results. Nav link from home page.
   - **Test**: `apps/arsy/test/swarm.test.mjs` — 5/5 passing.
+- **Windows-local VS Code agent**: local workspace tools and mode policies execute in the extension host; workspace context requires explicit session consent, and file edits are reviewable before application. Paired devices poll missions outbound; Headquarter can manage tenant-scoped devices and missions without selecting local paths or overriding extension policy. Signup assigns isolated personal tenant IDs from the negative integer namespace; positive IDs remain organization tenants, with zero reserved for unassigned users.
 - Data: single embedded database engine (PGlite WASM via `@allah/arsy-orm`), zero ORM overlap, explicit schemas and migrations, tenant isolation (`company_id`), provenance, and fail-closed retention.
 - Infrastructure: reproducible local, CI, staging, and production environments, health checks (`/health`, `/ready`), secrets, networking, and rollback.
 

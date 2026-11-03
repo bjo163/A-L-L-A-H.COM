@@ -12,8 +12,7 @@ import {
   Input,
   Avatar,
 } from '@moonwitness/ui';
-import { mwClient } from '@allah/sdk';
-import type { SwarmRole, SwarmExecutionResult } from '@allah/sdk';
+import { mwClient, type SwarmRole, type SwarmExecutionResult } from '@allah/sdk';
 
 interface RoleMeta {
   label: string;

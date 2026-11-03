@@ -12,6 +12,10 @@ The Headquarter is a Next.js command center for the A-L-L-A-H.COM platform. It r
 
 Check `package.json` and source for the current routes, dependencies, and features.
 
+## Remote agent operations
+
+The Agent page supports pairing and revoking Windows VS Code devices, submitting missions, requesting cancellation, and viewing persisted mission events. Device and mission access is tenant-scoped: newly registered users receive isolated personal tenants, while members assigned to the same organization tenant can share its devices and missions. Headquarter does not select local workspace paths or bypass the extension's execution policy.
+
 ## Commands
 
 Run these from the repository root:

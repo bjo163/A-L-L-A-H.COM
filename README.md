@@ -70,6 +70,8 @@ The extension in `packages/vscode-extension` integrates the `.plans` workflow, t
 - Local and gateway-generated plans contain `spec.md`, `task.md`, `design.md`, and `rules.md`. AI generation stops on gateway errors, malformed output, or Arsy mock completions.
 - The Arsy API view checks `/health` and `/ready` and opens the Swagger UI at `/docs`.
 - The model picker uses identifiers from Arsy's gateway catalog. Catalog entries do not confirm that an upstream provider is configured.
+- The Windows-local agent supports Ask, Plan, Code, Debug, Ideate, and Autopilot modes with workspace-scoped tools, explicit context consent, reviewable edits, and bounded validation commands.
+- Headquarter can pair/revoke extension devices, submit/cancel missions, and view persisted events. New accounts receive isolated personal tenants; shared device access requires explicit membership in the same organization tenant.
 - Verification commands: `pnpm extension:test`, `pnpm --filter allah-vscode-extension typecheck`, and `pnpm extension:build`.
 - Arsy and the extension default to port `5150`. If Arsy uses another port, set both `allah.arsyUrl` and `allah.gatewayUrl` to that server's URL.
 - Extension-specific setup and commands: [`packages/vscode-extension/README.md`](packages/vscode-extension/README.md).

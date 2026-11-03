@@ -271,6 +271,7 @@
   box-shadow: inset 0 0 0 1px rgb(224 236 245 / 0.08);
 }
 
+.id-account-content h1,
 .id-account-content h2,
 .id-account-content h3 {
   color: #eef0f3;

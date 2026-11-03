@@ -10,13 +10,15 @@ export default [
     },
   },
   {
-    files: ['**/*.{ts,tsx,js,jsx,mjs,cjs}'],
     ignores: [
       'node_modules/**',
       'dist/**',
+      '**/dist/**',
       '.next/**',
+      '**/.next/**',
       'out/**',
       'build/**',
+      '**/build/**',
       'next-env.d.ts',
       '**/*.d.ts',
       'pnpm-lock.yaml',

@@ -4,7 +4,7 @@ import helmet from '@fastify/helmet';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ok, fail, AppError, logger } from '@allah/arsy-core';
-import { dbEngine, SchemaMigrator, modelRegistry, BaseRepository, redactSecret, encryptSecret } from '@allah/arsy-orm';
+import { dbEngine, SchemaMigrator, modelRegistry, BaseRepository, redactSecret, encryptSecret, cosineSimilarity } from '@allah/arsy-orm';
 
 import { authPlugin } from '@allah/arsy-plugin-auth';
 import { sduiPlugin } from '@allah/arsy-plugin-sdui';
@@ -17,7 +17,6 @@ import { registerMwStorageAddon } from '../../../addons/mw_storage/index';
 import { registerMwQorpusAddon } from '../../../addons/mw_qorpus/index';
 import { registerNexusAddon } from '../../../addons/nexus/index';
 import { computeSha256, chunkText } from '../../../addons/mw_qorpus/src/chunker';
-import { cosineSimilarity } from '@allah/arsy-orm';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;
@@ -304,7 +303,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
       }
       const repo = new BaseRepository(model);
-      let filters: any[] = [];
+      const filters: any[] = [];
       if (companyId) {
         filters.push({ field: 'company_id', operator: '=' as const, value: companyId });
       }
@@ -408,7 +407,7 @@ const repo = new BaseRepository(model);
         return fail('MODEL_NOT_FOUND', 'nexus.ip_pool model not registered');
       }
       const repo = new BaseRepository(model);
-      let filters: any[] = [];
+      const filters: any[] = [];
       if (companyId) {
         filters.push({ field: 'company_id', operator: '=' as const, value: companyId });
       }

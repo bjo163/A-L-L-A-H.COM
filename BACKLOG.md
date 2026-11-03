@@ -9,12 +9,19 @@ last_verified: "2026-11-03"
 
 # BACKLOG.md
 
+## WINDOWS-VSCODE-LOCAL-AGENT: Windows-local VS Code agent and remote operations
+- Priority: P0
+- Status: IMPLEMENTED; INTERACTIVE VERIFICATION PENDING
+- Outcome: The extension offers six local agent modes with explicit workspace-context consent, workspace-scoped edits, bounded validation commands, and outbound paired-device missions. Headquarter can manage tenant-scoped devices and missions. New accounts receive isolated personal tenants; team access requires shared organization membership.
+- Acceptance: Local permissions remain authoritative; personal accounts are isolated; users in the same tenant can manage shared devices and missions; focused extension and device-control tests pass.
+- Verification: `pnpm extension:test` (28/28), `pnpm typecheck`, `pnpm lint:arch`, `pnpm docs:check`, `pnpm extension:build`, all four documented application/Arsy builds, and auth/gateway package builds pass. Interactive Windows extension-host and Headquarter behavior checks remain pending; see `.plans/20261104-0138-windows-vscode-agent-platform/`.
+
 ## MOONFRAME-SIX-DNA-UI-SKINS: Shared UI skin engine and app assignments
 - Priority: P0
-- Status: IMPLEMENTED; VISUAL VERIFICATION PENDING
-- Outcome: `@moonwitness/ui` exposes six typed skin definitions, semantic token roles, a deterministic server-rendered `SkinRoot`, and shared component recipes. Dock uses Imperium Lumen, Headquarter uses Nexus Paradox, ID uses Lunar Chronicles, and WORLD OBSERVATORY uses Mycelium. The Skin Laboratory and app-specific composition remain deferred.
+- Status: IMPLEMENTED; APP ROUTES AUDITED; INTERACTIVE BROWSER VERIFICATION PENDING
+- Outcome: `@moonwitness/ui` exposes six typed skin definitions, semantic token roles, a deterministic server-rendered `SkinRoot`, and shared component recipes. Dock uses Imperium Lumen, Headquarter uses Nexus Paradox, ID uses Lunar Chronicles, and WORLD OBSERVATORY uses Mycelium. All 12 current app routes have been visually and responsively audited; the Skin Laboratory and live interactive verification remain pending.
 - Acceptance: All six IDs are registered; shared component behavior remains semantic and accessible; four consumer roots select the approved skin; `apps/web` remains unchanged; no full verification claim without Skin Laboratory evidence.
-- Verification: See `.plans/20261103-2359-six-dna-ui-skins/report.md` when complete.
+- Verification: See `.plans/20261104-0310-ui-skin-refinement/report.md` for current route, viewport, test, and browser-environment evidence.
 
 ## SWARM-ORCHESTRATION: Autonomous IDE Agent Workbench & Multi-Agent Swarm Orchestration
 - Priority: P0

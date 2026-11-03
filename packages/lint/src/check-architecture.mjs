@@ -21,6 +21,10 @@ function collectFiles(dir, extensions, excludeDirs = []) {
         entry.name === 'node_modules' ||
         entry.name === '.next' ||
         entry.name === 'dist' ||
+        entry.name === 'build' ||
+        entry.name === 'out' ||
+        entry.name === 'lib' ||
+        entry.name === 'coverage' ||
         entry.name === '.git'
       ) {
         continue;
@@ -105,7 +109,7 @@ function checkUiPurity() {
 // Ensure no secondary ORMs (Drizzle, Prisma, TypeORM, Mongoose) exist anywhere
 function checkZeroOrmOverlap() {
   const allFiles = collectFiles(ROOT_DIR, ['.ts', '.tsx', '.js', '.mjs'], [
-    'node_modules', 'dist', '.next', '.git', 'packages/lint',
+    'node_modules', 'dist', 'build', 'out', '.next', '.git', 'packages/lint',
   ]);
 
   const forbiddenPackages = ['drizzle-orm', '@prisma/client', 'typeorm', 'mongoose'];
@@ -243,7 +247,7 @@ function checkTenantIsolation() {
 // No raw SQL string concatenation in query method calls; use parameterized queries
 function checkParameterizedQueries() {
   const allFiles = collectFiles(ROOT_DIR, ['.ts', '.tsx', '.js', '.mjs'], [
-    'node_modules', 'dist', '.next', '.git', 'packages/lint',
+    'node_modules', 'dist', 'build', 'out', '.next', '.git', 'packages/lint',
   ]);
 
   // Match .query(...) or .execute(...) calls with template literals containing SQL keywords
@@ -273,7 +277,7 @@ function checkParameterizedQueries() {
 // No hardcoded API keys, tokens, passwords, or connection strings
 function checkNoSecrets() {
   const allFiles = collectFiles(ROOT_DIR, ['.ts', '.tsx', '.js', '.mjs', '.json'], [
-    'node_modules', 'dist', '.next', '.git', 'packages/lint', 'pnpm-lock.yaml',
+    'node_modules', 'dist', 'build', 'out', '.next', '.git', 'packages/lint', 'pnpm-lock.yaml',
   ]);
 
   const secretPatterns = [
@@ -311,7 +315,7 @@ function checkNoSecrets() {
 // No debugger statements in committed code
 function checkNoDebugger() {
   const allFiles = collectFiles(ROOT_DIR, ['.ts', '.tsx', '.js', '.mjs'], [
-    'node_modules', 'dist', '.next', '.git', 'packages/lint',
+    'node_modules', 'dist', 'build', 'out', '.next', '.git', 'packages/lint',
   ]);
 
   for (const filePath of allFiles) {
@@ -333,7 +337,7 @@ function checkNoDebugger() {
 // No blocking TODO/FIXME/HACK comments in code files (not .md docs)
 function checkTodoFixmeHack() {
   const allFiles = collectFiles(ROOT_DIR, ['.ts', '.tsx', '.js', '.mjs'], [
-    'node_modules', 'dist', '.next', '.git', 'packages/lint',
+    'node_modules', 'dist', 'build', 'out', '.next', '.git', 'packages/lint',
   ]);
 
   const blockingPatterns = [

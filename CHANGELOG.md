@@ -9,6 +9,16 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - Windows VS Code Agent and Remote Operations
+
+### Added
+- Windows-local VS Code agent modes with workspace-scoped file operations, explicit context consent, reviewable edits, local session history, and allowlisted validation commands.
+- Outbound device pairing and tenant-scoped remote missions, cancellation, and event history in Headquarter.
+- Isolated personal tenant assignment for new accounts; organization sharing requires explicit tenant membership.
+
+### Changed
+- Device-control tenant validation accepts non-zero safe integer IDs so isolated personal tenants and positive organization tenants both remain scoped.
+
 ## 2026-11-04 - DNA App Visual Transformation
 
 ### Added
@@ -19,6 +29,7 @@ last_verified: "2026-11-04"
 ### Changed
 - Redesigned all 12 in-scope routes with distinct application identities, responsive layouts, and honest loading, empty, authentication, and unavailable states.
 - Added descriptive Headquarter page titles, explicit form labels, semantic main landmarks, and primary page headings.
+- Added an account-page heading and announced loading and empty-session states for assistive technology.
 - Removed unsupported AGI capability claims and nonfunctional presentation controls.
 - Verified the four required production build gates; architecture lint currently reports unrelated violations in other worktree files.
 

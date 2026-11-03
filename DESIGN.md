@@ -55,6 +55,8 @@ A-L-L-A-H.COM, MoonWitness, Headquarter, Dock, Cockpit, Qorpus, and ROCKSOUL may
 ## Interaction
 Every visible control performs its advertised action. Provide hover, focus, pressed, disabled, loading, success, and error states. Motion communicates transition or feedback, respects reduced-motion preferences, and never obstructs core tasks. Each skin must preserve keyboard and screen-reader behavior.
 
+The VS Code agent requests explicit consent before sending selected workspace context, presents proposed file changes for review, and exposes permission, approval, cancellation, and truthful completion states. Headquarter's remote agent controls manage paired devices and missions, but do not expose workspace paths or bypass local extension permissions.
+
 ## Delivery Experience
 Production releases use prebuilt, versioned container images so deployment does not compile application code on the production host. Keep the active image tag explicit and provide a commit-specific tag for rollback.
 

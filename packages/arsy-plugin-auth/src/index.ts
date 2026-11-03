@@ -38,6 +38,7 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     const existingCompanyId = Number(user.company_id);
     if (Number.isSafeInteger(existingCompanyId) && existingCompanyId !== 0) return existingCompanyId;
 
+    // Personal tenants use a negative namespace; organization tenants use positive company IDs.
     const personalCompanyId = -userId;
     const assigned = await dbEngine.query<{ company_id: number }>(
       'UPDATE "auth_user" SET company_id = $1, write_date = CURRENT_TIMESTAMP WHERE id = $2 AND (company_id IS NULL OR company_id = 0) RETURNING company_id;',

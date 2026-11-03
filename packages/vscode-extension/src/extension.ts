@@ -3,11 +3,11 @@ import * as vscode from 'vscode';
 import { MoonWitnessClient } from './client';
 import { ArsyStatusTreeDataProvider, ModelTreeDataProvider } from './treeProvider';
 import { PlanTreeDataProvider } from './planTreeProvider';
-import { PlanManager } from './planManager';
+import { PlanManager, type PlanItem, type TaskItem, type TaskStatus } from './planManager';
 import { AgentWorkbenchProvider } from './agentWorkbench';
 import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
 import { RemoteMissionService } from './remoteMissionService';
-import type { PlanItem, TaskItem, TaskStatus } from './planManager';
+
 
 function isTaskItem(value: unknown): value is TaskItem {
   if (typeof value !== 'object' || value === null) {

@@ -89,7 +89,7 @@ async function getCompanyContext(
   const user = await new BaseRepository(userModel).findById(userId) as { company_id?: unknown } | null;
   const companyId = Number(user?.company_id);
   if (!Number.isSafeInteger(companyId) || companyId === 0) {
-    reply.status(403).send(fail('TENANT_REQUIRED', 'A verified company tenant must be assigned before pairing devices.'));
+    reply.status(403).send(fail('TENANT_REQUIRED', 'A verified tenant must be assigned before pairing devices.'));
     return undefined;
   }
   return { userId, companyId };
@@ -199,7 +199,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const companyId = Number(pairing.company_id);
     if (!Number.isSafeInteger(companyId) || companyId === 0) {
       reply.status(403);
-      return fail('TENANT_REQUIRED', 'The pairing record has no verified company tenant.');
+      return fail('TENANT_REQUIRED', 'The pairing record has no verified tenant.');
     }
 
     const claimed = await getRepository('agent.pairing').updateById(
@@ -421,7 +421,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const companyId = Number(device.company_id);
     if (!Number.isSafeInteger(companyId) || companyId === 0) {
       reply.status(403);
-      return fail('TENANT_REQUIRED', 'The paired device has no verified company tenant.');
+      return fail('TENANT_REQUIRED', 'The paired device has no verified tenant.');
     }
     const deviceRepository = getRepository<AgentDeviceRow>('agent.device');
     const stillActive = await deviceRepository.updateById(
@@ -550,7 +550,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const companyId = Number(device.company_id);
     if (!Number.isSafeInteger(companyId) || companyId === 0) {
       reply.status(403);
-      return fail('TENANT_REQUIRED', 'The paired device has no verified company tenant.');
+      return fail('TENANT_REQUIRED', 'The paired device has no verified tenant.');
     }
     const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, companyId);
     if (!mission || mission.device_id !== device.id) {

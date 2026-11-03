@@ -9,8 +9,8 @@ import {
 import {
   getGatewayErrorMessage,
   parsePlanCompletionResponse,
+  type GatewayModel,
 } from './gatewayContracts';
-import type { GatewayModel } from './gatewayContracts';
 import type { PlanMarkdownBodies } from './planManager';
 
 const API_KEY_SECRET = process.env.API_KEY_SECRET_NAME || 'allah.apiKey';

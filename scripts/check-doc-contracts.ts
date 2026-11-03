@@ -168,7 +168,7 @@ function main() {
   let antislopScore = 20;
 
   const inspections: DocInspection[] = [];
-  let totalErrors: string[] = [];
+  const totalErrors: string[] = [];
 
   for (const req of REQUIRED_DOCS) {
     const fullPath = path.resolve(repoRoot, req.path);

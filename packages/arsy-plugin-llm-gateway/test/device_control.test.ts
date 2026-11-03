@@ -80,6 +80,13 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     });
     assert.equal(secondPersonalSignIn.statusCode, 200);
     const secondPersonalToken = secondPersonalSignIn.json<ApiResponse<{ sessionToken: string }>>().data.sessionToken;
+    const secondPersonalUser = await new BaseRepository(personalUserModel).find({
+      filters: [{ field: 'email', operator: '=', value: 'second-personal@example.test' }],
+      limit: 1,
+    }) as Array<{ id: number; company_id: number }>;
+    assert.equal(secondPersonalUser.length, 1);
+    assert.equal(secondPersonalUser[0].company_id, -secondPersonalUser[0].id);
+    assert.notEqual(secondPersonalUser[0].company_id, personalUser[0].company_id);
 
     const personalPairingResponse = await app.inject({
       method: 'POST',

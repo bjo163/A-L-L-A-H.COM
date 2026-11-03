@@ -54,6 +54,16 @@ Record accepted decisions and rationale only. Proposals and unresolved questions
 - Consequences: Dock selects Imperium Lumen, Headquarter selects Nexus Paradox, ID selects Lunar Chronicles, and WORLD OBSERVATORY selects Mycelium. ROCKSOUL and RIOT ANARCHY remain available for future consumers. Skin Laboratory comparison and complete visual verification remain pending.
 - Related tasks: MOONFRAME-SIX-DNA-UI-SKINS.
 
+### D-008 — Isolated Personal Tenants for New Accounts
+- Status: ACCEPTED
+- Date: 2026-11-04
+- Context: Newly registered accounts need tenant assignment to use paired-device and remote-mission APIs, but sharing one default tenant would expose devices across unrelated accounts.
+- Decision: Assign each new account a personal tenant whose integer ID is the negative of its unique positive user ID. Reserve positive IDs for organization tenants and zero for unassigned accounts. Device-control APIs accept non-zero safe integer tenant IDs and continue to reject unassigned users.
+- Alternatives: Keep registration blocked until an administrator assigns an organization tenant; introduce a central tenant registry/ID allocator before enabling personal tenants.
+- Rationale: The existing integer `company_id` field and user sequence provide distinct per-account IDs without introducing a shared tenant or colliding with positive organization IDs.
+- Consequences: New accounts are isolated by default. Organization sharing requires explicit administrative assignment of users to the same positive tenant. Tenant-scoped queries must treat the ID as an opaque non-zero key rather than assuming it is positive.
+- Related tasks: WINDOWS-VSCODE-LOCAL-AGENT.
+
 ## Decision template
 ### D-XXX — Title
 - Status: PROPOSED / ACCEPTED / SUPERSEDED

@@ -17,14 +17,12 @@ Implement Kilo-like per-mode `allow` / `ask` / `deny` policies and a high-autono
 
 The user selected remote control from Headquarter. Pairing is therefore required; Headquarter can submit and cancel missions for an authenticated paired extension, but cannot select arbitrary local paths or bypass local approvals.
 
-## Tenant provisioning prerequisite
+## Tenant provisioning resolution
 
 The device and mission APIs correctly fail closed unless the authenticated user's `auth.user.company_id` is assigned. The current `/api/auth/register` flow creates a user without a company assignment, so a newly registered account can authenticate but receives `403 TENANT_REQUIRED` when it attempts to create a pairing code. Integration coverage confirms this behavior.
 
-Choose how new accounts receive tenant membership before remote pairing is considered complete:
+- [x] **Create a personal tenant on signup.** Confirmed by the user.
 
-- [ ] **Create a personal tenant on signup.** New accounts can pair immediately in an isolated tenant. Team sharing still requires an existing administrative assignment of users to the same company tenant.
-- [ ] **Require pre-provisioned membership.** Keep registration unchanged and require an operator to assign `company_id` before users can pair. Document this prerequisite in setup guidance.
-- [ ] **Add tenant creation and invitation onboarding.** Allow account owners to create a shared tenant and invite other authenticated users. This expands scope to tenant membership UX and APIs.
+Each account receives a distinct negative `company_id` derived from its user ID. Positive IDs remain the organization-tenant namespace; zero remains unassigned. This avoids collisions with existing positive company IDs without introducing a tenant registry or a shared default tenant. Device-control validation accepts any non-zero safe integer and continues to fail closed for unassigned accounts. Users share devices and missions only when they have the same tenant ID; organization membership still requires explicit administrative assignment.
 
-No option is selected yet. Do not weaken the fail-closed tenant check or create a shared default tenant while awaiting the product decision.
+Integration coverage verifies signup provisioning, pairing, isolation between personal tenants, sharing within an assigned organization tenant, and cross-tenant denial.
