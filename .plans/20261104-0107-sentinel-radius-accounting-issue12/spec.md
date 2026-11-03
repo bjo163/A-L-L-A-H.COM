@@ -1,6 +1,6 @@
 ---
 title: "SENTINEL Phase 3: RADIUS Accounting & Subscriber Session Lifecycle (Issue #12)"
-status: "proposed"
+status: "completed"
 timestamp: "2026-11-04T01:07:00+07:00"
 author: "Antigravity Assistant"
 target_branch: "dev"
