@@ -1,54 +1,32 @@
-# DESIGN: A-L-L-A-H.COM Visual & Server-Driven UI Specification
+# DESIGN.md
+## Empire of the Light — Product Experience & Moon UI Doctrine
 
-Dokumen ini mendefinisikan sistem desain visual, palet warna, tipografi, dan kontrak Server-Driven UI (SDUI) antara backend Rust dan frontend Next.js (`apps/web`).
+## Purpose
+Create one coherent design language for A-L-L-A-H.COM while preserving the distinct identity of MoonWitness and each product. The target is a distinctive, premium, cinematic, carefully crafted interface—not a generic SaaS dashboard or default component-library layout.
 
----
+## Principles
+- Purpose before decoration; every element communicates hierarchy, state, or meaning.
+- Distinctive composition; avoid repetitive dashboard grids and generic hero templates.
+- Coherent ecosystem; shared foundations with recognizable product identities.
+- Clarity in navigation, hierarchy, actions, and status.
+- Restraint in glow, gradients, effects, and motion.
+- Accessibility: contrast, keyboard support, focus, semantics, reduced motion, readable type.
+- Responsive composition for desktop, tablet, and mobile.
+- Honest loading, empty, error, offline, permission, and success states.
 
-## 1. Design Tokens & Palet Visual
+## Empire of the Light visual DNA
+Use cinematic light, atmospheric depth, celestial geometry, refined surfaces, and subtle intentional motion where appropriate. Avoid noisy decoration and generic sci-fi clichés. Reuse approved MoonWitness and A-L-L-A-H.COM canon/assets; do not discard established identity without a documented decision.
 
-- **Background Deep Space**: `#020617` (`slate-950`) / Surface `#0f172a` (`slate-900`)
-- **Accent Emerald (Operational / Active)**: `#10b981` (`emerald-500`) / Badge bg `#10b98115`
-- **Accent Sky (Storage & Data)**: `#0ea5e9` (`sky-500`)
-- **Accent Amber (Odoo ERP Core)**: `#f59e0b` (`amber-500`)
-- **Border Crisp**: `#1e293b` (`slate-800`)
+## Moon UI
+Evaluate Moon UI as the shared foundation. Maintain tokens for color, typography, spacing, radii, elevation, motion; layout primitives; accessible components; iconography; data visualization; navigation/overlays; theme behavior; responsive rules; and component states.
 
----
+Share components when appropriate; retain product-specific components when behavior genuinely differs.
 
-## 2. Server-Driven UI (SDUI) Contracts
+## Product identity
+A-L-L-A-H.COM, MoonWitness, Headquarter, Dock, Cockpit, and Qorpus may share foundations but should not become visually indistinguishable. Their hierarchy, tone, navigation, and motifs must reflect validated purpose.
 
-Frontend tidak meng-hardcode struktur form dan tabel. Seluruh rendering digerakkan oleh skema JSON dari backend:
+## Interaction
+Every visible control performs its advertised action. Provide hover, focus, pressed, disabled, loading, success, and error states. Motion communicates transition or feedback, respects reduced-motion preferences, and never obstructs core tasks.
 
-### Tree (List View) Contract:
-```json
-{
-  "model": "res.partner",
-  "view_type": "tree",
-  "title": "Developers & Partners",
-  "fields": [
-    { "name": "name", "label": "Full Name", "type": "char", "sortable": true },
-    { "name": "email", "label": "Email Address", "type": "char", "sortable": true },
-    { "name": "credit_balance", "label": "Credit (USD)", "type": "float", "sortable": true },
-    { "name": "active", "label": "Status", "type": "boolean", "badge": true }
-  ]
-}
-```
-
-### Form (Edit View) Contract:
-```json
-{
-  "model": "ai.provider",
-  "view_type": "form",
-  "title": "Configure AI Provider",
-  "groups": [
-    {
-      "title": "Basic Credentials",
-      "fields": ["name", "slug", "provider_type", "base_url"]
-    },
-    {
-      "title": "Routing & Priority",
-      "fields": ["priority", "is_healthy", "active"]
-    }
-  ]
-}
-```
-
+## Review checklist
+Review information architecture, task flow, visual hierarchy, responsive behavior, accessibility, keyboard/focus, loading/empty/error/offline states, functional controls, performance, and consistency with Moon UI and product identity. A mockup is not a completed feature; verify the running implementation.
