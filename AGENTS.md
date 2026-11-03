@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Target: `https://github.com/bjo163/A-L-L-A-H.COM.git` (branch: `main`)
+Target: `https://github.com/bjo163/A-L-L-A-H.COM.git` (branch: `dev`)
 Contract: `AUTONOMOUS.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`
 
 ## Universal Engineering Rules
@@ -17,7 +17,7 @@ Contract: `AUTONOMOUS.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`
   2. `cargo check --manifest-path apps/server/Cargo.toml`
   3. `pnpm web:build`
 - **Doc sync**: Concurrently update `README.md`, `CHANGELOG.md`, `BLUEPRINT.md`, `DESIGN.md`, `BACKLOG.md`.
-- **Git safety**: Review staged diff. No secrets/untracked bloat. Conventional commits + push to `main`.
+- **Git safety**: Review staged diff. No secrets/untracked bloat. Conventional commits + push to `dev` (CI auto-promotes to `main` upon 100% pass).
 
 <!-- antislop:start -->
 ## antislop

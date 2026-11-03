@@ -46,4 +46,4 @@ Update only affected docs:
 ### 6. Git Safety & Push
 - Inspect diff before committing. Never commit secrets, local databases, or credentials.
 - Conventional commit: `<type>(<scope>): <concise description>`.
-- Push directly to `main` when working tree is clean.
+- Push directly to `dev` (CI gate verifies and auto-promotes to `main`) when working tree is clean.

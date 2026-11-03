@@ -46,3 +46,8 @@ After the first successful publish, set both GHCR packages to public in GitHub's
 ## VS Code Extension
 The official extension lives in `packages/vscode-extension`. It provides direct integration with MoonWitness for LLM routing, Echolog storage exploration, and gateway telemetry.
 - Build command: `pnpm extension:build`
+
+## Branch Strategy & CI/CD Release Gate
+- `dev`: Primary development branch. All commits and features are pushed here.
+- CI Gate (`.github/workflows/ci-dev.yml`): Validates Rust backend, Next.js web, and VS Code extension in parallel.
+- `main`: Production release branch. Auto-promoted from `dev` only when all CI checks pass 100%. Pushes to `main` trigger GHCR image publishing and Coolify deployment.
