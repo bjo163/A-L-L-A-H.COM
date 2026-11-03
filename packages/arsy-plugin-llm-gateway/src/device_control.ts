@@ -88,7 +88,7 @@ async function getCompanyContext(
   }
   const user = await new BaseRepository(userModel).findById(userId) as { company_id?: unknown } | null;
   const companyId = Number(user?.company_id);
-  if (!Number.isSafeInteger(companyId) || companyId < 1) {
+  if (!Number.isSafeInteger(companyId) || companyId === 0) {
     reply.status(403).send(fail('TENANT_REQUIRED', 'A verified company tenant must be assigned before pairing devices.'));
     return undefined;
   }
@@ -197,7 +197,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       return fail('PAIRING_EXPIRED', 'The pairing code is invalid, expired, or already used.');
     }
     const companyId = Number(pairing.company_id);
-    if (!Number.isSafeInteger(companyId) || companyId < 1) {
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
       reply.status(403);
       return fail('TENANT_REQUIRED', 'The pairing record has no verified company tenant.');
     }
@@ -419,7 +419,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       return fail('DEVICE_UNAUTHORIZED', 'The device credential is missing, invalid, or revoked.');
     }
     const companyId = Number(device.company_id);
-    if (!Number.isSafeInteger(companyId) || companyId < 1) {
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
       reply.status(403);
       return fail('TENANT_REQUIRED', 'The paired device has no verified company tenant.');
     }
@@ -548,7 +548,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       payload.tool = rawPayload.tool;
     }
     const companyId = Number(device.company_id);
-    if (!Number.isSafeInteger(companyId) || companyId < 1) {
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
       reply.status(403);
       return fail('TENANT_REQUIRED', 'The paired device has no verified company tenant.');
     }

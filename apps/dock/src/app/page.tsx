@@ -77,8 +77,8 @@ export default function DockHomePage() {
               Enter the MoonWitness ecosystem through a clear map of its
               discovery, identity, operations, and observatory spaces.
             </p>
-            <a className="dock-hero__link" href="http://localhost:3002">
-              Enter Headquarter <span aria-hidden="true">↗</span>
+            <a className="dock-hero__link" href="#dock-index-title">
+              View destinations <span aria-hidden="true">↓</span>
             </a>
           </div>
 

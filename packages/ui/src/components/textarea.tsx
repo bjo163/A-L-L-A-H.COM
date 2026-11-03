@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
+import { RawStack } from '../raw';
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -13,7 +14,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     const errorId = error ? `${textareaId}-error` : undefined;
 
     return (
-      <div className="mw-input-field">
+      <RawStack gap="tight" className="mw-input-field">
         {label && (
           <label className="mw-input-field__label" htmlFor={textareaId}>
             {label}
@@ -32,7 +33,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             {error}
           </p>
         )}
-      </div>
+      </RawStack>
     );
   }
 );

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
+import { RawStack } from '../raw';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -13,7 +14,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const errorId = error ? `${inputId}-error` : undefined;
 
     return (
-      <div className="mw-input-field">
+      <RawStack gap="tight" className="mw-input-field">
         {label && (
           <label className="mw-input-field__label" htmlFor={inputId}>
             {label}
@@ -36,7 +37,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {error}
           </p>
         )}
-      </div>
+      </RawStack>
     );
   }
 );

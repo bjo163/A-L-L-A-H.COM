@@ -8,6 +8,10 @@ last_verified: "2026-11-03"
 ---
 # AGENTS.md
 
+
+
+## New Plan Added: Observability & Telemetry Platform Phase 1 (Issue #27)
+
 Target: `https://github.com/bjo163/A-L-L-A-H.COM.git` (branch: `dev`)
 Contracts: `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `GOAL.md`, `LEGACY_RECONCILIATION.md`, `QUALITY.md`
 

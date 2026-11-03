@@ -21,6 +21,7 @@ export function RemoteAgentControlPanel() {
   const [devices, setDevices] = useState<PairedAgentDevice[]>([]);
   const [missions, setMissions] = useState<RemoteAgentMission[]>([]);
   const [events, setEvents] = useState<AgentSessionEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [selectedMissionId, setSelectedMissionId] = useState('');
   const [deviceName, setDeviceName] = useState('');
@@ -63,16 +64,24 @@ export function RemoteAgentControlPanel() {
   useEffect(() => {
     if (!selectedMissionId) {
       setEvents([]);
+      setEventsLoading(false);
       return;
     }
 
     let active = true;
+    setEventsLoading(true);
     const loadEvents = async () => {
       try {
         const nextEvents = await mwClient.agentControl.getMissionEvents(selectedMissionId);
-        if (active) setEvents(nextEvents);
+        if (active) {
+          setEvents(nextEvents);
+          setEventsLoading(false);
+        }
       } catch (requestError) {
-        if (active) setError(describeError(requestError));
+        if (active) {
+          setError(describeError(requestError));
+          setEventsLoading(false);
+        }
       }
     };
 
@@ -354,13 +363,15 @@ export function RemoteAgentControlPanel() {
           <CardContent>
             {!selectedMission ? (
               <p>No mission selected.</p>
+            ) : eventsLoading ? (
+              <p role="status">Loading mission events…</p>
             ) : events.length === 0 ? (
               <p role="status">No events reported yet. The extension may be offline or waiting for local approval.</p>
             ) : (
               <ol className="remote-agent-control__events" aria-live="polite">
                 {events.map((event) => (
                   <li key={event.id}>
-                    <Badge variant="active">{event.type.replaceAll('_', ' ')}</Badge>
+                    <Badge variant="active">{event.type.replace(/_/g, ' ')}</Badge>
                     <time dateTime={event.createdAt}>{formatTime(event.createdAt)}</time>
                   </li>
                 ))}

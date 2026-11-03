@@ -5,6 +5,7 @@ import { Button, buttonVariants } from '../components/button';
 import { Badge } from '../components/badge';
 import { cn } from '../lib/utils';
 import { SoundToggle } from './sound-toggle';
+import { VisualEffectsToggle } from './visual-effects-toggle';
 
 export interface EcosystemNavbarProps {
   currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz';
@@ -24,6 +25,10 @@ export function EcosystemNavbar({
   className,
 }: EcosystemNavbarProps) {
   const isSignedIn = Boolean(userEmail);
+  const appLabel =
+    currentApp === 'headquarter' ? 'HQ' :
+    currentApp === 'jizz' ? 'OBSERVATORY' :
+    currentApp.toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const menuButtonRef = React.useRef<HTMLButtonElement>(null);
   const navigationId = React.useId();
@@ -50,7 +55,7 @@ export function EcosystemNavbar({
             </span>
             <span className="mw-navbar__separator" aria-hidden="true">·</span>
             <Badge variant="gold">
-              {currentApp.toUpperCase()}
+              {appLabel}
             </Badge>
           </div>
         </div>
@@ -60,7 +65,7 @@ export function EcosystemNavbar({
           id={navigationId}
           className="mw-navbar__links"
           data-open={isMenuOpen}
-          aria-label="Ecosystem"
+          aria-label="Ecosystem navigation and controls"
         >
           <a
             href="http://localhost:3001"
@@ -94,42 +99,41 @@ export function EcosystemNavbar({
           >
             WORLD OBSERVATORY
           </a>
+          <div className="mw-navbar__actions">
+            <VisualEffectsToggle />
+            <SoundToggle />
+            {showAuthActions && isSignedIn ? (
+              <div className="mw-navbar__action-group">
+                <a
+                  href="http://localhost:3003/account"
+                  className="mw-navbar__identity-link"
+                >
+                  <span>{userName || userEmail}</span>
+                </a>
+                {onSignOut && (
+                  <Button variant="ghost" size="sm" onClick={onSignOut}>
+                    Sign Out
+                  </Button>
+                )}
+              </div>
+            ) : showAuthActions ? (
+              <div className="mw-navbar__action-group">
+                <a
+                  href="http://localhost:3003/login"
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                >
+                  Sign In
+                </a>
+                <a
+                  href="http://localhost:3003/register"
+                  className={cn(buttonVariants({ variant: 'default', size: 'sm' }))}
+                >
+                  Get ID
+                </a>
+              </div>
+            ) : null}
+          </div>
         </nav>
-
-        {/* User Identity SSO / Launch Action */}
-        <div className="mw-navbar__actions">
-          <SoundToggle />
-          {showAuthActions && isSignedIn ? (
-            <div className="mw-navbar__action-group">
-              <a
-                href="http://localhost:3003/account"
-                className="mw-navbar__identity-link"
-              >
-                <span>{userName || userEmail}</span>
-              </a>
-              {onSignOut && (
-                <Button variant="ghost" size="sm" onClick={onSignOut}>
-                  Sign Out
-                </Button>
-              )}
-            </div>
-          ) : showAuthActions ? (
-            <div className="mw-navbar__action-group">
-              <a
-                href="http://localhost:3003/login"
-                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-              >
-                Sign In
-              </a>
-              <a
-                href="http://localhost:3003/register"
-                className={cn(buttonVariants({ variant: 'default', size: 'sm' }))}
-              >
-                Get ID
-              </a>
-            </div>
-          ) : null}
-        </div>
         <button
           ref={menuButtonRef}
           className="mw-navbar__menu"

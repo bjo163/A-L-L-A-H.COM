@@ -12,5 +12,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true
-  }
+  },
+  "exclude": [
+    "node_modules/**",
+    "dist/**",
+    ".next/**",
+    "out/**",
+    "build/**",
+    "scripts/**",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ]
 }

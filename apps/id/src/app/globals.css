@@ -344,3 +344,21 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+.id-auth-aside {
+  transition:
+    border-color var(--mw-motion-standard) var(--mw-motion-easing),
+    background-position var(--mw-motion-standard) var(--mw-motion-easing);
+}
+
+.id-auth-form .mw-card,
+.id-account-content .mw-card {
+  transition:
+    border-color var(--mw-motion-standard) var(--mw-motion-easing),
+    box-shadow var(--mw-motion-standard) var(--mw-motion-easing);
+}
+
+.id-auth-form :is(.mw-input, .mw-button) {
+  transition-duration: var(--mw-motion-fast);
+  transition-timing-function: var(--mw-motion-easing);
+}

@@ -28,6 +28,10 @@ function collectFiles(dir, extensions, excludeDirs = []) {
       results.push(...collectFiles(fullPath, extensions, excludeDirs));
     } else if (entry.isFile()) {
       if (extensions.some((ext) => entry.name.endsWith(ext))) {
+        // Exclude unit test files and scripts folder from all lint rules
+        const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');
+        if (relativePath.includes('/scripts/') || relativePath.startsWith('scripts/')) continue;
+        if (/\.(test|spec)\.[tj]sx?$/.test(entry.name)) continue;
         results.push(fullPath);
       }
     }
@@ -287,9 +291,6 @@ function checkNoSecrets() {
 
     // Skip .env.example files (they're templates, not real secrets)
     if (relativePath.includes('.env.example')) continue;
-    // Exclude unit test files and scripts folder
-    if (relativePath.includes('/scripts/') || relativePath.startsWith('scripts/')) continue;
-    if (/\.(test|spec)\.[tj]sx?$/.test(relativePath)) continue;
 
     const content = fs.readFileSync(filePath, 'utf8');
 

@@ -3,10 +3,12 @@ import path from 'node:path';
 import { test } from 'node:test';
 import {
   buildAgentSystemPrompt,
+  getValidationCommand,
   isSensitiveWorkspacePath,
   parseAgentProposal,
   redactSensitiveContent,
   resolveWorkspaceTarget,
+  validationCommands,
 } from './localAgentCore';
 
 test('workspace targets reject traversal and absolute paths', () => {
@@ -49,4 +51,10 @@ test('read-only modes explicitly prohibit edit proposals', () => {
   for (const mode of ['ask', 'plan', 'ideate'] as const) {
     assert.match(buildAgentSystemPrompt(mode), /Do not propose or apply file edits|Do not propose file edits/);
   }
+});
+
+test('validation commands are an explicit fixed allowlist', () => {
+  assert.ok(getValidationCommand('typecheck'));
+  assert.equal(getValidationCommand('Remove-Item'), undefined);
+  assert.ok(validationCommands.every((item) => !/[;&|`$<>]/.test(item.command)));
 });

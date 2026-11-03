@@ -401,3 +401,33 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+.jizz-hero__art {
+  transition:
+    border-color var(--mw-motion-standard) var(--mw-motion-easing),
+    border-radius var(--mw-motion-standard) var(--mw-motion-easing);
+}
+
+.jizz-hero__image {
+  transition:
+    filter var(--mw-motion-standard) var(--mw-motion-easing),
+    transform var(--mw-motion-standard) var(--mw-motion-easing);
+}
+
+.jizz-hero__art:hover .jizz-hero__image {
+  filter: saturate(1.08) brightness(1.04);
+  transform: scale(1.012);
+}
+
+.jizz-empty {
+  transition:
+    border-color var(--mw-motion-standard) var(--mw-motion-easing),
+    background-color var(--mw-motion-standard) var(--mw-motion-easing);
+}
+
+@media (hover: none) {
+  .jizz-hero__art:hover .jizz-hero__image {
+    filter: none;
+    transform: none;
+  }
+}

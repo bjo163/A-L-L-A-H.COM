@@ -1,5 +1,5 @@
 ---
-title: "COCKPIT Phase 1 — High-Density Real-Time Operations Console"
+title: "COCKPIT Phase 1: Design Specification"
 status: "proposed"
 timestamp: "2026-11-04T01:16:00+07:00"
 author: "Antigravity Assistant"
@@ -9,37 +9,52 @@ issue: 21
 parent_issue: 5
 ---
 
-# Design: COCKPIT Phase 1 — High-Density Real-Time Operations Console
+# DESIGN
 
-## 1. Context & Architecture Goal
-- **Product Domain**: COCKPIT (High-Density, Multi-Monitor, Real-Time Mission-Critical Operations Console within the A-L-L-A-H.COM ecosystem).
-- **Distinction from Headquarter**: While Headquarter serves governance, admin forms, and business review, COCKPIT provides a dedicated, low-latency, real-time command bridge designed for live network dispatchers, NOC engineers, and infrastructure operators.
-- **Backend Authority**: Single backend authority via ARSY Fastify Hub (apps/arsy:5150) with live WebSocket / SSE event feeds from SENTINEL, CHRONICLE, and WATCHTOWER.
-- **UI Purity**: 100% atomic components via @moonwitness/ui with specialized high-density HUD tokens.
+## UI Architecture
+- **Page**: `/cockpit` hosted in `apps/headquarter` (Next.js App Router).
+- **Layout**: 4‑panel grid (responsive, 2×2 on desktop, stacked on mobile).
+- **Components**: All panels built from atomic UI primitives in `@moonwitness/ui` (e.g., `Card`, `Chart`, `Table`, `Badge`).
+- **State Management**: Global event store via `@allah/sdk` subscription to SSE stream; each panel consumes a slice of the store.
+- **Accessibility**: Keyboard‑navigable panel focus, ARIA live regions for critical alerts.
 
-## 2. Architecture Diagram
+## Panel Details
+| Panel | Purpose | Key Elements |
+|-------|---------|--------------|
+| **A** – Sessions & Bandwidth | Live throughput graph, total PPPoE users | `LineChart`, `StatCard` |
+| **B** – Incident Radar | Real‑time alerts with severity, acknowledge button | `AlertList`, `Badge` |
+| **C** – Syslog Stream | High‑speed tail of syslog entries, search/filter | `VirtualizedTable`, `SearchBox` |
+| **D** – Device Matrix | Rack/POP health matrix, status colors | `Grid`, `StatusDot` |
+
+## Data Flow Diagram
 ```mermaid
 flowchart TD
-    NOC["NOC Operator / Dispatcher"]
-    CockpitUI["COCKPIT Bridge (/cocktail)"]
-    SSE["Fastify Hub Live Stream (/v1/cockpit/stream)"]
-    Sentinel["SENTINEL Active Sessions"]
-    Chronicle["CHRONICLE Syslog Stream"]
-    Watchtower["WATCHTOWER Alert Feed"]
-
-    NOC --> CockpitUI
-    CockpitUI --> SSE
-    SSE --> Sentinel
-    SSE --> Chronicle
-    SSE --> Watchtower
+    Browser["Browser (Headquarter UI)"] -->|SSE Connect| SSE["Fastify Hub /v1/cockpit/stream"]
+    SSE -->|Event Bus| Sentinel["SENTINEL"]
+    SSE -->|Event Bus| Chronicle["CHRONICLE"]
+    SSE -->|Event Bus| Watchtower["WATCHTOWER"]
+    SSE -->|Event Bus| HelioGrid["HELIOGRID"]
+    Sentinel -->|Session Events| Browser
+    Chronicle -->|Syslog Events| Browser
+    Watchtower -->|Alert Events| Browser
+    HelioGrid -->|Power Events| Browser
 ```
 
-## 3. Component Structure
-- **Dashboard Layout**: Four-panel high-density layout (Active Sessions, Incident Radar, Syslog Stream, Network Device Matrix)
-- **UI Components**: All via @moonwitness/ui - specialized HUD tokens for COCKPIT
-- **Backend Integration**: ARSY Fastify Hub endpoints for real-time data streaming
+## Interaction States
+- **Loading**: UI shows skeleton placeholders until SSE connection established.
+- **Connected**: Live panels receive events; reconnection logic on network drop.
+- **Error**: Global toast with retry button; individual panels display fallback state.
+- **Acknowledgement**: Clicking an alert sends POST to `/v1/incident/ack` via SDK, updates UI instantly.
 
-## 4. Technical Specifications
-- **Real-Time Feed**: SSE stream with sub-second latency aggregating events from SENTINEL, CHRONICLE, and WATCHTOWER
-- **High-Density UI**: Maintain ≥60fps rendering without memory leaks during event bursts
-- **Operator Actions**: Idempotent execution via @allah/sdk (Acknowledge Incident, Terminate Session)
+## Performance Considerations
+- Event throttling: max 100 events/sec per client.
+- Virtualized rendering for syslog panel to handle high volume.
+- Use `requestIdleCallback` for non‑critical UI updates.
+
+---
+
+## Acceptance Criteria (Design)
+1. UI renders correctly on Chrome/Edge latest versions at 1920×1080 resolution.
+2. No layout shift > 0.1 during live updates (CLS < 0.1).
+3. Keyboard navigation works across all panels.
+4. Screen‑reader announces new critical alerts via ARIA live region.

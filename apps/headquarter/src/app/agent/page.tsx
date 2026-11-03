@@ -12,6 +12,7 @@ import {
   Badge,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
+import { RemoteAgentControlPanel } from '@/components/remote-agent-control-panel';
 import type {
   AgentThought,
   AgentToolCallEvent,
@@ -250,9 +251,9 @@ export default function AgentStudioPage() {
 
         {/* Live Reasoning Timeline */}
         <section className="mb-6">
-          <h3 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
+          <h2 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
             Reasoning Timeline
-          </h3>
+          </h2>
           {status === 'idle' && steps.length === 0 && (
             <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/60 text-zinc-500 text-center">
               No steps yet. Enter a mission goal and click "Run Agent".
@@ -348,9 +349,9 @@ export default function AgentStudioPage() {
 
         {/* SDUI Preview */}
         <section>
-          <h3 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
+          <h2 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
             SDUI Preview
-          </h3>
+          </h2>
           {steps.some(s => s.sdui && s.sdui.length > 0) && (
             <Card>
               <CardHeader>
@@ -370,6 +371,7 @@ SDUI view rendering - preview not yet connected to backend
             </div>
           )}
         </section>
+        <RemoteAgentControlPanel />
       </main>
     </div>
   );

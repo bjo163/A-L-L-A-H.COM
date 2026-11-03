@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Button } from '../components/button';
 import { Badge } from '../components/badge';
 import { cn } from '../lib/utils';
+import { MotionFrame } from '../primitives/visual-effects';
 
 export interface SessionCardProps {
   id: number;
@@ -18,26 +19,30 @@ export interface SessionCardProps {
 
 export function SessionCard({
   id,
-  deviceName = 'Client Device',
-  ipAddress = '127.0.0.1',
+  deviceName,
+  ipAddress,
   expiresAt,
   isCurrent = false,
   onRevoke,
   isLoading = false,
   className,
 }: SessionCardProps) {
+  const expiration = Date.parse(expiresAt);
+  const hasValidExpiration = Number.isFinite(expiration);
+
   return (
-    <div
+    <MotionFrame
       className={cn(
         'mw-session-card',
         isCurrent && 'mw-session-card--current',
         className
       )}
+      effect="enter"
     >
       <div className="mw-session-card__details">
         <div className="mw-session-card__copy">
           <div className="mw-session-card__title-row">
-            <span className="mw-session-card__title">{deviceName}</span>
+            <span className="mw-session-card__title">{deviceName?.trim() || 'Unnamed device'}</span>
             {isCurrent && (
               <Badge variant="gold" dot>
                 Current
@@ -45,9 +50,14 @@ export function SessionCard({
             )}
           </div>
           <div className="mw-session-card__metadata">
-            <span>IP: {ipAddress}</span>
-            <span aria-hidden="true">·</span>
-            <span>Expires: {new Date(expiresAt).toLocaleDateString()}</span>
+            {ipAddress && <span>IP: {ipAddress}</span>}
+            {ipAddress && <span aria-hidden="true">·</span>}
+            <span>
+              Expires:{' '}
+              {hasValidExpiration
+                ? <time dateTime={expiresAt}>{new Date(expiration).toISOString().slice(0, 10)}</time>
+                : 'Not reported'}
+            </span>
           </div>
         </div>
       </div>
@@ -62,6 +72,6 @@ export function SessionCard({
           {isLoading ? 'Revoking...' : 'Revoke'}
         </Button>
       )}
-    </div>
+    </MotionFrame>
   );
 }

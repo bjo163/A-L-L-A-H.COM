@@ -19,6 +19,14 @@
       "import": "./src/blocks/index.ts",
       "types": "./src/blocks/index.ts"
     },
+    "./primitives": {
+      "import": "./src/primitives/index.ts",
+      "types": "./src/primitives/index.ts"
+    },
+    "./raw": {
+      "import": "./src/raw/index.ts",
+      "types": "./src/raw/index.ts"
+    },
     "./sfx": {
       "import": "./src/sfx/index.ts",
       "types": "./src/sfx/index.ts"

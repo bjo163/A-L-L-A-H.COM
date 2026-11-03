@@ -12,6 +12,24 @@ export interface AgentProposal {
   edits: ProposedFileEdit[];
 }
 
+export const validationCommands = [
+  { id: 'git-status', label: 'Git status', command: 'git status --short' },
+  { id: 'extension-tests', label: 'Extension tests', command: 'pnpm extension:test' },
+  { id: 'typecheck', label: 'Typecheck', command: 'pnpm typecheck' },
+  { id: 'architecture-lint', label: 'Architecture lint', command: 'pnpm lint:arch' },
+  { id: 'docs-check', label: 'Documentation check', command: 'pnpm docs:check' },
+  { id: 'dock-build', label: 'Dock build', command: 'pnpm dock:build' },
+  { id: 'headquarter-build', label: 'Headquarter build', command: 'pnpm headquarter:build' },
+  { id: 'id-build', label: 'ID build', command: 'pnpm id:build' },
+  { id: 'arsy-build', label: 'Arsy build', command: 'pnpm --filter @allah/arsy build' },
+] as const;
+
+export type ValidationCommandId = (typeof validationCommands)[number]['id'];
+
+export function getValidationCommand(value: unknown) {
+  return validationCommands.find((item) => item.id === value);
+}
+
 export function resolveWorkspaceTarget(workspacePath: string, relativePath: string): string {
   if (!relativePath.trim() || path.isAbsolute(relativePath)) {
     throw new Error('Agent edits must use a non-empty workspace-relative path.');

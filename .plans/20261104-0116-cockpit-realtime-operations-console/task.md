@@ -1,5 +1,5 @@
 ---
-title: "COCKPIT Phase 1 — High-Density Real-Time Operations Console"
+title: "COCKPIT Phase 1: Task Checklist"
 status: "proposed"
 timestamp: "2026-11-04T01:16:00+07:00"
 author: "Antigravity Assistant"
@@ -9,17 +9,34 @@ issue: 21
 parent_issue: 5
 ---
 
-# Task: COCKPIT Phase 1 — High-Density Real-Time Operations Console
+# TASKS
 
-## Acceptance Criteria
-- [ ] SSE stream aggregates events from SENTINEL, CHRONICLE, and WATCHTOWER with sub-second latency
-- [ ] High-density UI maintains ≥60fps rendering without memory leaks during event bursts
-- [ ] Operator actions (Acknowledge Incident, Terminate Session) execute idempotently via @allah/sdk
-- [ ] Monorepo quality gates (pnpm docs:check, pnpm lint:arch, pnpm typecheck) pass 100%
+- [ ] **Backend Development**
+  - [ ] Implement SSE endpoint `/v1/cockpit/stream` in `apps/arsy/src/routes/cockpit.ts`
+  - [ ] Aggregate events from SENTINEL, CHRONICLE, WATCHTOWER, HELIOGRID via internal event bus
+  - [ ] Ensure tenant isolation (`company_id` scoped streams)
+  - [ ] Add SDK wrappers in `packages/sdk/src/cockpit.ts` for client consumption
+  - [ ] Write unit & integration tests covering event aggregation and auth
 
-## Checklist
-- [ ] Fix ERR_PNPM_OUTDATED_LOCKFILE error
-- [ ] Fix registerMwQorpusAddon typo in apps/arsy/src/app.ts
-- [ ] Fix suspendSubscription body JSON.stringify in packages/sdk/src/index.ts
-- [ ] Implement COCKPIT real-time operations console
-- [ ] Run all quality gates and ensure 100% pass
+- [ ] **Frontend UI**
+  - [ ] Create Cockpit page route `/cockpit` in `apps/headquarter/pages/cockpit.tsx`
+  - [ ] Build high‑density HUD using atomic components from `@moonwitness/ui`
+  - [ ] Implement panels A‑D as per design spec
+  - [ ] Connect to SSE stream via `@allah/sdk` client
+  - [ ] Add action handlers (acknowledge incident, terminate session)
+  - [ ] Write component tests with React Testing Library
+
+- [ ] **Documentation & Contracts**
+  - [ ] Update `DOCUMENTATION_CONTRACT.md` with new endpoint definitions
+  - [ ] Add ADR entry in `ADR/2026-11-cockpit-sse.md`
+  - [ ] Ensure `pnpm docs:check` passes with new markdown files
+
+- [ ] **Quality Assurance**
+  - [ ] Run `pnpm lint:arch` and address any architectural violations
+  - [ ] Run `pnpm typecheck` for full TypeScript compliance
+  - [ ] Verify performance: SSE latency < 200ms, UI > 60fps under load
+
+- [ ] **Deployment**
+  - [ ] Update CI pipeline to include Cockpit build steps
+  - [ ] Deploy to staging environment for operator testing
+  - [ ] Gather feedback and iterate

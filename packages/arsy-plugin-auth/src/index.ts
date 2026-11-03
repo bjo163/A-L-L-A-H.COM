@@ -29,6 +29,29 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     return new BaseRepository(model);
   };
 
+  const ensureCompanyTenant = async (user: { id?: unknown; company_id?: unknown }): Promise<number> => {
+    const userId = Number(user.id);
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+      throw new Error('Cannot assign a personal tenant to a user without a valid ID.');
+    }
+
+    const existingCompanyId = Number(user.company_id);
+    if (Number.isSafeInteger(existingCompanyId) && existingCompanyId !== 0) return existingCompanyId;
+
+    const personalCompanyId = -userId;
+    const assigned = await dbEngine.query<{ company_id: number }>(
+      'UPDATE "auth_user" SET company_id = $1, write_date = CURRENT_TIMESTAMP WHERE id = $2 AND (company_id IS NULL OR company_id = 0) RETURNING company_id;',
+      [personalCompanyId, userId]
+    );
+    const assignedCompanyId = Number(assigned[0]?.company_id);
+    if (Number.isSafeInteger(assignedCompanyId) && assignedCompanyId !== 0) return assignedCompanyId;
+
+    const refreshedUser = await getRepo('auth.user').findById(userId) as { company_id?: unknown } | null;
+    const concurrentCompanyId = Number(refreshedUser?.company_id);
+    if (Number.isSafeInteger(concurrentCompanyId) && concurrentCompanyId !== 0) return concurrentCompanyId;
+    throw new Error('Unable to assign a personal tenant to this account.');
+  };
+
   // Auth Guard Decorator
   fastify.decorate('authenticate', async (request: any, reply: any) => {
     try {
@@ -98,6 +121,7 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
       reply.status(401);
       return fail('INVALID_CREDENTIALS', 'Invalid email or password');
     }
+    const companyId = await ensureCompanyTenant(user);
 
     // Generate session token (30-day sliding expiry)
     const sessionToken = `sess_${crypto.randomBytes(32).toString('hex')}`;
@@ -112,7 +136,7 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
       device_name: deviceName || 'Browser Session',
       expires_at: expiresAt,
       revoked: false,
-    });
+    }, companyId);
 
     const jwtToken = fastify.jwt.sign({ id: user.id, email: user.email, sessionId: (session as any).id });
 
@@ -165,12 +189,14 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     const passwordHash = await bcrypt.hash(password, salt);
 
     const user = await userRepo.create({
+      company_id: 0,
       name,
       email,
       password_hash: passwordHash,
       status: 'active', // auto-activate in dev/self-hosted bootstrap
       two_factor_enabled: false,
     });
+    const companyId = await ensureCompanyTenant(user as { id?: unknown; company_id?: unknown });
 
     // Also mirror to res.users projection without password
     const resUsersModel = modelRegistry.get('res.users');
@@ -181,7 +207,7 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
         email,
         password: '[MANAGED_BY_AUTH_USER]',
         api_key: `lo-${(user as any).id}`,
-      });
+      }, companyId);
     }
 
     reply.status(201);

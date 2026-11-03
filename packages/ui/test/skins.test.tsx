@@ -4,6 +4,10 @@ import test from 'node:test';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Textarea } from '../src/components/textarea';
+import { EcosystemNavbar } from '../src/blocks/navbar';
+import { VisualEffectsToggle } from '../src/blocks/visual-effects-toggle';
+import { RawCluster, RawContainer, RawGrid, RawSection, RawStack } from '../src/raw';
+import { VisualEffectsProvider } from '../src/primitives/visual-effects';
 import { SkinRoot } from '../src/skins/root';
 import {
   defaultSkinId,
@@ -56,6 +60,21 @@ test('each skin keeps semantic text and control colors legible', () => {
   assert.deepEqual(failures, []);
 });
 
+test('all six skins have distinct geometry, typography, and motion recipes', () => {
+  const recipes = skinIds.map((id) => {
+    const { geometry, typography, motion } = skinRegistry[id].tokens;
+    return JSON.stringify({
+      controlRadius: geometry.controlRadius,
+      surfaceRadius: geometry.surfaceRadius,
+      display: typography.display,
+      ambientDuration: motion.ambientDuration,
+      easing: motion.easing,
+    });
+  });
+
+  assert.equal(new Set(recipes).size, skinIds.length);
+});
+
 test('SkinRoot renders the selected skin in server markup', () => {
   const markup = renderToStaticMarkup(
     <SkinRoot skin="lunar-chronicles">
@@ -66,6 +85,52 @@ test('SkinRoot renders the selected skin in server markup', () => {
   assert.match(markup, /data-moonframe-skin="lunar-chronicles"/);
   assert.match(markup, /--mw-canvas:#101923/);
   assert.match(markup, /<span>Archive<\/span>/);
+});
+
+test('visual effects render paused by default with an actionable control', () => {
+  const markup = renderToStaticMarkup(
+    <VisualEffectsProvider>
+      <VisualEffectsToggle />
+    </VisualEffectsProvider>
+  );
+
+  assert.match(markup, /data-effects-paused="true"/);
+  assert.match(markup, /class="mw-ambient-layer" aria-hidden="true"/);
+  assert.match(markup, /aria-pressed="false"/);
+  assert.match(markup, /aria-label="Resume ambient visual effects"/);
+  assert.match(markup, />Resume effects<\/button>/);
+});
+
+test('navbar uses clear public application names instead of internal abbreviations', () => {
+  const headquarter = renderToStaticMarkup(
+    <EcosystemNavbar currentApp="headquarter" showAuthActions={false} />
+  );
+  const observatory = renderToStaticMarkup(
+    <EcosystemNavbar currentApp="jizz" showAuthActions={false} />
+  );
+
+  assert.match(headquarter, />HQ<\/span>/);
+  assert.match(observatory, />OBSERVATORY<\/span>/);
+  assert.doesNotMatch(observatory, />JIZZ<\/span>/);
+});
+
+test('raw layout primitives preserve semantic tags and gap choices', () => {
+  const markup = renderToStaticMarkup(
+    <>
+      <RawContainer>Content</RawContainer>
+      <RawSection aria-label="Records">Records</RawSection>
+      <RawStack gap="tight">Stack</RawStack>
+      <RawCluster gap="loose">Cluster</RawCluster>
+      <RawGrid gap="regular">Grid</RawGrid>
+    </>
+  );
+
+  assert.match(markup, /class="mw-raw-container">Content<\/div>/);
+  assert.match(markup, /<section[^>]*aria-label="Records"/);
+  assert.match(markup, /class="mw-raw-stack"/);
+  assert.match(markup, /data-gap="tight"/);
+  assert.match(markup, /data-gap="loose"/);
+  assert.match(markup, /data-gap="regular"/);
 });
 
 test('Textarea exposes its visible label and associated error state', () => {
@@ -84,6 +149,12 @@ test('component recipes remain scoped to SkinRoot', () => {
 
   assert.doesNotMatch(styles, /^\s*\.(?:mw-(?:button|card|input|badge|avatar|navbar|session-card))/m);
   assert.doesNotMatch(styles, /^\s*\[data-moonframe-skin=/m);
+
+  for (const id of skinIds) {
+    assert.match(styles, new RegExp(`\\.mw-skin-root\\[data-moonframe-skin='${id}'\\] \\.mw-ambient-layer`));
+  }
+  assert.match(styles, /data-effects-paused='true'\].*animation-play-state: paused/s);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 
 test('invalid runtime skin IDs are reported before the safe fallback is used', () => {

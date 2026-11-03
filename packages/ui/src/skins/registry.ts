@@ -52,6 +52,7 @@ export interface SkinTokens {
   motion: {
     fastDuration: string;
     standardDuration: string;
+    ambientDuration: string;
     easing: string;
   };
 }
@@ -109,6 +110,7 @@ export const skinRegistry = {
       motion: {
         fastDuration: '120ms',
         standardDuration: '220ms',
+        ambientDuration: '42s',
         easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
       },
     },
@@ -158,6 +160,7 @@ export const skinRegistry = {
       motion: {
         fastDuration: '140ms',
         standardDuration: '240ms',
+        ambientDuration: '48s',
         easing: 'cubic-bezier(0.2, 0.65, 0.3, 1)',
       },
     },
@@ -207,6 +210,7 @@ export const skinRegistry = {
       motion: {
         fastDuration: '110ms',
         standardDuration: '180ms',
+        ambientDuration: '34s',
         easing: 'cubic-bezier(0.25, 0.5, 0.35, 1)',
       },
     },
@@ -256,6 +260,7 @@ export const skinRegistry = {
       motion: {
         fastDuration: '100ms',
         standardDuration: '180ms',
+        ambientDuration: '28s',
         easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
       },
     },
@@ -305,6 +310,7 @@ export const skinRegistry = {
       motion: {
         fastDuration: '90ms',
         standardDuration: '150ms',
+        ambientDuration: '32s',
         easing: 'steps(2, end)',
       },
     },
@@ -354,6 +360,7 @@ export const skinRegistry = {
       motion: {
         fastDuration: '150ms',
         standardDuration: '260ms',
+        ambientDuration: '46s',
         easing: 'cubic-bezier(0.22, 0.7, 0.25, 1)',
       },
     },
@@ -418,6 +425,7 @@ export function getSkinStyle(skin: SkinDefinition): SkinStyle {
     '--mw-control-shadow': material.controlShadow,
     '--mw-motion-fast': motion.fastDuration,
     '--mw-motion-standard': motion.standardDuration,
+    '--mw-motion-ambient': motion.ambientDuration,
     '--mw-motion-easing': motion.easing,
   };
 }

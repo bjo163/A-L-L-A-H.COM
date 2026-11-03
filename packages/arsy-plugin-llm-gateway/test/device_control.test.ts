@@ -44,7 +44,74 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     await app.register(authPlugin, { prefix: '/api/auth' });
     await app.register(deviceControlPlugin, { prefix: '/v1' });
     await app.ready();
+
+    const registration = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { name: 'New Account', email: 'new-account@example.test', password: 'test-password-only' },
+    });
+    assert.equal(registration.statusCode, 201);
+    const personalSignIn = await app.inject({
+      method: 'POST',
+      url: '/api/auth/sign-in',
+      payload: { email: 'new-account@example.test', password: 'test-password-only' },
+    });
+    assert.equal(personalSignIn.statusCode, 200);
+    const personalToken = personalSignIn.json<ApiResponse<{ sessionToken: string }>>().data.sessionToken;
+    const personalUserModel = modelRegistry.get('auth.user');
+    assert.ok(personalUserModel);
+    const personalUser = await new BaseRepository(personalUserModel).find({
+      filters: [{ field: 'email', operator: '=', value: 'new-account@example.test' }],
+      limit: 1,
+    }) as Array<{ id: number; company_id: number }>;
+    assert.equal(personalUser.length, 1);
+    assert.equal(personalUser[0].company_id, -personalUser[0].id);
+
+    const secondRegistration = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { name: 'Second Personal Account', email: 'second-personal@example.test', password: 'test-password-only' },
+    });
+    assert.equal(secondRegistration.statusCode, 201);
+    const secondPersonalSignIn = await app.inject({
+      method: 'POST',
+      url: '/api/auth/sign-in',
+      payload: { email: 'second-personal@example.test', password: 'test-password-only' },
+    });
+    assert.equal(secondPersonalSignIn.statusCode, 200);
+    const secondPersonalToken = secondPersonalSignIn.json<ApiResponse<{ sessionToken: string }>>().data.sessionToken;
+
+    const personalPairingResponse = await app.inject({
+      method: 'POST',
+      url: '/v1/agent/pairings',
+      headers: { 'x-session-token': personalToken },
+      payload: { deviceName: 'Personal Tenant Device' },
+    });
+    assert.equal(personalPairingResponse.statusCode, 200);
+    const personalPairing = personalPairingResponse.json<ApiResponse<{ code: string }>>().data;
+    const personalClaim = await app.inject({
+      method: 'POST',
+      url: '/v1/agent/pairings/claim',
+      payload: { code: personalPairing.code, deviceName: 'Personal Tenant Device', platform: 'windows' },
+    });
+    assert.equal(personalClaim.statusCode, 200);
+    const personalDevice = personalClaim.json<ApiResponse<{ deviceId: string }>>().data;
+    const secondPersonalDevices = await app.inject({
+      method: 'GET',
+      url: '/v1/agent/devices',
+      headers: { 'x-session-token': secondPersonalToken },
+    });
+    assert.deepEqual(secondPersonalDevices.json<ApiResponse<unknown[]>>().data, []);
+    const secondPersonalMission = await app.inject({
+      method: 'POST',
+      url: '/v1/agent/missions',
+      headers: { 'x-session-token': secondPersonalToken },
+      payload: { deviceId: Number(personalDevice.deviceId), mode: 'code', goal: 'Not authorized' },
+    });
+    assert.equal(secondPersonalMission.statusCode, 404);
+
     const tenantToken = await createSession('tenant-user@example.test', 501);
+    const sharedTenantToken = await createSession('shared-tenant-user@example.test', 501);
     const otherTenantToken = await createSession('other-user@example.test', 502);
 
     const pairingResponse = await app.inject({
@@ -70,6 +137,12 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
       headers: { 'x-session-token': otherTenantToken },
     });
     assert.deepEqual(devicesResponse.json<ApiResponse<unknown[]>>().data, []);
+    const sharedTenantDevices = await app.inject({
+      method: 'GET',
+      url: '/v1/agent/devices',
+      headers: { 'x-session-token': sharedTenantToken },
+    });
+    assert.equal(sharedTenantDevices.json<ApiResponse<unknown[]>>().data.length, 1);
 
     const deniedMission = await app.inject({
       method: 'POST',
@@ -99,7 +172,7 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     const cancelResponse = await app.inject({
       method: 'POST',
       url: `/v1/agent/missions/${mission.id}/cancel`,
-      headers: { 'x-session-token': tenantToken },
+      headers: { 'x-session-token': sharedTenantToken },
     });
     assert.equal(cancelResponse.statusCode, 200);
 
@@ -137,7 +210,7 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     const revokeResponse = await app.inject({
       method: 'POST',
       url: `/v1/agent/devices/${device.deviceId}/revoke`,
-      headers: { 'x-session-token': tenantToken },
+      headers: { 'x-session-token': sharedTenantToken },
     });
     assert.equal(revokeResponse.statusCode, 200);
     const revokedPoll = await app.inject({
