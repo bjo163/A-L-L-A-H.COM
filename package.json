@@ -7,6 +7,7 @@
     "dev": "pnpm -r --parallel run dev",
     "web:dev": "pnpm --filter web dev",
     "web:build": "pnpm --filter web build",
+    "extension:build": "pnpm --filter @allah/vscode-extension build",
     "server": "powershell -Command \"Set-Location apps/server; cargo loco start\"",
     "server:migrate": "powershell -Command \"Set-Location apps/server; cargo loco db migrate\""
   }

@@ -1,0 +1,89 @@
+{
+  "name": "@allah/vscode-extension",
+  "displayName": "A-L-L-A-H.COM (MoonWitness) Developer Tools",
+  "description": "VS Code integration for A-L-L-A-H.COM: LLM Router Gateway, Echolog Immutable Storage, and SDUI Explorer.",
+  "version": "0.1.0",
+  "publisher": "a-l-l-a-h",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Developer Tools"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "allah.testConnection",
+        "title": "MoonWitness: Test Gateway Connection",
+        "category": "A-L-L-A-H"
+      },
+      {
+        "command": "allah.listModels",
+        "title": "MoonWitness: List Registered LLM Models",
+        "category": "A-L-L-A-H"
+      },
+      {
+        "command": "allah.refreshStorage",
+        "title": "MoonWitness: Refresh Echolog Storage Artifacts",
+        "category": "A-L-L-A-H"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "allah-explorer",
+          "title": "MoonWitness",
+          "icon": "$(hubot)"
+        }
+      ]
+    },
+    "views": {
+      "allah-explorer": [
+        {
+          "id": "allah.views.storage",
+          "name": "Echolog Storage (SHA-256)",
+          "icon": "$(database)"
+        },
+        {
+          "id": "allah.views.models",
+          "name": "LLM Router Models",
+          "icon": "$(server)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "A-L-L-A-H MoonWitness",
+      "properties": {
+        "allah.gatewayUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:5150",
+          "description": "Base URL of the MoonWitness Loco Rust gateway server."
+        },
+        "allah.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Optional API Key for authenticated endpoints."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup src/extension.ts --format cjs --external vscode --no-shims --clean",
+    "watch": "tsup src/extension.ts --format cjs --external vscode --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/vscode": "^1.90.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}
+

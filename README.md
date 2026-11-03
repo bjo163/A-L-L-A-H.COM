@@ -42,3 +42,7 @@ Configure these repository secrets in GitHub:
 - `COOLIFY_API_TOKEN` — a Coolify API token authorized to deploy that application.
 
 After the first successful publish, set both GHCR packages to public in GitHub's package settings; public packages can be pulled by Coolify without registry credentials, so Docker Hub is not required. If the images stay private, configure GHCR read credentials in Coolify. Disable deployment directly from Git pushes so Coolify does not start before the images are published; use its deployment URL with `force=true` for the post-publish deployment. Set `IMAGE_PREFIX` to `ghcr.io/<owner>/<repository>` only if the image namespace differs from the default, `ghcr.io/bjo163/a-l-l-a-h.com`; set `IMAGE_TAG` to `latest` or a published `sha-<short-commit>` tag for a pinned rollback. Both services use `pull_policy: always`, so each Coolify deployment fetches the selected image.
+
+## VS Code Extension
+The official extension lives in `packages/vscode-extension`. It provides direct integration with MoonWitness for LLM routing, Echolog storage exploration, and gateway telemetry.
+- Build command: `pnpm extension:build`
