@@ -1,31 +1,43 @@
-# BLUEPRINT: A-L-L-A-H.COM Architecture Specification
-**Platform Identity:** A-L-L-A-H.COM ("Accountable Life, Learning & Action Hub")  
-**Target Repository:** `https://github.com/bjo163/A-L-L-A-H.COM.git`  
-**Architecture Domain:** MoonWitness Unified Platform Engine  
+# BLUEPRINT.md
+## Unified Product & System Architecture
 
-Dokumen ini mendefinisikan cetak biru arsitektur menyeluruh, batas domain, kontrak data, dan prinsip teknis platform.
+This is the target architecture, not a declaration that every component already exists. Reconcile it continuously with actual code and verified runtime behavior.
 
----
+## Product architecture
+A-L-L-A-H.COM is the central home of the MoonWitness and Empire of the Light ecosystem. It should provide coherent identity, navigation, shared platform capabilities, integration contracts, and product experiences while allowing independent deployment boundaries where justified.
 
-## 1. Domain Boundaries (Non-Overlapping Synthesis)
+## Product domains to validate
 
-| Domain | Source Invariant | Implementation in A-L-L-A-H.COM |
-|---|---|---|
-| **OS & Enterprise Model** | `ql-orm` & Odoo ERP | `apps/server/src/core/base_model.rs` + `migration/m20261103_000001_base_odoo.rs` |
-| **Object Storage** | `bjo163/echolog` | `apps/server/src/core/storage.rs` + `ir_attachment` |
-| **AI Gateway & Router** | `ql_ai` & 9router | `apps/server/src/controllers/llm_gateway.rs` + `RoutingTable` |
-| **Server-Driven UI** | Odoo `fields_view_get` | `apps/server/src/core/view_engine.rs` + `apps/web/src/app` |
-| **Deployment Engine** | Coolify Git-Backed | `docker-compose.yml` (Loopback pinned, auto healthcheck) |
+| Domain | Responsibility to investigate |
+|---|---|
+| A-L-L-A-H.COM / Empire of the Light | Central identity, entrypoint, ecosystem navigation |
+| MoonWitness | Universe, narratives, research, timelines, creative works, archives |
+| MoonWitness Reborn | Historical generation and its source/assets to reconcile |
+| MoonWitness XV | Historical/current generation and its source/assets to reconcile |
+| Moon UI | Shared design system and interface foundations |
+| Headquarter | Central operational/administrative experience; validate scope |
+| Dock | Community/user-facing portal; validate scope |
+| Cockpit | Control/management experience; validate scope |
+| Qorpus | Knowledge corpus, ingestion, retrieval, and content organization; validate scope |
 
----
+These are working hypotheses. Audit actual requirements and implementations before freezing boundaries.
 
-## 2. Invariants & Security Mandates
+## Architecture layers
+- Experience: public/authenticated experiences, product-specific interfaces, shared navigation, responsive accessible UI.
+- Applications: domain-specific workflows, explicit ownership, stable API contracts, no duplicated business logic.
+- Platform services: evaluate identity/access, users/organizations, content/media, search/knowledge, notifications, AI routing/usage, audit logs, observability, configuration.
+- Data: authoritative ownership, explicit schemas/migrations, tenant isolation, provenance, retention, backup/recovery.
+- Infrastructure: reproducible local/CI/staging/production environments, health checks, secrets, networking, storage, deployment and rollback.
 
-1. **Content-Addressed Immutability**:
-   - Seluruh payload file disimpan beralamatkan hash SHA-256 (`objects/<sha256>`). File tidak pernah ditimpa (write-once).
-   - Menghapus file harus mematuhi pemeriksaan `legal_hold` dan `retention_until` (fail-closed).
-2. **Zero-Database Query Fast-Path Proxy**:
-   - Permintaan chat completion diarahkan menggunakan hash map in-memory (`Arc<RwLock<RoutingTable>>`). Database hanya diakses saat booting atau event cache invalidation.
-3. **Multi-Company Data Isolation**:
-   - Setiap transaksi dan token key terikat pada `company_id`. Row-level security menjamin ketiadaan kebocoran data antar tenant.
+Implement shared services only when reuse and ownership justify them.
 
+## Current repository baseline
+The repository has a Rust/Loco server under apps/server/ and a Next.js web application under apps/web/. Verify exact versions, routes, modules, endpoints, and capabilities from current manifests and source. Correct unsupported README/changelog claims.
+
+## Integration contracts
+Every cross-application integration defines producer/consumer, data ownership, schema/API/event version, authentication/authorization, error/retry/idempotency/timeout behavior, observability, compatibility, migration, and tests. Do not rely on undocumented shared-database assumptions.
+
+## Architecture decisions
+Before adding a service, application, database, framework, or abstraction: identify the user outcome; inspect existing capability; compare alternatives and operational cost; define ownership; record accepted decisions in DECISIONS.md; add work to BACKLOG.md.
+
+Architecture is progressively realized when product boundaries and data ownership are clear, integration contracts are tested, provenance is preserved, and end-to-end user journeys work reliably.
