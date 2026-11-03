@@ -39,7 +39,7 @@ export class GeminiAdapter implements ProviderAdapter {
     }
 
     const input = Array.isArray(req.input) ? req.input : [req.input];
-    const data = [];
+    const data: Array<{ object: 'embedding'; index: number; embedding: number[] }> = [];
 
     for (let idx = 0; idx < input.length; idx++) {
       const text = input[idx];
@@ -63,7 +63,7 @@ export class GeminiAdapter implements ProviderAdapter {
       }
 
       const json = (await response.body.json()) as any;
-      const embedding = json.embedding?.values || [];
+      const embedding: number[] = Array.isArray(json.embedding?.values) ? json.embedding.values : [];
       data.push({
         object: 'embedding',
         index: idx,

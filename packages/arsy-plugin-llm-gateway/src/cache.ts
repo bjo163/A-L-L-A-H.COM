@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import type { ChatMessage, ChatCompletionResponse } from './types';
-import { dbEngine, BaseRepository, modelRegistry } from '@allah/arsy-orm';
-import { cosineSimilarity } from '@allah/arsy-orm';
+import { dbEngine, BaseRepository, modelRegistry, cosineSimilarity } from '@allah/arsy-orm';
 
 export interface CacheEntry {
   response: ChatCompletionResponse;
@@ -51,8 +50,11 @@ export class GatewayCache {
         if (similarity >= threshold) {
           try {
             const resp = JSON.parse((entry as any).response_json);
-            // Increment hit count asynchronously
-            repo.update((entry as any).id, { hit_count: ((entry as any).hit_count || 0) + 1 }).catch(() => {});
+            // Increment hit count asynchronously via query
+            dbEngine.query(
+              'UPDATE ai_semantic_cache SET hit_count = hit_count + 1 WHERE id = $1',
+              [(entry as any).id]
+            ).catch(() => {});
             return resp;
           } catch {
             return null;

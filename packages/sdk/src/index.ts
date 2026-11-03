@@ -210,6 +210,10 @@ export class MoonWitnessClient {
     getUsage: async (): Promise<GatewayUsageLog[]> => {
       return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
     },
+
+    getUsageLogs: async (): Promise<GatewayUsageLog[]> => {
+      return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
+    },
   };
 
   // Threads & Memory Operations
