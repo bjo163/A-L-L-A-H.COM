@@ -12,13 +12,19 @@ export function Avatar({ className, name, src, ...props }: AvatarProps) {
   return (
     <div
       className={cn(
-        'relative flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500/20 to-amber-400/5 border border-amber-500/20 text-amber-400 font-semibold shadow-inner',
+        'mw-avatar',
         className
       )}
       {...props}
     >
       {src ? (
-        <img src={src} alt={name || 'Avatar'} className="h-full w-full rounded-xl object-cover" />
+        <img
+          src={src}
+          alt={name ?? ''}
+          width={40}
+          height={40}
+          className="mw-avatar__image"
+        />
       ) : (
         <span>{initial}</span>
       )}

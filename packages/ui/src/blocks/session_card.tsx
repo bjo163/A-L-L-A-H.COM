@@ -29,36 +29,24 @@ export function SessionCard({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 rounded-xl border p-4 transition-all',
-        isCurrent
-          ? 'border-amber-500/30 bg-amber-500/5'
-          : 'border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700',
+        'mw-session-card',
+        isCurrent && 'mw-session-card--current',
         className
       )}
     >
-      <div className="flex items-center gap-3.5">
-        <div
-          className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-semibold',
-            isCurrent
-              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-              : 'border-zinc-700/60 bg-zinc-800/40 text-zinc-400'
-          )}
-        >
-          {isCurrent ? '⚡' : '💻'}
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-zinc-200">{deviceName}</span>
+      <div className="mw-session-card__details">
+        <div className="mw-session-card__copy">
+          <div className="mw-session-card__title-row">
+            <span className="mw-session-card__title">{deviceName}</span>
             {isCurrent && (
               <Badge variant="gold" dot>
                 Current
               </Badge>
             )}
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs font-mono text-zinc-400">
+          <div className="mw-session-card__metadata">
             <span>IP: {ipAddress}</span>
-            <span>•</span>
+            <span aria-hidden="true">·</span>
             <span>Expires: {new Date(expiresAt).toLocaleDateString()}</span>
           </div>
         </div>
@@ -77,4 +65,3 @@ export function SessionCard({
     </div>
   );
 }
-

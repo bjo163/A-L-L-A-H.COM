@@ -1,12 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { Button } from '../components/button';
+import { Button, buttonVariants } from '../components/button';
 import { Badge } from '../components/badge';
 import { cn } from '../lib/utils';
 
 export interface EcosystemNavbarProps {
-  currentApp?: 'dock' | 'headquarter' | 'id';
+  currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz';
   userName?: string;
   userEmail?: string;
   onSignOut?: () => void;
@@ -21,25 +21,31 @@ export function EcosystemNavbar({
   className,
 }: EcosystemNavbarProps) {
   const isSignedIn = Boolean(userEmail);
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const menuButtonRef = React.useRef<HTMLButtonElement>(null);
+  const navigationId = React.useId();
 
   return (
     <header
-      className={cn(
-        'sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl',
-        className
-      )}
+      className={cn('mw-navbar', className)}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && isMenuOpen) {
+          setIsMenuOpen(false);
+          menuButtonRef.current?.focus();
+        }
+      }}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <div className="mw-navbar__inner">
         {/* Brand & Badge */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-sm shadow-sm">
+        <div className="mw-navbar__brand">
+          <div className="mw-navbar__brand-mark">
             MW
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm tracking-tight text-zinc-100">
+          <div className="mw-navbar__identity">
+            <span className="mw-navbar__brand-name">
               A-L-L-A-H.COM
             </span>
-            <span className="hidden sm:inline-block text-xs text-zinc-500">•</span>
+            <span className="mw-navbar__separator" aria-hidden="true">·</span>
             <Badge variant="gold">
               {currentApp.toUpperCase()}
             </Badge>
@@ -47,37 +53,55 @@ export function EcosystemNavbar({
         </div>
 
         {/* Cross-App Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-zinc-400">
+        <nav
+          id={navigationId}
+          className="mw-navbar__links"
+          data-open={isMenuOpen}
+          aria-label="Ecosystem"
+        >
           <a
             href="http://localhost:3001"
-            className={cn('hover:text-amber-400 transition-colors', currentApp === 'dock' && 'text-amber-400')}
+            className="mw-navbar__link"
+            aria-current={currentApp === 'dock' ? 'page' : undefined}
+            onClick={() => setIsMenuOpen(false)}
           >
             Dock (Discovery)
           </a>
           <a
             href="http://localhost:3002"
-            className={cn('hover:text-amber-400 transition-colors', currentApp === 'headquarter' && 'text-amber-400')}
+            className="mw-navbar__link"
+            aria-current={currentApp === 'headquarter' ? 'page' : undefined}
+            onClick={() => setIsMenuOpen(false)}
           >
             Headquarter (Ops)
           </a>
           <a
             href="http://localhost:3003/account"
-            className={cn('hover:text-amber-400 transition-colors', currentApp === 'id' && 'text-amber-400')}
+            className="mw-navbar__link"
+            aria-current={currentApp === 'id' ? 'page' : undefined}
+            onClick={() => setIsMenuOpen(false)}
           >
             MoonWitness ID
+          </a>
+          <a
+            href="http://localhost:3004"
+            className="mw-navbar__link"
+            aria-current={currentApp === 'jizz' ? 'page' : undefined}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            WORLD OBSERVATORY
           </a>
         </nav>
 
         {/* User Identity SSO / Launch Action */}
-        <div className="flex items-center gap-3">
+        <div className="mw-navbar__actions">
           {isSignedIn ? (
-            <div className="flex items-center gap-3">
+            <div className="mw-navbar__action-group">
               <a
                 href="http://localhost:3003/account"
-                className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-200 hover:border-amber-500/30 transition-all"
+                className="mw-navbar__identity-link"
               >
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-zinc-300">{userName || userEmail}</span>
+                <span>{userName || userEmail}</span>
               </a>
               {onSignOut && (
                 <Button variant="ghost" size="sm" onClick={onSignOut}>
@@ -86,22 +110,34 @@ export function EcosystemNavbar({
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <a href="http://localhost:3003/login">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
+            <div className="mw-navbar__action-group">
+              <a
+                href="http://localhost:3003/login"
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+              >
+                Sign In
               </a>
-              <a href="http://localhost:3003/register">
-                <Button variant="default" size="sm">
-                  Get ID
-                </Button>
+              <a
+                href="http://localhost:3003/register"
+                className={cn(buttonVariants({ variant: 'default', size: 'sm' }))}
+              >
+                Get ID
               </a>
             </div>
           )}
         </div>
+        <button
+          ref={menuButtonRef}
+          className="mw-navbar__menu"
+          type="button"
+          aria-expanded={isMenuOpen}
+          aria-controls={navigationId}
+          aria-label={isMenuOpen ? 'Close navigation' : 'Open navigation'}
+          onClick={() => setIsMenuOpen((open) => !open)}
+        >
+          {isMenuOpen ? 'Close' : 'Menu'}
+        </button>
       </div>
     </header>
   );
 }
-

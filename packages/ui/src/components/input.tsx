@@ -8,24 +8,34 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, ...props }, ref) => {
+    const generatedId = React.useId();
+    const inputId = props.id ?? generatedId;
+    const errorId = error ? `${inputId}-error` : undefined;
+
     return (
-      <div className="w-full space-y-1.5">
+      <div className="mw-input-field">
         {label && (
-          <label className="block text-xs font-medium text-zinc-300 uppercase tracking-wider">
+          <label className="mw-input-field__label" htmlFor={inputId}>
             {label}
           </label>
         )}
         <input
+          id={inputId}
           type={type}
           className={cn(
-            'flex h-10 w-full rounded-xl border border-zinc-800 bg-zinc-950/60 px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/40 disabled:cursor-not-allowed disabled:opacity-50',
-            error && 'border-red-500/50 focus-visible:ring-red-500/40',
+            'mw-input',
             className
           )}
           ref={ref}
           {...props}
+          aria-invalid={error ? true : props['aria-invalid']}
+          aria-describedby={cn(props['aria-describedby'], errorId) || undefined}
         />
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && (
+          <p className="mw-input-field__error" id={errorId} role="alert">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

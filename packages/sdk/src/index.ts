@@ -267,6 +267,68 @@ export class MoonWitnessClient {
     },
   };
 
+  // Works Commercial Operations
+  readonly works = {
+    listPlans: async () => {
+      return this.request('/v1/works/plans', { method: 'GET' });
+    },
+    createPlan: async (payload: {
+      name: string;
+      description?: string;
+      download_speed_kbps: number;
+      upload_speed_kbps: number;
+      burst_download_kbps?: number;
+      burst_upload_kbps?: number;
+      burst_threshold_kbps?: number;
+      burst_time_seconds?: number;
+      fup_threshold_gb?: number;
+      fup_throttled_download_kbps?: number;
+      fup_throttled_upload_kbps?: number;
+      price_cents: number;
+      currency?: string;
+      billing_cycle_days?: number;
+      grace_period_days?: number;
+      is_active?: boolean;
+    }): Promise<any> => {
+      return this.request('/v1/works/plans', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    listSubscriptions: async () => {
+      return this.request('/v1/works/subscriptions', { method: 'GET' });
+    },
+    createSubscription: async (payload: {
+      company_id: number;
+      partner_id: number;
+      plan_id: number;
+      username: string;
+      start_date: string;
+      end_date?: string;
+      auto_renew?: boolean;
+      payment_method_id?: number;
+    }): Promise<any> => {
+      return this.request('/v1/works/subscriptions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    activateSubscription: async (subscriptionId: number) => {
+      return this.request(`/v1/works/subscriptions/${subscriptionId}/activate`, {
+        method: 'POST',
+      });
+    },
+     suspendSubscription: async (subscriptionId: number, reason?: string) => {
+       return this.request(`/v1/works/subscriptions/${subscriptionId}/suspend`, {
+         method: 'POST',
+         body: JSON.stringify(reason ? { reason } : {}) as string,
+       });
+     },
+    listInvoices: async () => {
+      return this.request('/v1/works/invoices', { method: 'GET' });
+    },
+  };
+
   // Threads & Memory Operations
   readonly threads = {
     list: async () => {
@@ -301,6 +363,32 @@ export class MoonWitnessClient {
       return this.request('/v1/qorpus/search', {
         method: 'POST',
         body: JSON.stringify(payload),
+      });
+    },
+  };
+
+  // NEXUS Network Inventory Operations
+  readonly nexus = {
+    listNas: async (companyId?: string) => {
+      return this.request<{ success: boolean; data: any[] }>(`/v1/nexus/nas?company_id=${companyId || ''}`, {
+        method: 'GET',
+      });
+    },
+    createNas: async (payload: { nas_identifier: string; ip_address: string; secret: string; vendor?: string; coa_port?: number; source_allowlist?: string[]; site_id?: number }) => {
+      return this.request<{ success: boolean; data: any }>('/v1/nexus/nas', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    getNas: async (id: number) => {
+      return this.request<{ success: boolean; data: any }>(`/v1/nexus/nas/${id}`, {
+        method: 'GET',
+      });
+    },
+    rotateSecret: async (id: number, secret: string, rotated_by?: string) => {
+      return this.request<{ success: boolean; data: any }>(`/v1/nexus/nas/${id}/secret`, {
+        method: 'PUT',
+        body: JSON.stringify({ secret, rotated_by }),
       });
     },
   };
@@ -529,4 +617,3 @@ export class MoonWitnessClient {
 
 export const createClient = (options?: SdkOptions) => new MoonWitnessClient(options);
 export const mwClient = createClient();
-

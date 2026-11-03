@@ -23,6 +23,7 @@
       "import": "./src/sfx/index.ts",
       "types": "./src/sfx/index.ts"
     },
+    "./skins.css": "./src/skins.css",
     "./tokens": {
       "import": "./src/tokens/index.ts",
       "types": "./src/tokens/index.ts"

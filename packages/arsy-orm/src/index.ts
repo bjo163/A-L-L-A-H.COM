@@ -7,4 +7,5 @@ export * from './repository';
 export * from './migrator';
 export * from './auth_models';
 export * from './vector';
+export * from './encryption';
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SkinRoot } from '@moonwitness/ui';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -14,9 +15,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-amber-500/20 selection:text-amber-200">
-        {children}
+        <SkinRoot skin="lunar-chronicles">{children}</SkinRoot>
       </body>
     </html>
   );
 }
-

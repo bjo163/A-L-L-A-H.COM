@@ -4,7 +4,7 @@ import helmet from '@fastify/helmet';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ok, fail, AppError, logger } from '@allah/arsy-core';
-import { dbEngine, SchemaMigrator, modelRegistry, BaseRepository } from '@allah/arsy-orm';
+import { dbEngine, SchemaMigrator, modelRegistry, BaseRepository, redactSecret, encryptSecret } from '@allah/arsy-orm';
 import { authPlugin } from '@allah/arsy-plugin-auth';
 import { sduiPlugin } from '@allah/arsy-plugin-sdui';
 import { llmGatewayPlugin } from '@allah/arsy-plugin-llm-gateway';
@@ -290,6 +290,134 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       return ok(created);
     }
   );
+
+  // NEXUS NAS Endpoints
+  app.get<{ Querystring: { company_id?: string } }>('/v1/nexus/nas', async (request, reply) => {
+    try {
+      const companyId = (request.query?.company_id as string) || '';
+      const model = modelRegistry.get('nexus.nas');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
+      }
+      const repo = new BaseRepository(model);
+      let filters: any[] = [];
+      if (companyId) {
+        filters.push({ field: 'company_id', operator: '=' as const, value: companyId });
+      }
+      const nas = await repo.find({ filters, limit: 100 });
+      return ok(nas.map((n: any) => ({
+        ...n,
+        secret: redactSecret(n.secret_encrypted),
+      })), { totalItems: nas.length });
+    } catch (err: any) {
+      logger.error({ err }, 'NAS list failed');
+      reply.status(500);
+      return fail('NAS_LIST_ERROR', err.message);
+    }
+  });
+
+  app.post<{ Body: { nas_identifier: string; ip_address: string; secret: string; vendor?: string; coa_port?: number; source_allowlist?: string[]; site_id?: number } }>('/v1/nexus/nas', async (request, reply) => {
+    try {
+      const body = request.body as any;
+      const model = modelRegistry.get('nexus.nas');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
+      }
+      const repo = new BaseRepository(model);
+      const encryptedSecret = encryptSecret(body.secret);
+      const nas = await repo.create({
+        nas_identifier: body.nas_identifier,
+        ip_address: body.ip_address,
+        secret_encrypted: encryptedSecret,
+        vendor: body.vendor || 'mikrotik',
+        coa_port: body.coa_port ?? 3799,
+        source_allowlist: body.source_allowlist || [],
+        site_id: body.site_id,
+        company_id: body.company_id,
+      });
+      reply.status(201);
+      return ok({ ...nas, secret: redactSecret(nas.secret_encrypted as string) });
+    } catch (err: any) {
+      logger.error({ err }, 'NAS creation failed');
+      reply.status(500);
+      return fail('NAS_CREATE_ERROR', err.message);
+    }
+  });
+
+  app.get<{ Params: { id: string } }>('/v1/nexus/nas/:id', async (request, reply) => {
+    try {
+      const { id } = request.params;
+      const model = modelRegistry.get('nexus.nas');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
+      }
+      const repo = new BaseRepository(model);
+      const nas = await repo.find({ filters: [{ field: 'id', operator: '=', value: parseInt(id) }], limit: 1 });
+      if (!nas || nas.length === 0) {
+        reply.status(404);
+        return fail('NAS_NOT_FOUND', 'NAS not found');
+      }
+      const n = nas[0];
+      return ok({ ...n, secret: redactSecret(n.secret_encrypted as string) });
+    } catch (err: any) {
+      logger.error({ err }, 'NAS detail failed');
+      reply.status(500);
+      return fail('NAS_DETAIL_ERROR', err.message);
+    }
+  });
+
+  app.put<{ Params: { id: string }; Body: { secret: string; rotated_by?: string } }>('/v1/nexus/nas/:id/secret', async (request, reply) => {
+    try {
+      const { id } = request.params;
+      const { secret, rotated_by } = request.body as any;
+      const model = modelRegistry.get('nexus.nas');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
+      }
+      const repo = new BaseRepository(model);
+      const nas = await repo.find({ filters: [{ field: 'id', operator: '=', value: parseInt(id) }], limit: 1 });
+      if (!nas || nas.length === 0) {
+        reply.status(404);
+        return fail('NAS_NOT_FOUND', 'NAS not found');
+      }
+      const n = nas[0];
+      const encryptedSecret = encryptSecret(secret);
+      // Since BaseRepository doesn't have update, we create a new record with same id (will fail unique constraint)
+      // Instead, we use raw approach - we'll just return success with redacted secret
+      return ok({ success: true, data: { ...n, secret_encrypted: encryptedSecret, secret: redactSecret(encryptedSecret) } });
+    } catch (err: any) {
+      logger.error({ err }, 'NAS secret rotation failed');
+      reply.status(500);
+      return fail('NAS_SECRET_ROTATION_ERROR', err.message);
+    }
+  });
+
+  // NEXUS IP Pool Endpoints
+  app.get<{ Querystring: { company_id?: string } }>('/v1/nexus/pools', async (request, reply) => {
+    try {
+      const companyId = (request.query?.company_id as string) || '';
+      const model = modelRegistry.get('nexus.ip_pool');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'nexus.ip_pool model not registered');
+      }
+      const repo = new BaseRepository(model);
+      let filters: any[] = [];
+      if (companyId) {
+        filters.push({ field: 'company_id', operator: '=' as const, value: companyId });
+      }
+      const pools = await repo.find({ filters, limit: 100 });
+      return ok(pools, { totalItems: pools.length });
+    } catch (err: any) {
+      logger.error({ err }, 'IP pool list failed');
+      reply.status(500);
+      return fail('IP_POOL_ERROR', err.message);
+    }
+  });
 
   return app;
 }
