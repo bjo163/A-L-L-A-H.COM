@@ -1,5 +1,4 @@
-import Image from "next/image";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel, skinRegistry } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, SkinScope, StatePanel, WorldArtwork } from "@moonwitness/ui";
 
 export const metadata = {
   title: "RIOT ANARCHY | Controlled Disruption",
@@ -8,7 +7,7 @@ export const metadata = {
 
 export default function RiotAnarchyPage() {
   return (
-    <>
+    <SkinScope skin="riot-anarchy" className="jizz-world-scope">
       <MotionFrame effect="enter">
         <PageHero
           titleId="riot-title"
@@ -21,7 +20,7 @@ export default function RiotAnarchyPage() {
               <Badge variant="default">Poster index pending</Badge>
             </>
           }
-          media={<Image src={skinRegistry["riot-anarchy"].identity.hero} alt="" width={1600} height={900} priority />}
+          media={<WorldArtwork skin="riot-anarchy" />}
           captionLeft="RIOT ANARCHY / PRINT COLLISION"
           captionRight="ISSUE / 00"
         />
@@ -68,6 +67,6 @@ export default function RiotAnarchyPage() {
           </Card>
         </div>
       </section>
-    </>
+    </SkinScope>
   );
 }

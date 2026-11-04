@@ -1,9 +1,13 @@
 'use client';
 
-import { type PhenomenonRecord } from '@moonwitness/types';
-import { JizzClientAdapter } from '@/lib/jizz/client';
+import type { PhenomenonRecord } from '@moonwitness/types';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, SectionHeading, StatePanel, MotionFrame, Input } from '@moonwitness/ui';
 import { useEffect, useState } from 'react';
+
+interface ListResponse {
+  data?: PhenomenonRecord[];
+  error?: string;
+}
 
 export default function PhenomenaCatalogue() {
   const [phenomena, setPhenomena] = useState<PhenomenonRecord[]>([]);
@@ -12,27 +16,34 @@ export default function PhenomenaCatalogue() {
   const [search, setSearch] = useState('');
   const [tags, setTags] = useState<string[]>([]);
 
-  const client = new JizzClientAdapter({
-    base_url: process.env.NEXT_PUBLIC_JIZZ_API_URL ?? 'http://localhost:4000',
-    api_key: process.env.NEXT_PUBLIC_JIZZ_API_KEY,
-  });
-
   useEffect(() => {
+    let cancelled = false;
+
     async function loadPhenomena() {
       try {
         setLoading(true);
         setError(null);
-        const data = await client.listPhenomena(100, 0);
-        setPhenomena(data);
+        const res = await fetch('/api/jizz/phenomena?limit=100&offset=0');
+        if (cancelled) return;
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as ListResponse;
+          setError(body.error ?? 'Failed to load observations.');
+          return;
+        }
+        const data = (await res.json()) as PhenomenonRecord[];
+        if (!cancelled) setPhenomena(data);
       } catch (err) {
-        setError('Failed to load observations. Check source connection.');
-        console.error('Phenomena load error:', err);
+        if (!cancelled) {
+          setError('Failed to load observations. Check source connection.');
+          console.error('Phenomena load error:', err);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadPhenomena();
+    return () => { cancelled = true; };
   }, []);
 
   const filteredPhenomena = phenomena.filter(p => {

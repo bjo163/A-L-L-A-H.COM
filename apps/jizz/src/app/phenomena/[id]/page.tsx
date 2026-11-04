@@ -1,12 +1,15 @@
 'use client';
 
-import { type PhenomenonRecord, type PerspectiveRecord, type SignalRecord } from '@moonwitness/types';
-import { JizzClientAdapter } from '@/lib/jizz/client';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, SectionHeading, StatePanel, MotionFrame, Table, TableBody, TableCell, TableHeader, TableRow, Button, LinkButton } from '@moonwitness/ui';
+import type { PhenomenonRecord, PerspectiveRecord, SignalRecord } from '@moonwitness/types';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, SectionHeading, StatePanel, MotionFrame, Table, TableBody, TableCell, TableHeader, TableRow, Link, LinkButton } from '@moonwitness/ui';
 import { useEffect, useState } from 'react';
 
 interface Params {
   params: { id: string };
+}
+
+interface ErrorBody {
+  error?: string;
 }
 
 export default function PhenomenonPerspectives({ params }: Params) {
@@ -16,36 +19,51 @@ export default function PhenomenonPerspectives({ params }: Params) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const client = new JizzClientAdapter({
-    base_url: process.env.NEXT_PUBLIC_JIZZ_API_URL ?? 'http://localhost:4000',
-    api_key: process.env.NEXT_PUBLIC_JIZZ_API_KEY,
-  });
+  const id = params.id;
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadData() {
       try {
         setLoading(true);
         setError(null);
 
-        const [phenom, persps, sigs] = await Promise.all([
-          client.getPhenomenon(params.id),
-          client.listPerspectives(params.id),
-          client.listSignals(params.id),
+        const [phenomRes, perspsRes, sigsRes] = await Promise.all([
+          fetch(`/api/jizz/phenomena/${id}`),
+          fetch(`/api/jizz/phenomena/${id}/perspectives`),
+          fetch(`/api/jizz/phenomena/${id}/signals`),
         ]);
 
-        setPhenomenon(phenom);
-        setPerspectives(persps);
-        setSignals(sigs);
+        if (cancelled) return;
+
+        const phenomBody = (await phenomRes.json().catch(() => ({}))) as PhenomenonRecord | ErrorBody;
+        const perspsBody = (await perspsRes.json().catch(() => ({}))) as PerspectiveRecord[] | ErrorBody;
+        const sigsBody = (await sigsRes.json().catch(() => ({}))) as SignalRecord[] | ErrorBody;
+
+        if (!phenomRes.ok) {
+          setError((phenomBody as ErrorBody).error ?? 'Failed to load phenomenon data.');
+          return;
+        }
+
+        if (!cancelled) {
+          setPhenomenon(phenomBody as PhenomenonRecord);
+          setPerspectives(Array.isArray(perspsBody) ? perspsBody : []);
+          setSignals(Array.isArray(sigsBody) ? sigsBody : []);
+        }
       } catch (err) {
-        setError('Failed to load phenomenon data. Check source connection.');
-        console.error('Phenomenon detail load error:', err);
+        if (!cancelled) {
+          setError('Failed to load phenomenon data. Check source connection.');
+          console.error('Phenomenon detail load error:', err);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadData();
-  }, [params.id]);
+    return () => { cancelled = true; };
+  }, [id]);
 
   if (loading) {
     return <StatePanel kind="loading" cause="Loading phenomenon details..." />;
@@ -95,9 +113,9 @@ export default function PhenomenonPerspectives({ params }: Params) {
           {phenomenon.source_url && (
             <div className="jizz-phenomenon-source">
               <Badge variant="default">Source</Badge>
-              <a href={phenomenon.source_url} target="_blank" rel="noopener noreferrer">
+              <Link href={phenomenon.source_url} external>
                 {new URL(phenomenon.source_url).hostname}
-              </a>
+              </Link>
             </div>
           )}
         </div>

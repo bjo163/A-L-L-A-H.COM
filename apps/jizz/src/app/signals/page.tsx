@@ -1,9 +1,12 @@
 'use client';
 
-import { type SignalRecord, type PhenomenonRecord } from '@moonwitness/types';
-import { JizzClientAdapter } from '@/lib/jizz/client';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, SectionHeading, StatePanel, MotionFrame, Table, TableBody, TableCell, TableHeader, TableRow, Input } from '@moonwitness/ui';
+import type { SignalRecord, PhenomenonRecord } from '@moonwitness/types';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, SectionHeading, StatePanel, MotionFrame, Input } from '@moonwitness/ui';
 import { useEffect, useState } from 'react';
+
+interface ErrorBody {
+  error?: string;
+}
 
 export default function SignalsTimeline() {
   const [signals, setSignals] = useState<SignalRecord[]>([]);
@@ -13,37 +16,51 @@ export default function SignalsTimeline() {
   const [search, setSearch] = useState('');
   const [signalType, setSignalType] = useState<string>('');
 
-  const client = new JizzClientAdapter({
-    base_url: process.env.NEXT_PUBLIC_JIZZ_API_URL ?? 'http://localhost:4000',
-    api_key: process.env.NEXT_PUBLIC_JIZZ_API_KEY,
-  });
-
   useEffect(() => {
+    let cancelled = false;
+
     async function loadSignals() {
       try {
         setLoading(true);
         setError(null);
-        // Note: In a real implementation, there would be a /api/signals endpoint
-        // For now, we'll fetch all phenomena and their signals
-        const phenData = await client.listPhenomena(100, 0);
-        setPhenomena(phenData);
 
-        // Collect all signals from all phenomena (simplified)
+        const phenRes = await fetch('/api/jizz/phenomena?limit=100&offset=0');
+        if (cancelled) return;
+        if (!phenRes.ok) {
+          const body = (await phenRes.json().catch(() => ({}))) as ErrorBody;
+          setError(body.error ?? 'Failed to load signals.');
+          return;
+        }
+
+        const phenData = (await phenRes.json()) as PhenomenonRecord[];
+        if (cancelled) return;
+
+        // Collect all signals across all phenomena
         const allSignals: SignalRecord[] = [];
         for (const phen of phenData) {
-          const phenSignals = await client.listSignals(phen.id);
-          allSignals.push(...phenSignals);
+          const sigRes = await fetch(`/api/jizz/phenomena/${phen.id}/signals`);
+          if (!sigRes.ok) continue;
+          const sigs = (await sigRes.json().catch(() => [])) as SignalRecord[];
+          if (Array.isArray(sigs)) allSignals.push(...sigs);
+          if (cancelled) return;
         }
-        setSignals(allSignals.sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()));
+
+        if (!cancelled) {
+          setPhenomena(phenData);
+          setSignals(allSignals.sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()));
+        }
       } catch (err) {
-        setError('Failed to load signals. Check source connection.');
-        console.error('Signals load error:', err);
+        if (!cancelled) {
+          setError('Failed to load signals. Check source connection.');
+          console.error('Signals load error:', err);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadSignals();
+    return () => { cancelled = true; };
   }, []);
 
   const filteredSignals = signals.filter(s => {

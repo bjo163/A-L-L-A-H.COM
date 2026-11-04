@@ -1,5 +1,4 @@
-import Image from "next/image";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel, skinRegistry } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, SkinScope, StatePanel, WorldArtwork } from "@moonwitness/ui";
 
 export const metadata = {
   title: "ROCKSOUL | Narrative Space",
@@ -8,7 +7,7 @@ export const metadata = {
 
 export default function RocksoulPage() {
   return (
-    <>
+    <SkinScope skin="rocksoul" className="jizz-world-scope">
       <MotionFrame effect="enter">
         <PageHero
           titleId="rocksoul-title"
@@ -21,7 +20,7 @@ export default function RocksoulPage() {
               <Badge variant="default">Index pending</Badge>
             </>
           }
-          media={<Image src={skinRegistry.rocksoul.identity.hero} alt="" width={1600} height={900} priority />}
+          media={<WorldArtwork skin="rocksoul" />}
           captionLeft="ROCKSOUL / WET STREET"
           captionRight="CHAPTER / 00"
         />
@@ -68,6 +67,6 @@ export default function RocksoulPage() {
           </Card>
         </div>
       </section>
-    </>
+    </SkinScope>
   );
 }

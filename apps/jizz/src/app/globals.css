@@ -38,7 +38,7 @@
 
 .jizz-phenomenon-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--mw-surface-shadow);
 }
 
 .jizz-phenomenon-meta {
@@ -78,8 +78,8 @@
   gap: 0.5rem;
 }
 
-.jizz-phenomenon-source a {
-  color: var(--mw-text-primary);
+.jizz-phenomenon-source [data-slot="link"] {
+  color: var(--mw-text);
   text-decoration: underline;
 }
 
@@ -109,7 +109,7 @@
 
 .jizz-signal-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--mw-surface-shadow);
 }
 
 .jizz-signal-meta {
@@ -120,9 +120,9 @@
 }
 
 .jizz-signal-metadata__pre {
-  background: var(--mw-bg-secondary);
+  background: var(--mw-surface-raised);
   padding: 0.75rem;
-  border-radius: var(--mw-radius-sm);
+  border-radius: var(--mw-control-radius);
   font-size: 0.875rem;
   overflow-x: auto;
   max-height: 200px;

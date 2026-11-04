@@ -1,5 +1,4 @@
-import Image from 'next/image';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel, skinRegistry } from '@moonwitness/ui';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel, WorldArtwork } from '@moonwitness/ui';
 
 export default function WorldObservatoryHome() {
   return (
@@ -16,7 +15,7 @@ export default function WorldObservatoryHome() {
               <Badge variant="default">No feed attached</Badge>
             </>
           }
-          media={<Image src={skinRegistry.mycelium.identity.hero} alt="" width={1600} height={900} priority />}
+          media={<WorldArtwork skin="mycelium" />}
           captionLeft="MYCELIUM / NETWORK ATLAS"
           captionRight="01 / OPEN SPACE"
         />
