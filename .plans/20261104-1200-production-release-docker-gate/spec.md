@@ -17,6 +17,7 @@ Retire the unused Rust/Cargo server, run the Docker gate on GitHub, and only sen
 - Remove the retired `apps/server/` Cargo application and its standalone Rust CI.
 - Keep Arsy Fastify as the production API service.
 - Include the root TypeScript config in each production Docker build context.
+- Include the addon source imported by Arsy in its Docker build context.
 - Build and publish Docker images for every service in `docker-compose.yml`.
 - Configure Compose to pull those published images rather than rebuilding them on Coolify.
 - Run all production Docker builds on GitHub Actions, not on developer machines.

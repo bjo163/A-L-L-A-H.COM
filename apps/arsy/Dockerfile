@@ -28,6 +28,7 @@ COPY packages/arsy-plugin-storage ./packages/arsy-plugin-storage
 COPY packages/arsy-plugin-llm-gateway ./packages/arsy-plugin-llm-gateway
 COPY packages/arsy-plugin-sdui ./packages/arsy-plugin-sdui
 COPY packages/types ./packages/types
+COPY addons ./addons
 COPY apps/arsy ./apps/arsy
 
 RUN pnpm --filter @allah/arsy-core build \
