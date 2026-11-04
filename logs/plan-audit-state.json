@@ -7,6 +7,22 @@
     ".plans/20261104-1950-ui-design-consistency": {
       "issue": "67",
       "at": "2026-11-04T13:09:27.923Z"
+    },
+    ".plans/20261103-2342-ide-workbench-swarm-orchestration": {
+      "issue": "69",
+      "at": "2026-11-04T15:00:22.998Z"
+    },
+    ".plans/20261104-0845-ui-refinement-wave": {
+      "issue": "70",
+      "at": "2026-11-04T15:00:26.911Z"
+    },
+    ".plans/20261104-feature-architecture-platform": {
+      "issue": "71",
+      "at": "2026-11-04T15:07:00.917Z"
+    },
+    ".plans/20261104-type-safety-improvement": {
+      "issue": "72",
+      "at": "2026-11-04T15:10:49.842Z"
     }
   }
 }

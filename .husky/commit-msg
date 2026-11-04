@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "[HUSKY] Conventional-commit validation (commitlint)..."
+pnpm exec commitlint --edit || {
+  echo "[HUSKY ERROR] Commit message violates .commitlintrc.json. Commit aborted."
+  exit 1
+}

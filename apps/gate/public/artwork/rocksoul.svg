@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="night" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17181a"/>
+      <stop offset=".55" stop-color="#141516"/>
+      <stop offset="1" stop-color="#0e0f10"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0" cy="0" r="1" gradientTransform="matrix(0 240 -320 0 1105 380)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#efd278" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#efd278" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="street" x1="800" y1="560" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#26282b"/>
+      <stop offset="1" stop-color="#121314"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#night)" d="M0 0h1600v900H0z"/>
+  <path fill="url(#street)" d="M0 612h1600v288H0z"/>
+  <path stroke="#3a3d41" stroke-width="2" d="M240 612 420 900m240-288 60 288m520-288-140 288m240-288-260 288"/>
+  <g fill="#1d1e20" stroke="#2c2e31" stroke-width="2">
+    <path d="M120 612V196h320v416Zm360 0V284h180v328Zm680 0V156h340v456Z"/>
+  </g>
+  <g fill="#efd278" fill-opacity=".55">
+    <path d="M164 240h26v34h-26zm60 0h26v34h-26zm120 58h26v34h-26zm-60 116h26v34h-26zm240-58h26v34h-26zm540-116h26v34h-26zm60 0h26v34h-26zm120 58h26v34h-26zm-60 116h26v34h-26zm180-58h26v34h-26z"/>
+    <path d="M804 380h26v34h-26zm60 58h26v34h-26z" fill-opacity=".38"/>
+  </g>
+  <rect x="1464" y="336" width="58" height="20" rx="3" fill="#bd4144"/>
+  <path fill="url(#lamp)" d="M0 0h1600v900H0z"/>
+  <g stroke="#8f949a" stroke-opacity=".5" stroke-width="2" stroke-linecap="round">
+    <path d="m1105 384-6 228m-3-228h18v72h-18z"/>
+  </g>
+  <g fill="#0f1011">
+    <path d="M772 620c0-36 12-58 32-58s32 22 32 58l-8 96h-48l-8-96Z"/>
+    <circle cx="804" cy="540" r="18"/>
+  </g>
+  <g stroke="#bd4144" stroke-opacity=".4" stroke-width="2" stroke-linecap="round">
+    <path d="M770 724h68m-58 18h48m-38 18h28"/>
+  </g>
+  <g stroke="#c7c0b8" stroke-opacity=".16" stroke-width="2" stroke-linecap="round">
+    <path d="M208 96l-14 56m120-92-14 56m212-72-14 56m216-52-14 56m164-88-14 56m168-32-14 56m164-92-14 56m128-40-14 56M96 292l-14 56m560-92-14 56m560-40-14 56m-212 96-14 56m-560-32-14 56m920-16-14 56"/>
+  </g>
+  <path stroke="#aaa39b" stroke-opacity=".28" stroke-width="2" d="M0 612h1600"/>
+  <g fill="#f1eee8" fill-opacity=".08">
+    <path d="M764 730h80v4H764zm-6 22h92v4h-92z"/>
+  </g>
+</svg>
