@@ -1,0 +1,31 @@
+/* Canonical Tailwind theme mapping for the A-L-L-A-H.COM ecosystem.
+   Utilities resolve to the runtime skin tokens published by SkinRoot, so an
+   application never defines its own colour or type variables. */
+@theme inline {
+  --color-background: var(--mw-canvas);
+  --color-foreground: var(--mw-text);
+  --color-card: var(--mw-surface);
+  --color-card-foreground: var(--mw-text);
+  --color-popover: var(--mw-surface);
+  --color-popover-foreground: var(--mw-text);
+  --color-primary: var(--mw-accent);
+  --color-primary-foreground: var(--mw-accent-text);
+  --color-secondary: var(--mw-surface-raised);
+  --color-secondary-foreground: var(--mw-text);
+  --color-muted: var(--mw-surface-raised);
+  --color-muted-foreground: var(--mw-muted-text);
+  --color-accent: var(--mw-accent);
+  --color-accent-foreground: var(--mw-accent-text);
+  --color-destructive: var(--mw-danger);
+  --color-destructive-foreground: var(--mw-danger-text);
+  --color-border: var(--mw-border);
+  --color-input: var(--mw-border);
+  --color-ring: var(--mw-focus);
+  --color-success: var(--mw-success);
+  --color-danger: var(--mw-danger);
+  --font-sans: var(--mw-font-body);
+  --font-heading: var(--mw-font-heading);
+  --font-mono: var(--mw-font-numeric);
+  --radius-control: var(--mw-control-radius);
+  --radius-surface: var(--mw-surface-radius);
+}

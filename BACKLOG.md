@@ -109,3 +109,11 @@ last_verified: "2026-11-03"
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-34-20-new-platform-capability-10
+
+
+## NEW-PLATFORM-CAPABILITY-11: New platform capability
+- Priority: P0
+- Status: VERIFIED
+- Outcome: Implement new platform capability from brainstorming
+- Acceptance: New capability implemented and verified
+- Verification: Pending per plan 2026-11-04T09-44-14-new-platform-capability-11
