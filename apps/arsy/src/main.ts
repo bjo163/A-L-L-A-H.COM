@@ -6,7 +6,9 @@ import { dbEngine } from '@allah/arsy-orm';
 dotenv.config();
 
 const PORT = Number(process.env.PORT) || 5150;
-const HOST = process.env.HOST || '0.0.0.0';
+// Bind to loopback by default. Set HOST=0.0.0.0 (as docker-compose does) to
+// publish the API for container-to-container or external traffic.
+const HOST = process.env.HOST || '127.0.0.1';
 
 async function bootstrap() {
   const app = await buildArsyApp({ enableLogging: true });

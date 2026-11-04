@@ -4,9 +4,11 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { fail, ok } from '@allah/arsy-core';
 import {
   BaseRepository,
+  AuditActor,
   dbEngine,
   modelRegistry,
   SchemaMigrator,
+  SYSTEM_ACTOR,
 } from '@allah/arsy-orm';
 import {
   AgentDevice,
@@ -22,6 +24,7 @@ interface DeviceControlOptions {
 
 interface AuthenticatedUser {
   id?: number | string;
+  orm_user_id?: number | string;
 }
 
 interface AgentDeviceRow {
@@ -74,9 +77,10 @@ function parseId(value: string | undefined): number | undefined {
 async function getCompanyContext(
   request: { user?: AuthenticatedUser },
   reply: { status(code: number): { send(payload: unknown): unknown } }
-): Promise<{ userId: number; companyId: number } | undefined> {
+): Promise<{ userId: number; ormUserId: number; companyId: number } | undefined> {
   const userId = Number(request.user?.id);
-  if (!Number.isSafeInteger(userId) || userId < 1) {
+  const ormUserId = Number(request.user?.orm_user_id);
+  if (!Number.isSafeInteger(userId) || userId < 1 || !Number.isSafeInteger(ormUserId) || ormUserId < 1) {
     reply.status(401).send(fail('UNAUTHORIZED', 'An authenticated user is required.'));
     return undefined;
   }
@@ -86,13 +90,14 @@ async function getCompanyContext(
     reply.status(503).send(fail('AUTH_MODEL_UNAVAILABLE', 'Authentication storage is unavailable.'));
     return undefined;
   }
-  const user = await new BaseRepository(userModel).findById(userId) as { company_id?: unknown } | null;
+  // The authenticated user id is the locator; the tenant is taken from the resolved row.
+  const user = await new BaseRepository(userModel).findById(userId, { systemScope: true }) as { company_id?: unknown } | null;
   const companyId = Number(user?.company_id);
   if (!Number.isSafeInteger(companyId) || companyId === 0) {
     reply.status(403).send(fail('TENANT_REQUIRED', 'A verified tenant must be assigned before pairing devices.'));
     return undefined;
   }
-  return { userId, companyId };
+  return { userId, ormUserId, companyId };
 }
 
 function getRepository<T>(modelName: string): BaseRepository<T> {
@@ -105,13 +110,14 @@ function recordEvent(
   missionId: number,
   companyId: number,
   eventType: string,
-  payload: Record<string, unknown> = {}
+  payload: Record<string, unknown> = {},
+  actor: AuditActor = SYSTEM_ACTOR
 ): Promise<unknown> {
   return getRepository('agent.mission.event').create({
     mission_id: missionId,
     event_type: eventType,
     payload,
-  }, companyId);
+  }, { companyId }, actor);
 }
 
 async function authenticateDevice(request: {
@@ -119,7 +125,9 @@ async function authenticateDevice(request: {
 }): Promise<AgentDeviceRow | undefined> {
   const rawToken = request.headers['x-agent-device-token'];
   if (typeof rawToken !== 'string' || rawToken.length < 32 || rawToken.length > 256) return undefined;
+  // The credential hash is the locator; the tenant is taken from the resolved device row.
   const devices = await getRepository<AgentDeviceRow>('agent.device').find({
+    scope: { systemScope: true },
     filters: [
       { field: 'credential_hash', operator: '=', value: hash(rawToken) },
       { field: 'state', operator: '=', value: 'active' },
@@ -158,7 +166,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       user_id: owner.userId,
       expires_at: expiresAt,
       state: 'pending',
-    }, owner.companyId) as { id: number };
+    }, { companyId: owner.companyId }, { type: 'user', userId: owner.ormUserId }) as { id: number };
 
     return ok({
       id: String(pairing.id),
@@ -184,7 +192,9 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       return fail('VALIDATION_ERROR', 'A valid pairing code, device name, and Windows platform are required.');
     }
 
+    // The pairing code hash is the locator; the tenant is taken from the resolved pairing row.
     const pairings = await getRepository('agent.pairing').find({
+      scope: { systemScope: true },
       filters: [
         { field: 'code_hash', operator: '=', value: hash(code) },
         { field: 'state', operator: '=', value: 'pending' },
@@ -205,7 +215,8 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const claimed = await getRepository('agent.pairing').updateById(
       pairing.id,
       { state: 'claimed' },
-      companyId,
+      { companyId },
+      SYSTEM_ACTOR,
       { state: 'pending' }
     );
     if (!claimed) {
@@ -221,7 +232,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       pairing_id: pairing.id,
       paired_by: pairing.user_id,
       state: 'active',
-    }, companyId) as { id: number };
+    }, { companyId }, SYSTEM_ACTOR) as { id: number };
 
     return ok({
       deviceId: String(device.id),
@@ -235,7 +246,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const owner = await getCompanyContext(request as { user?: AuthenticatedUser }, reply);
     if (!owner) return;
     const devices = await getRepository<AgentDeviceRow>('agent.device').find({
-      companyId: owner.companyId,
+      scope: { companyId: owner.companyId },
       orderBy: 'id',
       orderDirection: 'DESC',
     });
@@ -262,7 +273,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       reply.status(400);
       return fail('VALIDATION_ERROR', 'A valid device id is required.');
     }
-    const device = await getRepository<AgentDeviceRow>('agent.device').findById(deviceId, owner.companyId);
+    const device = await getRepository<AgentDeviceRow>('agent.device').findById(deviceId, { companyId: owner.companyId });
     if (!device) {
       reply.status(404);
       return fail('DEVICE_NOT_FOUND', 'The paired device was not found in this tenant.');
@@ -271,7 +282,8 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       await getRepository('agent.device').updateById(
         deviceId,
         { state: 'revoked' },
-        owner.companyId,
+        { companyId: owner.companyId },
+        { type: 'user', userId: owner.ormUserId },
         { state: 'active' }
       );
     }
@@ -297,7 +309,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       reply.status(400);
       return fail('VALIDATION_ERROR', 'A valid device id, mode, and mission goal (up to 5000 characters) are required.');
     }
-    const device = await getRepository<AgentDeviceRow>('agent.device').findById(deviceId, owner.companyId);
+    const device = await getRepository<AgentDeviceRow>('agent.device').findById(deviceId, { companyId: owner.companyId });
     if (!device || device.state !== 'active') {
       reply.status(404);
       return fail('DEVICE_UNAVAILABLE', 'The selected paired device is not active in this tenant.');
@@ -308,8 +320,8 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       mode: body.mode,
       goal: body.goal.trim(),
       state: 'queued',
-    }, owner.companyId);
-    await recordEvent(mission.id, owner.companyId, 'queued', { mode: body.mode });
+    }, { companyId: owner.companyId }, { type: 'user', userId: owner.ormUserId });
+    await recordEvent(mission.id, owner.companyId, 'queued', { mode: body.mode }, { type: 'user', userId: owner.ormUserId });
     return ok({
       id: String(mission.id),
       deviceId: String(deviceId),
@@ -332,7 +344,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       return fail('VALIDATION_ERROR', 'A valid device id is required.');
     }
     const missions = await getRepository<AgentMissionRow>('agent.mission').find({
-      companyId: owner.companyId,
+      scope: { companyId: owner.companyId },
       filters: deviceId ? [{ field: 'device_id', operator: '=', value: deviceId }] : undefined,
       orderBy: 'id',
       orderDirection: 'DESC',
@@ -359,7 +371,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       reply.status(400);
       return fail('VALIDATION_ERROR', 'A valid mission id is required.');
     }
-    const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, owner.companyId);
+    const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, { companyId: owner.companyId });
     if (!mission) {
       reply.status(404);
       return fail('MISSION_NOT_FOUND', 'The mission was not found in this tenant.');
@@ -371,14 +383,15 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const updated = await getRepository('agent.mission').updateById(
       missionId,
       { state: 'cancel_requested' },
-      owner.companyId,
+      { companyId: owner.companyId },
+      { type: 'user', userId: owner.ormUserId },
       { state: mission.state }
     );
     if (!updated) {
       reply.status(409);
       return fail('MISSION_STATE_CHANGED', 'The mission state changed before cancellation could be recorded.');
     }
-    await recordEvent(missionId, owner.companyId, 'cancel_requested');
+    await recordEvent(missionId, owner.companyId, 'cancel_requested', {}, { type: 'user', userId: owner.ormUserId });
     return ok({ missionId: String(missionId), state: 'cancel_requested' });
   });
 
@@ -392,13 +405,13 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       reply.status(400);
       return fail('VALIDATION_ERROR', 'A valid mission id is required.');
     }
-    const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, owner.companyId);
+    const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, { companyId: owner.companyId });
     if (!mission) {
       reply.status(404);
       return fail('MISSION_NOT_FOUND', 'The mission was not found in this tenant.');
     }
     const events = await getRepository('agent.mission.event').find({
-      companyId: owner.companyId,
+      scope: { companyId: owner.companyId },
       filters: [{ field: 'mission_id', operator: '=', value: missionId }],
       orderBy: 'id',
       orderDirection: 'ASC',
@@ -427,7 +440,8 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const stillActive = await deviceRepository.updateById(
       device.id,
       { last_seen_at: new Date().toISOString() },
-      companyId,
+      { companyId },
+      SYSTEM_ACTOR,
       { state: 'active' }
     );
     if (!stillActive) {
@@ -436,7 +450,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     }
 
     const missions = await getRepository<AgentMissionRow>('agent.mission').find({
-      companyId,
+      scope: { companyId },
       filters: [
         { field: 'device_id', operator: '=', value: device.id },
         { field: 'state', operator: '=', value: 'cancel_requested' },
@@ -460,7 +474,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     }
 
     const activeMissions = await getRepository<AgentMissionRow>('agent.mission').find({
-      companyId,
+      scope: { companyId },
       filters: [
         { field: 'device_id', operator: '=', value: device.id },
         { field: 'state', operator: '=', value: 'running' },
@@ -484,7 +498,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     }
 
     const queued = await getRepository<AgentMissionRow>('agent.mission').find({
-      companyId,
+      scope: { companyId },
       filters: [
         { field: 'device_id', operator: '=', value: device.id },
         { field: 'state', operator: '=', value: 'queued' },
@@ -498,7 +512,8 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
     const started = await getRepository('agent.mission').updateById(
       mission.id,
       { state: 'running' },
-      companyId,
+      { companyId },
+      SYSTEM_ACTOR,
       { state: 'queued' }
     );
     if (!started) return ok({ mission: null });
@@ -552,7 +567,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       reply.status(403);
       return fail('TENANT_REQUIRED', 'The paired device has no verified tenant.');
     }
-    const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, companyId);
+    const mission = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, { companyId });
     if (!mission || mission.device_id !== device.id) {
       reply.status(404);
       return fail('MISSION_NOT_FOUND', 'The mission does not belong to this paired device.');
@@ -561,7 +576,7 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       ? eventType
       : undefined;
     if (state) {
-      const current = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, companyId);
+      const current = await getRepository<AgentMissionRow>('agent.mission').findById(missionId, { companyId });
       if (!current || terminalMissionStates.has(current.state)) {
         reply.status(409);
         return fail('MISSION_STATE_CHANGED', 'The mission is already in a terminal state.');
@@ -569,7 +584,8 @@ const deviceControlAsync: FastifyPluginAsync<DeviceControlOptions> = async (
       const updated = await getRepository('agent.mission').updateById(
         missionId,
         { state },
-        companyId,
+        { companyId },
+        SYSTEM_ACTOR,
         { state: current.state }
       );
       if (!updated) {

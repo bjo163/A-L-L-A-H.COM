@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { RouteShell } from "@moonwitness/ui";
 import { GateNavbar } from "@/components/gate-navbar";
 import { InfoPageShell } from "@/components/info-page-shell";
 
@@ -12,14 +13,14 @@ export default function AboutPage() {
   return (
     <>
       <GateNavbar />
-      <main id="main-content" tabIndex={-1} className="gate-page">
+      <RouteShell as="main" className="gate-shell">
         <InfoPageShell
           title="Tentang A-L-L-A-H.COM"
           titleEn="About A-L-L-A-H.COM"
           description="Misi, visi, dan produk ekosistem Empire of the Light."
           descriptionEn="Mission, vision, and ecosystem products of the Empire of the Light."
         />
-      </main>
+      </RouteShell>
     </>
   );
 }

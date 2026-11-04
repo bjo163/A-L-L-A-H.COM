@@ -12,7 +12,7 @@ import type {
   ToolChoice,
   ToolCall,
 } from '../types';
-import { validateUrlSsrf } from '../ssrf';
+import { validateUrlSsrf, ssrfSafeDispatcher } from '../ssrf';
 
 export class AnthropicAdapter implements ProviderAdapter {
   readonly slug: string;
@@ -142,6 +142,7 @@ ${this.extractText(msg.content)}` : this.extractText(msg.content);
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -228,6 +229,7 @@ ${this.extractText(msg.content)}` : this.extractText(msg.content);
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

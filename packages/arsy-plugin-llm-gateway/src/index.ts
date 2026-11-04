@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import crypto from 'crypto';
 import { ok, fail, logger } from '@allah/arsy-core';
 import { dbEngine } from '@allah/arsy-orm';
@@ -10,7 +10,7 @@ import { OpenAiAdapter } from './adapters/openai';
 import { GeminiAdapter } from './adapters/gemini';
 import { toolRegistry } from './tools';
 import { mcpHandler } from './mcp';
-import type { LlmGatewayOptions, ChatCompletionRequest } from './types';
+import type { LlmGatewayOptions, ChatCompletionRequest, VirtualKeyRecord } from './types';
 import { runAgent, streamAgent } from './agent/loop';
 import { SwarmCoordinator } from './swarm';
 import { deviceControlPlugin } from './device_control';
@@ -38,6 +38,15 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   const router = new SmartRouter(options);
   const cache = new GatewayCache();
   const usageManager = new UsageManager();
+
+  // Tenant always comes from the verified principal or the presented virtual key, never
+  // from a query string or body field.
+  const tenantOf = (request: FastifyRequest): number | null => {
+    const principal = (request as any).principal;
+    if (typeof principal?.companyId === 'number') return principal.companyId;
+    const companyId = (request as any).user?.company_id;
+    return typeof companyId === 'number' ? companyId : null;
+  };
 
   // Initialize router models and database defaults
   await router.initialize();
@@ -151,7 +160,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
         ? request.headers.authorization.slice(7)
         : undefined);
 
-    let keyRecord: any;
+    let keyRecord: VirtualKeyRecord | undefined;
     if (rawKey) {
       const authResult = await usageManager.validateVirtualKey(rawKey);
       if (!authResult.valid) {
@@ -161,6 +170,12 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       keyRecord = authResult.keyRecord;
     }
 
+    const tenant = keyRecord?.company_id ?? tenantOf(request);
+    if (typeof tenant !== 'number') {
+      reply.status(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
+
     // Cache lookup for non-streaming calls
     if (!stream) {
       const cacheKey = cache.generateKey(model, messages, temperature);
@@ -168,6 +183,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       if (cached) {
         reply.header('X-Cache-Hit', 'true');
         usageManager.recordUsage({
+          companyId: tenant,
           virtualKeyId: keyRecord?.id,
           promptTokens: cached.usage?.prompt_tokens || 0,
           completionTokens: cached.usage?.completion_tokens || 0,
@@ -213,6 +229,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
         );
 
         usageManager.recordUsage({
+          companyId: tenant,
           virtualKeyId: keyRecord?.id,
           providerId: streamResult.provider.id,
           modelId: streamResult.model.id,
@@ -259,6 +276,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
 
       // Async usage record
       usageManager.recordUsage({
+        companyId: tenant,
         virtualKeyId: keyRecord?.id,
         providerId: execResult.provider.id,
         modelId: execResult.model.id,
@@ -307,14 +325,22 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   // POST /v1/mcp/message: Ingress endpoint for JSON-RPC 2.0 MCP messages.
   fastify.post<{ Body: { jsonrpc?: string; method?: string; params?: unknown; id?: string | number | null } }>(
     `${prefix}/mcp/message`,
-    async (request) => {
+    async (request, reply) => {
+      const tenant = tenantOf(request);
+      if (typeof tenant !== 'number') {
+        reply.status(403);
+        return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+      }
       const body = request.body || {};
-      const response = await mcpHandler.handle({
-        jsonrpc: body.jsonrpc ?? '2.0',
-        method: (body.method as string) || '',
-        params: body.params as Record<string, unknown> | undefined,
-        id: (body.id ?? null) as string | number | null,
-      });
+      const response = await mcpHandler.handle(
+        {
+          jsonrpc: body.jsonrpc ?? '2.0',
+          method: (body.method as string) || '',
+          params: body.params as Record<string, unknown> | undefined,
+          id: (body.id ?? null) as string | number | null,
+        },
+        { companyId: tenant, actor: 'mcp' }
+      );
       return response;
     }
   );
@@ -348,7 +374,11 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return fail('MISSING_PROMPT', 'Prompt is required for agent execution');
     }
 
-    const companyId = (request as any).user?.company_id || 'default';
+    const companyId = tenantOf(request);
+    if (typeof companyId !== 'number') {
+      reply.code(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
     const result = await runAgent({
       prompt,
       system,
@@ -377,12 +407,16 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return;
     }
 
+    const companyId = tenantOf(request);
+    if (typeof companyId !== 'number') {
+      reply.code(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
+
     reply.raw.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
     reply.raw.setHeader('Connection', 'keep-alive');
     reply.raw.setHeader('X-Accel-Buffering', 'no');
-
-    const companyId = (request as any).user?.company_id || 'default';
 
     await streamAgent(
       {
@@ -425,7 +459,11 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return fail('MISSING_GOAL', 'Goal is required for swarm execution');
     }
 
-    const companyId = (request as any).user?.company_id || 'default';
+    const companyId = tenantOf(request);
+    if (typeof companyId !== 'number') {
+      reply.code(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
     const result = await swarmCoordinator.run({
       goal,
       system,
@@ -456,12 +494,16 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return;
     }
 
+    const companyId = tenantOf(request);
+    if (typeof companyId !== 'number') {
+      reply.code(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
+
     reply.raw.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
     reply.raw.setHeader('Connection', 'keep-alive');
     reply.raw.setHeader('X-Accel-Buffering', 'no');
-
-    const companyId = (request as any).user?.company_id || 'default';
 
     await swarmCoordinator.run(
       {
@@ -487,10 +529,16 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
 
 
   // GET /v1/gateway/telemetry (Aggregate Usage & Health Telemetry)
-  fastify.get(`${prefix}/gateway/telemetry`, async () => {
+  fastify.get(`${prefix}/gateway/telemetry`, async (request, reply) => {
+    const tenant = tenantOf(request);
+    if (typeof tenant !== 'number') {
+      reply.status(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
     try {
       const stats = (await dbEngine.query(
-        'SELECT COUNT(*) as total_requests, COALESCE(SUM(total_tokens), 0) as total_tokens, COALESCE(SUM(cost_usd), 0) as total_cost_usd, COALESCE(AVG(latency_ms), 0) as avg_latency_ms FROM ai_usage_log'
+        'SELECT COUNT(*) as total_requests, COALESCE(SUM(total_tokens), 0) as total_tokens, COALESCE(SUM(cost_usd), 0) as total_cost_usd, COALESCE(AVG(latency_ms), 0) as avg_latency_ms FROM ai_usage_log WHERE company_id = $1',
+        [tenant]
       )) as Array<{
         total_requests: number | string;
         total_tokens: number | string;
@@ -515,9 +563,12 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   });
 
   // GET /v1/gateway/providers
+  // Platform configuration, and never the stored credential envelope.
   fastify.get(`${prefix}/gateway/providers`, async () => {
     try {
-      const providers = await dbEngine.query('SELECT * FROM ai_provider ORDER BY priority ASC');
+      const providers = await dbEngine.query(
+        'SELECT id, company_id, name, slug, provider_type, base_url, priority, is_healthy FROM ai_provider ORDER BY priority ASC'
+      );
       return ok(providers);
     } catch (err: any) {
       return fail('PROVIDERS_FETCH_ERROR', err.message);
@@ -525,10 +576,16 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   });
 
   // GET /v1/gateway/usage
-  fastify.get(`${prefix}/gateway/usage`, async () => {
+  fastify.get(`${prefix}/gateway/usage`, async (request, reply) => {
+    const tenant = tenantOf(request);
+    if (typeof tenant !== 'number') {
+      reply.status(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
     try {
       const logs = await dbEngine.query(
-        'SELECT l.*, p.name as provider_name, m.name as model_name, k.name as key_name FROM ai_usage_log l LEFT JOIN ai_provider p ON l.provider_id = p.id LEFT JOIN ai_model m ON l.model_id = m.id LEFT JOIN ai_virtual_key k ON l.virtual_key_id = k.id ORDER BY l.id DESC LIMIT 100'
+        'SELECT l.*, p.name as provider_name, m.name as model_name, k.name as key_name FROM ai_usage_log l LEFT JOIN ai_provider p ON l.provider_id = p.id LEFT JOIN ai_model m ON l.model_id = m.id LEFT JOIN ai_virtual_key k ON l.virtual_key_id = k.id WHERE l.company_id = $1 ORDER BY l.id DESC LIMIT 100',
+        [tenant]
       );
       return ok(logs);
     } catch (err: any) {

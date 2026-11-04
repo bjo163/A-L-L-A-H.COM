@@ -1,6 +1,6 @@
-import { PGliteEngine, dbEngine } from './engine';
-import { ModelDefinition } from './model';
-import { QueryBuilder, QueryOptions } from './query_builder';
+import { PGliteEngine, QueryExecutor, dbEngine } from './engine';
+import { AuditActor, ModelDefinition } from './model';
+import { QueryBuilder, QueryOptions, TenantScope, isSystemScope, tenantCompanyId } from './query_builder';
 import { logger } from '@allah/arsy-core';
 
 /**
@@ -45,32 +45,102 @@ class TranslationCache {
 }
 
 const translationCache = new TranslationCache();
+const systemActorIds = new WeakMap<PGliteEngine, Promise<number>>();
 
 export class BaseRepository<T = Record<string, unknown>> {
   private queryBuilder: QueryBuilder;
 
   constructor(
     public readonly model: ModelDefinition,
-    private readonly engine: PGliteEngine = dbEngine
+    private readonly engine: PGliteEngine = dbEngine,
+    private readonly executor: QueryExecutor = engine
   ) {
     this.queryBuilder = new QueryBuilder(model);
   }
 
-  async find(options: QueryOptions = {}): Promise<T[]> {
+  private async resolveActor(actor: AuditActor): Promise<number> {
+    if (actor.type === 'user') {
+      if (!Number.isSafeInteger(actor.userId) || actor.userId < 1) {
+        throw new Error('Audit actor must be a positive res.users ID.');
+      }
+      return actor.userId;
+    }
+
+    let actorId = systemActorIds.get(this.engine);
+    if (!actorId) {
+      actorId = this.executor.query<{ id: number }>(
+        `SELECT id FROM "res_users" WHERE "role" = $1 AND "system_key" = $2 LIMIT 2;`,
+        ['system', 'bot']
+      ).then((rows) => {
+        if (rows.length !== 1 || !Number.isSafeInteger(Number(rows[0].id))) {
+          throw new Error('The system bot must exist before system-owned records can be written.');
+        }
+        return Number(rows[0].id);
+      });
+      systemActorIds.set(this.engine, actorId);
+    }
+
+    try {
+      return await actorId;
+    } catch (error) {
+      systemActorIds.delete(this.engine);
+      throw error;
+    }
+  }
+
+  private async withAuditContext<R>(
+    actor: AuditActor,
+    actorId: number,
+    operation: (executor: QueryExecutor) => Promise<R>
+  ): Promise<R> {
+    const run = async (executor: QueryExecutor): Promise<R> => {
+      await executor.query(
+        `SELECT
+           set_config('arsy.audit_actor_id', $1, true),
+           set_config('arsy.audit_reason_hash', $2, true),
+           set_config('arsy.audit_request_id', $3, true),
+           set_config('arsy.audit_global_access', $4, true);`,
+        [
+          String(actorId),
+          actor.reasonHash ?? '',
+          actor.requestId ?? '',
+          actor.globalAccess === true ? 'true' : 'false',
+        ]
+      );
+      try {
+        return await operation(executor);
+      } finally {
+        await executor.query(
+          `SELECT
+             set_config('arsy.audit_actor_id', '', true),
+             set_config('arsy.audit_reason_hash', '', true),
+             set_config('arsy.audit_request_id', '', true),
+             set_config('arsy.audit_global_access', 'false', true);`
+        );
+      }
+    };
+
+    return this.executor === this.engine
+      ? this.engine.transaction(run)
+      : run(this.executor);
+  }
+
+  async find(options: QueryOptions): Promise<T[]> {
     const { sql, params } = this.queryBuilder.buildSelect(options);
-    const rows = await this.engine.query<T>(sql, params);
+    const rows = await this.executor.query<T>(sql, params);
 
     // Apply transparent field translation if context.lang is provided
     if (options.lang && rows.length > 0) {
-      return this._applyTranslations(rows, options.lang, options.companyId ?? null);
+      const companyId = isSystemScope(options.scope) ? null : tenantCompanyId(options.scope);
+      return this._applyTranslations(rows, options.lang, companyId);
     }
 
     return rows;
   }
 
-  async findById(id: string | number, companyId?: string | number | null, lang?: string): Promise<T | null> {
+  async findById(id: string | number, scope: TenantScope, lang?: string): Promise<T | null> {
     const options: QueryOptions = {
-      companyId,
+      scope,
       lang,
       filters: [{ field: 'id', operator: '=', value: id }],
       limit: 1,
@@ -79,10 +149,13 @@ export class BaseRepository<T = Record<string, unknown>> {
     return rows[0] || null;
   }
 
-  async create(data: Record<string, unknown>, companyId?: string | number | null): Promise<T> {
-    const { sql, params } = this.queryBuilder.buildInsert(data, companyId);
-    const rows = await this.engine.query<T>(sql, params);
-    const created = rows[0];
+  async create(data: Record<string, unknown>, scope: TenantScope, actor: AuditActor): Promise<T> {
+    const actorId = await this.resolveActor(actor);
+    const { sql, params } = this.queryBuilder.buildInsert(data, scope, actorId);
+    const created = await this.withAuditContext(actor, actorId, async (executor) => {
+      const rows = await executor.query<T>(sql, params);
+      return rows[0];
+    });
     if (!created) throw new Error(`Failed to create a record in '${this.model.tableName}'.`);
     return created;
   }
@@ -90,18 +163,31 @@ export class BaseRepository<T = Record<string, unknown>> {
   async updateById(
     id: string | number,
     data: Record<string, unknown>,
-    companyId: string | number,
+    scope: TenantScope,
+    actor: AuditActor,
     expected: Record<string, unknown> = {}
   ): Promise<T | null> {
-    const { sql, params } = this.queryBuilder.buildUpdate(id, data, companyId, expected);
-    const rows = await this.engine.query<T>(sql, params);
-    return rows[0] || null;
+    const actorId = await this.resolveActor(actor);
+    const { sql, params } = this.queryBuilder.buildUpdate(id, data, scope, actorId, expected);
+    return this.withAuditContext(actor, actorId, async (executor) => {
+      const rows = await executor.query<T>(sql, params);
+      return rows[0] || null;
+    });
+  }
+
+  async deleteById(id: string | number, scope: TenantScope, actor: AuditActor): Promise<boolean> {
+    const actorId = await this.resolveActor(actor);
+    const { sql, params } = this.queryBuilder.buildDelete(id, scope);
+    return this.withAuditContext(actor, actorId, async (executor) => {
+      const rows = await executor.query<{ id: number }>(sql, params);
+      return rows.length > 0;
+    });
   }
 
   private async _applyTranslations(
     rows: T[],
     lang: string,
-    companyId: string | number | null
+    companyId: number | null
   ): Promise<T[]> {
     if (!this.model.fields) return rows;
 
@@ -116,18 +202,24 @@ export class BaseRepository<T = Record<string, unknown>> {
     const recordIds = rows.map(row => (row as any).id);
     const modelName = this.model.name;
 
+    // Postgres binds numbered parameters; the previous '?' form was never a valid placeholder.
+    const idPlaceholders = recordIds.map((_: unknown, index: number) => `$${index + 3}`);
+    const namePlaceholders = translatableFields.map(
+      (_: unknown, index: number) => `$${index + 3 + recordIds.length}`
+    );
+
     const translationQuery = `
       SELECT res_id, name, value
       FROM ir_translation
-      WHERE (company_id = 0 OR company_id = ?)
-        AND lang = ?
+      WHERE (company_id = 0 OR company_id = $1)
+        AND lang = $2
         AND type = 'model'
-        AND res_id IN (${recordIds.map(() => '?').join(',')})
-        AND name IN (${translatableFields.map(() => '?').join(',')})
+        AND res_id IN (${idPlaceholders.join(',')})
+        AND name IN (${namePlaceholders.join(',')})
     `;
 
-    const translationParams = [companyId || 0, lang, ...recordIds, ...translatableFields];
-    const translations = await this.engine.query<{
+    const translationParams = [companyId ?? 0, lang, ...recordIds, ...translatableFields];
+    const translations = await this.executor.query<{
       res_id: number;
       name: string;
       value: string;

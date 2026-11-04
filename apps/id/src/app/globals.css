@@ -3,6 +3,7 @@
 @import "@moonwitness/ui/skins.css";
 @import "tw-animate-css";
 
+/* Auth surface. Copy and artwork come from PageHero; only the two-column measure is app-owned. */
 .id-auth-page {
   display: grid;
   min-height: calc(100dvh - 4.25rem);
@@ -19,148 +20,186 @@
   gap: clamp(2rem, 6vw, 6rem);
 }
 
-.id-auth-aside {
-  position: relative;
-  display: flex;
-  min-height: 31rem;
-  flex-direction: column;
-  justify-content: flex-end;
-  overflow: hidden;
-  border: 1px solid rgb(187 199 219 / 0.28);
-  padding: clamp(1.5rem, 4vw, 3rem);
-  background-color: #111624;
-  background-image: url('/artwork/lunar-chronicles.svg');
-  background-position: center;
-  background-size: cover;
-}
-
-.id-auth-aside::before {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgb(9 13 22 / 0.05) 15%, rgb(9 13 22 / 0.94) 100%);
-  content: '';
-}
-
-.id-auth-aside__art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.42;
-  mix-blend-mode: screen;
-}
-
-.id-auth-aside__copy,
-.id-auth-aside__index {
-  position: relative;
-  z-index: 1;
-}
-
-.id-kicker {
-  margin: 0;
-  color: #c4cce1;
-  font-family: var(--mw-font-numeric);
-  font-size: 0.6875rem;
-  letter-spacing: 0.15em;
-}
-
-.id-auth-aside__copy h2 {
-  max-width: 10ch;
-  margin: 0.875rem 0;
-  color: #f0f1f0;
-  font-size: clamp(2.2rem, 4.8vw, 4.25rem);
-  font-weight: 500;
-  letter-spacing: -0.05em;
-  line-height: 0.98;
-}
-
-.id-auth-aside__copy > p:last-child {
-  max-width: 27rem;
-  margin: 0;
-  color: #bdc3cf;
-  line-height: 1.7;
-}
-
-.id-auth-aside__index {
-  position: absolute;
-  inset-inline-end: 1rem;
-  inset-block-start: 1rem;
-  color: #c4cce1;
-  font-family: var(--mw-font-numeric);
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-}
-
 .id-auth-form {
+  display: grid;
   width: 100%;
+  min-width: 0;
   max-width: 28rem;
+  gap: 1rem;
   justify-self: center;
 }
 
-.id-auth-form > .text-center {
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.id-auth-form > .text-center > div:first-child {
-  width: 3rem;
-  height: 3rem;
-}
-
-.id-auth-form h1 {
-  color: #eff0f0;
+.id-auth-form__title {
+  margin: 0;
+  color: var(--mw-text);
   font-size: clamp(1.75rem, 3vw, 2.25rem);
   letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.id-auth-form__note {
+  margin: 0;
+  color: var(--mw-muted-text);
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .id-auth-form [data-slot="card"] {
-  border-color: rgb(177 190 216 / 0.24);
-  background: rgb(16 21 32 / 0.9);
+  border-color: color-mix(in oklab, var(--mw-border) 26%, transparent);
+  background-color: color-mix(in oklab, var(--mw-surface) 92%, transparent);
 }
 
-.id-account-page {
-  min-height: calc(100dvh - 4.25rem);
-  flex: 1;
+.id-auth-form__submit {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.id-auth-form__alt,
+.id-auth-form__foot {
+  margin: 0.75rem 0 0;
+  color: var(--mw-muted-text);
+  font-size: 0.8125rem;
+}
+
+.id-auth-form__alt {
+  padding-top: 1rem;
+  border-block-start: var(--mw-border-width) solid color-mix(in oklab, var(--mw-border) 32%, transparent);
+}
+
+.id-auth-form__foot {
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+/* Account center: the shared route measure with the lunar atlas behind it. */
+.id-account-shell {
+  --mw-route-max: 88rem;
+  --mw-route-gap: var(--mw-section-gap);
+
   background-image:
-    linear-gradient(180deg, rgb(9 13 22 / 0.15), rgb(9 13 22 / 0.9) 50%),
+    linear-gradient(180deg, color-mix(in oklab, var(--mw-canvas) 15%, transparent), color-mix(in oklab, var(--mw-canvas) 90%, transparent) 50%),
     url('/artwork/lunar-chronicles.svg');
   background-position: center top;
   background-size: 100% auto, min(100%, 1600px) auto;
   background-repeat: no-repeat;
 }
 
-.id-account-content {
-  display: grid;
-  width: min(100% - 2rem, 76rem);
-  gap: 2rem;
-  margin-inline: auto;
-  padding-block: clamp(2rem, 5vw, 4rem);
-}
-
 .id-account-profile {
-  border-color: rgb(177 190 216 / 0.3);
-  background: linear-gradient(120deg, rgb(25 31 46 / 0.94), rgb(11 16 26 / 0.88));
-  box-shadow: inset 0 0 0 1px rgb(224 236 245 / 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mw-card-padding);
+  border-color: color-mix(in oklab, var(--mw-border) 34%, transparent);
+  background-image: linear-gradient(120deg, color-mix(in oklab, var(--mw-surface) 96%, transparent), color-mix(in oklab, var(--mw-canvas) 92%, transparent));
 }
 
-.id-account-content h1,
-.id-account-content h2,
-.id-account-content h3 {
-  color: #eef0f3;
+.id-account-profile__identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
 }
 
-.id-account-content [data-slot="card"] {
-  border-color: rgb(177 190 216 / 0.22);
-  background: rgb(16 21 32 / 0.88);
+.id-account-profile__name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.id-loading {
+.id-account-profile__name {
+  margin: 0;
+  color: var(--mw-text);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.id-account-profile__email,
+.id-account-profile__subject {
+  margin: 0.125rem 0 0;
+  color: var(--mw-muted-text);
+  font-family: var(--mw-font-numeric);
+  font-size: 0.75rem;
+}
+
+.id-account-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.id-account-facts > div {
+  border: var(--mw-border-width) solid color-mix(in oklab, var(--mw-border) 26%, transparent);
+  border-radius: var(--mw-control-radius);
+  padding: 0.5rem 0.75rem;
+  background-color: color-mix(in oklab, var(--mw-canvas) 70%, transparent);
+}
+
+.id-account-facts dt {
+  color: var(--mw-muted-text);
+  font-family: var(--mw-font-label);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.id-account-facts dd {
+  margin: 0.125rem 0 0;
+  color: var(--mw-text);
+  font-size: 0.8125rem;
+}
+
+.id-account-columns {
   display: grid;
-  min-height: calc(100dvh - 4.25rem);
-  flex: 1;
-  place-items: center;
-  color: #e7eaf0;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+.id-account-sessions,
+.id-account-consumers,
+.id-console {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.id-account-sessions__list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.id-console__header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.id-console__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.id-console__facts dt {
+  color: var(--mw-muted-text);
+  font-family: var(--mw-font-label);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.id-console__facts dd {
+  margin: 0.25rem 0 0;
+  color: var(--mw-text);
+  font-family: var(--mw-font-numeric);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 58rem) {
@@ -170,13 +209,8 @@
     gap: 1.5rem;
   }
 
-  .id-auth-aside {
-    min-height: 17rem;
-  }
-
-  .id-auth-aside__copy h2 {
-    max-width: 15ch;
-    font-size: clamp(2rem, 6vw, 3rem);
+  .id-account-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -185,54 +219,8 @@
     padding: 1rem 0.75rem 2rem;
   }
 
-  .id-auth-aside {
-    min-height: 13rem;
-    padding: 1.25rem;
-  }
-
-  .id-auth-aside__copy h2 {
-    max-width: 12ch;
-    font-size: 2.25rem;
-  }
-
   .id-auth-form {
     max-width: none;
     padding-inline: 0.25rem;
   }
-
-  .id-account-content {
-    width: min(100% - 1.5rem, 76rem);
-    gap: 1.5rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .id-auth-page *,
-  .id-auth-page *::before,
-  .id-auth-page *::after,
-  .id-account-page *,
-  .id-account-page *::before,
-  .id-account-page *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-.id-auth-aside {
-  transition:
-    border-color var(--mw-motion-standard) var(--mw-motion-easing),
-    background-position var(--mw-motion-standard) var(--mw-motion-easing);
-}
-
-.id-auth-form [data-slot="card"],
-.id-account-content [data-slot="card"] {
-  transition:
-    border-color var(--mw-motion-standard) var(--mw-motion-easing),
-    box-shadow var(--mw-motion-standard) var(--mw-motion-easing);
-}
-
-.id-auth-form :is([data-slot="input"], [data-slot="button"]) {
-  transition-duration: var(--mw-motion-fast);
-  transition-timing-function: var(--mw-motion-easing);
 }

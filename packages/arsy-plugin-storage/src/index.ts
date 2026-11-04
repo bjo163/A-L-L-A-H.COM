@@ -74,6 +74,12 @@ const storagePluginAsync: FastifyPluginAsync<StoragePluginOptions> = async (fast
     Params: { digest: string };
   }>(`${prefix}/:digest`, async (request, reply) => {
     const { digest } = request.params;
+    // A digest is always a bare SHA-256 hex; anything else (notably path segments)
+    // must not reach path.join.
+    if (!/^[0-9a-f]{64}$/.test(digest)) {
+      reply.status(400);
+      return fail('VALIDATION_ERROR', 'Invalid digest format');
+    }
     const buffer = await cas.get(digest);
 
     if (!buffer) {

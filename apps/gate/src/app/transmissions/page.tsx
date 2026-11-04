@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { RouteShell } from "@moonwitness/ui";
 import { GateNavbar } from "@/components/gate-navbar";
 import { TransmissionsFeed } from "@/components/transmissions-feed";
 
@@ -11,9 +12,9 @@ export default function TransmissionsPage() {
   return (
     <>
       <GateNavbar />
-      <main id="main-content" tabIndex={-1} className="gate-page">
+      <RouteShell as="main" className="gate-shell">
         <TransmissionsFeed />
-      </main>
+      </RouteShell>
     </>
   );
 }

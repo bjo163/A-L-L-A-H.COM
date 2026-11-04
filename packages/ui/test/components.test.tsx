@@ -149,12 +149,30 @@ test('PageHero wires its title to the section name and skips empty slots', () =>
   assert.match(plain, /<p class="mw-kicker mw-hero__kicker" data-slot="kicker">entry<\/p>/);
   assert.doesNotMatch(plain, /aria-labelledby/);
   assert.doesNotMatch(plain, /<figcaption/);
-  assert.match(full, /<section class="mw-hero" data-slot="hero" aria-labelledby="hero">/);
+  assert.match(full, /<section class="mw-hero" data-slot="hero" data-media-layout="side" aria-labelledby="hero">/);
   assert.match(
     full,
     /<figure class="mw-hero__art"><img src="art\.png" alt=""\/><figcaption class="mw-hero__caption"><span>IMPERIUM LUMEN<\/span><span>01<\/span><\/figcaption><\/figure>/
   );
   assert.match(full, /<div class="mw-hero__actions"><a class="mw-button/);
+});
+
+test('PageHero backdrop mode keeps one h1 and puts the caption over the art', () => {
+  const markup = renderToStaticMarkup(
+    <PageHero
+      titleAs="h2"
+      title="One identity."
+      summary="Sign in."
+      mediaLayout="backdrop"
+      media={<img src="atlas.png" alt="" />}
+      captionRight="L / 02"
+    />
+  );
+
+  assert.match(markup, /class="mw-hero mw-hero--backdrop" data-slot="hero" data-media-layout="backdrop">/);
+  assert.match(markup, /<h2 class="mw-hero__title">One identity\.<\/h2>/);
+  assert.doesNotMatch(markup, /<h1/);
+  assert.match(markup, /<figcaption class="mw-hero__caption"><span><\/span><span>L \/ 02<\/span><\/figcaption>/);
 });
 
 test('RouteShell renders one landmark and no header when the route supplies its own title', () => {

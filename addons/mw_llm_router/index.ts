@@ -74,6 +74,7 @@ export const AiVirtualKey = defineModel({
     budget_limit: fields.float({ label: 'Monthly Budget Limit USD' }),
     rate_limit_rpm: fields.integer({ label: 'Requests per Minute', default: 60 }),
     rate_limit_tpm: fields.integer({ label: 'Tokens per Minute', default: 100000 }),
+    revoked: fields.boolean({ label: 'Revoked', default: false }),
   },
 });
 

@@ -1,4 +1,10 @@
 services:
+  # Production topology. Local development should run each app directly
+  # (`pnpm dev`), where secret material is self-provisioned in dev mode.
+  # This stack is production, so JWT/NAS secrets are REQUIRED and must be
+  # supplied via the environment (or a .env file); there is no insecure default.
+  # ARSY_MASTER_KEY is shared by arsy (encrypts NAS secrets) and sentinel
+  # (decrypts them), so both services must receive the identical value.
   arsy:
     build:
       context: .
@@ -10,7 +16,10 @@ services:
     environment:
       - PORT=5150
       - HOST=0.0.0.0
-      - JWT_SECRET=${JWT_SECRET:-arsy-master-secret-key}
+      - NODE_ENV=production
+      - ARSY_DATA_DIR=/app/data
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ARSY_MASTER_KEY=${ARSY_MASTER_KEY:?ARSY_MASTER_KEY is required and must match sentinel}
     volumes:
       - arsy_data:/app/data
 
@@ -105,6 +114,7 @@ services:
       - SENTINEL_ACCT_PORT=1813
       - SENTINEL_HTTP_PORT=9181
       - PG_DATA_DIR=/app/data
+      - ARSY_MASTER_KEY=${ARSY_MASTER_KEY:?ARSY_MASTER_KEY is required and must match arsy}
     volumes:
       - sentinel_data:/app/data
     healthcheck:

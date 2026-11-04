@@ -1,20 +1,6 @@
 {
-  "STYLE_PURITY": {
-    "dock": 12,
-    "gate": 6,
-    "headquarter": 20,
-    "id": 10,
-    "jizz": 5
-  },
-  "INLINE_STYLE_PURITY": {
-    "gate": 78,
-    "headquarter": 1
-  },
-  "PALETTE_PURITY": {
-    "headquarter": 99,
-    "id": 44
-  },
-  "SKIN_ROOT_DUPLICATES": [
-    "imperium-lumen"
-  ]
+  "STYLE_PURITY": {},
+  "INLINE_STYLE_PURITY": {},
+  "PALETTE_PURITY": {},
+  "SKIN_ROOT_DUPLICATES": []
 }

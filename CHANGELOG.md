@@ -9,6 +9,17 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - ORM System Identity, Audit UIDs, and First-Run Onboarding
+
+### Added
+- Idempotent `res.users` system bot provisioning and initial-superuser onboarding, with regular registration gated until setup completes.
+- Required `create_uid` and `write_uid` references to canonical ORM users, actor-aware repository writes, legacy audit backfill, and database triggers for direct SQL writes.
+- First-run onboarding UI and SDK operations for setup status and initial-superuser creation.
+- Integration coverage for onboarding, duplicate onboarding rejection, registration, and tenant-scoped device operations.
+
+### Changed
+- Authentication accounts now link to canonical `res.users` records; transaction-bound repository reads use the active transaction executor.
+
 ## 2026-11-04 - VS Code Mission Timeline
 
 ### Added

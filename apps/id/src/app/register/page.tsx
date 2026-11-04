@@ -3,10 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { mwClient } from '@allah/sdk';
-import { Button, Form, Input, Card, sfx } from '@moonwitness/ui';
-import { UserPlus, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { Button, Card, CardContent, Form, Input, Link, PageHero, StatusMessage, sfx } from '@moonwitness/ui';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,17 +19,17 @@ export default function RegisterPage() {
     document.title = 'Register | MoonWitness ID';
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('The two passwords do not match.');
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError('Use at least 8 characters for the password.');
       return;
     }
 
@@ -42,8 +40,8 @@ export default function RegisterPage() {
       await mwClient.auth.signIn({ email, password, deviceName: 'Primary Session' });
       sfx.success();
       router.push('/account');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Registration failed.');
     } finally {
       setIsLoading(false);
     }
@@ -52,109 +50,84 @@ export default function RegisterPage() {
   return (
     <main id="main-content" tabIndex={-1} className="id-auth-page">
       <div className="id-auth-layout">
-        <aside className="id-auth-aside">
-          <Image
-            src="/artwork/lunar-chronicles.png"
-            alt=""
-            width={1600}
-            height={900}
-            priority
-            className="id-auth-aside__art"
-          />
-          <div className="id-auth-aside__copy">
-            <p className="id-kicker">MOONWITNESS / IDENTITY ARCHIVE</p>
-            <h2>Begin with a secure account.</h2>
-            <p>Create the identity used to access your MoonWitness destinations.</p>
-          </div>
-          <span className="id-auth-aside__index" aria-hidden="true">L / 02 / ARCHIVE</span>
-        </aside>
+        <PageHero
+          titleAs="h2"
+          kicker="MOONWITNESS / IDENTITY ARCHIVE"
+          title="Begin with a secure account."
+          summary="Create the identity used to access your MoonWitness destinations."
+          mediaLayout="backdrop"
+          media={<Image src="/artwork/lunar-chronicles.png" alt="" width={1600} height={900} priority />}
+          captionRight="L / 02 / ARCHIVE"
+        />
 
         <div className="id-auth-form">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-4 shadow-lg shadow-amber-500/5">
-            <UserPlus className="w-7 h-7" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
-            Create MoonWitness <span className="text-amber-400">ID</span>
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Access Dock, Headquarter & Ecosystem Services with one profile
+          <h1 className="id-auth-form__title">Create MoonWitness ID</h1>
+          <p className="id-auth-form__note">
+            One profile opens Dock, Headquarter, and the rest of the ecosystem.
           </p>
-        </div>
 
-        <Card>
-          {error && (
-            <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2.5">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <Form onSubmit={handleSubmit}>
-            <Input
-              label="Full Name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-            />
-
-            <Input
-              label="Email Address"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-
-            <Input
-              label="Password (min 8 chars)"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-            />
-
-            <Input
-              label="Confirm Password"
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••••••"
-            />
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full mt-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Provisioning Account...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
+          <Card as="section">
+            <CardContent>
+              {error && (
+                <StatusMessage tone="danger" title="Registration failed">
+                  {error}
+                </StatusMessage>
               )}
-            </Button>
-          </Form>
 
-          <div className="mt-6 pt-6 border-t border-zinc-800/80 text-center">
-            <p className="text-xs text-zinc-400">
-              Already have an account?{' '}
-              <Link href="/login" className="text-amber-400 hover:text-amber-300 font-medium underline-offset-4 hover:underline">
-                Sign In
-              </Link>
-            </p>
-          </div>
-        </Card>
+              <Form onSubmit={handleSubmit}>
+                <Input
+                  label="Full name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Your name"
+                />
+
+                <Input
+                  label="Email address"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                />
+
+                <Input
+                  label="Password"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="At least 8 characters"
+                  hint="Eight characters is the minimum the identity service accepts."
+                />
+
+                <Input
+                  label="Confirm password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repeat the password"
+                />
+
+                <Button type="submit" disabled={isLoading} className="id-auth-form__submit">
+                  {isLoading ? 'Creating the account' : 'Create account'}
+                </Button>
+              </Form>
+
+              <p className="id-auth-form__alt">
+                Already have an account?{' '}
+                <Link href="/login" underline>Sign in</Link>
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </main>

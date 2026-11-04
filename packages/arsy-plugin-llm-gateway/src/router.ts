@@ -1,10 +1,11 @@
-import { logger } from '@allah/arsy-core';
-import { dbEngine } from '@allah/arsy-orm';
+import { logger, resolveLocalSecret } from '@allah/arsy-core';
+import { dbEngine, decryptSecret } from '@allah/arsy-orm';
 import { OpenAiAdapter } from './adapters/openai';
 import { AnthropicAdapter } from './adapters/anthropic';
 import { GeminiAdapter } from './adapters/gemini';
 import type { ProviderAdapter } from './adapters/base';
 import { ProviderCircuitBreaker } from './circuit';
+import { hashVirtualKey } from './usage';
 import type {
   ProviderRecord,
   ModelRecord,
@@ -59,45 +60,60 @@ export class SmartRouter {
         'SELECT count(*) as count FROM ai_provider'
       )) as Array<{ count: number | string }>;
 
-      if (Number(providers[0]?.count || 0) === 0) {
+      if (Number(providers[0]?.count || 0) > 0) return;
 
-        // Seed Providers
-        await dbEngine.query(
-          'INSERT INTO ai_provider (name, slug, provider_type, base_url, priority, is_healthy) VALUES ' +
-          "('OpenAI Platform', 'openai', 'openai_compatible', 'https://api.openai.com/v1', 10, true), " +
-          "('Anthropic Cloud', 'anthropic', 'anthropic', 'https://api.anthropic.com/v1', 20, true), " +
-          "('Google Gemini', 'gemini', 'gemini', 'https://generativelanguage.googleapis.com/v1beta', 30, true), " +
-          "('Local Ollama', 'ollama', 'ollama', 'http://localhost:11434/v1', 40, true)"
-        );
+      // Provider, model and route rows are platform configuration, not tenant data: they
+      // live under the shared platform tenant, the same convention res_translation uses
+      // for global terms.
+      await dbEngine.query(
+        'INSERT INTO ai_provider (company_id, name, slug, provider_type, base_url, priority, is_healthy) VALUES ' +
+          '(0, \'OpenAI Platform\', \'openai\', \'openai_compatible\', \'https://api.openai.com/v1\', 10, true), ' +
+          '(0, \'Anthropic Cloud\', \'anthropic\', \'anthropic\', \'https://api.anthropic.com/v1\', 20, true), ' +
+          '(0, \'Google Gemini\', \'gemini\', \'gemini\', \'https://generativelanguage.googleapis.com/v1beta\', 30, true), ' +
+          '(0, \'Local Ollama\', \'ollama\', \'ollama\', \'http://localhost:11434/v1\', 40, true)'
+      );
 
-        // Seed Models
-        await dbEngine.query(
-          'INSERT INTO ai_model (name, model_id, provider_id, context_window, input_cost_per_m, output_cost_per_m) VALUES ' +
-          "('GPT-4o', 'gpt-4o', 1, 128000, 2.5, 10.0), " +
-          "('GPT-4o Mini', 'gpt-4o-mini', 1, 128000, 0.15, 0.6), " +
-          "('Claude 3.5 Sonnet', 'claude-3-5-sonnet-20241022', 2, 200000, 3.0, 15.0), " +
-          "('Gemini 2.5 Flash', 'gemini-2.5-flash', 3, 1000000, 0.075, 0.3), " +
-          "('Llama 3.3 70B Local', 'llama3.3', 4, 32768, 0, 0)"
-        );
+      await dbEngine.query(
+        'INSERT INTO ai_model (company_id, name, model_id, provider_id, context_window, input_cost_per_m, output_cost_per_m) VALUES ' +
+          '(0, \'GPT-4o\', \'gpt-4o\', 1, 128000, 2.5, 10.0), ' +
+          '(0, \'GPT-4o Mini\', \'gpt-4o-mini\', 1, 128000, 0.15, 0.6), ' +
+          '(0, \'Claude 3.5 Sonnet\', \'claude-3-5-sonnet-20241022\', 2, 200000, 3.0, 15.0), ' +
+          '(0, \'Gemini 2.5 Flash\', \'gemini-2.5-flash\', 3, 1000000, 0.075, 0.3), ' +
+          '(0, \'Llama 3.3 70B Local\', \'llama3.3\', 4, 32768, 0, 0)'
+      );
 
-        // Seed Routes
-        await dbEngine.query(
-          'INSERT INTO ai_route (name, alias, strategy) VALUES ' +
-          "('Default Adaptive Route', 'dx-default', 'fallback'), " +
-          "('Ultra Fast Route', 'dx-fast', 'lowest_cost'), " +
-          "('Deep Reasoning Route', 'dx-reasoning', 'fallback')"
-        );
+      await dbEngine.query(
+        'INSERT INTO ai_route (company_id, name, alias, strategy) VALUES ' +
+          '(0, \'Default Adaptive Route\', \'dx-default\', \'fallback\'), ' +
+          '(0, \'Ultra Fast Route\', \'dx-fast\', \'lowest_cost\'), ' +
+          '(0, \'Deep Reasoning Route\', \'dx-reasoning\', \'fallback\')'
+      );
 
-        // Seed Default Virtual Key for platform
-        await dbEngine.query(
-          'INSERT INTO ai_virtual_key (name, key_prefix, key_hash, budget_limit, rate_limit_rpm, rate_limit_tpm) VALUES ' +
-          "('MoonWitness Master Key', 'mw_live_master', 'mw_live_master_hash', 1000.0, 120, 200000)"
-        );
-
-        logger.info('Successfully bootstrapped default AI Gateway routing models in PGlite');
-      }
+      logger.info('Successfully bootstrapped default AI Gateway routing models in PGlite');
     } catch (err: any) {
       logger.warn({ err }, 'Could not seed AI gateway defaults (schema might be booting)');
+    }
+
+    await this.seedPlatformVirtualKey();
+  }
+
+  private async seedPlatformVirtualKey(): Promise<void> {
+    try {
+      const existing = (await dbEngine.query(
+        "SELECT 1 FROM ai_virtual_key WHERE name = $1 LIMIT 1",
+        ['Platform Master Key']
+      )) as unknown[];
+      if (existing && existing.length > 0) return;
+
+      const raw = resolveLocalSecret('GATEWAY_VIRTUAL_KEY', 'gateway.virtual.key');
+      await dbEngine.query(
+        'INSERT INTO ai_virtual_key (company_id, name, key_prefix, key_hash, budget_limit, rate_limit_rpm, rate_limit_tpm, revoked) ' +
+          'VALUES (0, $1, $2, $3, 1000.0, 120, 200000, false)',
+        ['Platform Master Key', raw.slice(0, 15), hashVirtualKey(raw)]
+      );
+      logger.info('Seeded platform master virtual key; the secret is in GATEWAY_VIRTUAL_KEY or data/keys');
+    } catch (err: any) {
+      logger.warn({ err }, 'Could not seed the platform master virtual key');
     }
   }
 
@@ -149,12 +165,15 @@ export class SmartRouter {
       if (matchingModel) {
         let adapter = this.adapters.get(provider.slug);
         if (!adapter) {
+          // The column holds an AES-GCM envelope; the upstream call needs the plaintext key,
+          // so a row written before envelope encryption existed fails closed here.
+          const apiKey = provider.encrypted_api_key ? decryptSecret(provider.encrypted_api_key) : undefined;
           if (provider.provider_type === 'anthropic') {
-            adapter = new AnthropicAdapter(provider.slug, provider.base_url, provider.encrypted_api_key);
+            adapter = new AnthropicAdapter(provider.slug, provider.base_url, apiKey);
           } else if (provider.provider_type === 'gemini') {
-            adapter = new GeminiAdapter(provider.slug, provider.base_url, provider.encrypted_api_key);
+            adapter = new GeminiAdapter(provider.slug, provider.base_url, apiKey);
           } else {
-            adapter = new OpenAiAdapter(provider.slug, provider.base_url, provider.encrypted_api_key);
+            adapter = new OpenAiAdapter(provider.slug, provider.base_url, apiKey);
           }
           this.adapters.set(provider.slug, adapter);
         }

@@ -1,8 +1,14 @@
 'use client';
 
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, MotionFrame, RawStack } from "@moonwitness/ui";
+import {
+  DestinationCard,
+  DestinationGrid,
+  MotionFrame,
+  SectionHeading,
+  resolveEcosystemEndpoints,
+} from "@moonwitness/ui";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
+import { getManifest } from "@/lib/content-manifest";
 
 interface ClosingHorizonProps {
   locale?: "id" | "en";
@@ -10,61 +16,48 @@ interface ClosingHorizonProps {
 
 export function ClosingHorizon({ locale = "id" }: ClosingHorizonProps) {
   const { t } = useTranslationCatalog(locale);
+  const endpoints = resolveEcosystemEndpoints(process.env);
+  // The catalog has no site section; the quote and slogan are content and live in the manifest.
+  const site = getManifest().site;
+
   const destinations = [
     { id: "universe", label: t("nav.universe"), href: "/universe" },
     { id: "transmissions", label: t("nav.transmissions"), href: "/transmissions" },
     { id: "explore", label: t("nav.explore"), href: "/explore" },
     { id: "community", label: t("nav.community"), href: "/community" },
-    { id: "dock", label: t("nav.dock"), href: "https://dock.a-l-l-a-h.com/account", external: true },
-    { id: "signin", label: t("journey.anonymous.signIn"), href: "/login", external: false },
+    { id: "journey", label: t("nav.journey"), href: "/journey" },
+    { id: "dock", label: t("nav.dock"), href: endpoints.dock, external: true },
+    // Sign-in lives in the identity app; gate has no /login route of its own.
+    { id: "signin", label: t("journey.anonymous.signIn"), href: `${endpoints.id}${endpoints.signInPath}`, external: true },
   ];
 
   return (
     <MotionFrame effect="enter">
-      <footer className="gate-section" role="contentinfo" aria-labelledby="closing-title">
-        <div className="gate-section__heading" style={{ borderTop: "1px solid rgb(205 178 122 / 0.28)", paddingTop: "3rem" }}>
-          <div>
-            <h2 id="closing-title" style={{ fontSize: "clamp(1.6rem, 3vw, 2.25rem)" }}>
-              {locale === "id" ? "Kembali ke Horizon" : "Return to Horizon"}
-            </h2>
-          </div>
-        </div>
+      <footer className="gate-closing" role="contentinfo" aria-labelledby="closing-title">
+        <SectionHeading
+          titleId="closing-title"
+          kicker={t("nav.gate")}
+          title={locale === "id" ? "Kembali ke Horizon" : "Return to Horizon"}
+        />
 
-        <blockquote className="gate-section__heading" style={{ maxWidth: "40rem", margin: "0 auto 2rem", textAlign: "center", borderTop: "none", paddingTop: 0 }}>
-          <p style={{ margin: 0, color: "#b7b2a7", fontSize: "clamp(1rem, 1.6vw, 1.2rem)", lineHeight: 1.7, fontStyle: "italic" }}>
-            "{t("site.footerQuote")}"
-          </p>
-        </blockquote>
+        <p className="gate-quote">&ldquo;{site.footerQuote}&rdquo;</p>
 
-        <nav aria-label="Destinasi ekosistem" className="gate-closing-horizon__destinations">
+        <DestinationGrid label={locale === "id" ? "Destinasi ekosistem" : "Ecosystem destinations"}>
           {destinations.map((dest) => (
-            <Link
+            <DestinationCard
               key={dest.id}
+              role={t("nav.gate")}
+              title={dest.label}
               href={dest.href}
-              className="group block"
-              target={dest.external ? "_blank" : undefined}
-              rel={dest.external ? "noopener noreferrer" : undefined}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>{dest.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <span style={{ fontFamily: "var(--mw-font-numeric)", color: "var(--mw-accent)" }}>→</span>
-                </CardContent>
-              </Card>
-            </Link>
+              external={dest.external}
+            />
           ))}
-        </nav>
+        </DestinationGrid>
 
-        <RawStack gap="tight" style={{ marginTop: "3rem", paddingTop: "2rem", borderTop: "1px solid var(--mw-border)", textAlign: "center" }}>
-          <p style={{ margin: 0, color: "var(--mw-muted-text)", fontSize: "0.875rem" }}>
-            {locale === "id" ? "A-L-L-A-H.COM — Empire of the Light" : "A-L-L-A-H.COM — Empire of the Light"}
-          </p>
-          <p style={{ margin: "0.5rem 0 0", color: "var(--mw-muted-text)", fontSize: "0.75rem", fontFamily: "var(--mw-font-numeric)" }}>
-            {t("site.slogan")}
-          </p>
-        </RawStack>
+        <div className="gate-colophon">
+          <p>{site.name} &mdash; {site.descriptor}</p>
+          <p className="gate-colophon__slogan">{site.slogan}</p>
+        </div>
       </footer>
     </MotionFrame>
   );

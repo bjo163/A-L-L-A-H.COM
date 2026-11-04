@@ -1,6 +1,6 @@
 import { logger } from '@allah/arsy-core';
 import { toolRegistry } from './tools';
-import type { RegisteredTool, ToolResult } from './tools/base';
+import type { RegisteredTool, ToolContext, ToolResult } from './tools/base';
 import type { JsonRpcRequest, JsonRpcResponse, McpTool } from '@moonwitness/types';
 
 export const MCP_PROTOCOL_VERSION = '2025-06-12';
@@ -23,7 +23,7 @@ function makeSuccessResponse(id: string | number | null, result: unknown): JsonR
 }
 
 export class McpHandler {
-  async handle(request: JsonRpcRequest): Promise<JsonRpcResponse> {
+  async handle(request: JsonRpcRequest, context: ToolContext): Promise<JsonRpcResponse> {
     // Validate JSON-RPC 2.0 envelope
     if (!request || request.jsonrpc !== '2.0' || typeof request.method !== 'string') {
       return makeErrorResponse((request as any)?.id ?? null, JSON_RPC_ERRORS.INVALID_REQUEST);
@@ -40,7 +40,7 @@ export class McpHandler {
         case 'tools/list':
           return this.handleToolsList(id);
         case 'tools/call':
-          return await this.handleToolsCall(id, params as Record<string, unknown>);
+          return await this.handleToolsCall(id, params as Record<string, unknown>, context);
         case 'ping':
           return makeSuccessResponse(id, {});
         default:
@@ -76,7 +76,8 @@ export class McpHandler {
 
   private async handleToolsCall(
     _id: string | number | null,
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
+    context: ToolContext
   ): Promise<JsonRpcResponse> {
     const name = typeof params.name === 'string' ? params.name : undefined;
     const arguments_ = params.arguments && typeof params.arguments === 'object' ? (params.arguments as Record<string, unknown>) : {};
@@ -89,7 +90,16 @@ export class McpHandler {
       return makeErrorResponse(_id, JSON_RPC_ERRORS.METHOD_NOT_FOUND);
     }
 
-    const result = await toolRegistry.execute(name, arguments_);
+    if (typeof context.companyId !== 'number') {
+      return makeErrorResponse(_id, {
+        code: JSON_RPC_ERRORS.INVALID_PARAMS.code,
+        message: 'TENANT_REQUIRED: no tenant bound to this MCP session',
+      });
+    }
+
+    // The tenant comes from the authenticated request only; a `company_id` inside the
+    // JSON-RPC params is never trusted.
+    const result = await toolRegistry.execute(name, arguments_, context);
 
     const mcpResult: Record<string, unknown> = {
       structuredContent: {

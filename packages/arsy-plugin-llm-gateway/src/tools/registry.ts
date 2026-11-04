@@ -64,14 +64,18 @@ export class ToolRegistry {
       record.output = result.output;
       record.error = result.error ?? null;
       this.executionLog.push(record);
-      this.persistAudit(record).catch((err) => logger.warn({ err }, 'Failed to persist tool audit log'));
+      this.persistAudit(record, context.companyId ?? null).catch((err) =>
+        logger.warn({ err }, 'Failed to persist tool audit log')
+      );
       return { success: result.success, output: result.output, error: result.error ?? undefined, latencyMs: record.latencyMs };
     } catch (err: any) {
       record.latencyMs = Date.now() - startTime;
       record.status = 'error';
       record.error = err.message || 'Tool execution threw an exception';
       this.executionLog.push(record);
-      this.persistAudit(record).catch((err2) => logger.warn({ err2 }, 'Failed to persist tool audit log'));
+      this.persistAudit(record, context.companyId ?? null).catch((err2) =>
+        logger.warn({ err2 }, 'Failed to persist tool audit log')
+      );
       return { success: false, error: record.error, output: null, latencyMs: record.latencyMs };
     }
   }
@@ -91,13 +95,14 @@ export class ToolRegistry {
     }));
   }
 
-  private async persistAudit(record: ToolExecutionRecord): Promise<void> {
+  private async persistAudit(record: ToolExecutionRecord, companyId: number | null): Promise<void> {
     try {
       await dbEngine.query(
         `INSERT INTO ai_usage_log
-         (virtual_key_id, provider_id, model_id, prompt_tokens, completion_tokens, total_tokens, cost_usd, latency_ms, status_code, is_cached)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+         (company_id, virtual_key_id, provider_id, model_id, prompt_tokens, completion_tokens, total_tokens, cost_usd, latency_ms, status_code, is_cached)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
+          companyId,
           record.virtualKeyId || null,
           null,
           null,

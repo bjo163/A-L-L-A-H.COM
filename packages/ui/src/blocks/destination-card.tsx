@@ -9,7 +9,10 @@ export interface DestinationCardProps extends Omit<LinkProps, 'children' | 'href
   role?: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
-  href: string;
+  /** Availability or state marker. Pass a Badge so the tone stays a shared vocabulary. */
+  status?: React.ReactNode;
+  /** Omit it for a destination that is not open yet: the card then renders as plain content, not a dead link. */
+  href?: string;
 }
 
 /**
@@ -21,19 +24,37 @@ export function DestinationCard({
   role,
   title,
   description,
+  status,
   href,
   className,
   ...props
 }: DestinationCardProps) {
-  return (
-    <Link className={cn('mw-destination', className)} href={href} data-slot="destination" {...props}>
+  const body = (
+    <>
       {index !== undefined && <span className="mw-destination__index">{index}</span>}
       {role && <span className="mw-destination__role">{role}</span>}
       <h3 className="mw-destination__title">{title}</h3>
       {description && <p className="mw-destination__description">{description}</p>}
-      <span className="mw-destination__arrow" aria-hidden="true">
-        ↗
-      </span>
+      {status && <span className="mw-destination__status">{status}</span>}
+      {href !== undefined && (
+        <span className="mw-destination__arrow" aria-hidden="true">
+          ↗
+        </span>
+      )}
+    </>
+  );
+
+  if (href === undefined) {
+    return (
+      <article className={cn('mw-destination', 'mw-destination--static', className)} data-slot="destination">
+        {body}
+      </article>
+    );
+  }
+
+  return (
+    <Link className={cn('mw-destination', className)} href={href} data-slot="destination" {...props}>
+      {body}
     </Link>
   );
 }

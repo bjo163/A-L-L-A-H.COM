@@ -1015,11 +1015,15 @@
 }
 
 .mw-skin-root .mw-route {
-  width: min(100% - 3rem, 82rem);
+  /* Apps tune the measure through these knobs instead of overriding a private class. */
+  display: grid;
+  gap: var(--mw-route-gap, 0px);
+  align-content: start;
+  width: min(100% - var(--mw-route-gutter, 3rem), var(--mw-route-max, 82rem));
   min-width: 0;
   flex: 1;
   margin-inline: auto;
-  padding-block: clamp(2rem, 5vw, 5rem) 4rem;
+  padding-block: var(--mw-route-padding-block, clamp(2rem, 5vw, 5rem) 4rem);
 }
 
 .mw-skin-root .mw-route__header {
@@ -1123,6 +1127,64 @@
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* Backdrop mode: the media becomes the surface and the copy keeps a scrim.
+   The scrim ends at 94% canvas, which is where the title sits, so contrast is measured there. */
+.mw-skin-root .mw-hero--backdrop {
+  position: relative;
+  display: flex;
+  min-height: 27rem;
+  align-items: flex-end;
+  overflow: hidden;
+  border: var(--mw-border-width) solid color-mix(in oklab, var(--mw-border) 40%, transparent);
+  border-radius: var(--mw-surface-radius);
+  padding: 0;
+}
+
+.mw-skin-root .mw-hero--backdrop .mw-hero__art {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+}
+
+.mw-skin-root .mw-hero--backdrop .mw-hero__art :is(img, picture, video, svg, canvas) {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+}
+
+.mw-skin-root .mw-hero--backdrop::before {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg, color-mix(in oklab, var(--mw-canvas) 8%, transparent) 15%, color-mix(in oklab, var(--mw-canvas) 94%, transparent));
+  content: '';
+}
+
+.mw-skin-root .mw-hero--backdrop .mw-hero__copy {
+  position: relative;
+  z-index: 1;
+  max-width: none;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.mw-skin-root .mw-hero--backdrop .mw-hero__title {
+  max-width: 12ch;
+  font-size: clamp(2.1rem, 4.6vw, 4.1rem);
+}
+
+.mw-skin-root .mw-hero--backdrop .mw-hero__caption {
+  position: absolute;
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 2;
+  padding: 0;
 }
 
 .mw-skin-root .mw-section-heading {
@@ -1233,11 +1295,28 @@
 }
 
 .mw-skin-root .mw-destination__arrow {
-  margin-block-start: auto;
-  margin-top: 1rem;
+  position: absolute;
+  inset-block-end: var(--mw-card-padding);
+  inset-inline-end: var(--mw-card-padding);
   color: var(--mw-accent);
   font-size: 1.25rem;
   line-height: 1;
+}
+
+.mw-skin-root .mw-destination__status {
+  display: inline-flex;
+  margin-block-start: 0.75rem;
+}
+
+/* A destination that is not open yet is content, not a link: no travel affordance, no lift. */
+.mw-skin-root .mw-destination--static {
+  cursor: default;
+}
+
+.mw-skin-root .mw-destination--static:hover {
+  border-color: color-mix(in oklab, var(--mw-border) 36%, transparent);
+  background-color: transparent;
+  transform: none;
 }
 
 .mw-skin-root .mw-status {
@@ -1423,13 +1502,19 @@
 
 @media (max-width: 40rem) {
   .mw-skin-root .mw-route {
-    width: min(100% - 1.5rem, 82rem);
+    --mw-route-gutter: 1.5rem;
+
     padding-block-start: 1.25rem;
   }
 
   .mw-skin-root .mw-hero {
     gap: 1.5rem;
     padding-block: 2rem;
+  }
+
+  .mw-skin-root .mw-hero--backdrop {
+    min-height: 16rem;
+    padding: 0;
   }
 
   .mw-skin-root .mw-hero__title {
@@ -1617,6 +1702,12 @@
   border-radius: 0;
 }
 
+/* RIOT ANARCHY is the one light world: screen blending would erase the artwork. */
+.mw-skin-root[data-moonframe-skin='riot-anarchy'] .mw-hero--backdrop .mw-hero__art :is(img, picture, video, svg, canvas) {
+  mix-blend-mode: multiply;
+  opacity: 0.34;
+}
+
 .mw-skin-root[data-moonframe-skin='mycelium'] .mw-card {
   border-radius: 1.5rem 0.9rem 1.5rem 0.9rem;
 }
@@ -1675,20 +1766,9 @@
 }
 
 .mw-skin-root .mw-skin-lab__header p,
-.mw-skin-root .mw-skin-lab__empty-state,
 .mw-skin-root .mw-skin-lab__form-section {
   color: var(--mw-muted-text);
   font-size: 0.875rem;
-}
-
-.mw-skin-root .mw-skin-lab__kicker,
-.mw-skin-root .mw-skin-lab__hero-kicker {
-  margin: 0;
-  color: var(--mw-muted-text);
-  font-family: var(--mw-font-label);
-  font-size: 0.6875rem;
-  letter-spacing: var(--mw-label-tracking);
-  text-transform: uppercase;
 }
 
 .mw-skin-root .mw-skin-lab__nav {
@@ -1758,7 +1838,6 @@
 .mw-skin-root .mw-skin-lab__app-header,
 .mw-skin-root .mw-skin-lab__app-brand,
 .mw-skin-root .mw-skin-lab__app-nav,
-.mw-skin-root .mw-skin-lab__hero-actions,
 .mw-skin-root .mw-skin-lab__inline-actions,
 .mw-skin-root .mw-skin-lab__form-actions {
   display: flex;
@@ -1792,27 +1871,9 @@
 }
 
 .mw-skin-root .mw-skin-lab__main,
-.mw-skin-root .mw-skin-lab__hero-copy,
 .mw-skin-root .mw-skin-lab__form {
   display: grid;
   gap: 0.875rem;
-}
-
-.mw-skin-root .mw-skin-lab__hero {
-  display: grid;
-  gap: 1rem;
-  border: var(--mw-border-width) solid var(--mw-border);
-  border-radius: var(--mw-surface-radius);
-  padding: 1.25rem;
-  background: var(--mw-surface);
-}
-
-.mw-skin-root .mw-skin-lab__section-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
 }
 
 .mw-skin-root .mw-skin-lab__cards {
@@ -1837,61 +1898,6 @@
 .mw-skin-root .mw-skin-lab__dl dd {
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-.mw-skin-root .mw-skin-lab__state-row {
-  display: grid;
-  gap: 0.5rem;
-  border: var(--mw-border-width) solid var(--mw-border);
-  border-radius: var(--mw-surface-radius);
-  padding: 0.875rem;
-  background: var(--mw-surface);
-}
-
-.mw-skin-root .mw-skin-lab__status {
-  color: var(--mw-muted-text);
-  font-family: var(--mw-font-numeric);
-  font-size: 0.75rem;
-}
-
-.mw-skin-root .mw-skin-lab__pulse {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--mw-accent);
-}
-
-.mw-skin-root .mw-skin-lab__empty {
-  display: grid;
-  gap: 0.5rem;
-  justify-items: start;
-}
-
-.mw-skin-root .mw-skin-lab__empty-glyph {
-  display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
-  border: 1px dashed var(--mw-border);
-  border-radius: var(--mw-control-radius);
-  color: var(--mw-muted-text);
-}
-
-.mw-skin-root .mw-skin-lab__error {
-  border: var(--mw-border-width) solid var(--mw-danger);
-  border-radius: var(--mw-control-radius);
-  padding: 0.625rem 0.75rem;
-  color: var(--mw-danger);
-  font-size: 0.8125rem;
-}
-
-.mw-skin-root .mw-skin-lab__success {
-  border: var(--mw-border-width) solid var(--mw-accent);
-  border-radius: var(--mw-control-radius);
-  padding: 0.625rem 0.75rem;
-  color: var(--mw-accent);
-  font-size: 0.8125rem;
 }
 
 .mw-skin-root .mw-dialog.mw-skin-lab__dialog {
@@ -2005,7 +2011,7 @@
     animation: none !important;
   }
 
-  .mw-skin-root :is(.dock-page, .hq-home, .hq-route, .id-auth-page, .id-account-page, .id-loading, .jizz-home) {
+  .mw-skin-root :is(.dock-page, .hq-home, .hq-route, .id-auth-page, .id-account-page, .id-loading, .jizz-home, .mw-route) {
     animation: none !important;
   }
 
@@ -2016,7 +2022,13 @@
   .mw-skin-root .mw-select,
   .mw-skin-root .mw-textarea,
   .mw-skin-root .mw-session-card,
-  .mw-skin-root .mw-effects-toggle {
+  .mw-skin-root .mw-effects-toggle,
+  .mw-skin-root .mw-destination,
+  .mw-skin-root .mw-hero,
+  .mw-skin-root .mw-hero__art,
+  .mw-skin-root .mw-state,
+  .mw-skin-root .mw-status,
+  .mw-skin-root .mw-skip-link {
     animation: none !important;
     transition-duration: 0.01ms !important;
   }

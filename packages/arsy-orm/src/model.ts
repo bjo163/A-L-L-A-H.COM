@@ -5,10 +5,21 @@ export interface ModelAudit {
   active: boolean;
   create_date: string;
   write_date: string;
-  create_uid?: string | null;
-  write_uid?: string | null;
+  create_uid: number;
+  write_uid: number;
   company_id?: string | number | null;
 }
+
+export type AuditActor = (
+  | { type: 'user'; userId: number }
+  | { type: 'system' }
+) & {
+  reasonHash?: string;
+  requestId?: string;
+  globalAccess?: boolean;
+};
+
+export const SYSTEM_ACTOR: AuditActor = { type: 'system' };
 
 export interface ModelIndex {
   name?: string;
@@ -81,4 +92,3 @@ export function defineModel<TFields extends Record<string, FieldDefinition>>(
 ): ModelDefinition<TFields> {
   return new ModelDefinition(config);
 }
-

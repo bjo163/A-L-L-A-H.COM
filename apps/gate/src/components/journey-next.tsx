@@ -1,144 +1,135 @@
 'use client';
 
+import { useEffect, useState } from "react";
 import {
+  Badge,
   Button,
   Card,
+  CardContent,
+  CardHeader,
   CardTitle,
+  LinkButton,
   MotionFrame,
-  RawContainer,
-  RawGrid,
-  RawStack,
-  Skeleton,
+  SectionHeading,
+  StatePanel,
+  resolveEcosystemEndpoints,
 } from "@moonwitness/ui";
-import Link from "next/link";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
-import { useEffect, useState } from "react";
 import { getCurrentUser, type GateUser } from "@/lib/auth";
-import { mwClient } from "@allah/sdk";
 import { Compass, UsersRound, Settings, LayoutDashboard, BookOpen } from "lucide-react";
 
 interface JourneyNextProps {
   locale?: "id" | "en";
 }
 
+interface JourneyAction {
+  icon: typeof Compass;
+  label: string;
+  description: string;
+  href?: string;
+  external?: boolean;
+  variant?: "default" | "gold";
+}
+
 export function JourneyNext({ locale = "id" }: JourneyNextProps) {
   const { t } = useTranslationCatalog(locale);
+  const en = locale === "en";
+  const endpoints = resolveEcosystemEndpoints(process.env);
   const [user, setUser] = useState<GateUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    getCurrentUser().then((u) => {
+    getCurrentUser().then((currentUser) => {
       if (!cancelled) {
-        setUser(u);
+        setUser(currentUser);
         setLoading(false);
       }
     });
     return () => { cancelled = true; };
   }, []);
 
-  const anonymousActions: Array<{ icon: React.ElementType; label: string; desc: string; href: string; variant?: 'default' | 'gold' }> = [
-    { icon: Compass, label: t("journey.anonymous.explore"), desc: t("journey.anonymous.explore"), href: "/explore" },
-    { icon: UsersRound, label: t("journey.anonymous.participate"), desc: t("journey.anonymous.participate"), href: "/community" },
-    { icon: Settings, label: t("journey.anonymous.signIn"), desc: t("journey.anonymous.signIn"), href: "/login", variant: "gold" as const },
+  const anonymousActions: JourneyAction[] = [
+    { icon: Compass, label: en ? "Explore the archive" : "Jelajahi arsip", description: en ? "Public stories and transmissions, no account needed." : "Cerita dan transmisi publik tanpa akun.", href: "/explore" },
+    { icon: UsersRound, label: en ? "Learn the community" : "Pelajari komunitas", description: en ? "How participation, sourcing, and feedback work here." : "Cara berpartisipasi, menyumberkan, dan memberi umpan balik.", href: "/community" },
+    { icon: Settings, label: t("journey.anonymous.signIn"), description: en ? "Needed only for a personal workspace." : "Dibutuhkan hanya untuk ruang kerja pribadi.", href: `${endpoints.id}${endpoints.signInPath}`, external: true, variant: "gold" },
   ];
 
-  const signedInActions: Array<{ icon: React.ElementType; label: string; desc: string; href: string; available: boolean; external?: boolean; variant?: 'default' | 'gold' }> = [
-    { icon: LayoutDashboard, label: t("journey.signedIn.cockpit"), desc: "Akses alat AI, workspace, dan preferensi", href: "/cockpit", available: false },
-    { icon: BookOpen, label: t("journey.signedIn.saved"), desc: "Transmisi dan penelitian yang disimpan", href: "/saved", available: false },
-    { icon: Settings, label: t("journey.signedIn.account"), desc: "Kelola akun dan sesi aktif", href: "https://dock.a-l-l-a-h.com/account", available: true, external: true },
+  const signedInActions: JourneyAction[] = [
+    { icon: LayoutDashboard, label: t("journey.signedIn.cockpit"), description: en ? "AI tools, saved work, and preferences." : "Alat AI, kerja tersimpan, dan preferensi." },
+    { icon: BookOpen, label: t("journey.signedIn.saved"), description: en ? "Transmissions and research you kept." : "Transmisi dan penelitian yang Anda simpan." },
+    { icon: Settings, label: t("journey.signedIn.account"), description: en ? "Manage the account and its active sessions." : "Kelola akun dan sesi aktif.", href: `${endpoints.id}${endpoints.accountPath}`, external: true },
   ];
+
+  const actions = user ? signedInActions : anonymousActions;
 
   return (
     <section className="gate-section" aria-labelledby="journey-title">
-      <div className="gate-section__heading">
-        <div>
-          <p className="gate-kicker">{t("nav.journey")}</p>
-          <h2 id="journey-title">{t("journey.title")}</h2>
-        </div>
-      </div>
+      <SectionHeading titleId="journey-title" kicker={t("nav.journey")} title={t("journey.title")} />
 
       <MotionFrame effect="enter">
-        <RawContainer>
-          {loading ? (
-            <RawStack gap="tight" role="status" aria-label="Loading journey" style={{ textAlign: "center", padding: "3rem" }}>
-              <Skeleton size="lg" style={{ width: "200px", height: "48px", margin: "0 auto" }} />
-              <Skeleton size="md" style={{ width: "300px", height: "24px", margin: "0.5rem auto 0" }} />
-            </RawStack>
-          ) : user ? (
-            // Signed In State
-            <>
-              <RawStack data-gap="regular" style={{ textAlign: "center", maxWidth: "40rem", margin: "0 auto 2rem" }}>
-                <h3 style={{ margin: 0, fontFamily: "var(--mw-font-display)", fontSize: "clamp(1.5rem, 3vw, 2rem)" }}>
-                  {t("journey.signedIn.title")}
-                </h3>
-                <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>
-                  {locale === "id"
-                    ? `Selamat datang kembali, ${user.name}. Pilih tujuan Anda di bawah.`
-                    : `Welcome back, ${user.name}. Choose your destination below.`}
-                </p>
-              </RawStack>
+        {loading ? (
+          <StatePanel
+            kind="loading"
+            label={t("common.loading")}
+            cause={en ? "Checking for a signed-in MoonWitness ID." : "Memeriksa MoonWitness ID yang sedang masuk."}
+          />
+        ) : (
+          <>
+            <div className="gate-tease">
+              <SectionHeading
+                title={user
+                  ? (en ? `Welcome back, ${user.name}` : `Selamat datang kembali, ${user.name}`)
+                  : t("journey.anonymous.title")}
+                description={user
+                  ? (en ? "Choose a destination below." : "Pilih tujuan Anda di bawah.")
+                  : (en
+                    ? "Explore public stories, learn about the community, or sign in when you need a personal workspace."
+                    : "Jelajahi cerita publik, pelajari komunitas, atau masuk saat butuh ruang kerja pribadi.")}
+              />
+              <Badge variant={user ? "active" : "default"} dot>
+                {user ? (en ? "Session active" : "Sesi aktif") : (en ? "Browsing as guest" : "Masih sebagai tamu")}
+              </Badge>
+            </div>
 
-              <RawGrid data-gap="regular" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-                {signedInActions.map((action, i) => (
-                  <Card as="article" key={i} className="group" style={{ textAlign: "center", display: "flex", flexDirection: "column" }}>
-                    <div style={{ margin: "0 auto 1rem", width: "56px", height: "56px", borderRadius: "50%", background: action.available ? "rgb(211 183 123 / 0.15)" : "var(--mw-border)", display: "flex", alignItems: "center", justifyContent: "center", color: action.available ? "var(--mw-accent)" : "var(--mw-muted-text)" }}>
-                      <action.icon size={28} />
-                    </div>
+            <div className="gate-auto-grid">
+              {actions.map((action) => (
+                <Card as="article" key={action.label} className="gate-tile">
+                  <span className={action.href ? "gate-tile__mark" : "gate-tile__mark gate-tile__mark--blocked"} aria-hidden="true">
+                    <action.icon size={28} />
+                  </span>
+                  <CardHeader>
                     <CardTitle>{action.label}</CardTitle>
-                    <p style={{ margin: "0 0 1.5rem", color: "var(--mw-muted-text)", fontSize: "0.875rem", flex: 1 }}>{action.desc}</p>
-                    {action.available ? (
-                      <Button asChild variant={action.variant === "gold" ? "gold" : "default"} size="lg" style={{ width: "100%" }}>
-                        <Link href={action.href} target={action.external ? "_blank" : undefined} rel={action.external ? "noopener noreferrer" : undefined}>
-                          {locale === "id" ? "Buka" : "Open"}
-                        </Link>
-                      </Button>
-                    ) : (
-                      <Button variant="ghost" size="lg" disabled style={{ width: "100%", opacity: 0.5 }}>
-                        {locale === "id" ? "Belum Tersedia" : "Not Available"}
-                      </Button>
-                    )}
-                  </Card>
-                ))}
-              </RawGrid>
-
-              <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--mw-border)", textAlign: "center" }}>
-                <p style={{ margin: 0, color: "var(--mw-muted-text)", fontSize: "0.875rem" }}>
-                  {locale === "id" ? "Tidak ada aktivitas terbaru atau riwayat yang ditampilkan. Semua pintasan diverifikasi dari data nyata." : "No recent activity or history shown. All shortcuts verified from real data."}
-                </p>
-              </div>
-            </>
-          ) : (
-            // Anonymous State
-            <>
-              <RawStack data-gap="regular" style={{ textAlign: "center", maxWidth: "40rem", margin: "0 auto 2rem" }}>
-                <h3 style={{ margin: 0, fontFamily: "var(--mw-font-display)", fontSize: "clamp(1.5rem, 3vw, 2rem)" }}>
-                  {t("journey.anonymous.title")}
-                </h3>
-                <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>
-                  {locale === "id"
-                    ? "Jelajahi cerita publik, pelajari komunitas, atau masuk saat butuh ruang kerja pribadi."
-                    : "Explore public stories, learn about the community, or sign in when you need a personal workspace."}
-                </p>
-              </RawStack>
-
-              <RawGrid data-gap="regular" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-                {anonymousActions.map((action, i) => (
-                  <Card as="article" key={i} className="group" style={{ textAlign: "center", display: "flex", flexDirection: "column" }}>
-                    <div style={{ margin: "0 auto 1rem", width: "56px", height: "56px", borderRadius: "50%", background: "rgb(211 183 123 / 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--mw-accent)" }}>
-                      <action.icon size={28} />
-                    </div>
-                    <CardTitle>{action.label}</CardTitle>
-                    <p style={{ margin: "0 0 1.5rem", color: "var(--mw-muted-text)", fontSize: "0.875rem", flex: 1 }}>{action.desc}</p>
-                    <Button asChild variant={action.variant === "gold" ? "gold" : "default"} size="lg" style={{ width: "100%" }}>
-                      <Link href={action.href}>{locale === "id" ? "Mulai" : "Begin"}</Link>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="gate-meta">{action.description}</p>
+                  </CardContent>
+                  {action.href ? (
+                    <LinkButton
+                      href={action.href}
+                      external={action.external}
+                      variant={action.variant === "gold" ? "gold" : "outline"}
+                      size="lg"
+                      className="gate-actions__start"
+                    >
+                      {en ? (user ? "Open" : "Begin") : (user ? "Buka" : "Mulai")}
+                    </LinkButton>
+                  ) : (
+                    <Button variant="ghost" size="lg" disabled>
+                      {en ? "Not available yet" : "Belum tersedia"}
                     </Button>
-                  </Card>
-                ))}
-              </RawGrid>
-            </>
-          )}
-        </RawContainer>
+                  )}
+                </Card>
+              ))}
+            </div>
+
+            <p className="gate-rule">
+              {en
+                ? "No recent activity or history is shown here. Every shortcut above points at a route that exists."
+                : "Tidak ada aktivitas terbaru atau riwayat di sini. Setiap pintasan di atas menunjuk ke rute yang benar-benar ada."}
+            </p>
+          </>
+        )}
       </MotionFrame>
     </section>
   );

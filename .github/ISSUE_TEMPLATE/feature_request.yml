@@ -1,0 +1,29 @@
+---
+name: "✨ Feature Request"
+about: Suggest a new feature or improvement for A-L-L-A-H.COM
+title: "[Feature] "
+labels: ["enhancement"]
+assignees: ["bjo163"]
+---
+
+## 🎯 Summary
+
+A clear and concise description of the feature you'd like.
+
+## 💡 Why This Matters
+
+What problem does this feature solve? Who benefits?
+
+## 📋 Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+## 🏗️ Implementation Ideas (Optional)
+
+If you have technical ideas for how to implement this, describe them here.
+
+## 📝 Additional Context
+
+Any other context, screenshots, or references.

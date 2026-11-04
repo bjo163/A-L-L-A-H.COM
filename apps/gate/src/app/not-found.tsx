@@ -2,18 +2,19 @@ import { LinkButton, RouteShell, StatePanel } from '@moonwitness/ui';
 
 export default function NotFound() {
   return (
-    <RouteShell as="main">
+    <RouteShell as="main" className="gate-shell">
       <StatePanel
         kind="error"
         role="status"
-        title="Page not found"
-        cause="No Gate page is registered at this address. It may never have existed, or it has moved."
-        nextAction="Return to the entrance, or browse the universe map for a live destination."
+        label="Tidak ditemukan"
+        title="Halaman tidak ditemukan"
+        cause="Tidak ada halaman Gate yang terdaftar pada alamat ini. Halamannya mungkin belum pernah ada atau sudah pindah."
+        nextAction="Kembali ke gerbang, atau buka peta alam semesta untuk mencari destinasi yang aktif."
         action={
           <>
-            <LinkButton href="/">Back to entrance</LinkButton>
+            <LinkButton href="/">Kembali ke gerbang</LinkButton>
             <LinkButton href="/universe" variant="outline">
-              Open the universe map
+              Buka peta alam semesta
             </LinkButton>
           </>
         }

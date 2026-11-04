@@ -11,6 +11,12 @@ import { cn } from "../lib/utils";
 import { MotionFrame } from "../primitives/visual-effects";
 import { SkinRoot } from "../skins/root";
 import { skinIds, skinRegistry, type SkinId } from "../skins/registry";
+import { Kicker } from "./kicker";
+import { PageHero } from "./page-hero";
+import { SectionHeading } from "./section-heading";
+import { StatePanel } from "./state-panel";
+import { StatusMessage } from "./status-message";
+import { DestinationCard, DestinationGrid } from "./destination-card";
 
 export interface SkinLaboratoryProps {
   className?: string;
@@ -45,10 +51,11 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
     <section className={cn("mw-skin-lab", className)} aria-labelledby="skin-lab-title">
       <header className="mw-skin-lab__header">
         <div>
-          <p className="mw-skin-lab__kicker">MOONFRAME / SIX WORLD LABORATORY</p>
+          <Kicker>MOONFRAME / SIX WORLD LABORATORY</Kicker>
           <h1 id="skin-lab-title">Canonical representative task parity</h1>
           <p>
-            The same navigation, content, form, status, and empty-state task rendered across all six approved DNA worlds.
+            The same navigation, content, form, status, and empty-state task rendered across all six approved DNA worlds,
+            built from the composition blocks the applications use.
           </p>
         </div>
         <Badge variant="gold">Six worlds • one engine</Badge>
@@ -98,37 +105,58 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
             </header>
 
             <main className="mw-skin-lab__main">
-              <section id="lab-overview" className="mw-skin-lab__hero" aria-labelledby="lab-hero-title">
+              <section id="lab-overview" aria-labelledby="lab-hero-title">
                 <MotionFrame effect="enter">
-                  <div className="mw-skin-lab__hero-copy">
-                    <p className="mw-skin-lab__hero-kicker">ENTRY / COMPARISON TASK</p>
-                    <h2 id="lab-hero-title">A task that reads the same across all worlds.</h2>
-                    <p>
-                      Navigation, cards, forms, status messages, empty states, dialogs, and focus behavior are
-                      equivalent while composition, geometry, typography, material, and motion change by design.
-                    </p>
-                    <div className="mw-skin-lab__hero-actions">
-                      <Button type="button" onClick={() => setDialogOpen(true)}>
-                        Open representative dialog
-                      </Button>
-                      <Button type="button" variant="outline" onClick={handleReset}>
-                        Reset states
-                      </Button>
-                    </div>
-                  </div>
+                  <PageHero
+                    titleAs="h2"
+                    titleId="lab-hero-title"
+                    kicker="ENTRY / COMPARISON TASK"
+                    title="A task that reads the same across all worlds."
+                    summary="Navigation, cards, forms, status messages, states, dialogs, and focus behavior are equivalent while composition, geometry, typography, material, and motion change by design."
+                    actions={
+                      <>
+                        <Button type="button" onClick={() => setDialogOpen(true)}>
+                          Open representative dialog
+                        </Button>
+                        <Button type="button" variant="outline" onClick={handleReset}>
+                          Reset states
+                        </Button>
+                      </>
+                    }
+                    captionLeft={skinRegistry[activeSkin].name}
+                    captionRight="01 / PARITY"
+                  />
                 </MotionFrame>
               </section>
 
-              <section id="lab-content" className="mw-skin-lab__grid" aria-labelledby="lab-content-title">
-                <div className="mw-skin-lab__section-header">
-                  <div>
-                    <p className="mw-skin-lab__kicker">CONTENT / CARDS</p>
-                    <h3 id="lab-content-title">Content card and data section</h3>
-                  </div>
-                  <Badge variant="gold">Real action • keyboard accessible</Badge>
-                </div>
+              <section className="mw-skin-lab__grid" id="lab-content" aria-labelledby="lab-content-title">
+                <SectionHeading
+                  as="h3"
+                  titleId="lab-content-title"
+                  kicker="CONTENT / CARDS"
+                  title="Content card and data section"
+                  trailing={<Badge variant="gold">Real action • keyboard accessible</Badge>}
+                />
+
+                <DestinationGrid label="Representative destinations">
+                  <DestinationCard
+                    index="01"
+                    role="open"
+                    title="This page"
+                    description="A destination card that links, with the skin deciding radius, edge, and travel."
+                    href="#lab-content"
+                  />
+                  <DestinationCard
+                    index="02"
+                    role="reserved"
+                    title="A route that does not exist yet"
+                    description="The same card without a link, so the map never promises a destination it cannot reach."
+                    status={<Badge variant="revoked">Not open</Badge>}
+                  />
+                </DestinationGrid>
+
                 <div className="mw-skin-lab__cards">
-                  <Card>
+                  <Card as="article">
                     <CardHeader>
                       <CardTitle>Primary card</CardTitle>
                       <CardDescription>Shared semantic card recipe with skin-specific composition.</CardDescription>
@@ -145,7 +173,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card as="article">
                     <CardHeader>
                       <CardTitle>Data section</CardTitle>
                       <CardDescription>Truthful state reporting.</CardDescription>
@@ -170,14 +198,14 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
                 </div>
               </section>
 
-              <section id="lab-form" className="mw-skin-lab__form-section" aria-labelledby="lab-form-title">
-                <div className="mw-skin-lab__section-header">
-                  <div>
-                    <p className="mw-skin-lab__kicker">FORM / VALIDATION</p>
-                    <h3 id="lab-form-title">Form validation with real behavior</h3>
-                  </div>
-                </div>
-                <Card>
+              <section className="mw-skin-lab__form-section" id="lab-form" aria-labelledby="lab-form-title">
+                <SectionHeading
+                  as="h3"
+                  titleId="lab-form-title"
+                  kicker="FORM / VALIDATION"
+                  title="Form validation with real behavior"
+                />
+                <Card as="article">
                   <CardHeader>
                     <CardTitle>Project brief</CardTitle>
                     <CardDescription>Required fields with accessible errors.</CardDescription>
@@ -202,77 +230,45 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
                         <Button type="submit">Submit task</Button>
                       </div>
                     </form>
-                    {submitted && form.projectName.trim() && form.brief.trim() && (
-                      <div className="mw-skin-lab__status" role="status">
-                        <strong>Submitted.</strong> The task payload is captured in state with no fabricated metrics.
-                      </div>
+                    {submitted && (
+                      <StatusMessage tone={form.projectName.trim() && form.brief.trim() ? "success" : "danger"} title="Submit result">
+                        {form.projectName.trim() && form.brief.trim()
+                          ? "The task payload is captured in component state. No metric is invented."
+                          : "Both fields are required before the task can be captured."}
+                      </StatusMessage>
                     )}
                   </CardContent>
                 </Card>
               </section>
 
-              <section id="lab-states" className="mw-skin-lab__states" aria-labelledby="lab-states-title">
-                <div className="mw-skin-lab__section-header">
-                  <div>
-                    <p className="mw-skin-lab__kicker">STATES / LOADING • EMPTY • ERROR • SUCCESS</p>
-                    <h3 id="lab-states-title">Truthful states</h3>
-                  </div>
-                </div>
+              <section className="mw-skin-lab__states" id="lab-states" aria-labelledby="lab-states-title">
+                <SectionHeading
+                  as="h3"
+                  titleId="lab-states-title"
+                  kicker="STATES / LOADING • EMPTY • ERROR • SUCCESS"
+                  title="Truthful states"
+                />
                 <div className="mw-skin-lab__state-grid">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Loading</CardTitle>
-                      <CardDescription>Explicit loading region.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mw-skin-lab__state-row" role="status" aria-live="polite">
-                        <span className="mw-skin-lab__pulse" aria-hidden="true" />
-                        <span>Loading representative records…</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Empty</CardTitle>
-                      <CardDescription>No fabricated data.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mw-skin-lab__empty" role="status">
-                        <span className="mw-skin-lab__empty-glyph" aria-hidden="true" />
-                        <div>
-                          <p className="mw-skin-lab__empty-state">No records</p>
-                          <p>Nothing is shown until a real source returns records.</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Error</CardTitle>
-                      <CardDescription>Actionable error state.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mw-skin-lab__error" role="alert">
-                        <strong>Request failed.</strong> Retry when the connection is available.
-                        <div className="mw-skin-lab__inline-actions">
-                          <Button type="button" variant="outline" size="sm">
-                            Retry
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Success</CardTitle>
-                      <CardDescription>Confirmation without metrics inflation.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mw-skin-lab__success" role="status">
-                        <strong>Saved.</strong> Changes are recorded for this representative task.
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <StatePanel kind="loading" cause="Representative records are being read." />
+                  <StatePanel
+                    kind="empty"
+                    title="No records"
+                    cause="Nothing is shown until a real source returns records."
+                    nextAction="Connect a source, then reload this view."
+                  />
+                  <StatePanel
+                    kind="error"
+                    title="Request failed"
+                    cause="The representative source did not answer."
+                    nextAction="Retry when the connection is available."
+                    action={<Button type="button" variant="outline" size="sm">Retry</Button>}
+                  />
+                  <StatePanel
+                    kind="permission"
+                    title="Not authorised"
+                    cause="This account has no grant for the representative resource."
+                    nextAction="Ask an authorisation owner, then reload."
+                  />
                 </div>
               </section>
             </main>

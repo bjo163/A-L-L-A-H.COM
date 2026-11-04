@@ -26,7 +26,7 @@ export interface SwarmRunRequest {
   goal: string;
   system?: string;
   max_turns?: number;
-  company_id?: string;
+  company_id: number;
   allowed_tools?: string[];
   temperature?: number;
   context?: Record<string, unknown>;

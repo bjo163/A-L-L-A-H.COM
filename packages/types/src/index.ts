@@ -491,7 +491,9 @@ export interface AgentStep {
   finish_reason?: string;
 }
 
-export interface AgentRunRequest {
+// Client-facing shape: carries no tenant. The hub always derives company_id from
+// the verified principal, so a client-supplied tenant must never be part of the wire contract.
+export interface AgentRunInput {
   prompt: string;
   system?: string;
   thread_id?: string;
@@ -499,7 +501,11 @@ export interface AgentRunRequest {
   timeout_ms?: number;
   allowed_tools?: string[];
   temperature?: number;
-  company_id?: string;
+}
+
+// Internal execution contract: the route resolves company_id from the principal and injects it.
+export interface AgentRunRequest extends AgentRunInput {
+  company_id: number;
 }
 
 export interface AgentRunResponse {

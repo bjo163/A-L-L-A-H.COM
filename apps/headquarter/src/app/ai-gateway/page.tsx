@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableScroll,
   TableRow,
+  StatusMessage,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type {
@@ -99,14 +100,14 @@ export default function AiGatewayPage() {
   return (
     <div className="hq-route hq-ai-gateway">
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 AI Gateway Control Plane
               </h1>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Multi-provider routing, zero-copy streaming, virtual keys, and cost telemetry
             </p>
           </div>
@@ -121,10 +122,9 @@ export default function AiGatewayPage() {
         </div>
 
         {error && (
-          <div role="alert" className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
-            <span>{error}</span>
-            <Button variant="outline" size="sm" onClick={fetchData}>Retry</Button>
-          </div>
+          <StatusMessage tone="danger" title="Telemetry unavailable" action={<Button variant="outline" size="sm" onClick={fetchData}>Retry</Button>}>
+            {error}
+          </StatusMessage>
         )}
 
         {/* Telemetry Metric Cards */}
@@ -132,48 +132,48 @@ export default function AiGatewayPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Routed Requests</CardDescription>
-              <CardTitle className="text-2xl font-mono text-zinc-100">
+              <CardTitle className="text-2xl font-mono text-foreground">
                 {loading ? 'Loading...' : (telemetry?.metrics?.totalRequests?.toLocaleString() ?? 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <span className="text-[10px] text-zinc-500">Reported by connected gateway</span>
+              <span className="text-[10px] text-muted-foreground">Reported by connected gateway</span>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Tokens Processed</CardDescription>
-              <CardTitle className="text-2xl font-mono text-amber-400">
+              <CardTitle className="text-2xl font-mono text-ring">
                 {loading ? 'Loading...' : (telemetry?.metrics?.totalTokens?.toLocaleString() ?? 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <span className="text-[10px] text-zinc-500">Prompt + completion tokens</span>
+              <span className="text-[10px] text-muted-foreground">Prompt + completion tokens</span>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Accrued Cost (USD)</CardDescription>
-              <CardTitle className="text-2xl font-mono text-emerald-400">
+              <CardTitle className="text-2xl font-mono text-success">
                 {loading ? 'Loading...' : (telemetry?.metrics?.totalCostUsd != null ? `$${telemetry.metrics.totalCostUsd.toFixed(4)}` : 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <span className="text-[10px] text-zinc-500">Model tariff calculation</span>
+              <span className="text-[10px] text-muted-foreground">Model tariff calculation</span>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Avg Response Latency</CardDescription>
-              <CardTitle className="text-2xl font-mono text-zinc-100">
+              <CardTitle className="text-2xl font-mono text-foreground">
                 {loading ? 'Loading...' : (telemetry?.metrics?.avgLatencyMs != null ? `${telemetry.metrics.avgLatencyMs}ms` : 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <span className="text-[10px] text-zinc-500">TTFT & total elapsed roundtrip</span>
+              <span className="text-[10px] text-muted-foreground">TTFT & total elapsed roundtrip</span>
             </CardContent>
           </Card>
         </section>
@@ -181,13 +181,13 @@ export default function AiGatewayPage() {
         {/* Active Providers & Circuit Breaker Status */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
               Active Providers & Fallback Pipeline
             </h2>
           </div>
 
           {providers.length === 0 ? (
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-muted-foreground">
               {loading ? 'Loading provider records...' : 'No providers were returned by the connected gateway.'}
             </p>
           ) : (
@@ -207,18 +207,18 @@ export default function AiGatewayPage() {
                       </div>
                       <CardDescription className="text-xs font-mono">{p.slug}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-2 text-xs font-mono text-zinc-300">
+                    <CardContent className="space-y-2 text-xs font-mono text-foreground">
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">Type:</span>
+                        <span className="text-muted-foreground">Type:</span>
                         <span>{p.provider_type}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">Priority:</span>
+                        <span className="text-muted-foreground">Priority:</span>
                         <span>Tier {p.priority}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">Endpoint:</span>
-                        <span className="truncate max-w-[140px] text-zinc-400">{p.base_url}</span>
+                        <span className="text-muted-foreground">Endpoint:</span>
+                        <span className="truncate max-w-[140px] text-muted-foreground">{p.base_url}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -229,13 +229,13 @@ export default function AiGatewayPage() {
         </section>
 
         {/* Interactive Gateway Test Console */}
-        <section className="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-4">
+        <section className="p-6 rounded-xl bg-card border border-border space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-zinc-100">
+              <h2 className="text-base font-semibold text-foreground">
                 Interactive Gateway Tester
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 Live Server-Sent Events (SSE) streaming validation directly against the Arsy AI Gateway
               </p>
             </div>
@@ -275,17 +275,17 @@ export default function AiGatewayPage() {
             </div>
 
             {testStatus && (
-              <div className="text-[11px] font-mono text-zinc-500 flex items-center gap-2">
+              <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-2">
                 <span>Status:</span>
-                <span className={testStatus.includes('failed') ? 'text-red-400' : 'text-emerald-400'}>
+                <span className={testStatus.includes('failed') ? 'text-destructive' : 'text-success'}>
                   {testStatus}
                 </span>
               </div>
             )}
 
-            <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800/80 min-h-[90px] text-xs font-mono text-zinc-200 whitespace-pre-wrap leading-relaxed">
+            <div className="p-4 rounded-lg bg-card border border-border min-h-[90px] text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed">
               {testOutput || (
-                <span className="text-zinc-600 italic">
+                <span className="text-muted-foreground italic">
                   Stream output will render here in real-time...
                 </span>
               )}
@@ -296,10 +296,10 @@ export default function AiGatewayPage() {
         {/* Live Persistent Usage Log Table */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
               Live Gateway Usage Logs (PGlite)
             </h2>
-            <span className="text-xs text-zinc-500 font-mono">
+            <span className="text-xs text-muted-foreground font-mono">
               Last {usageLogs.length} audit records
             </span>
           </div>

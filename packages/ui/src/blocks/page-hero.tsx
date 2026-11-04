@@ -10,10 +10,14 @@ export interface PageHeroProps {
   actions?: React.ReactNode;
   /** Image, video, or illustration node. Sizing comes from the skin, not the app. */
   media?: React.ReactNode;
+  /** "side" places the media next to the copy; "backdrop" lays it under the copy with a scrim. */
+  mediaLayout?: 'side' | 'backdrop';
   captionLeft?: React.ReactNode;
   captionRight?: React.ReactNode;
   /** Wire this to the section's aria-labelledby so the heading stays the accessible name. */
   titleId?: string;
+  /** A hero that sits under a route title passes "h2" so the page keeps one h1. */
+  titleAs?: 'h1' | 'h2';
   className?: string;
 }
 
@@ -27,20 +31,28 @@ export function PageHero({
   summary,
   actions,
   media,
+  mediaLayout = 'side',
   captionLeft,
   captionRight,
   titleId,
+  titleAs = 'h1',
   className,
 }: PageHeroProps) {
   const hasCaption = captionLeft !== undefined || captionRight !== undefined;
+  const Title = titleAs;
 
   return (
-    <section className={cn('mw-hero', className)} data-slot="hero" aria-labelledby={titleId}>
+    <section
+      className={cn('mw-hero', mediaLayout === 'backdrop' && 'mw-hero--backdrop', className)}
+      data-slot="hero"
+      data-media-layout={mediaLayout}
+      aria-labelledby={titleId}
+    >
       <div className="mw-hero__copy">
         {kicker && <Kicker className="mw-hero__kicker">{kicker}</Kicker>}
-        <h1 className="mw-hero__title" id={titleId}>
+        <Title className="mw-hero__title" id={titleId}>
           {title}
-        </h1>
+        </Title>
         {summary && <p className="mw-hero__summary">{summary}</p>}
         {actions && <div className="mw-hero__actions">{actions}</div>}
       </div>

@@ -23,7 +23,7 @@ interface AgentSession {
   toolResults: AgentToolResultEvent[];
   sduiEvents: AgentSduiEvent[];
   finalResponse: string;
-  company_id?: string;
+  company_id: number;
 }
 
 const MAX_STEPS_DEFAULT = 8;
@@ -153,7 +153,10 @@ class AgentLoop {
     }));
 
     try {
-      const result: ToolResult = await toolRegistry.execute(toolName, args, { virtualKeyId: 1 });
+      const result: ToolResult = await toolRegistry.execute(toolName, args, {
+        companyId: session.company_id,
+        actor: 'agent-loop',
+      });
 
       // Emit tool_result event
       this.emitSSE(sessionId, 'tool_result', JSON.stringify({
@@ -317,7 +320,10 @@ class AgentLoop {
     }));
 
     try {
-      const result: ToolResult = await toolRegistry.execute(toolName, args, { virtualKeyId: 1 });
+      const result: ToolResult = await toolRegistry.execute(toolName, args, {
+        companyId: session.company_id,
+        actor: 'agent-loop',
+      });
 
       // Emit tool_result event
       callback('tool_result', JSON.stringify({

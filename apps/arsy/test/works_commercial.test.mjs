@@ -1,208 +1,80 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildArsyApp } from '../src/app.ts';
-import { modelRegistry, BaseRepository } from '@allah/arsy-orm';
+import { modelRegistry } from '@allah/arsy-orm';
+import { buildAuthenticatedApp, createPlan } from './helpers.mjs';
 
-test('WORKS Commercial Domain — Subscription State Machine Suite', async (t) => {
-  const app = await buildArsyApp({ enableLogging: false });
+// The hub boots one in-memory database per process, so this file keeps a single app.
+const { app, headers } = await buildAuthenticatedApp();
 
-  await t.test('Isp.plan model is registered and accessible', async () => {
+test('WORKS Commercial Domain - Subscription State Machine', async (t) => {
+  await t.test('isp.plan model is registered', () => {
     const model = modelRegistry.get('isp.plan');
-    assert.ok(model, 'Isp.plan model should be registered');
-    assert.equal(model.name, 'isp.plan');
+    assert.ok(model);
     assert.equal(model.tableName, 'isp_plan');
   });
 
-  await t.test('Isp.subscription model is registered with correct fields', async () => {
+  await t.test('isp.subscription model carries its lifecycle fields', () => {
     const model = modelRegistry.get('isp.subscription');
-    assert.ok(model, 'Isp.subscription model should be registered');
-    assert.equal(model.name, 'isp.subscription');
-    assert.equal(model.tableName, 'isp_subscription');
-    
-    const fields = model.fields;
-    assert.ok(fields.status, 'Should have status field');
-    assert.ok(fields.username, 'Should have username field');
-    assert.ok(fields.start_date, 'Should have start_date field');
-    assert.ok(fields.grace_until, 'Should have grace_until field');
-    assert.ok(fields.suspended_reason, 'Should have suspended_reason field');
+    assert.ok(model);
+    for (const field of ['customer_id', 'plan_id', 'state', 'started_at', 'suspended_at', 'cancelled_at']) {
+      assert.ok(model.fields[field], 'missing ' + field);
+    }
   });
 
-  await t.test('Isp.invoice model is registered', async () => {
-    const model = modelRegistry.get('isp.invoice');
-    assert.ok(model, 'Isp.invoice model should be registered');
-    assert.equal(model.name, 'isp.invoice');
-    assert.equal(model.tableName, 'isp_invoice');
+  await t.test('isp.invoice model is registered', () => {
+    assert.equal(modelRegistry.get('isp.invoice').tableName, 'isp_invoice');
   });
 
-  await t.test('POST /v1/works/plans creates a new ISP plan', async () => {
+  await t.test('POST /v1/works/plans creates a plan for the caller tenant', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/works/plans',
-      payload: {
-        name: 'Fiber 50 Mbps',
-        description: 'High-speed fiber internet',
-        download_speed_kbps: 50000,
-        upload_speed_kbps: 10000,
-        price_cents: 59900,
-        currency: 'USD',
-        billing_cycle_days: 30,
-        grace_period_days: 7,
-      },
+      headers,
+      payload: { name: 'Fiber 50 Mbps', download_mbps: 50, upload_mbps: 10, price: 59900, currency: 'USD' },
     });
-
-    assert.equal(res.statusCode, 201);
-    const body = JSON.parse(res.payload);
-    assert.ok(body.data);
-    assert.equal(body.data.name, 'Fiber 50 Mbps');
-    assert.equal(body.data.download_speed_kbps, 50000);
+    assert.equal(res.statusCode, 201, res.payload);
+    const plan = JSON.parse(res.payload).data;
+    assert.equal(plan.name, 'Fiber 50 Mbps');
+    assert.equal(plan.download_mbps, 50);
   });
 
-  await t.test('GET /v1/works/plans returns list of plans', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/works/plans',
-    });
-
+  await t.test('GET /v1/works/plans lists the tenant plans', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/works/plans', headers });
     assert.equal(res.statusCode, 200);
-    const body = JSON.parse(res.payload);
-    assert.ok(Array.isArray(body.data));
+    assert.ok(Array.isArray(JSON.parse(res.payload).data));
   });
 
-  await t.test('POST /v1/works/subscriptions creates a new subscription in draft state', async () => {
-    const planRes = await app.inject({
-      method: 'POST',
-      url: '/v1/works/plans',
-      payload: {
-        name: 'Test Plan',
-        download_speed_kbps: 10000,
-        upload_speed_kbps: 5000,
-        price_cents: 29900,
-      },
-    });
-    const plan = JSON.parse(planRes.payload).data;
-
+  await t.test('a subscription starts in draft', async () => {
+    const plan = await createPlan(app, headers, 'Draft Plan');
     const res = await app.inject({
       method: 'POST',
       url: '/v1/works/subscriptions',
-      payload: {
-        company_id: 1,
-        partner_id: 1,
-        plan_id: plan.id,
-        username: 'testuser001',
-        start_date: new Date().toISOString(),
-      },
+      headers,
+      payload: { plan_id: plan.id, customer_id: 1 },
     });
-
-    assert.equal(res.statusCode, 201);
-    const body = JSON.parse(res.payload);
-    assert.ok(body.data);
-    assert.equal(body.data.status, 'draft');
-    assert.equal(body.data.username, 'testuser001');
+    assert.equal(res.statusCode, 201, res.payload);
+    assert.equal(JSON.parse(res.payload).data.state, 'draft');
   });
 
-  await t.test('POST /v1/works/subscriptions/:id/activate transitions draft to active', async () => {
-    const planRes = await app.inject({
-      method: 'POST',
-      url: '/v1/works/plans',
-      payload: {
-        name: 'Activation Test Plan',
-        download_speed_kbps: 20000,
-        upload_speed_kbps: 10000,
-        price_cents: 39900,
-      },
-    });
-    const plan = JSON.parse(planRes.payload).data;
+  await t.test('activate then suspend transitions the state', async () => {
+    const plan = await createPlan(app, headers, 'Lifecycle Plan');
+    const sub = JSON.parse(
+      (await app.inject({ method: 'POST', url: '/v1/works/subscriptions', headers, payload: { plan_id: plan.id, customer_id: 1 } })).payload
+    ).data;
 
-    const subRes = await app.inject({
-      method: 'POST',
-      url: '/v1/works/subscriptions',
-      payload: {
-        company_id: 1,
-        partner_id: 1,
-        plan_id: plan.id,
-        username: 'activateuser001',
-        start_date: new Date().toISOString(),
-      },
-    });
-    const subscription = JSON.parse(subRes.payload).data;
+    const activated = await app.inject({ method: 'POST', url: '/v1/works/subscriptions/' + sub.id + '/activate', headers });
+    assert.equal(activated.statusCode, 200, activated.payload);
+    assert.equal(JSON.parse(activated.payload).data.state, 'active');
 
-    const res = await app.inject({
-      method: 'POST',
-      url: `/v1/works/subscriptions/${subscription.id}/activate`,
-    });
-
-    assert.equal(res.statusCode, 200);
-    const body = JSON.parse(res.payload);
-    assert.ok(body.data);
-    assert.equal(body.data.status, 'active');
+    const suspended = await app.inject({ method: 'POST', url: '/v1/works/subscriptions/' + sub.id + '/suspend', headers });
+    assert.equal(suspended.statusCode, 200, suspended.payload);
+    assert.equal(JSON.parse(suspended.payload).data.state, 'suspended');
   });
 
-  await t.test('POST /v1/works/subscriptions/:id/suspend transitions active to suspended', async () => {
-    const planRes = await app.inject({
-      method: 'POST',
-      url: '/v1/works/plans',
-      payload: {
-        name: 'Suspend Test Plan',
-        download_speed_kbps: 15000,
-        upload_speed_kbps: 7500,
-        price_cents: 34900,
-      },
-    });
-    const plan = JSON.parse(planRes.payload).data;
-
-    const subRes = await app.inject({
-      method: 'POST',
-      url: '/v1/works/subscriptions',
-      payload: {
-        company_id: 1,
-        partner_id: 1,
-        plan_id: plan.id,
-        username: 'suspenduser001',
-        start_date: new Date().toISOString(),
-      },
-    });
-    const subscription = JSON.parse(subRes.payload).data;
-
-    await app.inject({
-      method: 'POST',
-      url: `/v1/works/subscriptions/${subscription.id}/activate`,
-    });
-
-    const res = await app.inject({
-      method: 'POST',
-      url: `/v1/works/subscriptions/${subscription.id}/suspend`,
-      payload: {
-        reason: 'Non-payment',
-      },
-    });
-
+  await t.test('GET /v1/works/invoices lists the tenant invoices', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/works/invoices', headers });
     assert.equal(res.statusCode, 200);
-    const body = JSON.parse(res.payload);
-    assert.ok(body.data);
-    assert.equal(body.data.status, 'suspended');
-    assert.equal(body.data.suspended_reason, 'Non-payment');
-  });
-
-  await t.test('GET /v1/works/subscriptions returns list of subscriptions', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/works/subscriptions',
-    });
-
-    assert.equal(res.statusCode, 200);
-    const body = JSON.parse(res.payload);
-    assert.ok(Array.isArray(body.data));
-  });
-
-  await t.test('GET /v1/works/invoices returns list of invoices', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/works/invoices',
-    });
-
-    assert.equal(res.statusCode, 200);
-    const body = JSON.parse(res.payload);
-    assert.ok(Array.isArray(body.data));
+    assert.ok(Array.isArray(JSON.parse(res.payload).data));
   });
 
   await app.close();

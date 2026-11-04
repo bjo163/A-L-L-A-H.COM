@@ -74,9 +74,11 @@ export interface RouteRecord {
 
 export interface VirtualKeyRecord {
   id: number;
+  company_id: number;
   name: string;
   key_prefix: string;
   key_hash: string;
+  revoked?: boolean | null;
   partner_id?: number;
   budget_limit?: number;
   rate_limit_rpm: number;

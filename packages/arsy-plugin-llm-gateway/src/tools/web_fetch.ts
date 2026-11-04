@@ -1,5 +1,5 @@
 import { request as undiciRequest } from 'undici';
-import { validateUrlSsrf } from '../ssrf';
+import { validateUrlSsrf, ssrfSafeDispatcher } from '../ssrf';
 import { logger } from '@allah/arsy-core';
 import type { Tool, ToolContext, ToolResult } from './base';
 
@@ -43,6 +43,12 @@ export class WebFetchTool implements Tool {
     try {
       const response = await undiciRequest(url, {
         method: 'GET',
+        dispatcher: ssrfSafeDispatcher,
+        headersTimeout: 10_000,
+        bodyTimeout: 30_000,
+        // undici does not follow redirects unless maxRedirections is set, which is what we
+        // want: a public URL that 302s to an internal address would otherwise be validated
+        // only against the first hop.
       });
 
       if (response.statusCode < 200 || response.statusCode >= 300) {

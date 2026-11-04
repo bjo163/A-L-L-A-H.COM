@@ -1,5 +1,11 @@
-import { PGlite } from '@electric-sql/pglite';
+import { PGlite, Transaction } from '@electric-sql/pglite';
 import { logger } from '@allah/arsy-core';
+import { singleton } from './singleton';
+
+export interface QueryExecutor {
+  query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+  exec(sql: string): Promise<void>;
+}
 
 export interface PGliteOptions {
   dataDir?: string; // defaults to in-memory if undefined
@@ -49,13 +55,33 @@ export class PGliteEngine {
     return res.rows;
   }
 
+  async transaction<T>(callback: (executor: QueryExecutor) => Promise<T>): Promise<T> {
+    return this.getClient().transaction(async (transaction: Transaction) =>
+      callback(this.createTransactionExecutor(transaction))
+    );
+  }
+
   async exec(sql: string): Promise<void> {
     const client = this.getClient();
     await client.exec(sql);
   }
+
+  private createTransactionExecutor(transaction: Transaction): QueryExecutor {
+    return {
+      query: async <T>(sql: string, params?: unknown[]): Promise<T[]> => {
+        const result = await transaction.query<T>(
+          sql,
+          params as (string | number | boolean | null)[]
+        );
+        return result.rows;
+      },
+      exec: async (sql: string): Promise<void> => {
+        await transaction.exec(sql);
+      },
+    };
+  }
 }
 
-export const dbEngine = new PGliteEngine({
+export const dbEngine = singleton('dbEngine', () => new PGliteEngine({
   dataDir: process.env.PG_DATA_DIR,
-});
-
+}));

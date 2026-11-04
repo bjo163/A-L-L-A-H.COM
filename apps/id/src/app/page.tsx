@@ -1,1 +1,136 @@
-﻿'use client';import { useEffect, useState } from 'react';import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from '@moonwitness/ui';import { mwClient } from '@allah/sdk';import Link from 'next/link';export default function IdHomePage() {  const [user, setUser] = useState<{ name: string; email: string } | null>(null);  const [loading, setLoading] = useState(true);  const [authNotice, setAuthNotice] = useState<string | null>(null);  useEffect(() => {    mwClient.auth      .getCurrentUser()      .then((res) => {        if (res?.user) {          setUser(res.user);        }      })      .catch((error: unknown) => {        setAuthNotice(error instanceof Error ? error.message : 'Session status is unavailable.');      })      .finally(() => setLoading(false));  }, []);  return (    <main id="main-content" tabIndex={-1} className="id-home">      {authNotice && (        <p className="id-home__notice" role="status">          Session status: {authNotice}        </p>      )}      <MotionFrame effect="enter">        <section className="id-hero" aria-labelledby="id-title">          <div className="id-hero__copy">            <p className="id-kicker">LUNAR CHRONICLES / IDENTITY / SSO</p>            <h1 id="id-title">MoonWitness ID</h1>            <p className="id-hero__summary">              Unified authentication and session center for MoonWitness and Empire of the Light with observable              session governance.            </p>            <div className="id-hero__actions">              {loading ? (                <Button disabled>Loading session</Button>              ) : user ? (                <>                  <Link href="/account"><Button>Open account center</Button></Link>                  <Link href="/login"><Button variant="default">Sign in elsewhere</Button></Link>                </>              ) : (                <>                  <Link href="/login"><Button>Sign in</Button></Link>                  <Link href="/register"><Button variant="default">Create ID</Button></Link>                </>              )}            </div>          </div>          <div className="id-hero__panel" role="status">            <div className="id-hero__panel-header">              <span>IDENTITY CONSOLE</span>              <Badge variant="gold">{user ? 'Signed in' : 'Guest'}</Badge>            </div>            <dl className="id-hero__panel-grid">              <div>                <dt>Account</dt>                <dd>{user?.name || user?.email || 'No active session'}</dd>              </div>              <div>                <dt>Skin</dt>                <dd>LUNAR CHRONICLES</dd>              </div>              <div>                <dt>SSO</dt>                <dd>Enabled</dd>              </div>            </dl>          </div>        </section>      </MotionFrame>      <section className="id-sessions" aria-labelledby="id-sessions-title">        <div className="id-sessions__header">          <div>            <p className="id-kicker">SESSION GOVERNANCE</p>            <h2 id="id-sessions-title">Active sessions</h2>          </div>          <Badge variant="default">Observable</Badge>        </div>        <Card>          <CardHeader>            <CardTitle>Session status</CardTitle>            <CardDescription>Real session state is retrieved from the connected identity service.</CardDescription>          </CardHeader>          <CardContent>            <div className="id-sessions__actions">              <Link href="/sessions"><Button variant="default" size="sm">Manage sessions</Button></Link>              <Link href="/devices"><Button variant="default" size="sm">Manage devices</Button></Link>              <Link href="/security"><Button variant="default" size="sm">Security settings</Button></Link>            </div>          </CardContent>        </Card>      </section>    </main>  );}
+﻿'use client';
+
+import { useEffect, useState } from 'react';
+import { mwClient } from '@allah/sdk';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  DestinationCard,
+  DestinationGrid,
+  LinkButton,
+  MotionFrame,
+  PageHero,
+  RouteShell,
+  SectionHeading,
+  StatusMessage,
+} from '@moonwitness/ui';
+
+const managedRoutes = [
+  {
+    role: 'profile',
+    title: 'Account center',
+    description: 'Name, subject identifier, and the sessions that carry them.',
+    href: '/account',
+  },
+  {
+    role: 'access',
+    title: 'Sign in',
+    description: 'Open a session on a device you can revoke later.',
+    href: '/login',
+  },
+  {
+    role: 'new identity',
+    title: 'Create an ID',
+    description: 'Register the profile the rest of the ecosystem reads.',
+    href: '/register',
+  },
+];
+
+export default function IdHomePage() {
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    mwClient.auth
+      .getCurrentUser()
+      .then((res) => {
+        if (res?.user) {
+          setUser(res.user);
+        }
+      })
+      .catch((error: unknown) => {
+        setAuthNotice(error instanceof Error ? error.message : 'Session status is unavailable.');
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  return (
+    <RouteShell as="main">
+      <MotionFrame effect="enter">
+        <PageHero
+          kicker="LUNAR CHRONICLES / IDENTITY / SSO"
+          title="MoonWitness ID"
+          summary="Unified authentication and session center for MoonWitness and Empire of the Light, with observable session governance."
+          actions={
+            isLoading ? (
+              <Button disabled>Checking session</Button>
+            ) : user ? (
+              <>
+                <LinkButton href="/account">Open account center</LinkButton>
+                <LinkButton href="/login" variant="outline">Sign in elsewhere</LinkButton>
+              </>
+            ) : (
+              <>
+                <LinkButton href="/login">Sign in</LinkButton>
+                <LinkButton href="/register" variant="outline">Create ID</LinkButton>
+              </>
+            )
+          }
+        />
+      </MotionFrame>
+
+      <section className="id-console" aria-labelledby="id-console-title">
+        <SectionHeading
+          title="Session governance"
+          titleId="id-console-title"
+          description="Every read below comes from the connected identity service."
+          trailing={<Badge variant="default">Observable</Badge>}
+        />
+
+        {authNotice && (
+          <StatusMessage tone="warning" title="Session status">
+            {authNotice}
+          </StatusMessage>
+        )}
+
+        <Card as="section" className="id-console__panel">
+          <CardHeader>
+            <div className="id-console__header-row">
+              <CardTitle>Identity console</CardTitle>
+              <Badge variant="gold">{user ? 'Signed in' : 'Guest'}</Badge>
+            </div>
+            <CardDescription>The account, the world it renders in, and whether SSO is active.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <dl className="id-console__facts">
+              <div>
+                <dt>Account</dt>
+                <dd>{user?.name || user?.email || 'No active session'}</dd>
+              </div>
+              <div>
+                <dt>Skin</dt>
+                <dd>Lunar Chronicles</dd>
+              </div>
+              <div>
+                <dt>SSO</dt>
+                <dd>Enabled</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+
+        <DestinationGrid label="Identity routes">
+          {managedRoutes.map((route) => (
+            <DestinationCard key={route.href} role={route.role} title={route.title} description={route.description} href={route.href} />
+          ))}
+        </DestinationGrid>
+      </section>
+    </RouteShell>
+  );
+}

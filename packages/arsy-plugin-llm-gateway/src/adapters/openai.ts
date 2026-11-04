@@ -8,7 +8,7 @@ import type {
   StreamChunk,
   UsageInfo,
 } from '../types';
-import { validateUrlSsrf } from '../ssrf';
+import { validateUrlSsrf, ssrfSafeDispatcher } from '../ssrf';
 
 export class OpenAiAdapter implements ProviderAdapter {
   readonly slug: string;
@@ -52,6 +52,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -138,6 +139,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -215,6 +217,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

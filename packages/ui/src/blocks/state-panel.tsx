@@ -10,6 +10,8 @@ export interface StatePanelProps {
   /** What the user can do next, in words. Rendered even when `action` is absent. */
   nextAction?: React.ReactNode;
   title?: React.ReactNode;
+  /** Kind label above the title. Apps with their own language policy pass a translated one. */
+  label?: React.ReactNode;
   /** Button or LinkButton node for the next step. */
   action?: React.ReactNode;
   /** Defaults to "alert" for error and offline, "status" for the rest. */
@@ -45,6 +47,7 @@ export function StatePanel({
   cause,
   nextAction,
   title,
+  label,
   action,
   role,
   as: Tag = 'h2',
@@ -61,7 +64,7 @@ export function StatePanel({
       aria-busy={kind === 'loading' || undefined}
     >
       <span className="mw-state__marker" aria-hidden="true" />
-      <p className="mw-state__label">{kindLabel[kind]}</p>
+      <p className="mw-state__label">{label ?? kindLabel[kind]}</p>
       <Tag className="mw-state__title">{title ?? kindTitle[kind]}</Tag>
       <p className="mw-state__cause">{cause}</p>
       {nextAction && <p className="mw-state__next">{nextAction}</p>}

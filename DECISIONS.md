@@ -111,3 +111,12 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: Native elements arrive with tested accessibility and cost nothing in the bundle, while a single token source makes the selected world the only place appearance is decided, which is what the six DNA contract requires.
 - consequences: `STYLE_PURITY` and `INLINE_STYLE_PURITY` ratchet rules can now be enforced, because there is one place a style finding is wrong. Apps cannot theme a surface with an inline colour and expect the skin to follow. Any future Base UI use must be justified in the package, not in an app.
 - related: D-007, [DESIGN.md](DESIGN.md), [packages/ui/src/theme.css](packages/ui/src/theme.css), [packages/lint/style-baseline.json](packages/lint/style-baseline.json)
+
+### D-013 — Canonical ORM Identity and Required Audit Actors
+- status: ACCEPTED — 2026-11-04
+- context: ORM audit columns were nullable and unaffiliated with authentication identities, so writes could not reliably identify an actor. New installations also lacked a defined system identity and first-run administrator bootstrap.
+- decision: `res.users` is the canonical ORM identity. Schema sync provisions exactly one idempotent `system` user with `system_key='bot'`; that identity supplies audit UIDs for system-owned/default writes. First-run onboarding atomically creates the initial `superuser`, and regular registration remains available only after onboarding completes. Every persisted model row requires `create_uid` and `write_uid` references to `res.users`; repository writes require an explicit actor, while database triggers cover direct SQL writes.
+- alternatives: Keep audit UIDs nullable; use auth-table IDs as audit actors; seed a reusable superuser credential.
+- rationale: A single identity namespace makes audit references consistent across ORM and authentication, while provisioning the bot avoids null or fabricated actor IDs and onboarding avoids shipping a shared privileged credential.
+- consequences: Existing databases are migrated by backfilling invalid/missing audit references to the system bot before enforcing non-null foreign keys. Applications must pass an authenticated user actor or the explicit system actor to repository writes. The initial superuser credentials are supplied during first-run onboarding and are not seeded.
+- related: D-008, [BLUEPRINT.md](BLUEPRINT.md), `packages/arsy-orm`, `packages/arsy-plugin-auth`

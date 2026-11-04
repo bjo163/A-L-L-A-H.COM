@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "tsx --test test/**/*.test.mjs"
   },
   "dependencies": {
     "@allah/arsy-core": "workspace:*",
@@ -19,6 +20,12 @@
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.8.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
   }
 }
-

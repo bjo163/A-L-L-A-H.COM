@@ -3,283 +3,622 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { ok, fail } from '@allah/arsy-core';
-import { modelRegistry, BaseRepository, registerAuthModels, SchemaMigrator, dbEngine } from '@allah/arsy-orm';
+import { fail, ok, resolveLocalSecret, type Principal } from '@allah/arsy-core';
+import {
+  BaseRepository,
+  QueryExecutor,
+  SchemaMigrator,
+  SYSTEM_ACTOR,
+  dbEngine,
+  modelRegistry,
+  registerAuthModels,
+} from '@allah/arsy-orm';
+import { migrateAuthIdentities, provisionSystemBot } from './bootstrap';
 
 export interface AuthPluginOptions {
   secret?: string;
   prefix?: string;
 }
 
+export interface PrincipalGuardOptions {
+  isPublic(method: string, path: string): boolean;
+  rateLimits?: Record<string, { limit: number; windowMs: number }>;
+}
+
+interface AuthRow {
+  id: number;
+  [key: string]: unknown;
+}
+
+class InitialOnboardingCompletedError extends Error {}
+class AccountAlreadyExistsError extends Error {}
+
+function takeHit(
+  buckets: Map<string, { count: number; start: number }>,
+  key: string,
+  limit: number,
+  windowMs: number,
+  now: number
+): { allowed: boolean; retryAfterMs: number } {
+  const previous = buckets.get(key);
+  if (!previous || now - previous.start >= windowMs) {
+    buckets.set(key, { count: 1, start: now });
+    return { allowed: true, retryAfterMs: 0 };
+  }
+  if (previous.count >= limit) {
+    return { allowed: false, retryAfterMs: windowMs - (now - previous.start) };
+  }
+  previous.count += 1;
+  if (buckets.size > 10000) {
+    for (const [bucket, entry] of buckets) {
+      if (now - entry.start >= windowMs) buckets.delete(bucket);
+    }
+  }
+  return { allowed: true, retryAfterMs: 0 };
+}
+
+/** `PUT /v1/nexus/nas/:id/secret` compiles to a single-segment wildcard route key. */
+function compileRouteKey(routeKey: string): { method: string; pattern: RegExp } {
+  const [method, ...rest] = routeKey.split(' ');
+  const path = rest.join(' ');
+  const source = [...path]
+    .map((character) =>
+      character === '*'
+        ? '[^/]+'
+        : '\\^$.*+?()[]{}|'.includes(character)
+          ? `\\${character}`
+          : character
+    )
+    .join('');
+  return { method: method.toUpperCase(), pattern: new RegExp(`^${source}$`) };
+}
+
+/**
+ * Default-deny boundary: every route needs a live principal unless it is named
+ * in the public allowlist. As a root onRequest hook it covers routes added later.
+ */
+export function createPrincipalGuard(fastify: FastifyInstance, options: PrincipalGuardOptions) {
+  const limiters = Object.entries(options.rateLimits || {}).map(([routeKey, rule]) => ({
+    ...compileRouteKey(routeKey),
+    ...rule,
+    hits: new Map<string, { count: number; start: number }>(),
+  }));
+
+  return async function principalGuard(request: any, reply: any) {
+    if (request.method === 'OPTIONS') return;
+
+    const path = String(request.url).split('?')[0];
+    const upperMethod = String(request.method).toUpperCase();
+    const isHead = upperMethod === 'HEAD';
+    const method = isHead ? 'GET' : upperMethod;
+
+    const limiter = limiters.find((rule) => rule.method === method && rule.pattern.test(path));
+    if (limiter) {
+      const decision = takeHit(limiter.hits, request.ip, limiter.limit, limiter.windowMs, Date.now());
+      if (!decision.allowed) {
+        reply
+          .status(429)
+          .header('Retry-After', Math.ceil(decision.retryAfterMs / 1000))
+          .send(fail('RATE_LIMITED', 'Too many requests for this endpoint'));
+        return;
+      }
+    }
+
+    if (options.isPublic(request.method, path)) return;
+
+    const principal: Principal | null = await (fastify as any).resolvePrincipal(request);
+    if (!principal) {
+      reply.status(401).send(fail('UNAUTHORIZED', 'A valid session or bearer token is required'));
+      return;
+    }
+
+    request.principal = principal;
+    // Handlers read request.user; carrying the tenant on it means no handler can
+    // be written against an unscoped identity.
+    request.user = {
+      id: principal.userId,
+      orm_user_id: principal.ormUserId,
+      role: principal.role,
+      email: principal.email,
+      company_id: principal.companyId,
+    };
+  };
+}
+
 const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: FastifyInstance, options) => {
-  const secret = options.secret || process.env.JWT_SECRET || 'arsy-default-secret-key-change-in-prod';
   const prefix = options.prefix || '/api/auth';
+  const secret = options.secret || resolveLocalSecret('JWT_SECRET', 'jwt.secret');
+  const tokenTtl = process.env.AUTH_TOKEN_TTL || '12h';
 
   registerAuthModels();
 
-  // Provision auth tables if not existing
   const migrator = new SchemaMigrator(dbEngine, modelRegistry);
   await migrator.sync();
+  const systemBotId = await provisionSystemBot(dbEngine, modelRegistry);
+  await migrator.runMigration('auth-res-users-audit-v1', async (executor) => {
+    await migrateAuthIdentities(dbEngine, modelRegistry, executor, systemBotId);
+    await migrator.enforceAuditConstraints(systemBotId, executor);
+  });
 
   await fastify.register(fastifyJwt, { secret });
 
-  const getRepo = (modelName: string) => {
+  const getRepo = <T extends object = AuthRow>(
+    modelName: string,
+    executor: QueryExecutor = dbEngine
+  ) => {
     const model = modelRegistry.get(modelName);
     if (!model) throw new Error(`Model '${modelName}' not registered`);
-    return new BaseRepository(model);
+    return new BaseRepository<T>(model, dbEngine, executor);
   };
 
-  const ensureCompanyTenant = async (user: { id?: unknown; company_id?: unknown }): Promise<number> => {
+  const createAccount = async (
+    executor: QueryExecutor,
+    account: { name: string; email: string; passwordHash: string },
+    role: 'user' | 'superuser'
+  ) => {
+    const resUser = await getRepo('res.users', executor).create(
+      {
+        company_id: 0,
+        name: account.name,
+        email: account.email,
+        password: '[MANAGED_BY_AUTH_USER]',
+        role,
+      },
+      { systemScope: true },
+      SYSTEM_ACTOR
+    );
+    const resUserId = Number((resUser as { id: number }).id);
+    const authUser = await getRepo('auth.user', executor).create(
+      {
+        company_id: 0,
+        res_user_id: resUserId,
+        name: account.name,
+        email: account.email,
+        password_hash: account.passwordHash,
+        status: 'active',
+        two_factor_enabled: false,
+      },
+      { systemScope: true },
+      SYSTEM_ACTOR
+    );
+    const authUserId = Number((authUser as { id: number }).id);
+    const companyId = -authUserId;
+    const assignedResUser = await getRepo('res.users', executor).updateById(
+      resUserId,
+      { company_id: companyId, api_key: `lo-${authUserId}` },
+      { systemScope: true, companyId: 0 },
+      SYSTEM_ACTOR,
+      { company_id: 0 }
+    );
+    const assignedAuthUser = await getRepo('auth.user', executor).updateById(
+      authUserId,
+      { company_id: companyId },
+      { systemScope: true, companyId: 0 },
+      SYSTEM_ACTOR,
+      { company_id: 0 }
+    );
+    if (!assignedResUser || !assignedAuthUser) {
+      throw new Error('Unable to assign the new account personal tenant.');
+    }
+    return { ...assignedAuthUser, res_user_id: resUserId, company_id: companyId };
+  };
+
+  const getInitialSetup = async (executor: QueryExecutor = dbEngine) => {
+    const repository = getRepo('auth.setup', executor);
+    const rows = await repository.find({
+      scope: { systemScope: true },
+      filters: [{ field: 'key', operator: '=', value: 'initial-owner' }],
+      limit: 1,
+    });
+    return rows[0] as AuthRow | undefined;
+  };
+
+  fastify.get(`${prefix}/onboarding/status`, async () => {
+    const setup = await getInitialSetup();
+    return ok({ available: setup !== undefined && setup.completed !== true });
+  });
+
+  fastify.post<{ Body: { name: string; email: string; password: string } }>(
+    `${prefix}/onboarding`,
+    async (request, reply) => {
+      const { name, email, password } = request.body || {};
+      if (
+        typeof name !== 'string' ||
+        name.trim().length === 0 ||
+        typeof email !== 'string' ||
+        email.trim().length === 0 ||
+        typeof password !== 'string' ||
+        password.length < 12
+      ) {
+        reply.status(400);
+        return fail('VALIDATION_ERROR', 'Name, email, and a password of at least 12 characters are required');
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      try {
+        const setup = await getInitialSetup();
+        if (!setup || setup.completed === true) {
+          throw new InitialOnboardingCompletedError();
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+        const account = await dbEngine.transaction(async (executor) => {
+          const setup = await getInitialSetup(executor);
+          if (!setup || setup.completed === true) {
+            throw new InitialOnboardingCompletedError();
+          }
+
+          const claimed = await getRepo('auth.setup', executor).updateById(
+            setup.id,
+            { completed: true, completed_at: new Date().toISOString() },
+            { systemScope: true, companyId: 0 },
+            SYSTEM_ACTOR,
+            { completed: false }
+          );
+          if (!claimed) throw new InitialOnboardingCompletedError();
+
+          const existing = await getRepo('auth.user', executor).find({
+            scope: { systemScope: true },
+            filters: [{ field: 'email', operator: '=', value: normalizedEmail }],
+            limit: 1,
+          });
+          if (existing.length > 0) throw new AccountAlreadyExistsError();
+
+          const user = await createAccount(
+            executor,
+            { name: name.trim(), email: normalizedEmail, passwordHash },
+            'superuser'
+          );
+          await getRepo('auth.setup', executor).updateById(
+            setup.id,
+            { owner_auth_user_id: user.id, completed_at: new Date().toISOString() },
+            { systemScope: true, companyId: 0 },
+            SYSTEM_ACTOR
+          );
+          return user;
+        });
+
+        reply.status(201);
+        const createdAccount = account as AuthRow;
+        return ok({
+          user: {
+            id: createdAccount.id,
+            name: createdAccount.name,
+            email: createdAccount.email,
+            role: 'superuser',
+          },
+          message: 'Initial superuser created.',
+        });
+      } catch (error) {
+        if (error instanceof InitialOnboardingCompletedError) {
+          reply.status(409);
+          return fail('ONBOARDING_COMPLETED', 'Initial onboarding has already been completed');
+        }
+        if (error instanceof AccountAlreadyExistsError) {
+          reply.status(409);
+          return fail('USER_EXISTS', 'User with this email already exists');
+        }
+        throw error;
+      }
+    }
+  );
+
+  const ensureCompanyTenant = async (user: {
+    id?: unknown;
+    company_id?: unknown;
+    res_user_id?: unknown;
+  }): Promise<number> => {
     const userId = Number(user.id);
+    const ormUserId = Number(user.res_user_id);
     if (!Number.isSafeInteger(userId) || userId < 1) {
       throw new Error('Cannot assign a personal tenant to a user without a valid ID.');
+    }
+    if (!Number.isSafeInteger(ormUserId) || ormUserId < 1) {
+      throw new Error('Cannot assign a personal tenant without a linked res.users identity.');
     }
 
     const existingCompanyId = Number(user.company_id);
     if (Number.isSafeInteger(existingCompanyId) && existingCompanyId !== 0) return existingCompanyId;
 
-    // Personal tenants use a negative namespace; organization tenants use positive company IDs.
     const personalCompanyId = -userId;
-    const assigned = await dbEngine.query<{ company_id: number }>(
-      'UPDATE "auth_user" SET company_id = $1, write_date = CURRENT_TIMESTAMP WHERE id = $2 AND (company_id IS NULL OR company_id = 0) RETURNING company_id;',
-      [personalCompanyId, userId]
-    );
-    const assignedCompanyId = Number(assigned[0]?.company_id);
-    if (Number.isSafeInteger(assignedCompanyId) && assignedCompanyId !== 0) return assignedCompanyId;
+    return dbEngine.transaction(async (executor) => {
+      const authRepo = getRepo('auth.user', executor);
+      const assigned = await authRepo.updateById(
+        userId,
+        { company_id: personalCompanyId },
+        { systemScope: true, companyId: Number.isSafeInteger(existingCompanyId) ? existingCompanyId : 0 },
+        SYSTEM_ACTOR,
+        { company_id: Number.isSafeInteger(existingCompanyId) ? existingCompanyId : 0 }
+      );
+      if (assigned) {
+        await getRepo('res.users', executor).updateById(
+          ormUserId,
+          { company_id: personalCompanyId },
+          { systemScope: true, companyId: 0 },
+          SYSTEM_ACTOR,
+          { company_id: 0 }
+        );
+        return personalCompanyId;
+      }
 
-    const refreshedUser = await getRepo('auth.user').findById(userId) as { company_id?: unknown } | null;
-    const concurrentCompanyId = Number(refreshedUser?.company_id);
-    if (Number.isSafeInteger(concurrentCompanyId) && concurrentCompanyId !== 0) return concurrentCompanyId;
-    throw new Error('Unable to assign a personal tenant to this account.');
+      const refreshedUser = await authRepo.findById(userId, { systemScope: true });
+      const concurrentCompanyId = Number(
+        (refreshedUser as { company_id?: unknown } | null)?.company_id
+      );
+      if (!Number.isSafeInteger(concurrentCompanyId) || concurrentCompanyId === 0) {
+        throw new Error('Unable to assign a personal tenant to this account.');
+      }
+      return concurrentCompanyId;
+    });
   };
 
-  // Auth Guard Decorator
-  fastify.decorate('authenticate', async (request: any, reply: any) => {
-    try {
-      // Check Bearer Token
-      const authHeader = request.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const decoded = await request.jwtVerify();
-        request.user = decoded;
-        return;
-      }
+  /**
+   * Sessions and users here are located by a credential that is already verified
+   * (the JWT's session id or the session token), so this is not a tenant-wide
+   * listing — and the tenant comes from the resolved row, never from the client.
+   */
+  async function buildPrincipal(session: AuthRow | undefined, via: Principal['via']): Promise<Principal | null> {
+    if (!session || session.revoked === true) return null;
+    if (new Date(String(session.expires_at)).getTime() <= Date.now()) return null;
 
-      // Check Session Cookie / Header
-      const sessionToken = request.headers['x-session-token'] || request.cookies?.arsy_session;
-      if (sessionToken) {
-        const sessionRepo = getRepo('auth.session');
-        const sessions = await sessionRepo.find({
-          filters: [
-            { field: 'session_token', operator: '=', value: sessionToken },
-            { field: 'revoked', operator: '=', value: false },
-          ],
+    const user = await getRepo('auth.user').findById(Number(session.user_id), { systemScope: true });
+    if (!user) return null;
+    if ((user as { status?: string }).status !== 'active') return null;
+
+    const companyId = Number((user as { company_id?: unknown }).company_id);
+    if (!Number.isSafeInteger(companyId) || companyId === 0) return null;
+    const ormUserId = Number((user as { res_user_id?: unknown }).res_user_id);
+    if (!Number.isSafeInteger(ormUserId) || ormUserId < 1) return null;
+    const ormUser = await getRepo('res.users').findById(ormUserId, { systemScope: true });
+    const role = (ormUser as { role?: unknown } | null)?.role;
+    if (!ormUser || (role !== 'user' && role !== 'superuser')) return null;
+
+    return {
+      userId: Number(user.id),
+      ormUserId,
+      role,
+      email: String((user as { email?: unknown }).email ?? ''),
+      companyId,
+      sessionId: session.id,
+      via,
+    };
+  }
+
+  fastify.decorate('resolvePrincipal', async (request: any): Promise<Principal | null> => {
+    try {
+      const authHeader = request.headers.authorization;
+      if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        const decoded = (await request.jwtVerify()) as unknown as { sessionId?: unknown };
+        const sessionId = Number(decoded.sessionId);
+        if (!Number.isSafeInteger(sessionId) || sessionId < 1) return null;
+
+        // A bearer token is only as live as the session row behind it.
+        const sessions = await getRepo('auth.session').find({
+          scope: { systemScope: true },
+          filters: [{ field: 'id', operator: '=', value: sessionId }],
           limit: 1,
         });
-
-        if (sessions.length > 0) {
-          const session = sessions[0] as any;
-          if (new Date(session.expires_at) > new Date()) {
-            const userRepo = getRepo('auth.user');
-            const user = await userRepo.findById(session.user_id);
-            if (user) {
-              request.user = { id: (user as any).id, email: (user as any).email, sessionId: session.id };
-              return;
-            }
-          }
-        }
+        return buildPrincipal(sessions[0] as AuthRow | undefined, 'jwt');
       }
 
-      reply.status(401).send(fail('UNAUTHORIZED', 'Missing or invalid authentication credentials'));
-    } catch {
-      reply.status(401).send(fail('UNAUTHORIZED', 'Invalid or expired authorization token'));
-    }
-  });
+      const sessionToken = request.headers['x-session-token'] || request.cookies?.arsy_session;
+      if (typeof sessionToken !== 'string' || sessionToken.length === 0) return null;
 
-  // POST /api/auth/sign-in
-  fastify.post<{
-    Body: { email: string; password: string; deviceName?: string };
-  }>(`${prefix}/sign-in`, async (request, reply) => {
-    const { email, password, deviceName } = request.body || {};
-    if (!email || !password) {
-      reply.status(400);
-      return fail('VALIDATION_ERROR', 'Email and password are required');
-    }
-
-    const userRepo = getRepo('auth.user');
-    const users = await userRepo.find({
-      filters: [{ field: 'email', operator: '=', value: email }],
-      limit: 1,
-    });
-
-    if (users.length === 0) {
-      reply.status(401);
-      return fail('INVALID_CREDENTIALS', 'Invalid email or password');
-    }
-
-    const user = users[0] as any;
-    const isValid = await bcrypt.compare(password, user.password_hash);
-    if (!isValid) {
-      reply.status(401);
-      return fail('INVALID_CREDENTIALS', 'Invalid email or password');
-    }
-    const companyId = await ensureCompanyTenant(user);
-
-    // Generate session token (30-day sliding expiry)
-    const sessionToken = `sess_${crypto.randomBytes(32).toString('hex')}`;
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const sessionRepo = getRepo('auth.session');
-    const session = await sessionRepo.create({
-      user_id: user.id,
-      session_token: sessionToken,
-      ip_address: request.ip || '127.0.0.1',
-      user_agent: request.headers['user-agent'] || 'Unknown Device',
-      device_name: deviceName || 'Browser Session',
-      expires_at: expiresAt,
-      revoked: false,
-    }, companyId);
-
-    const jwtToken = fastify.jwt.sign({ id: user.id, email: user.email, sessionId: (session as any).id });
-
-    return ok({
-      token: jwtToken,
-      sessionToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        status: user.status,
-      },
-    });
-  });
-
-  // Alias for backward compatibility: POST /api/auth/login -> sign-in
-  fastify.post(`${prefix}/login`, async (request: any, reply) => {
-    return (fastify as any).inject({
-      method: 'POST',
-      url: `${prefix}/sign-in`,
-      payload: request.body,
-    }).then((res: any) => {
-      reply.status(res.statusCode);
-      return JSON.parse(res.payload);
-    });
-  });
-
-  // POST /api/auth/register
-  fastify.post<{
-    Body: { name: string; email: string; password: string };
-  }>(`${prefix}/register`, async (request, reply) => {
-    const { name, email, password } = request.body || {};
-    if (!name || !email || !password) {
-      reply.status(400);
-      return fail('VALIDATION_ERROR', 'Name, email, and password are required');
-    }
-
-    const userRepo = getRepo('auth.user');
-    const existing = await userRepo.find({
-      filters: [{ field: 'email', operator: '=', value: email }],
-      limit: 1,
-    });
-
-    if (existing.length > 0) {
-      reply.status(409);
-      return fail('USER_EXISTS', 'User with this email already exists');
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const user = await userRepo.create({
-      company_id: 0,
-      name,
-      email,
-      password_hash: passwordHash,
-      status: 'active', // auto-activate in dev/self-hosted bootstrap
-      two_factor_enabled: false,
-    });
-    const companyId = await ensureCompanyTenant(user as { id?: unknown; company_id?: unknown });
-
-    // Also mirror to res.users projection without password
-    const resUsersModel = modelRegistry.get('res.users');
-    if (resUsersModel) {
-      const resRepo = new BaseRepository(resUsersModel);
-      await resRepo.create({
-        name,
-        email,
-        password: '[MANAGED_BY_AUTH_USER]',
-        api_key: `lo-${(user as any).id}`,
-      }, companyId);
-    }
-
-    reply.status(201);
-    return ok({
-      user: {
-        id: (user as any).id,
-        name: (user as any).name,
-        email: (user as any).email,
-      },
-      message: 'Account successfully created.',
-    });
-  });
-
-  // GET /api/auth/current
-  fastify.get(
-    `${prefix}/current`,
-    { preHandler: [(fastify as any).authenticate] },
-    async (request: any, reply) => {
-      const authUser = request.user;
-      const userRepo = getRepo('auth.user');
-      const user = await userRepo.findById(authUser.id);
-
-      if (!user) {
-        reply.status(404);
-        return fail('USER_NOT_FOUND', 'User profile not found');
-      }
-
-      return ok({
-        id: (user as any).id,
-        name: (user as any).name,
-        email: (user as any).email,
-        status: (user as any).status,
-        twoFactorEnabled: (user as any).two_factor_enabled,
-      });
-    }
-  );
-
-  // GET /api/auth/sessions (List active sessions)
-  fastify.get(
-    `${prefix}/sessions`,
-    { preHandler: [(fastify as any).authenticate] },
-    async (request: any) => {
-      const authUser = request.user;
-      const sessionRepo = getRepo('auth.session');
-
-      const sessions = await sessionRepo.find({
+      const sessions = await getRepo('auth.session').find({
+        scope: { systemScope: true },
         filters: [
-          { field: 'user_id', operator: '=', value: authUser.id },
+          { field: 'session_token', operator: '=', value: sessionToken },
           { field: 'revoked', operator: '=', value: false },
         ],
-        orderBy: 'id',
-        orderDirection: 'DESC',
+        limit: 1,
+      });
+      return buildPrincipal(sessions[0] as AuthRow | undefined, 'session');
+    } catch {
+      return null;
+    }
+  });
+
+  fastify.decorate('authenticate', async (request: any, reply: any) => {
+    const principal: Principal | null = request.principal
+      ? request.principal
+      : await (fastify as any).resolvePrincipal(request);
+
+    if (!principal) {
+      reply.status(401).send(fail('UNAUTHORIZED', 'Missing or invalid authentication credentials'));
+      return;
+    }
+
+    request.principal = principal;
+    request.user = {
+      id: principal.userId,
+      orm_user_id: principal.ormUserId,
+      role: principal.role,
+      email: principal.email,
+      company_id: principal.companyId,
+      sessionId: principal.sessionId,
+    };
+  });
+
+  fastify.post<{ Body: { email: string; password: string; deviceName?: string } }>(
+    `${prefix}/sign-in`,
+    async (request, reply) => {
+      const { email, password, deviceName } = request.body || {};
+      if (!email || !password) {
+        reply.status(400);
+        return fail('VALIDATION_ERROR', 'Email and password are required');
+      }
+
+      // Login happens before a tenant exists: the lookup keys on the globally
+      // unique email and the tenant comes back from the resolved row.
+      const users = await getRepo('auth.user').find({
+        scope: { systemScope: true },
+        filters: [{ field: 'email', operator: '=', value: email }],
+        limit: 1,
       });
 
-      const mapped = sessions.map((s: any) => ({
-        id: s.id,
-        deviceName: s.device_name || 'Browser',
-        userAgent: s.user_agent,
-        ipAddress: s.ip_address,
-        expiresAt: s.expires_at,
-        isCurrent: s.id === authUser.sessionId,
-      }));
+      if (users.length === 0) {
+        reply.status(401);
+        return fail('INVALID_CREDENTIALS', 'Invalid email or password');
+      }
 
-      return ok(mapped, { totalItems: mapped.length });
+      const user = users[0] as any;
+      const isValid = await bcrypt.compare(password, user.password_hash);
+      if (!isValid) {
+        reply.status(401);
+        return fail('INVALID_CREDENTIALS', 'Invalid email or password');
+      }
+      if (user.status !== 'active') {
+        reply.status(403);
+        return fail('ACCOUNT_DISABLED', 'This account is not active');
+      }
+
+      const companyId = await ensureCompanyTenant(user);
+
+      // Session tokens live 30 days; the bearer JWT signed below expires on its own clock.
+      const sessionToken = `sess_${crypto.randomBytes(32).toString('hex')}`;
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const session = await getRepo('auth.session').create(
+        {
+          user_id: user.id,
+          session_token: sessionToken,
+          ip_address: request.ip || '127.0.0.1',
+          user_agent: request.headers['user-agent'] || 'Unknown Device',
+          device_name: deviceName || 'Browser Session',
+          expires_at: expiresAt,
+          revoked: false,
+        },
+        { companyId },
+        { type: 'user', userId: Number(user.res_user_id) }
+      );
+
+      const jwtToken = fastify.jwt.sign(
+        { id: user.id, email: user.email, sessionId: (session as any).id },
+        { expiresIn: tokenTtl }
+      );
+
+      return ok({
+        token: jwtToken,
+        sessionToken,
+        user: { id: user.id, email: user.email, name: user.name, status: user.status },
+      });
     }
   );
 
-  // POST /api/auth/sessions/revoke (Revoke a session remotely)
-  fastify.post<{
-    Body: { sessionId: number };
-  }>(
+  fastify.post<{ Body: { name: string; email: string; password: string } }>(
+    `${prefix}/register`,
+    async (request, reply) => {
+      const { name, email, password } = request.body || {};
+      if (
+        typeof name !== 'string' ||
+        name.trim().length === 0 ||
+        typeof email !== 'string' ||
+        email.trim().length === 0 ||
+        typeof password !== 'string' ||
+        password.length === 0
+      ) {
+        reply.status(400);
+        return fail('VALIDATION_ERROR', 'Name, email, and password are required');
+      }
+
+      const setup = await getInitialSetup();
+      if (!setup || setup.completed !== true) {
+        reply.status(403);
+        return fail('INITIAL_ONBOARDING_REQUIRED', 'Create the first superuser before registering other accounts');
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const userRepo = getRepo('auth.user');
+      const existing = await userRepo.find({
+        scope: { systemScope: true },
+        filters: [{ field: 'email', operator: '=', value: normalizedEmail }],
+        limit: 1,
+      });
+
+      if (existing.length > 0) {
+        reply.status(409);
+        return fail('USER_EXISTS', 'User with this email already exists');
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
+
+      const user = await dbEngine.transaction(async (executor) => {
+        const duplicate = await getRepo('auth.user', executor).find({
+          scope: { systemScope: true },
+          filters: [{ field: 'email', operator: '=', value: normalizedEmail }],
+          limit: 1,
+        });
+        if (duplicate.length > 0) throw new AccountAlreadyExistsError();
+        return createAccount(
+          executor,
+          { name: name.trim(), email: normalizedEmail, passwordHash },
+          'user'
+        );
+      }).catch((error: unknown) => {
+        if (error instanceof AccountAlreadyExistsError) {
+          reply.status(409);
+          return null;
+        }
+        throw error;
+      });
+
+      if (!user) return fail('USER_EXISTS', 'User with this email already exists');
+
+      reply.status(201);
+      return ok({
+        user: { id: user.id, name: user.name, email: user.email },
+        message: 'Account successfully created.',
+      });
+    }
+  );
+
+  fastify.get(`${prefix}/current`, { preHandler: [(fastify as any).authenticate] }, async (request: any, reply) => {
+    const principal: Principal = request.principal;
+    const user = await getRepo('auth.user').findById(principal.userId, { companyId: principal.companyId });
+
+    if (!user) {
+      reply.status(404);
+      return fail('USER_NOT_FOUND', 'User profile not found');
+    }
+
+    return ok({
+      id: (user as any).id,
+      name: (user as any).name,
+      email: (user as any).email,
+      status: (user as any).status,
+      twoFactorEnabled: (user as any).two_factor_enabled,
+      role: principal.role,
+    });
+  });
+
+  fastify.get(`${prefix}/sessions`, { preHandler: [(fastify as any).authenticate] }, async (request: any) => {
+    const principal: Principal = request.principal;
+    const sessions = await getRepo('auth.session').find({
+      scope: { companyId: principal.companyId },
+      filters: [
+        { field: 'user_id', operator: '=', value: principal.userId },
+        { field: 'revoked', operator: '=', value: false },
+      ],
+      orderBy: 'id',
+      orderDirection: 'DESC',
+    });
+
+    const mapped = sessions.map((session: any) => ({
+      id: session.id,
+      deviceName: session.device_name || 'Browser',
+      userAgent: session.user_agent,
+      ipAddress: session.ip_address,
+      expiresAt: session.expires_at,
+      isCurrent: session.id === principal.sessionId,
+    }));
+
+    return ok(mapped, { totalItems: mapped.length });
+  });
+
+  fastify.post<{ Body: { sessionId: number } }>(
     `${prefix}/sessions/revoke`,
     { preHandler: [(fastify as any).authenticate] },
     async (request: any, reply) => {
@@ -289,41 +628,38 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
         return fail('VALIDATION_ERROR', 'sessionId is required');
       }
 
-      const authUser = request.user;
-      const sessionRepo = getRepo('auth.session');
-      const session = await sessionRepo.findById(sessionId);
+      const principal: Principal = request.principal;
+      const scope = { companyId: principal.companyId };
+      const session = await getRepo('auth.session').findById(sessionId, scope);
 
-      if (!session || (session as any).user_id !== authUser.id) {
+      if (!session || (session as any).user_id !== principal.userId) {
         reply.status(404);
         return fail('SESSION_NOT_FOUND', 'Session not found or belongs to another user');
       }
 
-      // Mark session as revoked
-      await (sessionRepo as any).engine.query(
-        'UPDATE "auth_session" SET "revoked" = true WHERE "id" = $1 AND "user_id" = $2',
-        [sessionId, authUser.id]
+      await getRepo('auth.session').updateById(
+        sessionId,
+        { revoked: true },
+        scope,
+        { type: 'user', userId: principal.ormUserId }
       );
 
       return ok({ message: 'Session revoked successfully', revokedSessionId: sessionId });
     }
   );
 
-  // POST /api/auth/sign-out
-  fastify.post(
-    `${prefix}/sign-out`,
-    { preHandler: [(fastify as any).authenticate] },
-    async (request: any) => {
-      const authUser = request.user;
-      if (authUser.sessionId) {
-        const sessionRepo = getRepo('auth.session');
-        await (sessionRepo as any).engine.query(
-          'UPDATE "auth_session" SET "revoked" = true WHERE "id" = $1',
-          [authUser.sessionId]
-        );
-      }
-      return ok({ message: 'Signed out successfully' });
+  fastify.post(`${prefix}/sign-out`, { preHandler: [(fastify as any).authenticate] }, async (request: any) => {
+    const principal: Principal = request.principal;
+    if (principal.sessionId) {
+      await getRepo('auth.session').updateById(
+        principal.sessionId,
+        { revoked: true },
+        { companyId: principal.companyId },
+        { type: 'user', userId: principal.ormUserId }
+      );
     }
-  );
+    return ok({ message: 'Signed out successfully' });
+  });
 };
 
 export const authPlugin = fp(authPluginAsync, {

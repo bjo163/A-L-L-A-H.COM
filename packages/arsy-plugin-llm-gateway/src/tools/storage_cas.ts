@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { modelRegistry, BaseRepository } from '@allah/arsy-orm';
+import { modelRegistry, BaseRepository, SYSTEM_ACTOR } from '@allah/arsy-orm';
 import { logger } from '@allah/arsy-core';
 import type { Tool, ToolContext, ToolResult } from './base';
 
@@ -38,25 +38,43 @@ export class StorageCasTool implements Tool {
     return crypto.createHash('sha256').update(content, 'utf-8').digest('hex');
   }
 
-  private async recordAttachment(digest: string, content: string, name?: string): Promise<void> {
+  private async recordAttachment(
+    digest: string,
+    content: string,
+    companyId: number,
+    name?: string
+  ): Promise<void> {
     try {
       const model = modelRegistry.get('mw.storage.backend') ? modelRegistry.get('ir.attachment') : null;
       if (!model) return;
       const repo = new BaseRepository(model);
-      const existing = await repo.find({ domain: [['digest', '=', digest]], limit: 1 } as any);
-      if (existing && existing.length > 0) return;
-      await repo.create({
-        name: name || digest,
-        digest,
-        file_size: Buffer.byteLength(content, 'utf-8'),
-        mimetype: 'application/octet-stream',
+      const existing = await repo.find({
+        scope: { companyId },
+        filters: [{ field: 'digest', operator: '=', value: digest }],
+        limit: 1,
       });
+      if (existing && existing.length > 0) return;
+      await repo.create(
+        {
+          name: name || digest,
+          digest,
+          file_size: Buffer.byteLength(content, 'utf-8'),
+          mimetype: 'application/octet-stream',
+        },
+        { companyId },
+        SYSTEM_ACTOR
+      );
     } catch (err) {
       logger.warn({ err }, 'Could not record CAS attachment provenance');
     }
   }
 
-  async execute(args: Record<string, unknown>, _context?: ToolContext): Promise<ToolResult> {
+  async execute(args: Record<string, unknown>, context?: ToolContext): Promise<ToolResult> {
+    const companyId = Number(context?.companyId);
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
+      return { success: false, error: 'TENANT_REQUIRED: a verified tenant is required', output: null };
+    }
+
     const action = args.action === 'get' || args.action === 'put' ? args.action : undefined;
     if (!action) {
       return { success: false, error: 'action must be "get" or "put"', output: null };
@@ -72,7 +90,7 @@ export class StorageCasTool implements Tool {
       if (!fs.existsSync(filePath)) {
         fs.writeFileSync(filePath, content, 'utf-8');
       }
-      await this.recordAttachment(digest, content, args.name as string | undefined);
+      await this.recordAttachment(digest, content, companyId, args.name as string | undefined);
       return {
         success: true,
         output: { digest, action: 'put', size: Buffer.byteLength(content, 'utf-8') },
@@ -84,6 +102,10 @@ export class StorageCasTool implements Tool {
     const digest = typeof args.digest === 'string' ? args.digest : undefined;
     if (!digest) {
       return { success: false, error: 'digest is required for action "get"', output: null };
+    }
+    // A digest is always 64 lowercase hex chars; anything else could escape the store directory.
+    if (!/^[0-9a-f]{64}$/.test(digest)) {
+      return { success: false, error: 'digest must be a 64-character lowercase SHA-256 hex digest', output: null };
     }
     const filePath = path.join(STORAGE_DIR, digest);
     if (!fs.existsSync(filePath)) {

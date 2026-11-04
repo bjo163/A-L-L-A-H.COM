@@ -5,6 +5,7 @@ export interface ToolContext {
   virtualKeyId?: number | null;
   actor?: string | null;
   requestId?: string | null;
+  companyId?: number | null;
 }
 
 export interface Tool {

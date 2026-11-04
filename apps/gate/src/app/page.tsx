@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { RouteShell } from "@moonwitness/ui";
 import { GateNavbar } from "@/components/gate-navbar";
 import { HeroArrival } from "@/components/hero-arrival";
 import { ClosingHorizon } from "@/components/closing-horizon";
@@ -12,10 +13,10 @@ export default function HomePage() {
   return (
     <>
       <GateNavbar />
-      <main id="main-content" tabIndex={-1} className="gate-page">
+      <RouteShell as="main" className="gate-shell">
         <HeroArrival locale="id" />
         <ClosingHorizon locale="id" />
-      </main>
+      </RouteShell>
     </>
   );
 }

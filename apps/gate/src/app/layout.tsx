@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     description: "Public entrance to the Empire of the Light.",
     images: [
       {
-        url: "/artwork/imperium-lumen.png",
+        url: "/artwork/rocksoul.png",
         width: 1600,
         height: 900,
         alt: "A-L-L-A-H.COM Empire of the Light",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "A-L-L-A-H.COM | Gate",
     description: "Public entrance to the Empire of the Light.",
-    images: ["/artwork/imperium-lumen.png"],
+    images: ["/artwork/rocksoul.png"],
   },
   robots: {
     index: false,
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#11110f",
+  themeColor: "#141516",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -72,7 +72,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/brand/emblem.svg" />
       </head>
       <body className="min-h-full flex flex-col">
-        <SkinRoot skin="imperium-lumen">
+        <SkinRoot skin="rocksoul">
           <SkipLink />
           {children}
         </SkinRoot>

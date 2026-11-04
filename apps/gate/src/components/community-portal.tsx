@@ -2,20 +2,16 @@
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  LinkButton,
   MotionFrame,
-  RawCluster,
-  RawContainer,
-  RawGrid,
-  RawStack,
+  SectionHeading,
 } from "@moonwitness/ui";
-import Link from "next/link";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
-import { getDestinations, type Destination } from "@/lib/content-manifest";
+import { getDestinations } from "@/lib/content-manifest";
 import { UsersRound, ShieldCheck, MessageSquare, BookOpen } from "lucide-react";
 
 interface CommunityPortalProps {
@@ -24,119 +20,100 @@ interface CommunityPortalProps {
 
 export function CommunityPortal({ locale = "id" }: CommunityPortalProps) {
   const { t } = useTranslationCatalog(locale);
-  const dock = getDestinations().find((d) => d.id === "dock");
+  const en = locale === "en";
+  const dock = getDestinations().find((destination) => destination.id === "dock");
+
+  const participation = [
+    { icon: MessageSquare, label: en ? "Thoughtful discussion" : "Diskusi pemikiran", desc: en ? "Share interpretations and questions" : "Berbagi interpretasi dan pertanyaan" },
+    { icon: BookOpen, label: en ? "Sourced contributions" : "Kontribusi bersumber", desc: en ? "Cite references for factual claims" : "Kutip referensi untuk klaim faktual" },
+    { icon: UsersRound, label: en ? "Constructive feedback" : "Umpan balik konstruktif", desc: en ? "Help improve the collective work" : "Bantu meningkatkan karya bersama" },
+    { icon: ShieldCheck, label: en ? "Respect the guidelines" : "Hormati pedoman", desc: en ? "Privacy, no spam, separate fact from opinion" : "Privasi, tanpa spam, bedakan fakta dan opini" },
+  ];
+
+  const guidelines = [
+    t("community.guideline1"),
+    t("community.guideline2"),
+    t("community.guideline3"),
+    t("community.guideline4"),
+    t("community.guideline5"),
+  ];
 
   return (
     <section className="gate-section" aria-labelledby="community-title">
-      <div className="gate-section__heading">
-        <div>
-          <p className="gate-kicker">{t("nav.community")}</p>
-          <h2 id="community-title">{t("community.title")}</h2>
-        </div>
-      </div>
+      <SectionHeading titleId="community-title" kicker={t("nav.community")} title={t("community.title")} />
 
       <MotionFrame effect="enter">
-        <RawContainer>
-          {/* Purpose */}
-          <Card style={{ marginBottom: "2rem" }}>
-            <CardHeader>
-              <RawCluster data-gap="tight">
-                <span style={{ fontFamily: "var(--mw-font-numeric)", color: "var(--mw-accent)" }}>01</span>
-                <CardTitle>{locale === "id" ? "Tujuan Komunitas" : "Community Purpose"}</CardTitle>
-              </RawCluster>
-            </CardHeader>
-            <CardContent>
-              <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>{t("community.description")}</p>
-            </CardContent>
-          </Card>
+        <Card as="article">
+          <CardHeader>
+            <span className="gate-num">01</span>
+            <CardTitle>{en ? "Community purpose" : "Tujuan komunitas"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="gate-lede">{t("community.description")}</p>
+          </CardContent>
+        </Card>
 
-          {/* Participation */}
-          <Card style={{ marginBottom: "2rem" }}>
-            <CardHeader>
-              <RawCluster data-gap="tight">
-                <span style={{ fontFamily: "var(--mw-font-numeric)", color: "var(--mw-accent)" }}>02</span>
-                <CardTitle>{t("community.participation")}</CardTitle>
-              </RawCluster>
-            </CardHeader>
-            <CardContent>
-              <p style={{ margin: "0 0 1rem", color: "var(--mw-muted-text)", lineHeight: 1.7 }}>{t("community.participation")}</p>
-              <RawGrid data-gap="regular" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
-                {[
-                  { icon: MessageSquare, label: locale === "id" ? "Diskusi Pemikiran" : "Thoughtful Discussion", desc: locale === "id" ? "Berbagi interpretasi dan pertanyaan" : "Share interpretations and questions" },
-                  { icon: BookOpen, label: locale === "id" ? "Kontribusi Bersumber" : "Sourced Contributions", desc: locale === "id" ? "Kutip referensi untuk klaim faktual" : "Cite references for factual claims" },
-                  { icon: UsersRound, label: locale === "id" ? "Umpan Balik Konstruktif" : "Constructive Feedback", desc: locale === "id" ? "Bantu meningkatkan karya bersama" : "Help improve collective work" },
-                  { icon: ShieldCheck, label: locale === "id" ? "Hormati Pedoman" : "Respect Guidelines", desc: locale === "id" ? "Privasi, tidak spam, bedakan fakta/opini" : "Privacy, no spam, distinguish fact/opinion" },
-                ].map((item, i) => (
-                  <Card key={i} style={{ textAlign: "center", padding: "1.5rem" }}>
-                    <div style={{ margin: "0 auto 1rem", width: "48px", height: "48px", borderRadius: "50%", background: "rgb(211 183 123 / 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--mw-accent)" }}>
-                      <item.icon size={24} />
-                    </div>
-                    <h4 style={{ margin: "0 0 0.5rem", fontFamily: "var(--mw-font-heading)" }}>{item.label}</h4>
-                    <p style={{ margin: 0, color: "var(--mw-muted-text)", fontSize: "0.875rem" }}>{item.desc}</p>
-                  </Card>
-                ))}
-              </RawGrid>
-            </CardContent>
-          </Card>
-
-          {/* Guidelines */}
-          <Card style={{ marginBottom: "2rem" }}>
-            <CardHeader>
-              <RawCluster data-gap="tight">
-                <span style={{ fontFamily: "var(--mw-font-numeric)", color: "var(--mw-accent)" }}>03</span>
-                <CardTitle>{t("community.guidelines")}</CardTitle>
-              </RawCluster>
-            </CardHeader>
-            <CardContent>
-              <RawStack data-gap="regular">
-                {[t("community.guideline1"), t("community.guideline2"), t("community.guideline3"), t("community.guideline4"), t("community.guideline5")].map((guideline, i) => (
-                  <RawCluster key={i} data-gap="regular" style={{ alignItems: "flex-start" }}>
-                    <span style={{ fontFamily: "var(--mw-font-numeric)", color: "var(--mw-accent)", flexShrink: 0 }}>{(i + 1).toString().padStart(2, "0")}</span>
-                    <p style={{ margin: 0, color: "var(--mw-text)", lineHeight: 1.6 }}>{guideline}</p>
-                  </RawCluster>
-                ))}
-              </RawStack>
-            </CardContent>
-          </Card>
-
-          {/* Safety */}
-          <Card style={{ marginBottom: "2rem" }}>
-            <CardHeader>
-              <RawCluster data-gap="tight">
-                <span style={{ fontFamily: "var(--mw-font-numeric)", color: "var(--mw-accent)" }}>04</span>
-                <CardTitle>{t("community.safety")}</CardTitle>
-              </RawCluster>
-            </CardHeader>
-            <CardContent>
-              <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>{t("community.safetyText")}</p>
-            </CardContent>
-          </Card>
-
-          {/* Entry to Dock */}
-          <MotionFrame effect="enter">
-            <div style={{ textAlign: "center", padding: "2rem" }}>
-              <RawStack data-gap="regular" style={{ maxWidth: "40rem", margin: "0 auto" }}>
-                <div>
-                  <h3 style={{ margin: "0 0 1rem", fontFamily: "var(--mw-font-display)", fontSize: "clamp(1.5rem, 3vw, 2rem)" }}>
-                    {locale === "id" ? "Siap Bergabung?" : "Ready to Join?"}
-                  </h3>
-                  <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>
-                    {locale === "id"
-                      ? "Dermaga menunggu suara Anda. Masuk dengan MoonWitness ID untuk mulai berpartisipasi."
-                      : "The Dock awaits your voice. Sign in with MoonWitness ID to start participating."}
-                  </p>
+        <Card as="article">
+          <CardHeader>
+            <span className="gate-num">02</span>
+            <CardTitle>{t("community.participation")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="gate-auto-grid">
+              {participation.map((item) => (
+                <div className="gate-tile" key={item.label}>
+                  <span className="gate-tile__mark" aria-hidden="true">
+                    <item.icon size={24} />
+                  </span>
+                  <p className="gate-body">{item.label}</p>
+                  <p className="gate-meta">{item.desc}</p>
                 </div>
-                {dock && (
-                  <Button asChild variant="gold" size="lg" style={{ width: "100%" }}>
-                    <Link href={dock.href} target="_blank" rel="noopener noreferrer">
-                      {t("community.enterDock")}
-                    </Link>
-                  </Button>
-                )}
-              </RawStack>
+              ))}
             </div>
-          </MotionFrame>
-        </RawContainer>
+          </CardContent>
+        </Card>
+
+        <Card as="article">
+          <CardHeader>
+            <span className="gate-num">03</span>
+            <CardTitle>{t("community.guidelines")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="gate-list">
+              {guidelines.map((guideline, i) => (
+                <li className="gate-row" key={guideline}>
+                  <span className="gate-num">{(i + 1).toString().padStart(2, "0")}</span>
+                  <p className="gate-body">{guideline}</p>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+
+        <Card as="article">
+          <CardHeader>
+            <span className="gate-num">04</span>
+            <CardTitle>{t("community.safety")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="gate-lede">{t("community.safetyText")}</p>
+          </CardContent>
+        </Card>
+
+        <div className="gate-tease">
+          <SectionHeading
+            title={en ? "Ready to join?" : "Siap bergabung?"}
+            description={en
+              ? "The Dock awaits your voice. Sign in with a MoonWitness ID to start participating."
+              : "Dermaga menunggu suara Anda. Masuk dengan MoonWitness ID untuk mulai berpartisipasi."}
+          />
+          {dock && (
+            <LinkButton href={dock.href} variant="gold" size="lg" external>
+              {t("community.enterDock")}
+            </LinkButton>
+          )}
+          <Badge variant="default">{en ? "Dock requires an ID" : "Dermaga membutuhkan ID"}</Badge>
+        </div>
       </MotionFrame>
     </section>
   );

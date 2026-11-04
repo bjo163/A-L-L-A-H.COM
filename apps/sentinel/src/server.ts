@@ -8,8 +8,16 @@
 
 import 'dotenv/config';
 import { logger } from '@allah/arsy-core';
-import { dbEngine, modelRegistry, BaseRepository } from '@allah/arsy-orm';
-import { RadiusServer, RadiusCodec, RadiusCode, RadiusAttributeType, RadiusPacket, RadiusAttribute } from '@allah/sentinel-radius';
+import { dbEngine, modelRegistry, BaseRepository, SYSTEM_ACTOR, decryptSecret } from '@allah/arsy-orm';
+import {
+  RadiusServer,
+  RadiusCodec,
+  RadiusCode,
+  RadiusAttributeType,
+  RadiusPacket,
+  RadiusAttribute,
+  verifySubscriberPassword,
+} from '@allah/sentinel-radius';
 import { registerNexusAddon } from '../../../addons/nexus/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
@@ -25,7 +33,15 @@ const AUTH_PORT = Number(process.env.SENTINEL_AUTH_PORT) || 1812;
 const ACCT_PORT = Number(process.env.SENTINEL_ACCT_PORT) || 1813;
 const COA_PORT = Number(process.env.SENTINEL_COA_PORT) || 3799;
 const HTTP_PORT = Number(process.env.SENTINEL_HTTP_PORT) || 9181;
+// The metrics/health endpoint is internal (Prometheus scrapes it server-side);
+// bind to loopback unless an operator explicitly widens the bind host.
+const HTTP_HOST = process.env.SENTINEL_HTTP_HOST || '127.0.0.1';
+// No cross-origin access by default; only reflect an origin when configured.
+const METRICS_ORIGIN = process.env.SENTINEL_METRICS_ORIGIN || '';
 const NODE_ENV = process.env.NODE_ENV || 'development';
+// Conservative default when a subscriber row carries no explicit rate limits (Kbps).
+const DEFAULT_RATE_DOWNLOAD_KBPS = 10240; // 10 Mbps
+const DEFAULT_RATE_UPLOAD_KBPS = 5120; // 5 Mbps
 
 interface SentinelConfig {
   authPort: number;
@@ -45,6 +61,7 @@ const config: SentinelConfig = {
 interface NasCacheEntry {
   secret: string;
   nasId: number;
+  companyId: number;
   vendor: string;
   coaPort: number;
   sourceAllowlist: string[];
@@ -83,9 +100,10 @@ async function resolveNasByIp(ip: string): Promise<NasCacheEntry | null> {
 
     const repo = new BaseRepository(model);
     const nasList = await repo.find({
+      scope: { systemScope: true },
       filters: [
         { field: 'ip_address', operator: '=', value: ip },
-        { field: 'active', operator: '=', value: true },
+        { field: 'is_active', operator: '=', value: true },
       ],
       limit: 1,
     });
@@ -95,23 +113,35 @@ async function resolveNasByIp(ip: string): Promise<NasCacheEntry | null> {
       return null;
     }
 
-    const nas = nasList[0];
-    
-    // In production, decrypt secret_encrypted using AES-256-GCM
-    // For now, we'll use it as-is (development mode)
-    const secret = (nas as any).secret_encrypted || 'testing123';
+    const nas = nasList[0] as any;
+
+    // Decrypt the shared secret through the versioned AES-256-GCM envelope.
+    // Fail closed: an unresolvable secret must never fall back to a shared
+    // default, otherwise any NAS could impersonate another.
+    let secret: string;
+    try {
+      secret = decryptSecret(nas.secret_encrypted);
+    } catch (err) {
+      logger.error({ err, ip, nasId: nas.id }, 'NAS secret could not be decrypted - failing closed');
+      return null;
+    }
+    if (!secret) {
+      logger.error({ ip, nasId: nas.id }, 'NAS secret empty - failing closed');
+      return null;
+    }
 
     const entry: NasCacheEntry = {
       secret,
-      nasId: (nas as any).id,
-      vendor: (nas as any).vendor || 'mikrotik',
-      coaPort: (nas as any).coa_port ?? 3799,
-      sourceAllowlist: (nas as any).source_allowlist || [],
+      nasId: nas.id,
+      companyId: nas.company_id,
+      vendor: nas.vendor || 'mikrotik',
+      coaPort: nas.coa_port ?? 3799,
+      sourceAllowlist: nas.source_allowlist || [],
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
 
     nasCache.set(ip, entry);
-    logger.info({ ip, nasId: entry.nasId }, 'NAS resolved and cached');
+    logger.info({ ip, nasId: entry.nasId, companyId: entry.companyId }, 'NAS resolved and cached');
     return entry;
   } catch (err) {
     logger.error({ err, ip }, 'Failed to resolve NAS');
@@ -256,7 +286,7 @@ async function handleAccessRequest(
     return createAccessReject(packet, nasEntry.secret, 'Invalid password format');
   }
 
-  // Verify against sentinel.account table
+  // Verify against sentinel.account table (scoped to the NAS tenant)
   if (!SentinelAccountModel) {
     logger.error('sentinel.account model not registered');
     return createAccessReject(packet, nasEntry.secret, 'Account verification unavailable');
@@ -264,6 +294,7 @@ async function handleAccessRequest(
 
   const accountRepo = new BaseRepository(SentinelAccountModel);
   const accounts = await accountRepo.find({
+    scope: { companyId: nasEntry.companyId },
     filters: [
       { field: 'username', operator: '=', value: username },
       { field: 'status', operator: '=', value: 'active' },
@@ -272,32 +303,24 @@ async function handleAccessRequest(
   });
 
   if (!accounts || accounts.length === 0) {
-    logger.warn({ username }, 'Account not found or inactive');
+    logger.warn({ username, companyId: nasEntry.companyId }, 'Account not found or inactive');
     return createAccessReject(packet, nasEntry.secret, 'Invalid username or password');
   }
 
   const account = accounts[0] as any;
-  
-  // Verify password hash (simplified - in production would compare hashes)
-  // For now, we'll accept if account exists and is active
-  // NOTE: Implement proper password hash verification (SHA-256/bcrypt)
-  let rateLimit: string | undefined;
-  
-  // Use plan-based rate limit from account
-  if (account.plan_id) {
-    // Simple mapping - in production would query sentinel.plan table
-    if (username.includes('premium')) {
-      rateLimit = '50M/100M';
-    } else if (username.includes('business')) {
-      rateLimit = '100M/200M';
-    } else if (account.rate_limit_download && account.rate_limit_upload) {
-      rateLimit = `${account.rate_limit_download / 1000}M/${account.rate_limit_upload / 1000}M`;
-    } else {
-      rateLimit = '20M/50M';
-    }
-  } else {
-    rateLimit = '20M/50M';
+
+  // Verify the decrypted PAP password against the stored scrypt digest using a
+  // constant-time compare. Reject on any mismatch or malformed stored values.
+  const ok = verifySubscriberPassword(passwordStr, account.password_hash, account.password_salt);
+  if (!ok) {
+    logger.warn({ username, accountId: account.id }, 'Password verification failed');
+    return createAccessReject(packet, nasEntry.secret, 'Invalid username or password');
   }
+
+  // Derive the MikroTik rate limit from the subscriber row (Kbps -> Mbps).
+  const downloadKbps = Number(account.rate_limit_download) || DEFAULT_RATE_DOWNLOAD_KBPS;
+  const uploadKbps = Number(account.rate_limit_upload) || DEFAULT_RATE_UPLOAD_KBPS;
+  const rateLimit = `${Math.round(downloadKbps / 1000)}M/${Math.round(uploadKbps / 1000)}M`;
 
   logger.info({ username, nasIp: rinfo.address, rateLimit, accountId: account.id }, 'Access-Accept');
   return createAccessAccept(packet, nasEntry.secret, rateLimit);
@@ -348,13 +371,28 @@ async function handleAccountingRequest(
     logger.debug({ dedupKey }, 'Duplicate accounting packet ignored');
   } else {
     // Store in sentinel.session table
-    if (SentinelSessionModel) {
+    if (SentinelSessionModel && SentinelAccountModel) {
       try {
+        // Resolve the subscriber account (scoped to the NAS tenant) so the
+        // session can be attributed. account_id is required by the model, so
+        // an unresolvable account is logged and the write is skipped while the
+        // NAS is still acknowledged below.
+        const accountRepo = new BaseRepository(SentinelAccountModel);
+        const accounts = await accountRepo.find({
+          scope: { companyId: nasEntry.companyId },
+          filters: [{ field: 'username', operator: '=', value: username || '' }],
+          limit: 1,
+        });
+        const account = accounts && accounts.length > 0 ? (accounts[0] as any) : null;
+
+        if (!account) {
+          logger.warn({ username, sessionId, companyId: nasEntry.companyId }, 'Accounting for unknown account - skipping session write');
+        } else {
         const sessionRepo = new BaseRepository(SentinelSessionModel);
         const sessionData = {
-          company_id: nasEntry.nasId || 1,
-          account_id: null, // Would need to resolve from username in production
-          nas_id: nasEntry.nasId || 1,
+          company_id: nasEntry.companyId,
+          account_id: account.id,
+          nas_id: nasEntry.nasId,
           acct_session_id: sessionId || '',
           framed_ip_address: getAttrString(packet, RadiusAttributeType.FramedIPAddress) || '',
           calling_station_id: getAttrString(packet, RadiusAttributeType.CallingStationId) || '',
@@ -366,8 +404,6 @@ async function handleAccountingRequest(
           session_time_seconds: acctSessionTime || 0,
           terminate_cause: getAttrString(packet, RadiusAttributeType.AcctTerminateCause) || null,
           is_active: statusType !== 2, // Active unless Stop
-          create_date: new Date().toISOString(),
-          write_date: new Date().toISOString(),
           metadata: {
             nasIp: nasIp,
             username: username,
@@ -382,11 +418,12 @@ async function handleAccountingRequest(
         };
         
         if (statusType === 1) { // Start
-          await sessionRepo.create(sessionData);
+          await sessionRepo.create(sessionData, { companyId: nasEntry.companyId }, SYSTEM_ACTOR);
           logger.info({ sessionId, username }, 'Session created');
         } else if (statusType === 3) { // Interim-Update
           // Update existing session
           const existing = await sessionRepo.find({
+            scope: { companyId: nasEntry.companyId },
             filters: [
               { field: 'acct_session_id', operator: '=', value: sessionId || '' },
               { field: 'is_active', operator: '=', value: true },
@@ -400,18 +437,19 @@ async function handleAccountingRequest(
                 input_octets: inputOctets || 0,
                 output_octets: outputOctets || 0,
                 session_time_seconds: acctSessionTime || 0,
-                write_date: new Date().toISOString(),
               },
-              nasEntry.nasId || 1
+              { companyId: nasEntry.companyId },
+              SYSTEM_ACTOR
             );
             logger.info({ sessionId, username }, 'Session updated (interim)');
           } else {
             // Create new if not found
-            await sessionRepo.create(sessionData);
+            await sessionRepo.create(sessionData, { companyId: nasEntry.companyId }, SYSTEM_ACTOR);
             logger.info({ sessionId, username }, 'Session created (interim fallback)');
           }
         } else if (statusType === 2) { // Stop
           const existing = await sessionRepo.find({
+            scope: { companyId: nasEntry.companyId },
             filters: [
               { field: 'acct_session_id', operator: '=', value: sessionId || '' },
               { field: 'is_active', operator: '=', value: true },
@@ -428,18 +466,19 @@ async function handleAccountingRequest(
                 session_time_seconds: acctSessionTime || 0,
                 terminate_cause: getAttrString(packet, RadiusAttributeType.AcctTerminateCause) || null,
                 is_active: false,
-                write_date: new Date().toISOString(),
               },
-              nasEntry.nasId || 1
+              { companyId: nasEntry.companyId },
+              SYSTEM_ACTOR
             );
             logger.info({ sessionId, username }, 'Session stopped');
           }
+        }
         }
       } catch (err) {
         logger.error({ err, sessionId, username }, 'Failed to store accounting session');
       }
     } else {
-      logger.warn('sentinel.session model not registered');
+      logger.warn('sentinel.session or sentinel.account model not registered');
       logger.info({ sessionId, username }, 'Accounting event recorded (stub)');
     }
   }
@@ -490,28 +529,18 @@ async function startSentinel() {
       // Resolve NAS
       const nasEntry = await resolveNasByIp(rinfo.address);
       if (!nasEntry) {
-        logger.warn({ ip: rinfo.address }, 'NAS not found - sending Access-Reject');
-        const reject = createAccessReject(packet, 'testing123', 'NAS not authorized');
-        authServer.send(reject, rinfo.port, rinfo.address);
+        // Drop and audit-log unregistered sources. We have no valid shared
+        // secret for them, so signing a reply would leak a guessable default.
+        logger.warn({ ip: rinfo.address, code: packet.code, identifier: packet.identifier }, 'Rejected RADIUS auth from unknown/inactive NAS (dropped)');
         return;
       }
-
-      // Verify Request Authenticator (basic check)
-      // In production, verify the request authenticator against the shared secret
-      // For now, we trust the packet
 
       // Handle authentication
       const response = await handleAccessRequest(packet, rinfo, nasEntry);
       authServer.send(response, rinfo.port, rinfo.address);
     } catch (err) {
-      logger.error({ err, ip: rinfo.address }, 'Auth packet processing failed');
-      // Send generic reject
-      const reject = createAccessReject(
-        { code: 0, identifier: 0, length: 0, authenticator: Buffer.alloc(16), attributes: [] },
-        'testing123',
-        'Malformed packet'
-      );
-      authServer.send(reject, rinfo.port, rinfo.address);
+      logger.error({ err, ip: rinfo.address }, 'Auth packet processing failed (dropped)');
+      // Malformed packets cannot be signed (no trusted secret); drop them.
     }
   });
 
@@ -542,10 +571,8 @@ async function startSentinel() {
       // Resolve NAS
       const nasEntry = await resolveNasByIp(rinfo.address);
       if (!nasEntry) {
-        logger.warn({ ip: rinfo.address }, 'NAS not found for accounting');
-        // Still send response to avoid retransmissions
-        const response = createAccountingResponse(packet, 'testing123');
-        acctServer.send(response, rinfo.port, rinfo.address);
+        // Drop and audit-log unregistered sources; no valid secret to sign with.
+        logger.warn({ ip: rinfo.address, code: packet.code, identifier: packet.identifier }, 'Rejected RADIUS accounting from unknown/inactive NAS (dropped)');
         return;
       }
 
@@ -553,13 +580,8 @@ async function startSentinel() {
       const response = await handleAccountingRequest(packet, rinfo, nasEntry);
       acctServer.send(response, rinfo.port, rinfo.address);
     } catch (err) {
-      logger.error({ err, ip: rinfo.address }, 'Acct packet processing failed');
-      // Still respond to stop retransmissions
-      const response = createAccountingResponse(
-        { code: 0, identifier: 0, length: 0, authenticator: Buffer.alloc(16), attributes: [] },
-        'testing123'
-      );
-      acctServer.send(response, rinfo.port, rinfo.address);
+      logger.error({ err, ip: rinfo.address }, 'Acct packet processing failed (dropped)');
+      // Malformed packets cannot be signed (no trusted secret); drop them.
     }
   });
 
@@ -572,9 +594,11 @@ async function startSentinel() {
   // Create HTTP server for metrics and health
   const http = await import('http');
   const httpServer = http.createServer(async (req, res) => {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    // CORS headers - only widen cross-origin access when explicitly configured.
+    if (METRICS_ORIGIN) {
+      res.setHeader('Access-Control-Allow-Origin', METRICS_ORIGIN);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -625,8 +649,8 @@ async function startSentinel() {
     res.end(JSON.stringify({ error: 'Not found' }));
   });
 
-  httpServer.listen(config.httpPort, '0.0.0.0', () => {
-    logger.info(`HTTP metrics/health listening on port ${config.httpPort}`);
+  httpServer.listen(config.httpPort, HTTP_HOST, () => {
+    logger.info(`HTTP metrics/health listening on ${HTTP_HOST}:${config.httpPort}`);
   });
 
   // Graceful shutdown

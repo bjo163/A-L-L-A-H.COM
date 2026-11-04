@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel } from "@moonwitness/ui";
 
 export const metadata = {
   title: "RIOT ANARCHY | Controlled Disruption",
@@ -8,83 +8,66 @@ export const metadata = {
 
 export default function RiotAnarchyPage() {
   return (
-    <div className="jizz-home">
+    <>
       <MotionFrame effect="enter">
-        <section className="jizz-hero" aria-labelledby="riot-title">
-          <div className="jizz-hero__copy">
-            <p className="jizz-kicker">RIOT ANARCHY / POSTER COLLISION / RUNTIME SURFACE</p>
-            <h1 id="riot-title">Controlled disruption with predictable order.</h1>
-            <p>
-              Hard print edges, poster contrast, and bounded asymmetry. DOM order, keyboard flow, and touch-safe
-              targets remain predictable despite the disruption.
-            </p>
-            <div className="jizz-hero__principle">
-              <span className="jizz-hero__node" aria-hidden="true" />
-              <span>Graphic collision without losing semantic structure.</span>
-            </div>
-            <div className="jizz-hero__actions">
-              <span className="jizz-hero__status">Issue / 00</span>
-              <span className="jizz-hero__status jizz-hero__status--outline">Poster index pending</span>
-            </div>
-          </div>
-          <figure className="jizz-hero__art">
-            <Image
-              src="/artwork/riot-anarchy.png"
-              alt=""
-              width={1600}
-              height={900}
-              priority
-              className="jizz-hero__image"
-            />
-            <figcaption className="jizz-hero__caption">
-              <span>RIOT ANARCHY / PRINT COLLISION</span>
-              <span>ISSUE / 00</span>
-            </figcaption>
-          </figure>
-        </section>
+        <PageHero
+          titleId="riot-title"
+          kicker="RIOT ANARCHY / POSTER COLLISION / RUNTIME SURFACE"
+          title="Controlled disruption with predictable order."
+          summary="Hard print edges, poster contrast, and bounded asymmetry. DOM order, keyboard flow, and touch-safe targets stay predictable: the collision is graphic, never structural."
+          actions={
+            <>
+              <Badge variant="active" dot>Issue / 00</Badge>
+              <Badge variant="default">Poster index pending</Badge>
+            </>
+          }
+          media={<Image src="/artwork/riot-anarchy.png" alt="" width={1600} height={900} priority />}
+          captionLeft="RIOT ANARCHY / PRINT COLLISION"
+          captionRight="ISSUE / 00"
+        />
       </MotionFrame>
 
       <section className="jizz-records" aria-labelledby="riot-records-title">
-        <div className="jizz-records__heading">
-          <div>
-            <p className="jizz-kicker">POSTER INDEX / IDLE</p>
-            <h2 id="riot-records-title">Graphic sequence</h2>
-          </div>
-          <Badge variant="gold">Bounded asymmetry</Badge>
-        </div>
+        <SectionHeading
+          titleId="riot-records-title"
+          kicker="POSTER INDEX / IDLE"
+          title="Graphic sequence"
+          trailing={<Badge variant="gold">Bounded asymmetry</Badge>}
+        />
+
         <div className="jizz-records__grid">
-          <Card>
+          <Card as="article">
             <CardHeader>
               <CardTitle>Issues</CardTitle>
               <CardDescription>Stamped content with real actions only.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="jizz-empty" role="status">
-                <span className="jizz-empty__glyph" aria-hidden="true" />
-                <div>
-                  <p className="jizz-empty__state">No issues loaded</p>
-                  <p>Content appears when a real source is attached.</p>
-                </div>
-              </div>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No issues loaded"
+                cause="This surface has no poster source attached yet."
+                nextAction="Issues appear when a real source is connected."
+              />
             </CardContent>
           </Card>
-          <Card>
+          <Card as="article">
             <CardHeader>
               <CardTitle>Interaction contract</CardTitle>
               <CardDescription>Keyboard, focus, and touch-safe controls are preserved.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="jizz-empty" role="status">
-                <span className="jizz-empty__glyph" aria-hidden="true" />
-                <div>
-                  <p className="jizz-empty__state">Ready</p>
-                  <p>Disruption is visual only; structure remains accessible.</p>
-                </div>
-              </div>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No control outstanding"
+                cause="Disruption is visual only; structure remains accessible."
+                nextAction="Open an issue to exercise the keyboard and touch paths."
+              />
             </CardContent>
           </Card>
         </div>
       </section>
-    </div>
+    </>
   );
 }

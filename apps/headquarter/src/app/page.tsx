@@ -1,7 +1,15 @@
-﻿import Image from "next/image";
-import Link from "next/link";
-import type { Metadata } from "next";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
+﻿import type { Metadata } from "next";
+import Image from "next/image";
+import {
+  Badge,
+  DestinationCard,
+  DestinationGrid,
+  LinkButton,
+  MotionFrame,
+  PageHero,
+  RouteShell,
+  SectionHeading,
+} from "@moonwitness/ui";
 
 export const metadata: Metadata = {
   title: "Overview | Headquarter",
@@ -17,55 +25,46 @@ const modules = [
 
 export default function HeadquarterHomePage() {
   return (
-    <div className="hq-home">
+    <RouteShell className="hq-home">
       <MotionFrame effect="enter">
-        <section className="hq-hero" aria-labelledby="hq-title">
-          <div className="hq-hero__copy">
-            <p className="hq-kicker">NEXUS PARADOX / OPERATIONS / COMMAND CENTER</p>
-            <h1 id="hq-title">Control plane for the MoonWitness ecosystem</h1>
-            <p className="hq-hero__summary">Dense, instrument-grade views for gateway routing, agent work, swarm coordination, tools, and knowledge.</p>
-            <div className="hq-hero__actions">
-              <Button asChild>
-                <Link href="/ai-gateway">Open AI Gateway</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/agent">Open Agent Studio</Link>
-              </Button>
-            </div>
-          </div>
-          <figure className="hq-hero__art">
-            <Image src="/artwork/nexus-paradox.png" alt="" width={1600} height={900} priority className="hq-hero__image" />
-            <figcaption className="hq-hero__caption"><span>NEXUS PARADOX / INSTRUMENT PLANE</span><span>01 / OPERATIONS</span></figcaption>
-          </figure>
-        </section>
+        <PageHero
+          titleId="hq-title"
+          kicker="NEXUS PARADOX / OPERATIONS / COMMAND CENTER"
+          title="Control plane for the MoonWitness ecosystem"
+          summary="Dense, instrument-grade views for gateway routing, agent work, swarm coordination, tools, and knowledge."
+          actions={
+            <>
+              <LinkButton href="/ai-gateway">Open AI Gateway</LinkButton>
+              <LinkButton href="/agent" variant="outline">Open Agent Studio</LinkButton>
+            </>
+          }
+          media={<Image src="/artwork/nexus-paradox.png" alt="" width={1600} height={900} priority />}
+          captionLeft="NEXUS PARADOX / INSTRUMENT PLANE"
+          captionRight="01 / OPERATIONS"
+        />
       </MotionFrame>
-      <section className="hq-grid" aria-labelledby="hq-modules-title">
-        <div className="hq-grid__header">
-          <div>
-            <p className="hq-kicker">MODULE INDEX / 05</p>
-            <h2 id="hq-modules-title">Operational modules</h2>
-          </div>
-          <Badge variant="gold">All routes preserved</Badge>
-        </div>
-        <div className="hq-grid__cards">
+
+      <section className="hq-modules" aria-labelledby="hq-modules-title">
+        <SectionHeading
+          titleId="hq-modules-title"
+          kicker="MODULE INDEX / 05"
+          title="Operational modules"
+          trailing={<Badge variant="gold">Five routes</Badge>}
+        />
+
+        <DestinationGrid label="Headquarter modules">
           {modules.map((module) => (
-            <Card key={module.href}>
-              <CardHeader>
-                <div className="hq-card__top">
-                  <span className="hq-card__index">{module.index}</span>
-                  <CardTitle>{module.name}</CardTitle>
-                </div>
-                <CardDescription>{module.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={module.href}>Open module</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            <DestinationCard
+              key={module.href}
+              index={module.index}
+              role="module"
+              title={module.name}
+              description={module.description}
+              href={module.href}
+            />
           ))}
-        </div>
+        </DestinationGrid>
       </section>
-    </div>
+    </RouteShell>
   );
 }

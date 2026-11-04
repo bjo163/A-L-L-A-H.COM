@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { JizzNavbar } from '@/components/navbar';
-import { SkipLink, SkinRoot } from '@moonwitness/ui';
+import { RouteShell, SkipLink, SkinRoot } from '@moonwitness/ui';
 import type { ReactNode } from 'react';
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -20,9 +20,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <SkinRoot skin="mycelium">
           <SkipLink />
           <JizzNavbar />
-          <main id="main-content" tabIndex={-1} className="jizz-page">
+          <RouteShell as="main" className="jizz-shell">
             {children}
-          </main>
+          </RouteShell>
         </SkinRoot>
       </body>
     </html>

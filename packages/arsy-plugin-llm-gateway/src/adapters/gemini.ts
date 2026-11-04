@@ -11,7 +11,7 @@ import type {
   ToolChoice,
   ToolCall,
 } from '../types';
-import { validateUrlSsrf } from '../ssrf';
+import { validateUrlSsrf, ssrfSafeDispatcher } from '../ssrf';
 
 export class GeminiAdapter implements ProviderAdapter {
   readonly slug: string;
@@ -64,6 +64,7 @@ export class GeminiAdapter implements ProviderAdapter {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        dispatcher: ssrfSafeDispatcher,
       });
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -194,6 +195,7 @@ export class GeminiAdapter implements ProviderAdapter {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -277,6 +279,7 @@ export class GeminiAdapter implements ProviderAdapter {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      dispatcher: ssrfSafeDispatcher,
     });
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

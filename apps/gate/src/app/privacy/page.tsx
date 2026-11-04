@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { RouteShell } from "@moonwitness/ui";
 import { GateNavbar } from "@/components/gate-navbar";
 import { InfoPageShell } from "@/components/info-page-shell";
 
@@ -12,14 +13,14 @@ export default function PrivacyPage() {
   return (
     <>
       <GateNavbar />
-      <main id="main-content" tabIndex={-1} className="gate-page">
+      <RouteShell as="main" className="gate-shell">
         <InfoPageShell
           title="Privasi"
           titleEn="Privacy"
           description="Data yang dikumpulkan, tidak ada pelacakan, hak Anda, dan kontak."
           descriptionEn="Data collected, no tracking, your rights, and contact."
         />
-      </main>
+      </RouteShell>
     </>
   );
 }

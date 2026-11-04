@@ -1,4 +1,5 @@
 import { ModelDefinition } from './model';
+import { singleton } from './singleton';
 
 export class ModelRegistry {
   private models = new Map<string, ModelDefinition>();
@@ -28,5 +29,5 @@ export class ModelRegistry {
   }
 }
 
-export const modelRegistry = new ModelRegistry();
+export const modelRegistry = singleton('modelRegistry', () => new ModelRegistry());
 

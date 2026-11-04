@@ -33,14 +33,14 @@ const ROLE_CONFIGS: Record<SwarmRole, WorkerRoleConfig> = {
   researcher: {
     role: 'researcher',
     systemPrompt:
-      'You are the Researcher Agent. Retrieve contextual schema, API contracts, and prior memories using qorpus_retrieve and pglite_query. Return findings for the builder.',
-    tools: ['qorpus_retrieve', 'pglite_query', 'web_fetch'],
+      'You are the Researcher Agent. Retrieve knowledge chunks with qorpus_retrieve and public pages with web_fetch. Return findings for the builder.',
+    tools: ['qorpus_retrieve', 'web_fetch'],
   },
   builder: {
     role: 'builder',
     systemPrompt:
       'You are the Builder Agent. Execute tools, generate code, and render SDUI components. Produce concrete artifacts for the verifier to check.',
-    tools: ['pglite_query', 'storage_cas', 'render_sdui', 'web_fetch'],
+    tools: ['storage_cas', 'render_sdui', 'web_fetch'],
   },
   verifier: {
     role: 'verifier',
@@ -53,7 +53,7 @@ const ROLE_CONFIGS: Record<SwarmRole, WorkerRoleConfig> = {
 interface SwarmMission {
   id: string;
   goal: string;
-  companyId: string;
+  companyId: number;
   maxTurns: number;
   allowedTools: string[];
   temperature: number;
@@ -93,7 +93,7 @@ export class SwarmCoordinator {
     return {
       id: `swarm_${crypto.randomBytes(6).toString('hex')}`,
       goal: request.goal,
-      companyId: request.company_id ?? 'default',
+      companyId: request.company_id,
       maxTurns,
       allowedTools: request.allowed_tools ?? [],
       temperature: request.temperature ?? 0.2,
@@ -232,7 +232,7 @@ export class SwarmCoordinator {
     if (toolCalls.length > 0) {
       for (const tc of toolCalls) {
         const result = await toolRegistry.execute(tc.name, tc.arguments, {
-          virtualKeyId: 1,
+          companyId: mission.companyId,
           actor: config.role,
         });
         const msg: SwarmAgentMessage = {

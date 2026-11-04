@@ -21,6 +21,7 @@ import {
   TableScroll,
   TableRow,
   Textarea,
+  StatusMessage,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type { McpTool, McpToolCallResult, ToolExecutionRecord } from '@moonwitness/types';
@@ -134,17 +135,17 @@ export default function ToolsPage() {
   return (
     <div className="hq-route hq-tools">
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 Tools & Model Context Protocol
               </h1>
               <Badge variant={mcpConnected ? 'active' : loading ? 'default' : 'revoked'} dot>
                 {loading ? 'CONNECTING' : mcpConnected ? 'MCP READY' : 'MCP UNAVAILABLE'}
               </Badge>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Native platform tools & MCP server for external agents & IDEs
             </p>
           </div>
@@ -159,10 +160,9 @@ export default function ToolsPage() {
         </div>
 
         {error && (
-          <div role="alert" className="p-4 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-center justify-between">
-            <span>{error}</span>
-            <Button variant="outline" size="sm" onClick={fetchTools}>Retry</Button>
-          </div>
+          <StatusMessage tone="danger" title="Tool registry unavailable" action={<Button variant="outline" size="sm" onClick={fetchTools}>Retry</Button>}>
+            {error}
+          </StatusMessage>
         )}
 
         {/* MCP Status Card */}
@@ -179,17 +179,17 @@ export default function ToolsPage() {
                 POST /v1/mcp/message &bull; GET /v1/mcp/sse
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 text-xs font-mono text-zinc-300">
+            <CardContent className="space-y-2 text-xs font-mono text-foreground">
               <div className="flex justify-between">
-                <span className="text-zinc-500">Ingress:</span>
+                <span className="text-muted-foreground">Ingress:</span>
                 <span className="truncate max-w-[260px]">/v1/mcp/message</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">Stream:</span>
+                <span className="text-muted-foreground">Stream:</span>
                 <span className="truncate max-w-[260px]">/v1/mcp/sse</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">Registered tools:</span>
+                <span className="text-muted-foreground">Registered tools:</span>
                 <span className="font-semibold">{tools.length}</span>
               </div>
             </CardContent>
@@ -199,31 +199,31 @@ export default function ToolsPage() {
         {/* Tool Registry Catalog */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Tool Registry Catalog</h2>
-            <span className="text-xs text-zinc-500 font-mono">{tools.length} native platform tool(s)</span>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Tool Registry Catalog</h2>
+            <span className="text-xs text-muted-foreground font-mono">{tools.length} native platform tool(s)</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {tools.length === 0 ? (
               <Card className="col-span-full">
                 <CardContent>
-                  <p className="text-xs text-zinc-500 text-center py-4">
+                  <p className="text-xs text-muted-foreground text-center py-4">
                     No tools registered. Ensure the Arsy gateway is running with the tools registry loaded.
                   </p>
                 </CardContent>
               </Card>
             ) : (
               tools.map((tool) => (
-                <Card key={tool.name} className="cursor-pointer hover:border-amber-500/40 transition-colors group">
+                <Card key={tool.name} className="cursor-pointer hover:border-accent transition-colors group">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium">{tool.name}</CardTitle>
                       <Badge variant="gold" dot>NATIVE</Badge>
                     </div>
-                    <CardDescription className="text-xs text-zinc-400">{tool.description}</CardDescription>
+                    <CardDescription className="text-xs text-muted-foreground">{tool.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="pt-2">
-                    <div className="text-[10px] text-zinc-500 font-mono mb-2">
+                    <div className="text-[10px] text-muted-foreground font-mono mb-2">
                       Schema: {Object.keys(tool.inputSchema?.properties || {}).join(', ') || 'none'}
                     </div>
                     <Button
@@ -242,11 +242,11 @@ export default function ToolsPage() {
         </section>
 
         {/* Interactive Tool Execution Sandbox */}
-        <section className="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-4">
+        <section className="p-6 rounded-xl bg-card border border-border space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-zinc-100">Tool Execution Sandbox</h2>
-              <p className="text-xs text-zinc-400">
+              <h2 className="text-base font-semibold text-foreground">Tool Execution Sandbox</h2>
+              <p className="text-xs text-muted-foreground">
                 Execute a registered platform tool through the MCP gateway with custom arguments.
               </p>
             </div>
@@ -290,7 +290,7 @@ export default function ToolsPage() {
           </div>
 
           {callError && (
-            <div role="alert" className="p-3 rounded bg-red-950/40 border border-red-800 text-red-300 text-xs">
+            <div role="alert" className="p-3 rounded bg-destructive/10 border border-destructive text-xs">
               {callError}
             </div>
           )}
@@ -298,10 +298,10 @@ export default function ToolsPage() {
           {callResult && (
             <Card className="overflow-hidden">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-zinc-100">Result</CardTitle>
+                <CardTitle className="text-xs font-medium text-foreground">Result</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800/80 text-xs font-mono text-zinc-200 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+                <div className="p-3 rounded-lg bg-card border border-border text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
                   {JSON.stringify(callResult, null, 2)}
                 </div>
               </CardContent>
@@ -312,15 +312,15 @@ export default function ToolsPage() {
         {/* Tool Execution Audit Log */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
               Tool Execution Audit Log
             </h2>
-            <span className="text-xs text-zinc-500 font-mono">
+            <span className="text-xs text-muted-foreground font-mono">
               Last {auditLog.length} execution record(s)
             </span>
           </div>
           {auditError && (
-             <p className="text-sm text-red-400" role="alert">
+             <p className="text-sm text-destructive" role="alert">
                Audit log unavailable: {auditError}
              </p>
           )}

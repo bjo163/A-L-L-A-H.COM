@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { RouteShell } from "@moonwitness/ui";
 import { GateNavbar } from "@/components/gate-navbar";
 import { JourneyNext } from "@/components/journey-next";
 
@@ -11,9 +12,9 @@ export default function JourneyPage() {
   return (
     <>
       <GateNavbar />
-      <main id="main-content" tabIndex={-1} className="gate-page">
+      <RouteShell as="main" className="gate-shell">
         <JourneyNext />
-      </main>
+      </RouteShell>
     </>
   );
 }

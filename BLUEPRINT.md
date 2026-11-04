@@ -18,7 +18,7 @@ Monorepo map → [AGENTS.md](AGENTS.md). Invariants → [AGENTS.md](AGENTS.md). 
 | Arsy Hub | `apps/arsy/` | 5150 | Backend authority: PGlite ORM · AI Gateway · CAS storage · SDUI · auth |
 | Dock | `apps/dock/` | 3001 | Public ecosystem homepage |
 | Headquarter | `apps/headquarter/` | 3002 | Command center · AI Gateway control · knowledge explorer |
-| MoonWitness ID | `apps/id/` | 3003 | Auth · registration · SSO |
+| MoonWitness ID | `apps/id/` | 3003 | Auth · first-run superuser onboarding · registration · SSO |
 | World Observatory | `apps/jizz/` | 3004 | Public intelligence observatory, ROCKSOUL JIZZ API |
 
 ## Platform Packages
@@ -36,7 +36,7 @@ Experience     apps/* · EcosystemNavbar · responsive · a11y
 MoonFrame      @moonwitness/ui · 6 DNA skins · SSR SkinRoot · typed tokens  → DESIGN.md
 Cognitive      ReAct agent loop · SDUI synthesis · SSE /v1/agent/stream · @allah/sdk
 Swarm          SwarmCoordinator(planner/researcher/builder/verifier) · /v1/swarm/* · consensus≤3→human
-Data           PGlite WASM · @allah/arsy-orm · company_id · fail-closed retention
+Data           PGlite WASM · @allah/arsy-orm · res.users identity · create_uid/write_uid · company_id · fail-closed retention
 Infra          GitHub Actions · GHCR · Coolify · /health · /ready
 ```
 
@@ -55,6 +55,7 @@ SDK: `mwClient.swarm.run()` / `mwClient.swarm.stream()`. Types: `SwarmStep` · `
 Workspace context: explicit consent required. File edits: reviewable before apply.
 Paired devices: poll missions outbound. Headquarter: manage devices/missions, no workspace path exposure.
 Tenant IDs: negative = personal, positive = org, zero = unassigned → [DECISIONS.md](DECISIONS.md) D-008.
+The ORM provisions one idempotent system identity (`bot`) for default/system-owned audit writes. First-run onboarding creates the initial `superuser`; ordinary registration is available after onboarding. Every persisted model row has required `create_uid` and `write_uid` references to `res.users`, assigned by the ORM or database audit triggers → [DECISIONS.md](DECISIONS.md) D-013.
 
 ## Delivery
 

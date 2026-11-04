@@ -7,6 +7,8 @@ import dgram from 'dgram';
 import './models/sentinel_account';
 import './models/sentinel_session';
 
+export * from './subscriber_password';
+
 /**
  * RADIUS Packet Codes (RFC 2865/2866)
  */

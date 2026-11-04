@@ -1,12 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { mwClient } from '@allah/sdk';
-import type { UserSubject, ActiveSession } from '@moonwitness/types';
-import { Avatar, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Link as MwLink, SessionCard, resolveEcosystemEndpoints, sfx } from '@moonwitness/ui';
-import { ShieldCheck, CheckCircle2, Layers, ExternalLink, Loader2 } from 'lucide-react';
+import type { ActiveSession, UserSubject } from '@moonwitness/types';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  DestinationCard,
+  DestinationGrid,
+  LinkButton,
+  RouteShell,
+  SectionHeading,
+  SessionCard,
+  StatePanel,
+  StatusMessage,
+  resolveEcosystemEndpoints,
+  sfx,
+  type StatusTone,
+} from '@moonwitness/ui';
 
 export default function AccountCenterPage() {
   const router = useRouter();
@@ -16,7 +30,7 @@ export default function AccountCenterPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<number | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ tone: StatusTone; text: string } | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -48,19 +62,22 @@ export default function AccountCenterPage() {
     try {
       await mwClient.auth.revokeSession(sessionId);
       sfx.revoke();
-      setMessage('Session remotely terminated');
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setStatus({ tone: 'success', text: 'Session terminated on the hub.' });
+      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
       const currentToken = mwClient.getSessionToken();
-      const targetSession = sessions.find(s => s.id === sessionId);
+      const targetSession = sessions.find((session) => session.id === sessionId);
       if (targetSession && targetSession.sessionToken === currentToken) {
         mwClient.clearSessionToken();
         router.push('/login');
       }
     } catch (error) {
-      setMessage(error instanceof Error ? `Unable to revoke session: ${error.message}` : 'Unable to revoke session.');
+      setStatus({
+        tone: 'danger',
+        text: error instanceof Error ? `Unable to revoke session: ${error.message}` : 'Unable to revoke session.',
+      });
     } finally {
       setRevokingId(null);
-      setTimeout(() => setMessage(null), 3000);
+      setTimeout(() => setStatus(null), 6000);
     }
   };
 
@@ -69,189 +86,145 @@ export default function AccountCenterPage() {
       await mwClient.auth.signOut();
       router.push('/login');
     } catch (error) {
-      setMessage(error instanceof Error ? `Unable to sign out: ${error.message}` : 'Unable to sign out.');
+      setStatus({
+        tone: 'danger',
+        text: error instanceof Error ? `Unable to sign out: ${error.message}` : 'Unable to sign out.',
+      });
     }
   };
 
   if (isLoading) {
     return (
-      <main id="main-content" tabIndex={-1} className="id-loading">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="text-xl font-semibold text-zinc-100">Account</h1>
-          <div className="flex flex-col items-center gap-3" role="status">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-            <p className="text-sm text-zinc-400">Loading Account Center...</p>
-          </div>
-        </div>
-      </main>
+      <RouteShell as="main" className="id-account-shell">
+        <StatePanel kind="loading" title="Account" cause="Reading the profile and its active sessions." />
+      </RouteShell>
     );
   }
 
   if (loadError) {
     return (
-      <main id="main-content" tabIndex={-1} className="id-loading">
-        <div className="w-full max-w-md space-y-4 rounded-2xl border border-red-500/30 bg-zinc-900/80 p-6">
-          <h1 className="text-xl font-semibold text-zinc-100">Account data unavailable</h1>
-          <p className="text-sm text-red-300" role="alert">{loadError}</p>
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={loadData} disabled={isLoading}>Try Again</Button>
-            <Button asChild variant="outline">
-              <Link href="/login">Go to Sign In</Link>
-            </Button>
-          </div>
-        </div>
-      </main>
+      <RouteShell as="main" className="id-account-shell">
+        <StatePanel
+          kind="error"
+          title="Account data unavailable"
+          cause={loadError}
+          nextAction="Retry the read, or sign in again if the session has expired."
+          action={
+            <>
+              <Button variant="outline" onClick={() => void loadData()}>
+                Try again
+              </Button>
+              <LinkButton href="/login">Sign in</LinkButton>
+            </>
+          }
+        />
+      </RouteShell>
     );
   }
 
   return (
-    <main id="main-content" tabIndex={-1} className="id-account-page">
-      <div className="id-account-content">
-        {message && (
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{message}</span>
-          </div>
-        )}
+    <RouteShell as="main" className="id-account-shell">
+      {status && (
+        <StatusMessage tone={status.tone} title={status.tone === 'danger' ? 'Action failed' : 'Action confirmed'}>
+          {status.text}
+        </StatusMessage>
+      )}
 
-        <section className="id-account-profile p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <Avatar size="lg" name={user?.name} />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-zinc-100">{user?.name || 'Account overview'}</h1>
-                <Badge variant="active" dot>Active ID</Badge>
-              </div>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">{user?.email}</p>
-              <p className="text-[11px] text-zinc-500 mt-1">Universal Subject #{user?.id}</p>
+      <Card as="section" className="id-account-profile">
+        <div className="id-account-profile__identity">
+          <Avatar size="lg" name={user?.name} />
+          <div>
+            <div className="id-account-profile__name-row">
+              <h1 className="id-account-profile__name">{user?.name || 'Account overview'}</h1>
+              <Badge variant="active" dot>Active ID</Badge>
             </div>
+            <p className="id-account-profile__email">{user?.email}</p>
+            <p className="id-account-profile__subject">Universal Subject #{user?.id}</p>
           </div>
+        </div>
 
-          <div className="flex flex-wrap gap-2 text-xs">
-            <div className="px-3 py-2 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-300">
-              <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Authority</span>
-              Fastify Hub
-            </div>
-            <div className="px-3 py-2 rounded-xl bg-zinc-950/60 border border-zinc-800 text-zinc-300">
-              <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Client SDK</span>
-              @allah/sdk
-            </div>
+        <dl className="id-account-facts">
+          <div>
+            <dt>Authority</dt>
+            <dd>Fastify Hub</dd>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
+          <div>
+            <dt>Client SDK</dt>
+            <dd>@allah/sdk</dd>
+          </div>
+        </dl>
+
+        <Button variant="outline" onClick={handleSignOut}>
+          Sign out
+        </Button>
+      </Card>
+
+      <div className="id-account-columns">
+        <section className="id-account-sessions" aria-labelledby="id-sessions-title">
+          <SectionHeading
+            title="Active sessions and device grants"
+            titleId="id-sessions-title"
+            description="Revocation is applied on the hub, so a terminated device stops working on every destination."
+            trailing={<Badge variant="default">{sessions.length} active</Badge>}
+          />
+
+          {sessions.length === 0 ? (
+            <StatePanel
+              kind="empty"
+              cause="No device is holding a session for this account."
+              nextAction="Signing in from a new device adds it here, where you can revoke it again."
+            />
+          ) : (
+            <div className="id-account-sessions__list">
+              {sessions.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  id={session.id}
+                  deviceName={session.deviceName}
+                  ipAddress={session.ipAddress}
+                  expiresAt={session.expiresAt}
+                  isCurrent={session.isCurrent}
+                  isLoading={revokingId === session.id}
+                  onRevoke={handleRevoke}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <section className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-400" />
-                  Active Sessions & Device Grants
-                </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Remote session revocation state maintained in Arsy PGlite engine
-                </p>
-              </div>
-              <span className="text-xs font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-                {sessions.length} Active
-              </span>
-            </div>
+        <section className="id-account-consumers" aria-labelledby="id-consumers-title">
+          <SectionHeading
+            title="Ecosystem destinations"
+            titleId="id-consumers-title"
+            description="Federated endpoints that accept this identity."
+            as="h2"
+          />
 
-            <div className="space-y-3">
-              {sessions.length === 0 ? (
-                <p className="text-sm text-zinc-400" role="status">
-                  No active sessions are registered for this account.
-                </p>
-              ) : (
-                sessions.map((sess) => (
-                  <SessionCard
-                    key={sess.id}
-                    id={sess.id}
-                    deviceName={sess.deviceName}
-                    ipAddress={sess.ipAddress}
-                    expiresAt={sess.expiresAt}
-                    isCurrent={sess.isCurrent}
-                    isLoading={revokingId === sess.id}
-                    onRevoke={handleRevoke}
-                  />
-                ))
-              )}
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-400" />
-                Ecosystem Consumers
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Federated standalone endpoints
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>MoonWitness Dock</CardTitle>
-                    <Badge variant="default">Discovery</Badge>
-                  </div>
-                  <CardDescription>Public discovery & client presentation</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-400 font-medium">Open workspace</span>
-                    <MwLink href={endpoints.dock} external>
-                      <span>Launch</span>
-                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                    </MwLink>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>MoonWitness HQ</CardTitle>
-                    <Badge variant="default">Operations</Badge>
-                  </div>
-                  <CardDescription>Enterprise operations & command center</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-400 font-medium">Open workspace</span>
-                    <MwLink href={endpoints.headquarter} external>
-                      <span>Launch</span>
-                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                    </MwLink>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>WORLD OBSERVATORY</CardTitle>
-                    <Badge variant="default">Research</Badge>
-                  </div>
-                  <CardDescription>Source-grounded observation workspace</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-400 font-medium">Open workspace</span>
-                    <MwLink href={endpoints.jizz} external>
-                      <span>Launch</span>
-                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                    </MwLink>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-        </div>
+          <DestinationGrid label="Ecosystem destinations">
+            <DestinationCard
+              role="discovery"
+              title="MoonWitness Dock"
+              description="Public discovery and client presentation."
+              href={endpoints.dock}
+              external
+            />
+            <DestinationCard
+              role="operations"
+              title="MoonWitness HQ"
+              description="Enterprise operations and command center."
+              href={endpoints.headquarter}
+              external
+            />
+            <DestinationCard
+              role="research"
+              title="World Observatory"
+              description="Source-grounded observation workspace."
+              href={endpoints.jizz}
+              external
+            />
+          </DestinationGrid>
+        </section>
       </div>
-    </main>
+    </RouteShell>
   );
 }

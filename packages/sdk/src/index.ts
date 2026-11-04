@@ -16,6 +16,7 @@ import type {
   ToolExecutionRecord,
   AgentMode,
   AgentSessionEvent,
+  AgentRunInput,
   PairedAgentDevice,
   RemoteAgentMission,
 } from '@moonwitness/types';
@@ -197,6 +198,17 @@ export class MoonWitnessClient {
 
   // Auth Operations
   readonly auth = {
+    getOnboardingStatus: async (): Promise<{ available: boolean }> => {
+      return this.request<{ available: boolean }>('/api/auth/onboarding/status');
+    },
+
+    onboard: async (payload: { email: string; password: string; name: string }): Promise<{ user: UserSubject }> => {
+      return this.request<{ user: UserSubject }>('/api/auth/onboarding', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
     signIn: async (credentials: { email: string; password: string; deviceName?: string }): Promise<AuthResponse> => {
       const data = await this.request<AuthResponse>('/api/auth/sign-in', {
         method: 'POST',
@@ -692,13 +704,7 @@ export class MoonWitnessClient {
 
   // Autonomous Cognitive Agent Loop
   readonly agent = {
-    run: async (options: {
-      prompt: string;
-      system?: string;
-      max_steps?: number;
-      allowed_tools?: string[];
-      temperature?: number;
-    }): Promise<{
+    run: async (options: AgentRunInput): Promise<{
       session_id: string;
       success: boolean;
       total_steps: number;
@@ -715,13 +721,7 @@ export class MoonWitnessClient {
     },
 
     stream: async (
-      options: {
-        prompt: string;
-        system?: string;
-        max_steps?: number;
-        allowed_tools?: string[];
-        temperature?: number;
-      },
+      options: AgentRunInput,
       onEvent: (event: string, data: any) => void
     ): Promise<void> => {
       const token = await this.getSessionTokenForRequest();

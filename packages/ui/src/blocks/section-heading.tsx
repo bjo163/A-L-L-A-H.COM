@@ -9,7 +9,8 @@ export interface SectionHeadingProps {
   /** Filter controls, a count, or a Link that belongs to the section rather than the page. */
   trailing?: React.ReactNode;
   titleId?: string;
-  as?: 'h2' | 'h3';
+  /** "h1" when the section heading is also the page title. */
+  as?: 'h1' | 'h2' | 'h3';
   className?: string;
 }
 

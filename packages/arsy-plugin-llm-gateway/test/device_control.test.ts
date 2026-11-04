@@ -14,7 +14,7 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
   const require = createRequire(resolve(process.cwd(), 'device-control.test.cjs'));
   const Fastify = require('fastify') as typeof import('fastify');
   const bcrypt = require('bcryptjs') as typeof import('bcryptjs');
-  const { BaseRepository, dbEngine, modelRegistry } = require('@allah/arsy-orm') as typeof import('@allah/arsy-orm');
+  const { BaseRepository, SYSTEM_ACTOR, dbEngine, modelRegistry } = require('@allah/arsy-orm') as typeof import('@allah/arsy-orm');
   const { authPlugin } = require('@allah/arsy-plugin-auth') as typeof import('@allah/arsy-plugin-auth');
   const { deviceControlPlugin } = require('@allah/arsy-plugin-llm-gateway') as typeof import('../src');
   await dbEngine.connect();
@@ -22,13 +22,24 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
 
   const createSession = async (email: string, companyId: number): Promise<string> => {
     const userModel = modelRegistry.get('auth.user');
+    const resUserModel = modelRegistry.get('res.users');
     assert.ok(userModel);
+    assert.ok(resUserModel);
+    const ormUser = await new BaseRepository(resUserModel).create({
+      company_id: companyId,
+      email,
+      name: email,
+      password: '[MANAGED_BY_AUTH_USER]',
+      role: 'user',
+    }, { systemScope: true }, SYSTEM_ACTOR) as { id: number };
     await new BaseRepository(userModel).create({
+      company_id: companyId,
+      res_user_id: ormUser.id,
       email,
       password_hash: await bcrypt.hash('test-password-only', 4),
       name: email,
       status: 'active',
-    }, companyId);
+    }, { systemScope: true }, SYSTEM_ACTOR);
     const response = await app.inject({
       method: 'POST',
       url: '/api/auth/sign-in',
@@ -44,6 +55,66 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     await app.register(authPlugin, { prefix: '/api/auth' });
     await app.register(deviceControlPlugin, { prefix: '/v1' });
     await app.ready();
+
+    const resUserModel = modelRegistry.get('res.users');
+    const authUserModel = modelRegistry.get('auth.user');
+    assert.ok(resUserModel);
+    assert.ok(authUserModel);
+    const bots = await new BaseRepository(resUserModel).find({
+      scope: { systemScope: true },
+      filters: [{ field: 'system_key', operator: '=', value: 'bot' }],
+      limit: 2,
+    }) as Array<{ id: number; role: string; name: string }>;
+    assert.equal(bots.length, 1);
+    assert.equal(bots[0].role, 'system');
+    const botId = Number(bots[0].id);
+
+    const onboarding = await app.inject({
+      method: 'POST',
+      url: '/api/auth/onboarding',
+      payload: {
+        name: 'Initial Owner',
+        email: 'initial-owner@example.test',
+        password: 'initial-owner-password',
+      },
+    });
+    assert.equal(onboarding.statusCode, 201, onboarding.payload);
+    const initialUsers = await new BaseRepository(authUserModel).find({
+      scope: { systemScope: true },
+      filters: [{ field: 'email', operator: '=', value: 'initial-owner@example.test' }],
+      limit: 1,
+    }) as Array<{ id: number; res_user_id: number; create_uid: number; write_uid: number }>;
+    assert.equal(initialUsers.length, 1);
+    assert.equal(
+      Number(initialUsers[0].id),
+      Number(onboarding.json<ApiResponse<{ user: { id: number } }>>().data.user.id)
+    );
+    assert.equal(Number(initialUsers[0].create_uid), botId);
+    assert.equal(Number(initialUsers[0].write_uid), botId);
+    const initialOrmUser = await new BaseRepository(resUserModel).findById(
+      initialUsers[0].res_user_id,
+      { systemScope: true }
+    ) as { role: string } | null;
+    assert.equal(initialOrmUser?.role, 'superuser');
+
+    const directInsert = await dbEngine.query<{ create_uid: number; write_uid: number }>(
+      `INSERT INTO "auth_setup" ("company_id", "key", "completed")
+       VALUES (0, 'audit-trigger-test', false)
+       RETURNING "create_uid", "write_uid";`
+    );
+    assert.equal(Number(directInsert[0].create_uid), botId);
+    assert.equal(Number(directInsert[0].write_uid), botId);
+
+    const repeatedOnboarding = await app.inject({
+      method: 'POST',
+      url: '/api/auth/onboarding',
+      payload: {
+        name: 'Second Owner',
+        email: 'second-owner@example.test',
+        password: 'second-owner-password',
+      },
+    });
+    assert.equal(repeatedOnboarding.statusCode, 409);
 
     const registration = await app.inject({
       method: 'POST',
@@ -61,6 +132,7 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     const personalUserModel = modelRegistry.get('auth.user');
     assert.ok(personalUserModel);
     const personalUser = await new BaseRepository(personalUserModel).find({
+      scope: { systemScope: true },
       filters: [{ field: 'email', operator: '=', value: 'new-account@example.test' }],
       limit: 1,
     }) as Array<{ id: number; company_id: number }>;
@@ -81,6 +153,7 @@ test('paired devices and missions remain tenant-scoped and revocable', { timeout
     assert.equal(secondPersonalSignIn.statusCode, 200);
     const secondPersonalToken = secondPersonalSignIn.json<ApiResponse<{ sessionToken: string }>>().data.sessionToken;
     const secondPersonalUser = await new BaseRepository(personalUserModel).find({
+      scope: { systemScope: true },
       filters: [{ field: 'email', operator: '=', value: 'second-personal@example.test' }],
       limit: 1,
     }) as Array<{ id: number; company_id: number }>;

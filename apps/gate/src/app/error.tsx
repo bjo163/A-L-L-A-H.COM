@@ -9,21 +9,23 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <RouteShell as="main">
+    <RouteShell as="main" className="gate-shell">
       <StatePanel
         kind="error"
+        label="Masalah"
+        title="Halaman ini tidak dapat ditampilkan"
         cause={
           error.digest
-            ? `This page of the Gate stopped rendering. Support reference: ${error.digest}.`
-            : 'This page of the Gate stopped rendering.'
+            ? `Tampilan berhenti dimuat. Referensi dukungan: ${error.digest}.`
+            : 'Tampilan berhenti dimuat.'
         }
-        nextAction="Try the page again. If it keeps failing, return to the entrance."
+        nextAction="Muat ulang halaman ini. Jika terus gagal, kembali ke gerbang."
         action={
           <>
             <Button variant="outline" onClick={reset}>
-              Try again
+              Coba lagi
             </Button>
-            <LinkButton href="/">Back to entrance</LinkButton>
+            <LinkButton href="/">Kembali ke gerbang</LinkButton>
           </>
         }
       />

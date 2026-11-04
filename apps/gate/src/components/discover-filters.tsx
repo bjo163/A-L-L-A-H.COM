@@ -1,168 +1,173 @@
 'use client';
 
+import { useMemo, useState } from "react";
 import {
   Badge,
   Button,
   Card,
-  LinkButton,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   MotionFrame,
-  RawCluster,
-  RawContainer,
-  RawGrid,
-  RawStack,
+  SectionHeading,
+  StatePanel,
 } from "@moonwitness/ui";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
-import { getWorlds, getTransmissions, type StoryWorld, type Transmission } from "@/lib/content-manifest";
-import { useState, useMemo } from "react";
+import { getTransmissions, getWorlds } from "@/lib/content-manifest";
 
 interface DiscoverFiltersProps {
   locale?: "id" | "en";
 }
 
+type FilterCategory = "theme" | "format" | "source";
+
+interface DiscoverItem {
+  key: string;
+  theme: string;
+  format: "story" | "transmission";
+  source: string;
+  title: string;
+  description: string;
+  label: string;
+}
+
 export function DiscoverFilters({ locale = "id" }: DiscoverFiltersProps) {
   const { t } = useTranslationCatalog(locale);
+  const en = locale === "en";
   const worlds = getWorlds();
   const transmissions = getTransmissions();
 
-  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({
+  const [activeFilters, setActiveFilters] = useState<Record<FilterCategory, string[]>>({
     theme: [],
     format: [],
-    time: [],
     source: [],
   });
 
-  const themes = useMemo(() => [...new Set(worlds.map((w) => w.category))], [worlds]);
-  const formats = ["story", "transmission", "research", "creative"];
-  const sources = useMemo(() => [...new Set(transmissions.map((t) => t.provenance.sourceType))], [transmissions]);
+  const items = useMemo<DiscoverItem[]>(() => [
+    ...worlds.map((world) => ({
+      key: `world-${world.id}`,
+      theme: world.category,
+      format: "story" as const,
+      source: "narrative",
+      title: world.title,
+      description: en ? world.bodyEN : world.bodyID,
+      label: `${world.worldLabel} / ${en ? "World" : "Dunia"} ${world.index}`,
+    })),
+    ...transmissions.map((transmission) => ({
+      key: `tx-${transmission.id}`,
+      theme: transmission.series,
+      format: "transmission" as const,
+      source: transmission.provenance.sourceType,
+      title: transmission.title,
+      description: en ? transmission.excerptEN : transmission.excerptID,
+      label: `${transmission.series} / ${en ? "Chapter" : "Bab"} ${transmission.chapter}`,
+    })),
+  ], [worlds, transmissions, en]);
 
-  const filteredItems = useMemo(() => {
-    const worldItems = worlds.map((w) => ({ type: "world" as const, ...w }));
-    const transmissionItems = transmissions.map((t) => ({ type: "transmission" as const, ...t }));
-    return [...worldItems, ...transmissionItems];
-  }, [worlds, transmissions]);
+  const options = useMemo(() => ({
+    theme: [...new Set(items.map((item) => item.theme))],
+    format: [...new Set(items.map((item) => item.format))],
+    source: [...new Set(items.map((item) => item.source))],
+  }), [items]);
 
-  const toggleFilter = (category: string, value: string) => {
-    setActiveFilters((prev) => {
-      const current = prev[category] || [];
-      const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
-      return { ...prev, [category]: next };
-    });
+  const visible = items.filter((item) => (Object.keys(activeFilters) as FilterCategory[]).every((category) => {
+    const selected = activeFilters[category];
+    return selected.length === 0 || selected.includes(item[category]);
+  }));
+
+  const activeCount = Object.values(activeFilters).reduce((total, values) => total + values.length, 0);
+
+  const toggleFilter = (category: FilterCategory, value: string) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [category]: prev[category].includes(value)
+        ? prev[category].filter((entry) => entry !== value)
+        : [...prev[category], value],
+    }));
   };
-
-  const hasActiveFilters = Object.values(activeFilters).some((arr) => arr.length > 0);
 
   return (
     <section className="gate-section" aria-labelledby="discover-title">
-      <div className="gate-section__heading">
-        <div>
-          <p className="gate-kicker">{t("discover.title")}</p>
-          <h2 id="discover-title">{t("discover.description")}</h2>
-        </div>
-      </div>
+      <SectionHeading titleId="discover-title" kicker={t("discover.title")} title={t("discover.description")} />
 
-      {/* Filter Panel */}
       <MotionFrame effect="enter">
-        <RawContainer>
-          <Card style={{ marginBottom: "2rem" }}>
-            <RawStack data-gap="regular">
-              <h3 style={{ margin: 0, fontFamily: "var(--mw-font-heading)", color: "var(--mw-text)" }}>
-                {locale === "id" ? "Saring Hasil" : "Filter Results"}
-              </h3>
-              
-              <RawStack data-gap="regular">
-                {/* Theme Filter */}
-                <RawStack gap="tight" role="group" aria-labelledby="filter-theme-label">
-                  <p id="filter-theme-label" style={{ margin: "0 0 0.5rem", fontFamily: "var(--mw-font-label)", fontWeight: 600 }}>
-                    {t("discover.theme")}
-                  </p>
-                  <RawCluster gap="tight" style={{ flexWrap: "wrap" }}>
-                    {themes.map((theme) => (
+        <Card as="section" aria-labelledby="discover-filter-title">
+          <CardHeader>
+            <CardTitle id="discover-filter-title">{en ? "Filter results" : "Saring hasil"}</CardTitle>
+            <CardDescription>
+              {en
+                ? `${visible.length} of ${items.length} archived items match the current selection.`
+                : `${visible.length} dari ${items.length} arsip sesuai pilihan saat ini.`}
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="gate-list">
+              {(["theme", "format", "source"] as FilterCategory[]).map((category) => (
+                <div key={category} role="group" aria-labelledby={`filter-${category}-label`}>
+                  <p className="gate-label" id={`filter-${category}-label`}>{t(`discover.${category}`)}</p>
+                  <div className="gate-actions">
+                    {options[category].map((value) => (
                       <Button
-                        key={theme}
+                        key={value}
                         type="button"
                         size="sm"
-                        variant={activeFilters.theme.includes(theme) ? "default" : "outline"}
-                        onClick={() => toggleFilter("theme", theme)}
+                        variant={activeFilters[category].includes(value) ? "default" : "outline"}
+                        aria-pressed={activeFilters[category].includes(value)}
+                        onClick={() => toggleFilter(category, value)}
                       >
-                        {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                        {value}
                       </Button>
                     ))}
-                  </RawCluster>
-                </RawStack>
+                  </div>
+                </div>
+              ))}
 
-                {/* Format Filter */}
-                <RawStack gap="tight" role="group" aria-labelledby="filter-format-label">
-                  <p id="filter-format-label" style={{ margin: "0 0 0.5rem", fontFamily: "var(--mw-font-label)", fontWeight: 600 }}>
-                    {t("discover.format")}
-                  </p>
-                  <RawCluster gap="tight" style={{ flexWrap: "wrap" }}>
-                    {formats.map((format) => (
-                      <Button
-                        key={format}
-                        type="button"
-                        size="sm"
-                        variant={activeFilters.format.includes(format) ? "default" : "outline"}
-                        onClick={() => toggleFilter("format", format)}
-                      >
-                        {format.charAt(0).toUpperCase() + format.slice(1)}
-                      </Button>
-                    ))}
-                  </RawCluster>
-                </RawStack>
-
-                {/* Source Filter */}
-                <RawStack gap="tight" role="group" aria-labelledby="filter-source-label">
-                  <p id="filter-source-label" style={{ margin: "0 0 0.5rem", fontFamily: "var(--mw-font-label)", fontWeight: 600 }}>
-                    {t("discover.source")}
-                  </p>
-                  <RawCluster gap="tight" style={{ flexWrap: "wrap" }}>
-                    {sources.map((source) => (
-                      <Button
-                        key={source}
-                        type="button"
-                        size="sm"
-                        variant={activeFilters.source.includes(source) ? "default" : "outline"}
-                        onClick={() => toggleFilter("source", source)}
-                      >
-                        {source.charAt(0).toUpperCase() + source.slice(1)}
-                      </Button>
-                    ))}
-                  </RawCluster>
-                </RawStack>
-              </RawStack>
-
-              {hasActiveFilters && (
+              {activeCount > 0 && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setActiveFilters({ theme: [], format: [], time: [], source: [] })}
-                  style={{ alignSelf: "flex-start" }}
+                  className="gate-actions__start"
+                  onClick={() => setActiveFilters({ theme: [], format: [], source: [] })}
                 >
-                  {locale === "id" ? "Hapus Semua Filter" : "Clear All Filters"}
+                  {en ? `Clear ${activeCount} filters` : `Hapus ${activeCount} filter`}
                 </Button>
               )}
-            </RawStack>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Results */}
-          <div aria-live="polite" aria-label={locale === "id" ? "Hasil filter" : "Filter results"}>
-            {hasActiveFilters ? (
-              <Card style={{ textAlign: "center", padding: "3rem" }}>
-                <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>
-                  {t("discover.noResults")}
-                </p>
-                <LinkButton href="/explore" variant="outline" size="sm" style={{ marginTop: "1.5rem" }}>
-                  {locale === "id" ? "Jelajahi Indeks Lengkap" : "Browse Full Index"}
-                </LinkButton>
-              </Card>
-            ) : (
-              <p style={{ textAlign: "center", color: "var(--mw-muted-text)", padding: "2rem" }}>
-                {locale === "id" ? "Pilih filter di atas untuk menemukan konten yang relevan." : "Select filters above to discover relevant content."}
-              </p>
-            )}
-          </div>
-        </RawContainer>
+        <div aria-live="polite" className="gate-list">
+          {visible.map((item) => (
+            <Card as="article" key={item.key}>
+              <CardHeader>
+                <CardDescription>{item.label}</CardDescription>
+                <CardTitle as="h3">{item.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="gate-copy">{item.description}</p>
+                <div className="gate-actions">
+                  <Badge variant="default">{item.format}</Badge>
+                  <Badge variant="gold">{item.source}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {visible.length === 0 && (
+            <StatePanel
+              kind="empty"
+              title={en ? "Nothing matches these filters" : "Tidak ada yang sesuai filter ini"}
+              cause={activeCount > 0
+                ? t("discover.noResults")
+                : (en ? "The archive holds no items yet." : "Arsip belum berisi item.")}
+              nextAction={activeCount > 0
+                ? (en ? "Clear a filter to widen the search." : "Hapus salah satu filter untuk memperluas hasil.")
+                : (en ? "Publish a world or transmission to make it discoverable." : "Terbitkan dunia atau transmisi agar bisa ditemukan.")}
+            />
+          )}
+        </div>
       </MotionFrame>
     </section>
   );

@@ -473,7 +473,7 @@ function listAppDirs() {
 // Application stylesheets resolve colour and type through the skin tokens, never literals.
 function checkStylePurity(baseline) {
   const allowed = baseline.STYLE_PURITY || {};
-  const colourLiteral = /#\h{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|hwb)\(/;
+  const colourLiteral = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|hwb)\(/;
   const legacyVar = /^\s*--(?:background|foreground)\s*:/;
   const fallbackFont = /font-family:[^;]*\b(?:Arial|Helvetica|system-ui|-apple-system)\b/;
 
@@ -522,7 +522,7 @@ function checkStylePurity(baseline) {
 // Colour and type must not be painted inline, because an inline style cannot be themed by a skin.
 function checkInlineStylePurity(baseline) {
   const allowed = baseline.INLINE_STYLE_PURITY || {};
-  const paintKey = /(?:color|background|background-color|border|border-color|borderBlockEndColor|fontFamily)\s*:/;
+  const paintKey = /(?:\bcolor|\bbackground[A-Za-z-]*|\bborder[A-Za-z-]*|\boutline[A-Za-z-]*|\bfill|\bstroke|\bfontFamily|\baccentColor)\s*:/;
 
   for (const appName of listAppDirs()) {
     const files = collectFiles(path.join(ROOT_DIR, 'apps', appName), ['.tsx', '.jsx']);

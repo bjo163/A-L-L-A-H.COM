@@ -26,7 +26,12 @@ export class QorpusRetrieveTool implements Tool {
     required: ['query'],
   };
 
-  async execute(args: Record<string, unknown>, _context?: ToolContext): Promise<ToolResult> {
+  async execute(args: Record<string, unknown>, context?: ToolContext): Promise<ToolResult> {
+    const companyId = Number(context?.companyId);
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
+      return { success: false, error: 'TENANT_REQUIRED: a verified tenant is required', output: null };
+    }
+
     const query = typeof args.query === 'string' ? args.query : '';
     const limit = typeof args.limit === 'number' && args.limit > 0 ? args.limit : 5;
     const minScore = typeof args.min_score === 'number' ? args.min_score : 0.7;
@@ -49,8 +54,8 @@ export class QorpusRetrieveTool implements Tool {
       const docRepo = new BaseRepository(docModel);
       const chunkRepo = new BaseRepository(chunkModel);
 
-      const docs = (await docRepo.find({ limit: 100 })) as any[];
-      const chunks = (await chunkRepo.find({ limit: 1000 })) as any[];
+      const docs = (await docRepo.find({ scope: { companyId }, limit: 100 })) as any[];
+      const chunks = (await chunkRepo.find({ scope: { companyId }, limit: 1000 })) as any[];
 
       const queryLower = query.toLowerCase();
       const queryTerms = queryLower.split(/\s+/).filter(Boolean);

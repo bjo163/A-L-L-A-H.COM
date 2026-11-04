@@ -46,12 +46,17 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5150
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/arsy ./apps/arsy
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/packages ./packages
+COPY --from=builder --chown=node:node /app/apps/arsy ./apps/arsy
 
 WORKDIR /app/apps/arsy
 
+# /health and /ready are the only public routes, so the probe needs no credentials.
+USER node
 EXPOSE 5150
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1 || exit 1
 
 CMD ["pnpm", "start"]

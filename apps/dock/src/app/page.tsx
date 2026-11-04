@@ -2,8 +2,20 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { EcosystemNavbar, Link, MotionFrame, StatusMessage, resolveEcosystemEndpoints } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
+import {
+  DestinationCard,
+  DestinationGrid,
+  EcosystemNavbar,
+  LinkButton,
+  MotionFrame,
+  PageHero,
+  RouteShell,
+  SectionHeading,
+  StatusMessage,
+  resolveEcosystemEndpoints,
+  type EcosystemAppEndpoints,
+} from '@moonwitness/ui';
 
 const destinations = [
   {
@@ -11,27 +23,28 @@ const destinations = [
     name: 'Headquarter',
     role: 'Operations',
     description: 'Inspect the gateway, agent tools, and knowledge workspace.',
-    href: 'http://localhost:3002',
+    href: (endpoints: EcosystemAppEndpoints) => endpoints.headquarter,
   },
   {
     number: '02',
     name: 'MoonWitness ID',
     role: 'Identity',
     description: 'Manage your account and active device sessions.',
-    href: 'http://localhost:3003/account',
+    href: (endpoints: EcosystemAppEndpoints) => `${endpoints.id}${endpoints.accountPath}`,
   },
   {
     number: '03',
-    name: 'WORLD OBSERVATORY',
+    name: 'World Observatory',
     role: 'Research',
     description: 'Explore a source-grounded intelligence workspace.',
-    href: 'http://localhost:3004',
+    href: (endpoints: EcosystemAppEndpoints) => endpoints.jizz,
   },
 ];
 
 export default function DockHomePage() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const endpoints = resolveEcosystemEndpoints(process.env);
 
   useEffect(() => {
     mwClient.auth.getCurrentUser()
@@ -56,14 +69,14 @@ export default function DockHomePage() {
   return (
     <>
       <EcosystemNavbar
-        apps={resolveEcosystemEndpoints(process.env)}
+        apps={endpoints}
         currentApp="dock"
         userName={user?.name}
         userEmail={user?.email}
         onSignOut={handleSignOut}
       />
 
-      <main id="main-content" tabIndex={-1} className="dock-page">
+      <RouteShell as="main" className="dock-shell">
         {authNotice && (
           <StatusMessage tone="warning" title="Session status">
             {authNotice}
@@ -71,57 +84,41 @@ export default function DockHomePage() {
         )}
 
         <MotionFrame effect="enter">
-          <section className="dock-hero" aria-labelledby="dock-title">
-            <div className="dock-hero__copy">
-              <p className="dock-kicker">A-L-L-A-H.COM / ENTRY / IMPERIUM LUMEN</p>
-              <h1 id="dock-title">A platform with room to explore.</h1>
-              <p className="dock-hero__summary">
-                Enter the MoonWitness ecosystem through a clear map of its discovery, identity, operations,
-                and observatory spaces.
-              </p>
-              <Link className="dock-hero__link" href="#dock-index-title">
-                Explore destinations
-              </Link>
-            </div>
-            <figure className="dock-hero__art">
-              <Image
-                src="/artwork/imperium-lumen.png"
-                alt=""
-                width={1600}
-                height={900}
-                priority
-                className="dock-hero__image"
-              />
-              <figcaption className="dock-hero__caption">
-                <span>IMPERIUM LUMEN / THRESHOLD</span>
-                <span>01 / ENTRANCE</span>
-              </figcaption>
-            </figure>
-          </section>
+          <PageHero
+            titleId="dock-title"
+            kicker="A-L-L-A-H.COM / ENTRY / IMPERIUM LUMEN"
+            title="A platform with room to explore."
+            summary="Enter the MoonWitness ecosystem through a clear map of its discovery, identity, operations, and observatory spaces."
+            actions={<LinkButton href="#dock-index-title" variant="outline">Explore destinations</LinkButton>}
+            media={<Image src="/artwork/imperium-lumen.png" alt="" width={1600} height={900} priority />}
+            captionLeft="IMPERIUM LUMEN / THRESHOLD"
+            captionRight="01 / ENTRANCE"
+          />
         </MotionFrame>
 
         <section className="dock-index" aria-labelledby="dock-index-title">
-          <div className="dock-index__heading">
-            <div>
-              <p className="dock-kicker">WAYFINDING / 01-03</p>
-              <h2 id="dock-index-title">Choose a destination</h2>
-            </div>
-            <p>Each space has its own purpose and point of entry.</p>
-          </div>
+          <SectionHeading
+            titleId="dock-index-title"
+            kicker="WAYFINDING / 01-03"
+            title="Choose a destination"
+            description="Each space has its own purpose and point of entry."
+          />
 
-          <nav className="dock-destinations" aria-label="Platform destinations">
+          <DestinationGrid label="Platform destinations">
             {destinations.map((destination) => (
-              <Link className="dock-destination" href={destination.href} key={destination.number}>
-                <span className="dock-destination__number">{destination.number}</span>
-                <span className="dock-destination__role">{destination.role}</span>
-                <h3>{destination.name}</h3>
-                <p>{destination.description}</p>
-                <span className="dock-destination__arrow" aria-hidden="true">↗</span>
-              </Link>
+              <DestinationCard
+                key={destination.number}
+                index={destination.number}
+                role={destination.role}
+                title={destination.name}
+                description={destination.description}
+                href={destination.href(endpoints)}
+                external
+              />
             ))}
-          </nav>
+          </DestinationGrid>
         </section>
-      </main>
+      </RouteShell>
     </>
   );
 }

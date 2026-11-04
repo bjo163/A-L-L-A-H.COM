@@ -1,17 +1,28 @@
-import { modelRegistry, BaseRepository, dbEngine } from '@allah/arsy-orm';
+import crypto from 'crypto';
+import { modelRegistry, BaseRepository, dbEngine, SYSTEM_ACTOR } from '@allah/arsy-orm';
 import { logger } from '@allah/arsy-core';
 import type { VirtualKeyRecord } from './types';
 
 export interface UsageRecordParams {
+  companyId: number;
   virtualKeyId?: number;
   providerId?: number;
   modelId?: number;
   promptTokens: number;
   completionTokens: number;
-  costUsd: number;
   latencyMs: number;
+  costUsd: number;
   statusCode: number;
   isCached: boolean;
+}
+
+export function hashVirtualKey(rawKey: string): string {
+  return crypto.createHash('sha256').update(rawKey, 'utf-8').digest('hex');
+}
+
+export function generateVirtualKey(): { raw: string; prefix: string; hash: string } {
+  const raw = `mw_live_${crypto.randomBytes(24).toString('base64url')}`;
+  return { raw, prefix: raw.slice(0, 15), hash: hashVirtualKey(raw) };
 }
 
 export class UsageManager {
@@ -25,9 +36,11 @@ export class UsageManager {
     }
 
     try {
+      // Only the digest is compared: the stored column never holds a usable secret, and the
+      // prefix is deliberately not a lookup key because it is not random.
       const rows = (await dbEngine.query(
-        'SELECT * FROM ai_virtual_key WHERE key_hash = $1 OR key_prefix = $1 LIMIT 1',
-        [rawKey]
+        'SELECT * FROM ai_virtual_key WHERE key_hash = $1 AND revoked IS NOT TRUE LIMIT 1',
+        [hashVirtualKey(rawKey)]
       )) as VirtualKeyRecord[];
 
       if (!rows || rows.length === 0) {
@@ -36,7 +49,6 @@ export class UsageManager {
 
       const keyRecord = rows[0];
 
-      // Rate limit RPM check
       const now = Date.now();
       const tracker = this.keyRpmTrackers.get(keyRecord.key_hash) || { count: 0, windowStart: now };
       if (now - tracker.windowStart > 60000) {
@@ -50,12 +62,11 @@ export class UsageManager {
       tracker.count += 1;
       this.keyRpmTrackers.set(keyRecord.key_hash, tracker);
 
-      // Monthly budget limit check
       if (keyRecord.budget_limit && keyRecord.budget_limit > 0) {
         const usageRows = (await dbEngine.query(
-          `SELECT COALESCE(SUM(cost_usd), 0) as total_spent FROM ai_usage_log 
-           WHERE virtual_key_id = $1 AND create_date >= date_trunc('month', CURRENT_TIMESTAMP)`,
-          [keyRecord.id]
+          `SELECT COALESCE(SUM(cost_usd), 0) as total_spent FROM ai_usage_log
+           WHERE virtual_key_id = $1 AND company_id = $2 AND create_date >= date_trunc('month', CURRENT_TIMESTAMP)`,
+          [keyRecord.id, keyRecord.company_id]
         )) as Array<{ total_spent: number | string }>;
 
         const totalSpent = Number(usageRows[0]?.total_spent || 0);
@@ -75,40 +86,28 @@ export class UsageManager {
     try {
       const modelDef = modelRegistry.get('ai.usage_log');
       if (!modelDef) {
-        // Model definition not ready, fallback to raw SQL
-        await dbEngine.query(
-          `INSERT INTO ai_usage_log 
-           (virtual_key_id, provider_id, model_id, prompt_tokens, completion_tokens, total_tokens, cost_usd, latency_ms, status_code, is_cached)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-          [
-            params.virtualKeyId || null,
-            params.providerId || null,
-            params.modelId || null,
-            params.promptTokens,
-            params.completionTokens,
-            params.promptTokens + params.completionTokens,
-            params.costUsd,
-            params.latencyMs,
-            params.statusCode,
-            params.isCached,
-          ]
-        );
+        logger.warn('ai.usage_log model unavailable; usage not recorded');
         return;
       }
 
       const repo = new BaseRepository(modelDef);
-      await repo.create({
-        virtual_key_id: params.virtualKeyId,
-        provider_id: params.providerId,
-        model_id: params.modelId,
-        prompt_tokens: params.promptTokens,
-        completion_tokens: params.completionTokens,
-        total_tokens: params.promptTokens + params.completionTokens,
-        cost_usd: params.costUsd,
-        latency_ms: params.latencyMs,
-        status_code: params.statusCode,
-        is_cached: params.isCached,
-      });
+      await repo.create(
+        {
+          company_id: params.companyId,
+          virtual_key_id: params.virtualKeyId,
+          provider_id: params.providerId,
+          model_id: params.modelId,
+          prompt_tokens: params.promptTokens,
+          completion_tokens: params.completionTokens,
+          total_tokens: params.promptTokens + params.completionTokens,
+          cost_usd: params.costUsd,
+          latency_ms: params.latencyMs,
+          status_code: params.statusCode,
+          is_cached: params.isCached,
+        },
+        { companyId: params.companyId },
+        SYSTEM_ACTOR
+      );
     } catch (err: any) {
       logger.error({ err }, 'Failed recording AI usage log to PGlite');
     }
@@ -125,4 +124,3 @@ export class UsageManager {
     return Math.round((inputCost + outputCost) * 100000) / 100000;
   }
 }
-

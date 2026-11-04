@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { RouteShell } from "@moonwitness/ui";
 import { GateNavbar } from "@/components/gate-navbar";
 import { InfoPageShell } from "@/components/info-page-shell";
 
@@ -12,14 +13,14 @@ export default function SourcesPage() {
   return (
     <>
       <GateNavbar />
-      <main id="main-content" tabIndex={-1} className="gate-page">
+      <RouteShell as="main" className="gate-shell">
         <InfoPageShell
           title="Sumber & Provenansi"
           titleEn="Sources & Provenance"
           description="Metodologi provenance, edisi teks suci, hak cipta, dan lisensi."
           descriptionEn="Provenance methodology, scripture editions, copyright, and licensing."
         />
-      </main>
+      </RouteShell>
     </>
   );
 }

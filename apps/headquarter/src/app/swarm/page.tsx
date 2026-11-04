@@ -11,40 +11,37 @@ import {
   Badge,
   Input,
   Avatar,
+  StatusMessage,
 } from '@moonwitness/ui';
 import { mwClient, type SwarmRole, type SwarmExecutionResult } from '@allah/sdk';
 
 interface RoleMeta {
   label: string;
   description: string;
-  color: string;
-  icon: string;
+  /** A token-driven text utility: a hex here would escape the skin. */
+  tone: string;
 }
 
 const ROLE_META: Record<SwarmRole, RoleMeta> = {
   planner: {
     label: 'Supervisor',
     description: 'Decomposes goals into subtasks and dispatches workers.',
-    color: '#f59e0b',
-    icon: '🧭',
+    tone: 'text-ring',
   },
   researcher: {
     label: 'Researcher',
     description: 'Retrieves Qorpus context, schemas, and API contracts.',
-    color: '#38bdf8',
-    icon: '🔍',
+    tone: 'text-accent',
   },
   builder: {
     label: 'Builder',
     description: 'Executes executive tools and generates artifacts.',
-    color: '#a3e635',
-    icon: '🔨',
+    tone: 'text-success',
   },
   verifier: {
     label: 'Reviewer',
     description: 'Verifies against acceptance criteria and signs off.',
-    color: '#f472b6',
-    icon: '✅',
+    tone: 'text-primary',
   },
 };
 
@@ -113,12 +110,12 @@ export default function SwarmOperationsPage() {
   const renderAgentCard = (role: SwarmRole, status: 'active' | 'idle' | 'done') => {
     const meta = ROLE_META[role];
     return (
-      <Card className="bg-zinc-900/60 border-zinc-800">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Avatar name={meta.label} />
-              <CardTitle className="text-sm font-semibold text-white">{meta.label}</CardTitle>
+              <CardTitle className="text-sm font-semibold text-foreground">{meta.label}</CardTitle>
             </div>
             <Badge variant={status === 'active' ? 'active' : status === 'done' ? 'gold' : 'default'} dot={status === 'active'}>
               {status === 'active' ? 'AKTIF' : status === 'done' ? 'SELESAI' : 'SIAP'}
@@ -135,17 +132,17 @@ export default function SwarmOperationsPage() {
   return (
     <div className="hq-route hq-swarm">
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-800/80 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold tracking-tight text-white">Swarm Operations</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Swarm Operations</h1>
             </div>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Hierarchical multi-agent orchestration with supervisor, researcher, builder, and reviewer roles.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400">Mission Status:</span>
+            <span className="text-xs text-muted-foreground">Mission Status:</span>
             <Badge variant={isRunning ? 'active' : result?.success ? 'active' : 'default'} dot={isRunning}>
               {statusText}
             </Badge>
@@ -153,10 +150,10 @@ export default function SwarmOperationsPage() {
         </div>
 
         {/* Mission Input */}
-        <Card className="bg-zinc-900/60 border-zinc-800 shadow-xl">
+        <Card className="bg-card border-border shadow-xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold text-white">Mission Goal</CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardTitle className="text-lg font-semibold text-foreground">Mission Goal</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Enter an operational goal. The swarm will plan, research, build, and report its result.
             </CardDescription>
           </CardHeader>
@@ -189,17 +186,13 @@ export default function SwarmOperationsPage() {
                 {isRunning ? 'Running Swarm...' : 'Run Swarm'}
               </Button>
             </div>
-            {error && (
-              <div role="alert" className="p-3 bg-red-950/40 border border-red-500/20 rounded-md text-sm text-red-400">
-                {error}
-              </div>
-            )}
+            {error && <StatusMessage tone="danger" title="Swarm run failed">{error}</StatusMessage>}
           </CardContent>
         </Card>
 
         {/* Agent Role Cards */}
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Agent Roles</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Agent Roles</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {renderAgentCard('planner', isRunning ? 'active' : result?.success ? 'done' : 'idle')}
             {renderAgentCard('researcher', isRunning ? 'active' : 'idle')}
@@ -211,13 +204,13 @@ export default function SwarmOperationsPage() {
         {/* Live Inter-Agent Message Log */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Inter-Agent Message Log</h2>
-            <span className="text-xs text-zinc-500 font-mono">{log.length} event(s)</span>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Inter-Agent Message Log</h2>
+            <span className="text-xs text-muted-foreground font-mono">{log.length} event(s)</span>
           </div>
-          <Card className="bg-zinc-900/60 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardContent className="pt-6 space-y-3 max-h-[500px] overflow-y-auto">
               {log.length === 0 ? (
-                <div className="text-center py-16 text-zinc-500 text-sm">
+                <div className="text-center py-16 text-muted-foreground text-sm">
                   Belum ada aktivitas swarm. Masukkan tujuan di atas lalu "Luncurkan Swarm".
                 </div>
               ) : (
@@ -226,27 +219,27 @@ export default function SwarmOperationsPage() {
                   return (
                     <div
                       key={entry.id}
-                      className="p-3.5 rounded-lg border border-zinc-800 bg-zinc-950/60 space-y-2 text-sm"
+                      className="p-3.5 rounded-lg border border-border bg-card space-y-2 text-sm"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {meta && (
-                            <span className="font-mono text-xs" style={{ color: meta.color }}>
-                              {meta.icon} {meta.label}
+                            <span className={`font-mono text-xs ${meta.tone}`}>
+                              {meta.label}
                             </span>
                           )}
-                          <span className="font-mono text-xs text-zinc-500">{entry.action || entry.event}</span>
+                          <span className="font-mono text-xs text-muted-foreground">{entry.action || entry.event}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           {entry.latency_ms !== undefined && (
-                            <span className="text-[10px] font-mono text-zinc-500">{entry.latency_ms}ms</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">{entry.latency_ms}ms</span>
                           )}
-                          <span className="text-[10px] font-mono text-zinc-600">
+                          <span className="text-[10px] font-mono text-muted-foreground">
                             {new Date(entry.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
                       </div>
-                      <div className="bg-black/50 p-2 rounded text-xs font-mono text-emerald-300/90 overflow-x-auto">
+                      <div className="bg-secondary p-2 rounded text-xs font-mono text-success/90 overflow-x-auto">
                         {typeof entry.payload === 'object'
                           ? JSON.stringify(entry.payload, null, 2)
                           : String(entry.payload)}
@@ -262,17 +255,17 @@ export default function SwarmOperationsPage() {
         {/* Mission Result */}
         {result && (
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Mission Result</h2>
-            <Card className="bg-zinc-900/60 border-zinc-800">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Mission Result</h2>
+            <Card className="bg-card border-border">
               <CardContent className="pt-6 space-y-3">
                 <div className="flex items-center gap-3">
                   <Badge variant={result.success ? 'active' : 'revoked'} dot>
                     {result.success ? 'SUKSES' : result.finish_reason}
                   </Badge>
-                  <span className="font-mono text-xs text-zinc-500">{result.mission_id}</span>
+                  <span className="font-mono text-xs text-muted-foreground">{result.mission_id}</span>
                 </div>
-                <p className="text-sm text-zinc-300">{result.summary}</p>
-                <div className="bg-black/50 p-3 rounded text-xs font-mono text-zinc-400 overflow-x-auto">
+                <p className="text-sm text-foreground">{result.summary}</p>
+                <div className="bg-secondary p-3 rounded text-xs font-mono text-muted-foreground overflow-x-auto">
                   {JSON.stringify(result, null, 2)}
                 </div>
               </CardContent>

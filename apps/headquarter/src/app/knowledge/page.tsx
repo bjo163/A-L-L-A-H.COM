@@ -127,7 +127,7 @@ export default function KnowledgePage() {
           <Card className="p-4">
             <h2 id="knowledge-results-title" className="text-lg font-semibold mb-4">Search Results</h2>
             {searchError ? (
-              <p className="text-sm text-red-400" role="alert">{searchError}</p>
+              <p className="text-sm text-destructive" role="alert">{searchError}</p>
             ) : results.length === 0 ? (
               <p className="text-muted-foreground">
                 {loading
@@ -161,7 +161,7 @@ export default function KnowledgePage() {
           <Card className="p-4">
             <h2 id="knowledge-telemetry-title" className="text-lg font-semibold mb-4">Gateway Telemetry</h2>
             {telemetryError ? (
-              <p className="text-sm text-red-400" role="alert">
+              <p className="text-sm text-destructive" role="alert">
                 Telemetry unavailable: {telemetryError}
               </p>
             ) : telemetryLoading ? (

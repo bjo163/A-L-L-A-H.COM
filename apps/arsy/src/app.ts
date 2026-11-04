@@ -1,12 +1,25 @@
-import Fastify, { FastifyInstance } from 'fastify';
+import crypto from 'crypto';
+import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { ok, fail, AppError, logger } from '@allah/arsy-core';
-import { dbEngine, SchemaMigrator, modelRegistry, BaseRepository, redactSecret, encryptSecret, cosineSimilarity } from '@allah/arsy-orm';
+import { AppError, fail, isPublicRoute, logger, ok, type Principal, type PublicRouteRule } from '@allah/arsy-core';
+import {
+  BaseRepository,
+  SchemaMigrator,
+  dbEngine,
+  decryptSecret,
+  encryptSecret,
+  isEncrypted,
+  modelRegistry,
+  redactSecret,
+  type AuditActor,
+  type QueryExecutor,
+  type TenantScope,
+} from '@allah/arsy-orm';
 
-import { authPlugin } from '@allah/arsy-plugin-auth';
+import { authPlugin, createPrincipalGuard } from '@allah/arsy-plugin-auth';
 import { sduiPlugin } from '@allah/arsy-plugin-sdui';
 import { llmGatewayPlugin } from '@allah/arsy-plugin-llm-gateway';
 import { storagePlugin } from '@allah/arsy-plugin-storage';
@@ -17,18 +30,64 @@ import { registerMwStorageAddon } from '../../../addons/mw_storage/index';
 import { registerMwQorpusAddon } from '../../../addons/mw_qorpus/index';
 import { registerNexusAddon } from '../../../addons/nexus/index';
 import { registerOrbitAddon } from '../../../addons/orbit/index';
-import { registerWorksAddon } from '../../../addons/works/index';import { computeSha256, chunkText } from '../../../addons/mw_qorpus/src/chunker';
+import { registerWorksAddon } from '../../../addons/works/index';
+import { chunkText, computeSha256 } from '../../../addons/mw_qorpus/src/chunker';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;
 }
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Exact `METHOD path` rules: a prefix rule would authorise every future route that
+// happens to share the segment.
+const PUBLIC_ROUTES: PublicRouteRule[] = [
+  { method: 'GET', path: '/health' },
+  { method: 'GET', path: '/ready' },
+  { method: 'POST', path: '/api/auth/sign-in' },
+  { method: 'POST', path: '/api/auth/register' },
+  { method: 'GET', path: '/api/auth/onboarding/status' },
+  { method: 'POST', path: '/api/auth/onboarding' },
+  { method: 'POST', path: '/v1/agent/pairings/claim' },
+  { method: 'GET', path: '/v1/agent/device/missions/next' },
+  { method: 'POST', pattern: /^\/v1\/agent\/device\/missions\/[0-9]+\/events$/ },
+];
+if (!isProduction) PUBLIC_ROUTES.push({ method: 'GET', pattern: /^\/docs(\/.*)?$/ });
+
+const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  'POST /api/auth/sign-in': { limit: 10, windowMs: 60_000 },
+  'POST /api/auth/register': { limit: 5, windowMs: 3_600_000 },
+  'POST /api/auth/onboarding': { limit: 5, windowMs: 3_600_000 },
+  'POST /v1/agent/pairings/claim': { limit: 10, windowMs: 60_000 },
+  'GET /v1/agent/device/missions/next': { limit: 120, windowMs: 60_000 },
+  'POST /v1/agent/device/missions/*/events': { limit: 300, windowMs: 60_000 },
+  'PUT /v1/nexus/nas/*/secret': { limit: 10, windowMs: 60_000 },
+};
+
+const DEV_ORIGINS = [3000, 3001, 3002, 3003, 3004].flatMap((port) => [`http://localhost:${port}`, `http://127.0.0.1:${port}`]);
+
+function resolveCorsOrigins(): string[] {
+  const configured = (process.env.CORS_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean);
+  // Production fails closed to an empty list: no cross-origin reader unless one is named.
+  if (isProduction) return configured;
+  return configured.length > 0 ? configured : DEV_ORIGINS;
+}
+
+// Generic CRUD reaches every registered model, so it stays opt-in per model name.
+const PROTECTED_GENERIC_MODELS = new Set([
+  'res.users',
+  'auth.user',
+  'auth.session',
+  'auth.verification',
+  'auth.setup',
+  'arsy.audit.event',
+]);
 
 export async function buildArsyApp(options: BuildAppOptions = {}): Promise<FastifyInstance<any, any, any, any, any>> {
   const app = Fastify({
     loggerInstance: options.enableLogging ? logger : undefined,
   });
 
-  // Global Error Handler conforming to Arsy Standard Envelope
   app.setErrorHandler((error: any, request, reply) => {
     if (error instanceof AppError) {
       reply.status(error.statusCode).send(fail(error.code, error.message, error.details));
@@ -36,14 +95,26 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     }
 
     logger.error({ err: error, url: request.url }, 'Unhandled server exception');
-    reply.status(500).send(fail('INTERNAL_SERVER_ERROR', error?.message || 'An unexpected error occurred'));
+    reply.status(500).send(fail('INTERNAL_SERVER_ERROR', 'An unexpected error occurred'));
   });
 
-  // Register Core Security Plugins
-  await app.register(cors, { origin: true });
+  await app.register(cors, { origin: resolveCorsOrigins(), credentials: true });
   await app.register(helmet, { contentSecurityPolicy: false });
 
-  // OpenAPI Swagger Documentation
+  // The API only returns JSON; Swagger UI ships inline scripts and is the sole exception.
+  app.addHook('onRequest', async (request, reply) => {
+    if (request.url.split('?')[0].startsWith('/docs')) return;
+    reply.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+  });
+
+  // Root hook, registered before the plugins: `fastify-plugin` keeps every plugin
+  // route in this context, so one guard covers the whole surface. `resolvePrincipal`
+  // is read per request, which is what lets it run ahead of the auth plugin boot.
+  app.addHook('onRequest', createPrincipalGuard(app as unknown as FastifyInstance, {
+    isPublic: (method, path) => isPublicRoute(method, path, PUBLIC_ROUTES),
+    rateLimits: RATE_LIMITS,
+  }));
+
   await app.register(swagger, {
     openapi: {
       info: {
@@ -55,584 +126,678 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
   await app.register(swaggerUi, { routePrefix: '/docs' });
 
-  // Boot embedded PGlite Database & Register All Addons
   await dbEngine.connect();
   registerBaseAddon();
   registerMlLlmRouterAddon();
   registerMwStorageAddon();
   registerMwQorpusAddon();
   registerNexusAddon();
-registerOrbitAddon();
-registerWorksAddon();
+  registerOrbitAddon();
+  registerWorksAddon();
 
-  // Run schema auto-sync across all registered models
   const migrator = new SchemaMigrator(dbEngine);
   await migrator.sync();
 
-  // Health and Readiness Check
   app.get('/health', async () => ok({ status: 'ok', engine: 'arsy' }));
   app.get('/ready', async () => {
     const rows = await dbEngine.query('SELECT 1 as alive');
     return ok({ ready: true, database: 'pglite', check: rows[0] });
   });
 
-  // Register Arsy Technical Plugins
   await app.register(authPlugin, { prefix: '/api/auth' });
   await app.register(sduiPlugin, { prefix: '/v1/sdui' });
   await app.register(llmGatewayPlugin, { prefix: '/v1' });
   await app.register(storagePlugin, { prefix: '/api/storage' });
 
-  // Qorpus Endpoints
+  const repository = (
+    modelName: string,
+    executor: QueryExecutor = dbEngine
+  ): BaseRepository<Record<string, any>> => {
+    const model = modelRegistry.get(modelName);
+    if (!model) throw new AppError(`Model '${modelName}' is not registered`, 500, 'MODEL_NOT_FOUND');
+    return new BaseRepository(model, dbEngine, executor);
+  };
+
+  const principalOf = (request: FastifyRequest): Principal => {
+    const principal = (request as { principal?: Principal }).principal;
+    if (!principal) throw new AppError('A valid session or bearer token is required', 401, 'UNAUTHORIZED');
+    return principal;
+  };
+
+  const tenantOf = (request: FastifyRequest): TenantScope => {
+    const { companyId } = principalOf(request);
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
+      throw new AppError('No tenant is bound to this account', 403, 'TENANT_REQUIRED');
+    }
+    return { companyId };
+  };
+
+  const actorOf = (request: FastifyRequest): AuditActor => ({ type: 'user', userId: principalOf(request).ormUserId });
+
+  const parseId = (raw: string | number, label: string): number => {
+    const id = Number(raw);
+    if (!Number.isSafeInteger(id) || id < 1) throw new AppError(`${label} must be a positive integer`, 400, 'VALIDATION_ERROR');
+    return id;
+  };
+
+  const parseTenantCompanyId = (raw: unknown): number => {
+    const companyId = Number(raw);
+    if (!Number.isSafeInteger(companyId) || companyId === 0) {
+      throw new AppError('A non-zero target company_id is required', 400, 'VALIDATION_ERROR');
+    }
+    return companyId;
+  };
+
+  const requireAdminReasonHash = (raw: unknown): string => {
+    if (typeof raw !== 'string' || raw.trim().length < 8 || raw.trim().length > 500) {
+      throw new AppError('A reason between 8 and 500 characters is required', 400, 'VALIDATION_ERROR');
+    }
+    return crypto.createHash('sha256').update(raw.trim()).digest('hex');
+  };
+
+  const assertSuperuser = (request: FastifyRequest): Principal => {
+    const principal = principalOf(request);
+    if (principal.role !== 'superuser') {
+      throw new AppError('Superuser access is required', 403, 'SUPERUSER_REQUIRED');
+    }
+    return principal;
+  };
+
+  const adminActor = (
+    request: FastifyRequest,
+    reasonHash: string,
+    principal: Principal = assertSuperuser(request)
+  ): AuditActor => ({
+    type: 'user',
+    userId: principal.ormUserId,
+    reasonHash,
+    requestId: request.id,
+    globalAccess: true,
+  });
+
+  const recordAdminRead = async (
+    request: FastifyRequest,
+    principal: Principal,
+    companyId: number,
+    modelName: string,
+    recordId: string,
+    reasonHash: string,
+    executor = dbEngine
+  ): Promise<void> => {
+    await repository('arsy.audit.event', executor).create(
+      {
+        company_id: companyId,
+        actor_uid: principal.ormUserId,
+        model_name: modelName,
+        record_id: recordId,
+        operation: 'admin_read',
+        changed_fields: [],
+        reason_hash: reasonHash,
+        request_id: request.id,
+        global_access: true,
+      },
+      { companyId },
+      adminActor(request, reasonHash, principal)
+    );
+  };
+
+  const requireString = (body: Record<string, any>, field: string): string => {
+    const value = body[field];
+    if (typeof value !== 'string' || value.length === 0) throw new AppError(`${field} is required`, 400, 'VALIDATION_ERROR');
+    return value;
+  };
+
+  const optionalInteger = (body: Record<string, any>, field: string, fallback: number): number => {
+    const value = body[field];
+    if (value === undefined || value === null || value === '') return fallback;
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed)) throw new AppError(`${field} must be an integer`, 400, 'VALIDATION_ERROR');
+    return parsed;
+  };
+
+  const bodyOf = (request: FastifyRequest): Record<string, any> => (request.body as Record<string, any>) ?? {};
+
   app.post('/v1/qorpus/ingest', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const { title, category, content, source } = body;
-      if (!title || !category || !content) {
-        reply.status(400);
-        return fail('VALIDATION_ERROR', 'title, category, and content are required');
-      }
-      const sha256 = computeSha256(content);
-      const docModel = modelRegistry.get('qorpus.document');
-      const chunkModel = modelRegistry.get('qorpus.chunk');
-      if (!docModel || !chunkModel) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'Qorpus models not registered');
-      }
-      const docRepo = new BaseRepository(docModel);
-      const chunkRepo = new BaseRepository(chunkModel);
-      
-      // Check for duplicates
-      const existing = await docRepo.find({ filters: [{ field: 'sha256', operator: '=', value: sha256 }], limit: 1 });
-      if (existing && existing.length > 0) {
-        return ok({ message: 'Document already exists', document: existing[0], deduplicated: true });
-      }
-      
-      const doc = await docRepo.create({
-        title,
-        category,
-        source_path: source || null,
-        sha256,
-        content,
+    const body = bodyOf(request);
+    const title = requireString(body, 'title');
+    const category = requireString(body, 'category');
+    const content = requireString(body, 'content');
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+
+    const docRepo = repository('qorpus.document');
+    const chunkRepo = repository('qorpus.chunk');
+    const sha256 = computeSha256(content);
+    const chunks = chunkText(content, 512, 64);
+
+    const existing = await docRepo.find({ scope, filters: [{ field: 'sha256', operator: '=', value: sha256 }], limit: 1 });
+    if (existing.length > 0) {
+      const document = existing[0];
+      // A crashed ingest can leave the document row without its full chunk set, so the
+      // dedupe hit backfills the missing indexes instead of reporting an empty index.
+      const indexed = await chunkRepo.find({
+        scope,
+        filters: [{ field: 'document_id', operator: '=', value: document.id }],
+        limit: chunks.length,
       });
-      
-      const chunks = chunkText(content, 512, 64);
+      const present = new Set(indexed.map((chunk) => Number(chunk.chunk_index)));
+      let backfilled = 0;
       for (let i = 0; i < chunks.length; i++) {
+        if (present.has(i)) continue;
         await chunkRepo.create({
-          document_id: (doc as any).id,
+          document_id: document.id,
           chunk_index: i,
           content: chunks[i].content,
           token_count: chunks[i].tokenCount,
           embedding: null,
-        });
+        }, scope, actor);
+        backfilled += 1;
       }
-      
-      return ok({ document: doc, chunksCreated: chunks.length }, { totalItems: chunks.length });
-    } catch (err: any) {
-      logger.error({ err }, 'Qorpus ingest failed');
-      reply.status(500);
-      return fail('INGEST_ERROR', err.message);
+      return ok({ message: 'Document already exists', document, deduplicated: true, backfilled }, { totalItems: chunks.length });
     }
+
+    const document = await docRepo.create({
+      title,
+      category,
+      source_path: typeof body.source === 'string' ? body.source : null,
+      sha256,
+      content,
+    }, scope, actor);
+
+    for (let i = 0; i < chunks.length; i++) {
+      await chunkRepo.create({
+        document_id: document.id,
+        chunk_index: i,
+        content: chunks[i].content,
+        token_count: chunks[i].tokenCount,
+        embedding: null,
+      }, scope, actor);
+    }
+
+    reply.status(201);
+    return ok({ document, chunksCreated: chunks.length }, { totalItems: chunks.length });
   });
 
-  app.post('/v1/qorpus/search', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const { query, limit = 5, min_score = 0.75 } = body;
-      if (!query) {
-        reply.status(400);
-        return fail('VALIDATION_ERROR', 'query is required');
-      }
-      const docModel = modelRegistry.get('qorpus.document');
-      const chunkModel = modelRegistry.get('qorpus.chunk');
-      if (!docModel || !chunkModel) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'Qorpus models not registered');
-      }
-      const docRepo = new BaseRepository(docModel);
-      const chunkRepo = new BaseRepository(chunkModel);
-      
-      const docs = await docRepo.find({ limit: 100 });
-      const chunks = await chunkRepo.find({ limit: 1000 });
-      
-      const results = [];
-      for (const chunk of chunks) {
-        const content = (chunk as any).content || '';
-        // Simple lexical scoring
-        const queryLower = query.toLowerCase();
+  app.post('/v1/qorpus/search', async (request) => {
+    const body = bodyOf(request);
+    const query = requireString(body, 'query');
+    const limit = optionalInteger(body, 'limit', 5);
+    const minScore = Number(body.min_score ?? 0.75);
+    const scope = tenantOf(request);
+
+    const docs = await repository('qorpus.document').find({ scope, limit: 100 });
+    const chunks = await repository('qorpus.chunk').find({ scope, limit: 1000 });
+
+    const queryLower = query.toLowerCase();
+    const queryTerms = queryLower.split(/\s+/).filter(Boolean);
+    const results = chunks
+      .map((chunk) => {
+        const content = String(chunk.content ?? '');
         const contentLower = content.toLowerCase();
         let score = 0;
         if (contentLower.includes(queryLower)) score += 0.5;
-        const queryTerms = queryLower.split(/\s+/).filter(Boolean);
         for (const term of queryTerms) {
           if (contentLower.includes(term)) score += 0.1;
         }
-        if (score >= min_score) {
-          const doc = docs.find((d: any) => d.id === (chunk as any).document_id);
-          results.push({
-            id: (chunk as any).id,
-            document_title: (doc as any)?.title || 'Unknown',
-            content,
-            score: Math.min(score, 1.0),
-            category: (doc as any)?.category || 'unknown',
-          });
-        }
-      }
-      
-      results.sort((a, b) => b.score - a.score);
-      return ok({ chunks: results.slice(0, limit) }, { totalItems: results.slice(0, limit).length });
-    } catch (err: any) {
-      logger.error({ err }, 'Qorpus search failed');
-      reply.status(500);
-      return fail('SEARCH_ERROR', err.message);
-    }
+        const document = docs.find((doc) => doc.id === chunk.document_id);
+        return {
+          id: chunk.id,
+          document_title: document?.title ?? 'Unknown',
+          content,
+          score: Math.min(score, 1.0),
+          category: document?.category ?? 'unknown',
+        };
+      })
+      .filter((result) => result.score >= minScore)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+
+    return ok({ chunks: results }, { totalItems: results.length });
   });
 
-  // Thread CRUD Endpoints
-  app.get('/v1/threads', async (request, reply) => {
-    try {
-      const model = modelRegistry.get('ai.thread');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'ai.thread model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const threads = await repo.find({ limit: 100 });
-      return ok(threads, { totalItems: threads.length });
-    } catch (err: any) {
-      reply.status(500);
-      return fail('THREADS_FETCH_ERROR', err.message);
-    }
+  app.get('/v1/threads', async (request) => {
+    const threads = await repository('ai.thread').find({ scope: tenantOf(request), limit: 100 });
+    return ok(threads, { totalItems: threads.length });
   });
 
   app.post('/v1/threads', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const model = modelRegistry.get('ai.thread');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'ai.thread model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const thread = await repo.create({
-        title: body.title || 'New Thread',
-        active_model: body.active_model || 'dx-default',
-        metadata: body.metadata || {},
-      });
-      reply.status(201);
-      return ok(thread);
-    } catch (err: any) {
-      reply.status(500);
-      return fail('THREAD_CREATE_ERROR', err.message);
-    }
+    const body = bodyOf(request);
+    const scope = tenantOf(request);
+    const thread = await repository('ai.thread').create({
+      title: typeof body.title === 'string' && body.title.length > 0 ? body.title : 'New Thread',
+      active_model: body.active_model || 'dx-default',
+      metadata: body.metadata || {},
+    }, scope, actorOf(request));
+    reply.status(201);
+    return ok(thread);
   });
 
-  app.get<{ Params: { id: string } }>('/v1/threads/:id/messages', async (request, reply) => {
-    try {
-      const model = modelRegistry.get('ai.message');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'ai.message model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const messages = await repo.find({ filters: [{ field: 'thread_id', operator: '=', value: parseInt(request.params.id) }], limit: 1000 });
-      return ok(messages, { totalItems: messages.length });
-    } catch (err: any) {
-      reply.status(500);
-      return fail('MESSAGES_FETCH_ERROR', err.message);
-    }
+  const threadOf = async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const scope = tenantOf(request);
+    const threadId = parseId(request.params.id, 'thread id');
+    const thread = await repository('ai.thread').findById(threadId, scope);
+    if (!thread) throw new AppError('Thread not found', 404, 'NOT_FOUND');
+    return { scope, threadId };
+  };
+
+  app.get<{ Params: { id: string } }>('/v1/threads/:id/messages', async (request) => {
+    const { scope, threadId } = await threadOf(request);
+    const messages = await repository('ai.message').find({
+      scope,
+      filters: [{ field: 'thread_id', operator: '=', value: threadId }],
+      limit: 1000,
+    });
+    return ok(messages, { totalItems: messages.length });
   });
 
   app.post<{ Params: { id: string } }>('/v1/threads/:id/messages', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const model = modelRegistry.get('ai.message');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'ai.message model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const message = await repo.create({
-        thread_id: parseInt(request.params.id),
-        role: body.role,
-        content: body.content,
-        token_count: body.token_count || 0,
-      });
-      reply.status(201);
-      return ok(message);
-    } catch (err: any) {
-      reply.status(500);
-      return fail('MESSAGE_CREATE_ERROR', err.message);
-    }
+    const { scope, threadId } = await threadOf(request);
+    const body = bodyOf(request);
+    const message = await repository('ai.message').create({
+      thread_id: threadId,
+      role: requireString(body, 'role'),
+      content: requireString(body, 'content'),
+      token_count: optionalInteger(body, 'token_count', 0),
+    }, scope, actorOf(request));
+    reply.status(201);
+    return ok(message);
   });
 
-  // Generic REST Model CRUD Engine
-  app.get<{ Params: { model_name: string } }>('/api/v1/models/:model_name', async (request, reply) => {
-    const { model_name } = request.params;
-    const model = modelRegistry.get(model_name);
-    if (!model) {
-      reply.status(404);
-      return fail('MODEL_NOT_FOUND', `Model '${model_name}' is not registered`);
+  const assertModelExposed = (modelName: string): void => {
+    if (PROTECTED_GENERIC_MODELS.has(modelName)) {
+      throw new AppError(`Model '${modelName}' is protected from generic CRUD`, 403, 'PROTECTED_MODEL');
     }
+    const allowedModels = new Set(
+      (process.env.GENERIC_MODEL_ALLOWLIST || '').split(',').map((name) => name.trim()).filter(Boolean)
+    );
+    if (!allowedModels.has(modelName)) {
+      throw new AppError(`Model '${modelName}' is not exposed over generic CRUD`, 403, 'MODEL_NOT_ALLOWED');
+    }
+  };
 
-    const repo = new BaseRepository(model);
-    const records = await repo.find({ limit: 50 });
+  app.get<{ Params: { model_name: string } }>('/api/v1/models/:model_name', async (request) => {
+    const modelName = request.params.model_name;
+    assertModelExposed(modelName);
+    const records = await repository(modelName).find({ scope: tenantOf(request), limit: 50 });
     return ok(records, { totalItems: records.length });
   });
 
   app.post<{ Params: { model_name: string }; Body: Record<string, unknown> }>(
     '/api/v1/models/:model_name',
     async (request, reply) => {
-      const { model_name } = request.params;
-      const model = modelRegistry.get(model_name);
-      if (!model) {
-        reply.status(404);
-        return fail('MODEL_NOT_FOUND', `Model '${model_name}' is not registered`);
-      }
-
-      const repo = new BaseRepository(model);
-      const created = await repo.create(request.body);
+      const modelName = request.params.model_name;
+      assertModelExposed(modelName);
+      const created = await repository(modelName).create(
+        request.body as Record<string, any>,
+        tenantOf(request),
+        actorOf(request)
+      );
       reply.status(201);
       return ok(created);
     }
   );
 
-  // NEXUS NAS Endpoints
-  app.get<{ Querystring: { company_id?: string } }>('/v1/nexus/nas', async (request, reply) => {
-    try {
-      const companyId = (request.query?.company_id as string) || '';
-      const model = modelRegistry.get('nexus.nas');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const filters: any[] = [];
-      if (companyId) {
-        filters.push({ field: 'company_id', operator: '=' as const, value: companyId });
-      }
-      const nas = await repo.find({ filters, limit: 100 });
-      return ok(nas.map((n: any) => ({
-        ...n,
-        secret: redactSecret(n.secret_encrypted),
-      })), { totalItems: nas.length });
-    } catch (err: any) {
-      logger.error({ err }, 'NAS list failed');
-      reply.status(500);
-      return fail('NAS_LIST_ERROR', err.message);
-    }
+  app.get<{ Params: { model_name: string } }>('/v1/admin/models/:model_name', async (request) => {
+    const principal = assertSuperuser(request);
+    const query = request.query as Record<string, unknown>;
+    const companyId = parseTenantCompanyId(query.company_id);
+    const reasonHash = requireAdminReasonHash(query.reason);
+    const modelName = request.params.model_name;
+    assertModelExposed(modelName);
+    const records = await repository(modelName).find({ scope: { companyId }, limit: 50 });
+    await recordAdminRead(request, principal, companyId, modelName, '*', reasonHash);
+    return ok(records, { totalItems: records.length });
   });
 
-  app.post<{ Body: { nas_identifier: string; ip_address: string; secret: string; vendor?: string; coa_port?: number; source_allowlist?: string[]; site_id?: number } }>('/v1/nexus/nas', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const model = modelRegistry.get('nexus.nas');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
-      }
-const repo = new BaseRepository(model);
-      const encryptedSecret = encryptSecret(body.secret) || body.secret;
-      const nas = (await repo.create({
-        nas_identifier: body.nas_identifier,
-        ip_address: body.ip_address,
-        secret_encrypted: encryptedSecret,
-        vendor: body.vendor || 'mikrotik',
-        coa_port: body.coa_port ?? 3799,
-        source_allowlist: body.source_allowlist || [],
-        site_id: body.site_id,
-        company_id: body.company_id,
-      })) as any;
-      reply.status(201);
-      return ok({ ...nas, secret: redactSecret(nas.secret_encrypted as string) });
-    } catch (err: any) {
-      logger.error({ err }, 'NAS creation failed');
-      reply.status(500);
-      return fail('NAS_CREATE_ERROR', err.message);
+  app.post<{ Params: { model_name: string } }>('/v1/admin/models/:model_name', async (request, reply) => {
+    const principal = assertSuperuser(request);
+    const body = bodyOf(request);
+    const companyId = parseTenantCompanyId(body.company_id);
+    const reasonHash = requireAdminReasonHash(body.reason);
+    const modelName = request.params.model_name;
+    assertModelExposed(modelName);
+    const data = body.data;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new AppError('data must be an object', 400, 'VALIDATION_ERROR');
     }
+    if ('company_id' in data) {
+      throw new AppError('company_id must be supplied outside data', 400, 'VALIDATION_ERROR');
+    }
+    const created = await repository(modelName).create(
+      data as Record<string, unknown>,
+      { companyId },
+      adminActor(request, reasonHash, principal)
+    );
+    reply.status(201);
+    return ok(created);
   });
 
-  app.get<{ Params: { id: string } }>('/v1/nexus/nas/:id', async (request, reply) => {
-    try {
-      const { id } = request.params;
-      const model = modelRegistry.get('nexus.nas');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
+  app.put<{ Params: { model_name: string; id: string } }>(
+    '/v1/admin/models/:model_name/:id',
+    async (request) => {
+      const principal = assertSuperuser(request);
+      const body = bodyOf(request);
+      const companyId = parseTenantCompanyId(body.company_id);
+      const reasonHash = requireAdminReasonHash(body.reason);
+      const modelName = request.params.model_name;
+      assertModelExposed(modelName);
+      const data = body.data;
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new AppError('data must be an object', 400, 'VALIDATION_ERROR');
       }
-      const repo = new BaseRepository(model);
-        const nas = ((await repo.find({ filters: [{ field: 'id', operator: '=', value: parseInt(id) }], limit: 1 })) as unknown) as any[];
-       if (!nas || nas.length === 0) {
-         reply.status(404);
-         return fail('NAS_NOT_FOUND', 'NAS not found');
-       }
-       const n = nas[0];
-       return ok({ ...n, secret: redactSecret(n.secret_encrypted as string) });
-    } catch (err: any) {
-      logger.error({ err }, 'NAS detail failed');
-      reply.status(500);
-      return fail('NAS_DETAIL_ERROR', err.message);
+      if ('company_id' in data) {
+        throw new AppError('company_id cannot be changed by this operation', 400, 'VALIDATION_ERROR');
+      }
+      const updated = await repository(modelName).updateById(
+        parseId(request.params.id, 'record id'),
+        data as Record<string, unknown>,
+        { companyId },
+        adminActor(request, reasonHash, principal)
+      );
+      if (!updated) throw new AppError('Record not found in the target tenant', 404, 'RECORD_NOT_FOUND');
+      return ok(updated);
     }
+  );
+
+  app.get('/v1/admin/audit-events', async (request) => {
+    const principal = assertSuperuser(request);
+    const query = request.query as Record<string, unknown>;
+    const companyId = parseTenantCompanyId(query.company_id);
+    const reasonHash = requireAdminReasonHash(query.reason);
+    const events = await repository('arsy.audit.event').find({
+      scope: { companyId },
+      limit: 100,
+      orderBy: 'create_date',
+      orderDirection: 'DESC',
+    });
+    await recordAdminRead(request, principal, companyId, 'arsy.audit.event', '*', reasonHash);
+    return ok(events, { totalItems: events.length });
   });
 
-  app.put<{ Params: { id: string }; Body: { secret: string; rotated_by?: string } }>('/v1/nexus/nas/:id/secret', async (request, reply) => {
-    try {
-      const { id } = request.params;
-      const { secret, rotated_by } = request.body as any;
-      const model = modelRegistry.get('nexus.nas');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'nexus.nas model not registered');
-      }
-      const repo = new BaseRepository(model);
-       const nas = ((await repo.find({ filters: [{ field: 'id', operator: '=', value: parseInt(id) }], limit: 1 })) as unknown) as any[];
-      if (!nas || nas.length === 0) {
-        reply.status(404);
-        return fail('NAS_NOT_FOUND', 'NAS not found');
-      }
-      const n = nas[0];
-      const encryptedSecret = encryptSecret(secret) || secret;
-      // Since BaseRepository doesn't have update, we'll just return success with redacted secret
-      return ok({ ...n, secret_encrypted: encryptedSecret, secret: redactSecret(encryptedSecret) });
-    } catch (err: any) {
-      logger.error({ err }, 'NAS secret rotation failed');
-      reply.status(500);
-      return fail('NAS_SECRET_ROTATION_ERROR', err.message);
+  app.post<{ Params: { id: string } }>('/v1/admin/users/:id/role', async (request) => {
+    const principal = assertSuperuser(request);
+    const body = bodyOf(request);
+    const reasonHash = requireAdminReasonHash(body.reason);
+    if (body.role !== 'user' && body.role !== 'superuser') {
+      throw new AppError('role must be user or superuser', 400, 'VALIDATION_ERROR');
     }
+
+    const authUserId = parseId(request.params.id, 'user id');
+    const nextRole = body.role;
+    const updated = await dbEngine.transaction(async (executor: QueryExecutor) => {
+      const targetAuthUsers = await executor.query<{
+        id: number;
+        res_user_id: number;
+        company_id: number;
+        status: string;
+      }>(
+        `SELECT "id", "res_user_id", "company_id", "status" FROM "auth_user" WHERE "id" = $1;`,
+        [authUserId]
+      );
+      const authUser = targetAuthUsers[0];
+      if (!authUser) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      if (authUser.status !== 'active') {
+        throw new AppError('Only active users can receive an administrative role', 409, 'USER_NOT_ACTIVE');
+      }
+
+      const activeSuperusers = await executor.query<{ id: number }>(
+        `SELECT users."id"
+         FROM "res_users" AS users
+         JOIN "auth_user" AS accounts ON accounts."res_user_id" = users."id"
+         WHERE users."role" = 'superuser' AND accounts."status" = 'active'
+         ORDER BY users."id"
+         FOR UPDATE OF users;`
+      );
+      const targetRows = await executor.query<{
+        id: number;
+        role: string;
+        company_id: number;
+      }>(
+        `SELECT "id", "role", "company_id" FROM "res_users" WHERE "id" = $1 FOR UPDATE;`,
+        [authUser.res_user_id]
+      );
+      const target = targetRows[0];
+      if (!target || target.role === 'system') {
+        throw new AppError('This identity cannot receive a login role', 409, 'ROLE_NOT_ASSIGNABLE');
+      }
+
+      if (target.role === 'superuser' && nextRole === 'user' && activeSuperusers.length <= 1) {
+        throw new AppError('The last active superuser cannot be demoted', 409, 'LAST_SUPERUSER');
+      }
+
+      await recordAdminRead(
+        request,
+        principal,
+        Number(target.company_id),
+        'res.users',
+        String(target.id),
+        reasonHash,
+        executor
+      );
+      if (target.role === nextRole) return target.role;
+
+      const roleChange = await repository('res.users', executor).updateById(
+        target.id,
+        { role: nextRole },
+        { companyId: Number(target.company_id) },
+        adminActor(request, reasonHash, principal),
+        {}
+      );
+      if (!roleChange) throw new AppError('User identity changed during the operation', 409, 'ROLE_UPDATE_CONFLICT');
+      return nextRole;
+    });
+    return ok({ userId: authUserId, role: updated });
   });
 
-  // NEXUS IP Pool Endpoints
-  app.get<{ Querystring: { company_id?: string } }>('/v1/nexus/pools', async (request, reply) => {
-    try {
-      const companyId = (request.query?.company_id as string) || '';
-      const model = modelRegistry.get('nexus.ip_pool');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'nexus.ip_pool model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const filters: any[] = [];
-      if (companyId) {
-        filters.push({ field: 'company_id', operator: '=' as const, value: companyId });
-      }
-      const pools = await repo.find({ filters, limit: 100 });
-      return ok(pools, { totalItems: pools.length });
-    } catch (err: any) {
-      logger.error({ err }, 'IP pool list failed');
-      reply.status(500);
-      return fail('IP_POOL_ERROR', err.message);
-    }
+  app.get('/v1/nexus/nas', async (request) => {
+    const nas = await repository('nexus.nas').find({ scope: tenantOf(request), limit: 100 });
+    return ok(nas.map((record) => ({ ...record, secret: redactSecret(String(record.secret_encrypted)) })), { totalItems: nas.length });
   });
 
-  // ORBIT Compute Endpoints
-  app.get<{ Querystring: { company_id?: string } }>('/v1/orbit/instances', async (request, reply) => {
-    try {
-      const companyId = (request.query?.company_id as string) || '';
-      const model = modelRegistry.get('orbit.instance');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'orbit.instance not registered'); }
-      const repo = new BaseRepository(model);
-      const filters: any[] = [];
-      if (companyId) filters.push({ field: 'company_id', operator: '=', value: Number(companyId) });
-      const instances = await repo.find({ filters, limit: 100 });
-      return ok(instances, { totalItems: instances.length });
-    } catch (err: any) { reply.status(500); return fail('ORBIT_LIST_ERROR', err.message); }
+  app.post('/v1/nexus/nas', async (request, reply) => {
+    const body = bodyOf(request);
+    const scope = tenantOf(request);
+    const nas = await repository('nexus.nas').create({
+      nas_identifier: requireString(body, 'nas_identifier'),
+      ip_address: requireString(body, 'ip_address'),
+      secret_encrypted: encryptSecret(requireString(body, 'secret')),
+      vendor: body.vendor || 'mikrotik',
+      coa_port: optionalInteger(body, 'coa_port', 3799),
+      disconnect_port: optionalInteger(body, 'disconnect_port', 3799),
+      source_allowlist: Array.isArray(body.source_allowlist) ? body.source_allowlist : [],
+      site_id: body.site_id ?? null,
+      device_id: body.device_id ?? null,
+    }, scope, actorOf(request));
+    reply.status(201);
+    return ok({ ...nas, secret: redactSecret(String(nas.secret_encrypted)) });
+  });
+
+  const nasById = async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const scope = tenantOf(request);
+    const nas = await repository('nexus.nas').findById(parseId(request.params.id, 'nas id'), scope);
+    if (!nas) throw new AppError('NAS not found', 404, 'NAS_NOT_FOUND');
+    return { scope, nas };
+  };
+
+  app.get<{ Params: { id: string } }>('/v1/nexus/nas/:id', async (request) => {
+    const { nas } = await nasById(request);
+    return ok({ ...nas, secret: redactSecret(String(nas.secret_encrypted)) });
+  });
+
+  app.put<{ Params: { id: string } }>('/v1/nexus/nas/:id/secret', async (request) => {
+    const { scope, nas } = await nasById(request);
+    const nextSecret = requireString(bodyOf(request), 'secret');
+    const encrypted = encryptSecret(nextSecret);
+    const updated = await repository('nexus.nas').updateById(
+      Number(nas.id),
+      { secret_encrypted: encrypted },
+      scope,
+      actorOf(request)
+    );
+
+    const previous = String(nas.secret_encrypted ?? '');
+    await repository('nexus.nas_secret_log').create({
+      nas_id: Number(nas.id),
+      rotated_by: principalOf(request).userId,
+      rotated_at: new Date().toISOString(),
+      // Legacy rows may still hold a plaintext secret; only an envelope can be read back.
+      previous_secret_hash: isEncrypted(previous)
+        ? crypto.createHash('sha256').update(decryptSecret(previous)).digest('hex')
+        : null,
+      metadata: {},
+    }, scope, actorOf(request));
+
+    return ok({ ...(updated ?? nas), secret: redactSecret(encrypted) });
+  });
+
+  app.get('/v1/nexus/pools', async (request) => {
+    const pools = await repository('nexus.ip_pool').find({ scope: tenantOf(request), limit: 100 });
+    return ok(pools, { totalItems: pools.length });
+  });
+
+  app.get('/v1/orbit/instances', async (request) => {
+    const instances = await repository('orbit.instance').find({ scope: tenantOf(request), limit: 100 });
+    return ok(instances, { totalItems: instances.length });
   });
 
   app.post('/v1/orbit/instances', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const model = modelRegistry.get('orbit.instance');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'orbit.instance not registered'); }
-      const repo = new BaseRepository(model);
-      const instance = await repo.create({
-        company_id: body.company_id,
-        name: body.name,
-        cpu_cores: body.cpu_cores ?? 1,
-        ram_mb: body.ram_mb ?? 1024,
-        disk_gb: body.disk_gb ?? 20,
-        status: 'provisioning',
-        ip_address: body.ip_address || null,
-        partner_id: body.partner_id || null,
-        template_id: body.template_id || null,
-      });
-      reply.status(201);
-      return ok(instance);
-    } catch (err: any) { reply.status(500); return fail('ORBIT_CREATE_ERROR', err.message); }
+    const body = bodyOf(request);
+    const instance = await repository('orbit.instance').create({
+      name: requireString(body, 'name'),
+      cpu_cores: optionalInteger(body, 'cpu_cores', 1),
+      ram_mb: optionalInteger(body, 'ram_mb', 1024),
+      disk_gb: optionalInteger(body, 'disk_gb', 20),
+      status: 'provisioning',
+      ip_address: body.ip_address || null,
+      partner_id: body.partner_id ?? null,
+      template_id: body.template_id ?? null,
+    }, tenantOf(request), actorOf(request));
+    reply.status(201);
+    return ok(instance);
   });
 
-  // WORKS Commercial Endpoints
-  app.get('/v1/works/plans', async (_req, reply) => {
-    try {
-      const model = modelRegistry.get('isp.plan');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.plan not registered'); }
-      const repo = new BaseRepository(model);
-      const plans = await repo.find({ limit: 100 });
-      return ok(plans, { totalItems: plans.length });
-    } catch (err: any) { reply.status(500); return fail('WORKS_PLANS_ERROR', err.message); }
+  app.get('/v1/works/plans', async (request) => {
+    const plans = await repository('isp.plan').find({ scope: tenantOf(request), limit: 100 });
+    return ok(plans, { totalItems: plans.length });
   });
 
   app.post('/v1/works/plans', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const model = modelRegistry.get('isp.plan');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.plan not registered'); }
-      const repo = new BaseRepository(model);
-      const plan = await repo.create({ company_id: body.company_id, name: body.name, download_mbps: body.download_mbps ?? 10, upload_mbps: body.upload_mbps ?? 5, price: body.price ?? 0, currency: body.currency ?? 'IDR' });
-      reply.status(201); return ok(plan);
-    } catch (err: any) { reply.status(500); return fail('WORKS_PLAN_CREATE_ERROR', err.message); }
+    const body = bodyOf(request);
+    const plan = await repository('isp.plan').create({
+      name: requireString(body, 'name'),
+      download_mbps: optionalInteger(body, 'download_mbps', 10),
+      upload_mbps: optionalInteger(body, 'upload_mbps', 5),
+      price: Number(body.price ?? 0),
+      currency: body.currency || 'IDR',
+    }, tenantOf(request), actorOf(request));
+    reply.status(201);
+    return ok(plan);
   });
 
-  app.get('/v1/works/subscriptions', async (_req, reply) => {
-    try {
-      const model = modelRegistry.get('isp.subscription');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
-      const repo = new BaseRepository(model);
-      const subs = await repo.find({ limit: 100 });
-      return ok(subs, { totalItems: subs.length });
-    } catch (err: any) { reply.status(500); return fail('WORKS_SUBS_ERROR', err.message); }
+  app.get('/v1/works/subscriptions', async (request) => {
+    const subscriptions = await repository('isp.subscription').find({ scope: tenantOf(request), limit: 100 });
+    return ok(subscriptions, { totalItems: subscriptions.length });
   });
 
   app.post('/v1/works/subscriptions', async (request, reply) => {
-    try {
-      const body = request.body as any;
-      const model = modelRegistry.get('isp.subscription');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
-      const repo = new BaseRepository(model);
-      const sub = await repo.create({ company_id: body.company_id, customer_id: body.customer_id, plan_id: body.plan_id, state: 'draft' });
-      reply.status(201); return ok(sub);
-    } catch (err: any) { reply.status(500); return fail('WORKS_SUB_CREATE_ERROR', err.message); }
+    const body = bodyOf(request);
+    const scope = tenantOf(request);
+    const planId = parseId(body.plan_id, 'plan_id');
+    // The plan is read through the tenant scope, so another tenant's plan id is a 404, not a booking.
+    const plan = await repository('isp.plan').findById(planId, scope);
+    if (!plan) throw new AppError('Plan not found', 404, 'PLAN_NOT_FOUND');
+
+    const subscription = await repository('isp.subscription').create({
+      customer_id: body.customer_id ?? null,
+      plan_id: planId,
+      state: 'draft',
+    }, scope, actorOf(request));
+    reply.status(201);
+    return ok(subscription);
   });
 
-  app.post<{ Params: { id: string } }>('/v1/works/subscriptions/:id/activate', async (request, reply) => {
-    try {
-      const model = modelRegistry.get('isp.subscription');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
-      const repo = new BaseRepository(model);
-      await repo.updateById(parseInt(request.params.id), { state: 'active', started_at: new Date().toISOString() });
-      return ok({ id: request.params.id, state: 'active' });
-    } catch (err: any) { reply.status(500); return fail('WORKS_ACTIVATE_ERROR', err.message); }
+  const subscriptionTransitions: Record<string, { state: string; timestampField: string }> = {
+    activate: { state: 'active', timestampField: 'started_at' },
+    suspend: { state: 'suspended', timestampField: 'suspended_at' },
+  };
+
+  for (const [action, rule] of Object.entries(subscriptionTransitions)) {
+    app.post<{ Params: { id: string } }>(`/v1/works/subscriptions/:id/${action}`, async (request) => {
+      const scope = tenantOf(request);
+      const repo = repository('isp.subscription');
+      const id = parseId(request.params.id, 'subscription id');
+      const updated = await repo.updateById(id, { [rule.timestampField]: new Date().toISOString(), state: rule.state }, scope, actorOf(request));
+      if (!updated) throw new AppError('Subscription not found', 404, 'SUBSCRIPTION_NOT_FOUND');
+      return ok({ id, state: rule.state });
+    });
+  }
+
+  app.get('/v1/works/invoices', async (request) => {
+    const invoices = await repository('isp.invoice').find({ scope: tenantOf(request), limit: 100 });
+    return ok(invoices, { totalItems: invoices.length });
   });
 
-  app.post<{ Params: { id: string } }>('/v1/works/subscriptions/:id/suspend', async (request, reply) => {
-    try {
-      const model = modelRegistry.get('isp.subscription');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
-      const repo = new BaseRepository(model);
-      await repo.updateById(parseInt(request.params.id), { state: 'suspended', suspended_at: new Date().toISOString() });
-      return ok({ id: request.params.id, state: 'suspended' });
-    } catch (err: any) { reply.status(500); return fail('WORKS_SUSPEND_ERROR', err.message); }
+  // Platform catalogs are shared rows owned by company_id 0. Reading them needs the public
+  // rows plus this tenant's overrides, and the id list always comes from the principal.
+  const catalogScope = (): TenantScope => ({ systemScope: true });
+
+  app.get('/v1/i18n/languages', async (request) => {
+    const languages = await repository('res.lang').find({
+      scope: catalogScope(),
+      filters: [
+        { field: 'company_id', operator: 'IN', value: [0, principalOf(request).companyId] },
+        { field: 'active', operator: '=', value: true },
+      ],
+      limit: 100,
+    });
+    return ok(languages, { totalItems: languages.length });
   });
 
-  app.get('/v1/works/invoices', async (_req, reply) => {
-    try {
-      const model = modelRegistry.get('isp.invoice');
-      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.invoice not registered'); }
-      const repo = new BaseRepository(model);
-      const inv = await repo.find({ limit: 100 });
-      return ok(inv, { totalItems: inv.length });
-    } catch (err: any) { reply.status(500); return fail('WORKS_INVOICES_ERROR', err.message); }
+  app.get<{ Params: { lang: string } }>('/v1/i18n/terms/:lang', async (request) => {
+    const terms = await repository('ir.translation').find({
+      scope: catalogScope(),
+      filters: [
+        { field: 'company_id', operator: 'IN', value: [0, principalOf(request).companyId] },
+        { field: 'lang', operator: '=', value: request.params.lang },
+        { field: 'type', operator: '=', value: 'ui' },
+        { field: 'active', operator: '=', value: true },
+      ],
+      limit: 1000,
+    });
+    return ok(terms, { totalItems: terms.length });
   });
 
-  // i18n Endpoints
-  app.get<{ Querystring: { lang?: string; company_id?: string } }>('/v1/i18n/languages', async (request, reply) => {
-    try {
-      const companyId = (request.query?.company_id as string) || '';
-      const model = modelRegistry.get('res.lang');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'res.lang model not registered');
+  app.post('/v1/i18n/terms/sync', async (request) => {
+    const body = bodyOf(request);
+    const lang = requireString(body, 'lang');
+    const terms = body.terms as Record<string, string>;
+    if (!terms || typeof terms !== 'object') throw new AppError('terms is required', 400, 'VALIDATION_ERROR');
+
+    // A tenant may only write its own override rows; company_id 0 stays platform-owned.
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+    const repo = repository('ir.translation');
+
+    for (const [name, value] of Object.entries(terms)) {
+      const existing = await repo.find({
+        scope,
+        filters: [
+          { field: 'lang', operator: '=', value: lang },
+          { field: 'name', operator: '=', value: name },
+          { field: 'type', operator: '=', value: 'ui' },
+        ],
+        limit: 1,
+      });
+
+      if (existing.length > 0) {
+        await repo.updateById(existing[0].id, { value, state: 'translated' }, scope, actor);
+        continue;
       }
-      const repo = new BaseRepository(model);
-      const filters: any[] = [];
-      if (companyId) {
-        filters.push({ field: 'company_id', operator: '=' as const, value: Number(companyId) });
-      } else {
-        filters.push({ field: 'company_id', operator: '=', value: 0 });
-      }
-      filters.push({ field: 'active', operator: '=', value: true });
-      const languages = await repo.find({ filters, limit: 100 });
-      return ok(languages, { totalItems: languages.length });
-    } catch (err: any) {
-      logger.error({ err }, 'i18n languages failed');
-      reply.status(500);
-      return fail('I18N_ERROR', err.message);
+
+      await repo.create({ lang, name, src: value, value, state: 'translated', type: 'ui' }, scope, actor);
     }
-  });
 
-  app.get<{ Params: { lang: string }; Querystring: { company_id?: string } }>('/v1/i18n/terms/:lang', async (request, reply) => {
-    try {
-      const lang = request.params.lang;
-      const companyId = (request.query?.company_id as string) || '';
-      const model = modelRegistry.get('ir.translation');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'ir.translation model not registered');
-      }
-      const repo = new BaseRepository(model);
-      const filters: any[] = [];
-      if (companyId) {
-        filters.push({ field: 'company_id', operator: '=' as const, value: Number(companyId) });
-      } else {
-        filters.push({ field: 'company_id', operator: '=', value: 0 });
-      }
-      filters.push({ field: 'lang', operator: '=', value: lang });
-      filters.push({ field: 'type', operator: '=', value: 'ui' });
-      filters.push({ field: 'active', operator: '=', value: true });
-      const terms = await repo.find({ filters, limit: 100 });
-      return ok(terms, { totalItems: terms.length });
-    } catch (err: any) {
-      logger.error({ err }, 'i18n terms failed');
-      reply.status(500);
-      return fail('I18N_ERROR', err.message);
-    }
-  });
-
-  app.post<{ Body: { terms: Record<string, string>; lang: string; company_id: number } }>('/v1/i18n/terms/sync', async (request, reply) => {
-    try {
-      const { terms, lang, company_id } = request.body as any;
-      const model = modelRegistry.get('ir.translation');
-      if (!model) {
-        reply.status(500);
-        return fail('MODEL_NOT_FOUND', 'ir.translation model not registered');
-      }
-
-      const repo = new BaseRepository(model);
-      const currentTime = new Date().toISOString();
-
-      for (const [name, value] of Object.entries(terms)) {
-        // Try to find existing translation
-        const existing = await repo.find({
-          filters: [
-            { field: 'company_id', operator: '=', value: company_id },
-            { field: 'lang', operator: '=', value: lang },
-            { field: 'name', operator: '=', value: name },
-            { field: 'type', operator: '=', value: 'ui' }
-          ],
-          limit: 1
-        });
-
-        if (existing && existing.length > 0) {
-          // Update existing
-          await repo.updateById(existing[0].id, { value, state: 'translated', write_date: currentTime }, company_id);
-        } else {
-          // Create new
-          await repo.create({
-            company_id,
-            lang,
-            name,
-            src: value,
-            value,
-            state: 'translated',
-            type: 'ui'
-          }, company_id);
-        }
-      }
-
-      return ok({ message: 'Translation catalog synchronized successfully' });
-    } catch (err: any) {
-      logger.error({ err }, 'i18n terms sync failed');
-      reply.status(500);
-      return fail('I18N_ERROR', err.message);
-    }
+    return ok({ message: 'Translation catalog synchronized successfully' });
   });
 
   return app;

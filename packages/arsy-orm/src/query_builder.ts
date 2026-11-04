@@ -1,5 +1,13 @@
 import { ModelDefinition } from './model';
 
+const SUPPORTED_OPERATORS = new Set(['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'ILIKE', 'IN']);
+
+const RESERVED_COLUMNS = ['id', 'active', 'create_date', 'write_date', 'create_uid', 'write_uid', 'company_id'];
+
+export type TenantScope =
+  | { companyId: string | number }
+  | { systemScope: true; companyId?: string | number };
+
 export interface QueryFilter {
   field: string;
   operator: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'LIKE' | 'ILIKE' | 'IN';
@@ -7,7 +15,7 @@ export interface QueryFilter {
 }
 
 export interface QueryOptions {
-  companyId?: string | number | null;
+  scope: TenantScope;
   lang?: string;
   filters?: QueryFilter[];
   limit?: number;
@@ -16,31 +24,96 @@ export interface QueryOptions {
   orderDirection?: 'ASC' | 'DESC';
 }
 
+export class TenantScopeRequiredError extends Error {
+  constructor(modelName: string) {
+    super(
+      `Query on '${modelName}' has no tenant scope. Pass { companyId } or name { systemScope: true } explicitly.`
+    );
+    this.name = 'TenantScopeRequiredError';
+  }
+}
+
+export class UnknownFieldError extends Error {
+  constructor(modelName: string, field: string) {
+    super(`Unknown field '${field}' on '${modelName}'.`);
+    this.name = 'UnknownFieldError';
+  }
+}
+
+export class UnsupportedOperatorError extends Error {
+  constructor(operator: string) {
+    super(`Unsupported filter operator '${operator}'.`);
+    this.name = 'UnsupportedOperatorError';
+  }
+}
+
+export function isSystemScope(scope: TenantScope | undefined): scope is { systemScope: true } {
+  return scope !== undefined && (scope as { systemScope?: boolean }).systemScope === true;
+}
+
+export function tenantCompanyId(scope: TenantScope): number {
+  if (isSystemScope(scope)) {
+    throw new Error('systemScope carries no single tenant id.');
+  }
+  const companyId = Number(scope.companyId);
+  // Personal tenants live in the negative namespace, so only 0 and NaN are unusable.
+  if (!Number.isSafeInteger(companyId) || companyId === 0) {
+    throw new Error(`Invalid tenant company_id '${String(scope.companyId)}'.`);
+  }
+  return companyId;
+}
+
 export class QueryBuilder {
   constructor(private readonly model: ModelDefinition) {}
 
-  buildSelect(options: QueryOptions = {}): { sql: string; params: unknown[] } {
-    const params: unknown[] = [];
-    const whereClauses: string[] = ['active = true'];
-
-    // Fail-closed tenant isolation
-    if (options.companyId !== undefined && options.companyId !== null) {
-      params.push(options.companyId);
-      whereClauses.push(`company_id = $${params.length}`);
+  private assertColumn(modelName: string, field: string): void {
+    if (!RESERVED_COLUMNS.includes(field) && !(field in this.model.fields)) {
+      throw new UnknownFieldError(modelName, field);
     }
+  }
+
+  private column(field: string): string {
+    this.assertColumn(this.model.name, field);
+    return `"${field}"`;
+  }
+
+  private scopeClause(scope: TenantScope | undefined, params: unknown[]): string[] {
+    if (scope === undefined) throw new TenantScopeRequiredError(this.model.name);
+    if (isSystemScope(scope)) return [];
+    params.push(tenantCompanyId(scope));
+    return [`"company_id" = $${params.length}`];
+  }
+
+  buildSelect(options: QueryOptions): { sql: string; params: unknown[] } {
+    const params: unknown[] = [];
+    const whereClauses: string[] = ['"active" = true', ...this.scopeClause(options.scope, params)];
 
     if (options.filters) {
       for (const filter of options.filters) {
-        params.push(filter.value);
-        whereClauses.push(`"${filter.field}" ${filter.operator} $${params.length}`);
+        const column = this.column(filter.field);
+        const operator = filter.operator.toUpperCase();
+        if (!SUPPORTED_OPERATORS.has(operator)) throw new UnsupportedOperatorError(filter.operator);
+
+        if (operator === 'IN') {
+          const values = Array.isArray(filter.value) ? filter.value : [filter.value];
+          if (values.length === 0) throw new Error(`'${filter.field}' IN requires at least one value.`);
+          const placeholders = values.map((value) => {
+            params.push(value);
+            return `$${params.length}`;
+          });
+          whereClauses.push(`${column} IN (${placeholders.join(', ')})`);
+        } else {
+          params.push(filter.value);
+          whereClauses.push(`${column} ${operator} $${params.length}`);
+        }
       }
     }
 
     let sql = `SELECT * FROM "${this.model.tableName}" WHERE ${whereClauses.join(' AND ')}`;
 
     if (options.orderBy) {
-      const dir = options.orderDirection || 'ASC';
-      sql += ` ORDER BY "${options.orderBy}" ${dir}`;
+      const dir = options.orderDirection === 'DESC' ? 'DESC' : 'ASC';
+      sql += ` ORDER BY ${this.column(options.orderBy)} ${dir}`;
     }
 
     if (options.limit) {
@@ -56,24 +129,59 @@ export class QueryBuilder {
     return { sql, params };
   }
 
-  buildInsert(data: Record<string, unknown>, companyId?: string | number | null): { sql: string; params: unknown[] } {
-    const fields: string[] = [];
+  private assertAuditActor(actorId: number): void {
+    if (!Number.isSafeInteger(actorId) || actorId < 1) {
+      throw new Error('Audit actor must be a positive res.users ID.');
+    }
+  }
+
+  private assertWritableField(field: string, allowCompanyId = false): void {
+    if (allowCompanyId && field === 'company_id') return;
+    if (RESERVED_COLUMNS.includes(field) || field === 'create_date' || field === 'write_date') {
+      throw new Error(`Field '${field}' is managed by the ORM.`);
+    }
+    this.assertColumn(this.model.name, field);
+  }
+
+  buildInsert(
+    data: Record<string, unknown>,
+    scope: TenantScope,
+    actorId: number
+  ): { sql: string; params: unknown[] } {
+    this.assertAuditActor(actorId);
+    const columns: string[] = [];
     const placeholders: string[] = [];
     const params: unknown[] = [];
+    const values: Array<[string, unknown]> = [];
 
-    const payload = { ...data };
-    if (companyId !== undefined && companyId !== null) {
-      payload.company_id = companyId;
+    for (const [key, value] of Object.entries(data)) {
+      if (key === 'company_id' && !isSystemScope(scope)) continue;
+      this.assertWritableField(key, isSystemScope(scope));
+      values.push([key, value]);
     }
 
-    for (const [key, val] of Object.entries(payload)) {
-      fields.push(`"${key}"`);
-      params.push(val);
+    for (const [key, value] of values) {
+      columns.push(`"${key}"`);
+      params.push(value);
       placeholders.push(`$${params.length}`);
     }
 
+    if (isSystemScope(scope)) {
+      if (data.company_id === undefined) {
+        throw new Error(`Insert into '${this.model.name}' with systemScope must supply an explicit company_id.`);
+      }
+    } else {
+      columns.push('"company_id"');
+      params.push(tenantCompanyId(scope));
+      placeholders.push(`$${params.length}`);
+    }
+
+    columns.push('"create_uid"', '"write_uid"');
+    params.push(actorId, actorId);
+    placeholders.push(`$${params.length - 1}`, `$${params.length}`);
+
     const sql = `
-      INSERT INTO "${this.model.tableName}" (${fields.join(', ')})
+      INSERT INTO "${this.model.tableName}" (${columns.join(', ')})
       VALUES (${placeholders.join(', ')})
       RETURNING *;
     `;
@@ -84,40 +192,69 @@ export class QueryBuilder {
   buildUpdate(
     id: string | number,
     data: Record<string, unknown>,
-    companyId: string | number,
+    scope: TenantScope,
+    actorId: number,
     expected: Record<string, unknown> = {}
   ): { sql: string; params: unknown[] } {
+    this.assertAuditActor(actorId);
     const params: unknown[] = [];
     const assignments: string[] = [];
-    const conditions = ['active = true'];
-    const validFields = new Set(Object.keys(this.model.fields));
+    const conditions = ['"active" = true'];
 
     for (const [field, value] of Object.entries(data)) {
-      if (!validFields.has(field)) {
-        throw new Error(`Cannot update unknown field '${field}' on '${this.model.name}'.`);
-      }
+      this.assertWritableField(field, isSystemScope(scope));
       params.push(value);
-      assignments.push(`"${field}" = $${params.length}`);
+      assignments.push(`${this.column(field)} = $${params.length}`);
     }
     if (assignments.length === 0) {
       throw new Error('An update must include at least one field.');
     }
-
     params.push(id);
-    conditions.push(`id = $${params.length}`);
+    conditions.push(`"id" = $${params.length}`);
+    const companyId = isSystemScope(scope)
+      ? scope.companyId === undefined
+        ? (() => {
+            throw new Error(`System update on '${this.model.name}' must name a companyId.`);
+          })()
+        : Number(scope.companyId)
+      : tenantCompanyId(scope);
+    if (!Number.isSafeInteger(companyId) || (!isSystemScope(scope) && companyId === 0)) {
+      throw new Error(`Invalid tenant company_id '${String(companyId)}'.`);
+    }
     params.push(companyId);
-    conditions.push(`company_id = $${params.length}`);
+    conditions.push(`"company_id" = $${params.length}`);
 
     for (const [field, value] of Object.entries(expected)) {
-      if (!validFields.has(field)) {
-        throw new Error(`Cannot match unknown field '${field}' on '${this.model.name}'.`);
-      }
+      this.assertWritableField(field, isSystemScope(scope));
       params.push(value);
-      conditions.push(`"${field}" = $${params.length}`);
+      conditions.push(`${this.column(field)} = $${params.length}`);
     }
 
+    params.push(actorId);
+    assignments.push(`"write_uid" = $${params.length}`);
+
     return {
-      sql: `UPDATE "${this.model.tableName}" SET ${assignments.join(', ')}, write_date = CURRENT_TIMESTAMP WHERE ${conditions.join(' AND ')} RETURNING *;`,
+      sql: `UPDATE "${this.model.tableName}" SET ${assignments.join(', ')}, "write_date" = CURRENT_TIMESTAMP WHERE ${conditions.join(' AND ')} RETURNING *;`,
+      params,
+    };
+  }
+
+  buildDelete(id: string | number, scope: TenantScope): { sql: string; params: unknown[] } {
+    const params: unknown[] = [id];
+    const companyId = isSystemScope(scope)
+      ? scope.companyId === undefined
+        ? (() => {
+            throw new Error(`System delete on '${this.model.name}' must name a companyId.`);
+          })()
+        : Number(scope.companyId)
+      : tenantCompanyId(scope);
+    if (!Number.isSafeInteger(companyId) || (!isSystemScope(scope) && companyId === 0)) {
+      throw new Error(`Invalid tenant company_id '${String(companyId)}'.`);
+    }
+
+    params.push(companyId);
+    return {
+      sql: `DELETE FROM "${this.model.tableName}" WHERE "active" = true AND "id" = $1 AND "company_id" = $2 RETURNING "id";`,
       params,
     };
   }
