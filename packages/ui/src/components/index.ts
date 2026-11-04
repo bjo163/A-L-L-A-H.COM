@@ -10,3 +10,7 @@ export * from './table';
 export * from './dialog';
 export * from './link';
 export * from './skeleton';
+export * from './icon';
+export * from './emblem';
+export * from './ToolRegistryCard';
+export * from './ToolDetailPanel';

@@ -22,6 +22,9 @@ import {
   TableRow,
   Textarea,
   StatusMessage,
+  RouteShell,
+  ToolRegistryCard,
+  ToolDetailPanel,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type { McpTool, McpToolCallResult, ToolExecutionRecord } from '@moonwitness/types';
@@ -33,7 +36,7 @@ export default function ToolsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Sandbox state
-  const [selectedTool, setSelectedTool] = useState<string>('');
+  const [selectedTool, setSelectedTool] = useState<McpTool | null>(null);
   const [toolArgs, setToolArgs] = useState('{}');
   const [callResult, setCallResult] = useState<McpToolCallResult | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
@@ -97,7 +100,7 @@ export default function ToolsPage() {
   };
 
   const handleSelectTool = (tool: McpTool) => {
-    setSelectedTool(tool.name);
+    setSelectedTool(tool);
     setToolArgs(defaultArgsFor(tool));
     setCallResult(null);
     setCallError(null);
@@ -121,7 +124,7 @@ export default function ToolsPage() {
     }
 
     try {
-      const result = await mwClient.mcp.callTool(selectedTool, parsed);
+      const result = await mwClient.mcp.callTool(selectedTool.name, parsed);
       setCallResult(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : '';
@@ -132,9 +135,15 @@ export default function ToolsPage() {
     }
   };
 
+  const handleCloseDetail = () => {
+    setSelectedTool(null);
+    setToolArgs('{}');
+    setCallResult(null);
+    setCallError(null);
+  };
+
   return (
-    <div className="hq-route hq-tools">
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
+    <RouteShell as="main" className="hq-route hq-tools flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div>
             <div className="flex items-center gap-2">
@@ -196,7 +205,7 @@ export default function ToolsPage() {
           </Card>
         </section>
 
-        {/* Tool Registry Catalog */}
+        {/* Tool Registry Catalog - using ToolRegistryCard */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Tool Registry Catalog</h2>
@@ -214,32 +223,30 @@ export default function ToolsPage() {
               </Card>
             ) : (
               tools.map((tool) => (
-                <Card key={tool.name} className="cursor-pointer hover:border-accent transition-colors group">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium">{tool.name}</CardTitle>
-                      <Badge variant="gold" dot>NATIVE</Badge>
-                    </div>
-                    <CardDescription className="text-xs text-muted-foreground">{tool.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-2">
-                    <div className="text-[10px] text-muted-foreground font-mono mb-2">
-                      Schema: {Object.keys(tool.inputSchema?.properties || {}).join(', ') || 'none'}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSelectTool(tool)}
-                      className="w-full text-[10px] px-3"
-                    >
-                      Test in Sandbox
-                    </Button>
-                  </CardContent>
-                </Card>
+                <ToolRegistryCard
+                  key={tool.name}
+                  tool={tool}
+                  onClick={handleSelectTool}
+                />
               ))
             )}
           </div>
         </section>
+
+        {/* Tool Detail Panel - using ToolDetailPanel */}
+        {selectedTool && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Tool Detail</h2>
+              <Badge variant="gold" dot>SELECTED</Badge>
+            </div>
+            <ToolDetailPanel
+              tool={selectedTool}
+              onExecute={handleSelectTool}
+              onClose={() => setSelectedTool(null)}
+            />
+          </section>
+        )}
 
         {/* Interactive Tool Execution Sandbox */}
         <section className="p-6 rounded-xl bg-card border border-border space-y-4">
@@ -256,7 +263,7 @@ export default function ToolsPage() {
             <div className="space-y-2">
               <Select
                 label="Tool"
-                value={selectedTool}
+                value={selectedTool?.name || ''}
                 onChange={(e) => {
                   const t = tools.find((tool) => tool.name === e.target.value);
                   if (t) handleSelectTool(t);
@@ -371,7 +378,6 @@ export default function ToolsPage() {
             </TableScroll>
           </Card>
         </section>
-      </main>
-    </div>
+    </RouteShell>
   );
 }
