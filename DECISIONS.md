@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DECISIONS"
-version: "1.3.0"
+version: "1.4.0"
 owner: "architecture"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -102,3 +102,12 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - consequences: MOONSKY runtime and PostgreSQL remain separate services within the monorepo. Operator authentication and tenant authorization must integrate with ARSY; static broad service keys and standalone production operator identity are not accepted as the final ecosystem model. MOONSKY UI must use the shared `@moonwitness/ui` engine. Baileys remains an unofficial WhatsApp Web adapter behind a provider-neutral contract; an official WhatsApp Business provider can be added separately. No production data migration or deployment is authorized by this decision.
 - UI ownership clarification (locked): **MOONSKY Console** is the independently usable, full operator workspace and owns inbox, message composition, pairing/session repair, channel configuration, routing, automation, webhook operations, and delivery diagnostics. **HEADQUARTER** is the ecosystem command surface and owns aggregate health, metrics, alerts, recent activity summaries, and deep-links into the relevant Console context. Headquarter may show compact summaries or narrowly scoped safe actions, but must not fork inbox state, duplicate operator workflows, or become a second communication control plane. Both surfaces use shared ecosystem identity/navigation and the shared UI/skin engine; MOONSKY Console remains operable if Headquarter is unavailable, while Headquarter degrades gracefully if MOONSKY is unavailable. Standalone means independent runtime and operator capability—not disconnected identity, branding, or navigation.
 - related: [MOONSKY Integration Plan](.plans/20261104-moonsky-integration/spec.md), D-003, D-007, D-008
+
+### D-012 — Native-First Primitives and One Token Source
+- status: ACCEPTED — 2026-11-04
+- context: `DESIGN.md` declared Base UI as the primitives engine, but `@moonwitness/ui` implements `Select`, `Dialog`, `Table`, and `Form` on native elements, and `@base-ui/react` was declared without a single import. At the same time every app carried a second token system: shadcn `--background`/`--foreground` plus a local `@theme inline` block, alongside the 32 skin tokens that `SkinRoot` publishes. Utilities and skin classes were styling the same surface from two unrelated sources of truth.
+- decision: Primitives are native-first. Keyboard behaviour, focus, and screen-reader semantics that the platform already provides (`<select>`, `<dialog>` with `showModal()`, `<table>`, `<form>`) are not reimplemented. Base UI is introduced only inside `packages/ui`, only where native cannot meet a documented requirement, and each use carries the reason. Appearance has one source: `packages/ui/src/theme.css` maps Tailwind colour and font utilities onto the runtime skin tokens, and applications define no colour, type, or theme variables of their own.
+- alternatives: Adopt Base UI for every interactive primitive to match the old document; keep both token systems and document the split; move styling to CSS-in-JS.
+- rationale: Native elements arrive with tested accessibility and cost nothing in the bundle, while a single token source makes the selected world the only place appearance is decided, which is what the six DNA contract requires.
+- consequences: `STYLE_PURITY` and `INLINE_STYLE_PURITY` ratchet rules can now be enforced, because there is one place a style finding is wrong. Apps cannot theme a surface with an inline colour and expect the skin to follow. Any future Base UI use must be justified in the package, not in an app.
+- related: D-007, [DESIGN.md](DESIGN.md), [packages/ui/src/theme.css](packages/ui/src/theme.css), [packages/lint/style-baseline.json](packages/lint/style-baseline.json)

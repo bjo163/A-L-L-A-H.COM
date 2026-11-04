@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DESIGN"
-version: "1.2.0"
+version: "1.3.0"
 owner: "product-design"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -38,8 +38,9 @@ One shared functional UI engine. No behavioral or accessibility forking across D
 
 ## Implementation Rules
 
-- UI controls: `@moonwitness/ui` only. Blocked by `@moonwitness/lint`.
-- Primitives engine: Base UI. Do not assume Radix. Do not migrate primitive layer during skin work.
+- UI controls: `@moonwitness/ui` only. Blocked by `@moonwitness/lint` (`UI_PURITY`).
+- Primitives engine: native-first. `<select>`, `<dialog>`, `<table>`, and `<form>` carry the behaviour; Base UI is added only inside `packages/ui` where native cannot meet a documented requirement. See D-012. Do not migrate the primitive layer during skin work.
+- Token source: `packages/ui/src/theme.css` maps Tailwind colour and font utilities onto the skin tokens published by `SkinRoot`. Applications define no colour, type, or theme variables and paint no colour inline (`STYLE_PURITY`, `INLINE_STYLE_PURITY`).
 - Product-specific variants: only when behavior genuinely differs from shared.
 - Inspect existing UI package before extending.
 - Skin Laboratory comparison: pending.

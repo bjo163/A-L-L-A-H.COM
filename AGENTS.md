@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.4.0"
+version: "1.5.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -48,6 +48,9 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | SQL | Parameterized only. No raw string queries. |
 | Tenant | `company_id` on every row |
 | ORM | Embedded PGlite via `@allah/arsy-orm` only. Zero overlap. |
+| Style source | `packages/ui/src/theme.css` maps Tailwind utilities onto skin tokens. Apps define no colour, type, or theme variables and target no private `mw-*` class (`STYLE_PURITY`). |
+| Route states | Every app ships `error.tsx`, `loading.tsx`, and `not-found.tsx` built from `StatePanel` (`STATE_PARITY`). |
+| One world per app | Each app renders `SkinRoot` with a valid, unclaimed skin (`SKIN_ROOT`). |
 | Retention | Fail-closed: reject on `legal_hold` / `retention_until` |
 | SSRF | Validate `base_url` before every upstream request |
 
@@ -56,10 +59,14 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 ```
 pnpm docs:check          # 100/100 required
 pnpm lint:arch           # arch invariants
-pnpm typecheck           # TS strict in packages/ui, dock, headquarter, id, jizz
+pnpm lint                # eslint, --max-warnings 0
+pnpm typecheck           # TS strict in packages/ui, dock, headquarter, id, jizz, gate
+pnpm ui:test             # design system component and skin contracts
 pnpm dock:build
 pnpm headquarter:build
 pnpm id:build
+pnpm jizz:build
+pnpm gate:build
 pnpm --filter @allah/arsy build
 ```
 

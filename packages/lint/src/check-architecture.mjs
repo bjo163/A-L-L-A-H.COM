@@ -448,6 +448,175 @@ function checkAddonManifests() {
   }
 }
 
+// Shared baseline for the ratcheting rules. Counts may only fall.
+const BASELINE_FILE = path.join(ROOT_DIR, 'packages', 'lint', 'style-baseline.json');
+
+function readBaseline() {
+  if (!fs.existsSync(BASELINE_FILE)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(BASELINE_FILE, 'utf8'));
+  } catch (err) {
+    addViolation('BASELINE_CONTRACT', BASELINE_FILE, `style-baseline.json is not valid JSON: ${err.message}`);
+    return {};
+  }
+}
+
+function listAppDirs() {
+  const appsDir = path.join(ROOT_DIR, 'apps');
+  if (!fs.existsSync(appsDir)) return [];
+  return fs.readdirSync(appsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+}
+
+// 11. RULE: STYLE_PURITY
+// Application stylesheets resolve colour and type through the skin tokens, never literals.
+function checkStylePurity(baseline) {
+  const allowed = baseline.STYLE_PURITY || {};
+  const colourLiteral = /#\h{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|hwb)\(/;
+  const legacyVar = /^\s*--(?:background|foreground)\s*:/;
+  const fallbackFont = /font-family:[^;]*\b(?:Arial|Helvetica|system-ui|-apple-system)\b/;
+
+  for (const appName of listAppDirs()) {
+    const files = collectFiles(path.join(ROOT_DIR, 'apps', appName), ['.css']);
+    const findings = [];
+
+    for (const filePath of files) {
+      const lines = stripComments(fs.readFileSync(filePath, 'utf8')).split(/\r?\n/);
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.includes('data:')) continue;
+
+        // Private component classes are not a contract. Target the data-slot hook instead.
+        if (/^\s*[^@]*\.mw-[\w-]+/.test(line) || /,?\s*\.mw-[\w-]+\s*[,{]/.test(line)) {
+          addViolation(
+            'STYLE_PURITY',
+            filePath,
+            'App stylesheet targets a private `mw-*` component class. Use the `data-slot` attribute the component exposes, or a composition block from @moonwitness/ui.',
+            i + 1
+          );
+          continue;
+        }
+
+        if (colourLiteral.test(line) || legacyVar.test(line) || fallbackFont.test(line)) {
+          findings.push({ file: filePath, line: i + 1, text: line.trim().slice(0, 70) });
+        }
+      }
+    }
+
+    const limit = allowed[appName] === undefined ? 0 : allowed[appName];
+    if (findings.length > limit) {
+      const first = findings[0];
+      addViolation(
+        'STYLE_PURITY',
+        first.file,
+        `${findings.length} style findings in apps/${appName}, baseline allows ${limit}. Resolve colour, type and legacy --background/--foreground through the skin tokens (see ${first.line}: ${first.text}). Lower the number in packages/lint/style-baseline.json as you go.`,
+        first.line
+      );
+    }
+  }
+}
+
+// 12. RULE: INLINE_STYLE_PURITY
+// Colour and type must not be painted inline, because an inline style cannot be themed by a skin.
+function checkInlineStylePurity(baseline) {
+  const allowed = baseline.INLINE_STYLE_PURITY || {};
+  const paintKey = /(?:color|background|background-color|border|border-color|borderBlockEndColor|fontFamily)\s*:/;
+
+  for (const appName of listAppDirs()) {
+    const files = collectFiles(path.join(ROOT_DIR, 'apps', appName), ['.tsx', '.jsx']);
+    const findings = [];
+
+    for (const filePath of files) {
+      const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        if (trimmed.startsWith('//') || trimmed.startsWith('{/*')) continue;
+        if (trimmed.includes('style={{') && paintKey.test(trimmed)) {
+          findings.push({ file: filePath, line: i + 1 });
+        }
+      }
+    }
+
+    const limit = allowed[appName] === undefined ? 0 : allowed[appName];
+    if (findings.length > limit) {
+      const first = findings[0];
+      addViolation(
+        'INLINE_STYLE_PURITY',
+        first.file,
+        `${findings.length} painted inline styles in apps/${appName}, baseline allows ${limit}. Move colour and type into a skin class so the selected world can style it.`,
+        first.line
+      );
+    }
+  }
+}
+
+// 13. RULE: STATE_PARITY
+// Every app ships the three route states QUALITY.md requires.
+function checkStateParity(baseline) {
+  const allowed = baseline.STATE_PARITY || {};
+  const required = ['error.tsx', 'loading.tsx', 'not-found.tsx'];
+
+  for (const appName of listAppDirs()) {
+    const appRoot = path.join(ROOT_DIR, 'apps', appName, 'src', 'app');
+    if (!fs.existsSync(appRoot)) continue;
+
+    const missing = required.filter((file) => !fs.existsSync(path.join(appRoot, file)));
+    const tolerated = allowed[appName] || [];
+    const offending = missing.filter((file) => !tolerated.includes(file));
+
+    for (const file of offending) {
+      addViolation(
+        'STATE_PARITY',
+        path.join(appRoot, file),
+        `apps/${appName} is missing the required route state "${file}". Build it from StatePanel and Button in '@moonwitness/ui'.`
+      );
+    }
+  }
+}
+
+// 14. RULE: SKIN_ROOT
+// Each app renders the shared skin root, with a valid and unclaimed world.
+function checkSkinRoot(baseline) {
+  const allowedDuplicates = baseline.SKIN_ROOT_DUPLICATES || [];
+  const validSkinIds = ['imperium-lumen', 'lunar-chronicles', 'rocksoul', 'nexus-paradox', 'riot-anarchy', 'mycelium'];
+  const used = new Map();
+
+  for (const appName of listAppDirs()) {
+    const layoutPath = path.join(ROOT_DIR, 'apps', appName, 'src', 'app', 'layout.tsx');
+    if (!fs.existsSync(layoutPath)) continue;
+
+    const content = fs.readFileSync(layoutPath, 'utf8');
+    const match = content.match(/<SkinRoot[^>]*skin="([^"]+)"/);
+
+    if (!match) {
+      addViolation(
+        'SKIN_ROOT',
+        layoutPath,
+        `apps/${appName} does not render <SkinRoot skin="...">. The skin root publishes the design tokens every component depends on.`
+      );
+      continue;
+    }
+
+    const skinId = match[1];
+    if (!validSkinIds.includes(skinId)) {
+      addViolation('SKIN_ROOT', layoutPath, `apps/${appName} requests unknown skin "${skinId}".`);
+      continue;
+    }
+
+    if (used.has(skinId) && !allowedDuplicates.includes(skinId)) {
+      addViolation(
+        'SKIN_ROOT',
+        layoutPath,
+        `apps/${appName} and ${used.get(skinId)} both claim skin "${skinId}". One world per application keeps the DNA mapping honest.`
+      );
+    }
+    used.set(skinId, appName);
+  }
+}
+
 // Run all rules
 console.log('============================================================');
 console.log('  @moonwitness/lint - Monorepo Architectural Invariant Gate');
@@ -463,6 +632,12 @@ checkNoSecrets();
 checkNoDebugger();
 checkTodoFixmeHack();
 checkAddonManifests();
+
+const styleBaseline = readBaseline();
+checkStylePurity(styleBaseline);
+checkInlineStylePurity(styleBaseline);
+checkStateParity(styleBaseline);
+checkSkinRoot(styleBaseline);
 
 if (violations.length > 0) {
   console.error(`❌ ARCHITECTURAL VIOLATIONS DETECTED (${violations.length} error(s)):\n`);
@@ -484,6 +659,10 @@ if (violations.length > 0) {
   console.log('  ✓ No Debugger: debugger statement scan verified');
   console.log('  ✓ Blocking comments: scan verified');
   console.log('  ✓ Addon Manifest: Addon consistency verified');
+  console.log('  ✓ Style Purity: token-driven app styles within baseline');
+  console.log('  ✓ Inline Style Purity: painted inline styles within baseline');
+  console.log('  ✓ State Parity: error, loading and not-found routes present');
+  console.log('  ✓ Skin Root: every app renders one valid, unclaimed world');
   console.log('------------------------------------------------------------\n');
   process.exit(0);
 }

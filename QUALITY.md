@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "QUALITY"
-version: "1.2.0"
+version: "1.3.0"
 owner: "qa"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -26,9 +26,11 @@ States: `IMPLEMENTED` ≠ `VERIFIED` ≠ `RELEASED` ≠ `DEPLOYED`. Each require
 
 | Standard | Spec |
 |---|---|
-| UI controls | `@moonwitness/ui` only. No raw `<button>` / `<input>`. |
+| UI controls | `@moonwitness/ui` only. No raw `<button>` / `<input>` / `<select>` / `<textarea>` / `<a>` / `<form>` / `<label>` / `<table>`, and no hand-written `mw-*` class names. |
+| Style source | Tokens from `packages/ui/src/theme.css`. No colour or type literals, no `--background`/`--foreground`, no painted inline styles beyond the ratchet baseline. |
 | Client comms | `@allah/sdk` only |
-| UI states | loading · empty · error — all three required |
+| UI states | loading · empty · error — all three required, per app, as `loading.tsx`, an empty panel, and `error.tsx` |
+| Route files | Every app ships `error.tsx` · `loading.tsx` · `not-found.tsx` |
 | A11y | WCAG AA · keyboard · focus indicators |
 | Layout | Responsive mobile |
 
