@@ -31,8 +31,8 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 
 ## Production Delivery
 - Build and publish the Arsy, Dock, Headquarter, and ID Docker images to GHCR.
-- Trigger Coolify only after every image builds and publishes successfully.
-- Create the versioned GitHub release after the production webhook succeeds.
+- Let Coolify deploy from its GitHub webhook; production images are built and published separately by GitHub Actions.
+- Create the versioned GitHub release after every production image publishes successfully.
 
 ## Next Steps
 - Configure upstream LLM providers

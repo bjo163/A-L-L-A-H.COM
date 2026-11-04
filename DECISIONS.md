@@ -86,9 +86,9 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 
 ### D-010 — Docker-Gated Production Release
 - status: ACCEPTED — 2026-11-04
-- context: Coolify deployments were triggered despite incomplete or failing application image builds.
-- decision: Build and publish every root Compose service before calling the Coolify webhook. Dispatch production publishing only after CI promotes `dev` to `main`, and create a GitHub release after the webhook succeeds.
-- alternatives: Let Coolify build arbitrary source revisions without a prior image gate.
-- rationale: The deployed source must pass the same Docker build requirements before the deployment trigger is sent.
-- consequences: A failed Docker image blocks both Coolify notification and release creation. Compose pulls the same GHCR images that passed the GitHub build gate.
+- context: Production images must be built and published by GitHub Actions, while Coolify deployment is triggered by its own GitHub webhook integration.
+- decision: Build and publish every root Compose service on GitHub after CI promotion. Coolify independently reacts to GitHub webhooks and pulls the GHCR images. Create a GitHub release only after all image builds and pushes pass.
+- alternatives: Call Coolify's deployment endpoint from GitHub Actions using Coolify credentials.
+- rationale: Coolify already owns the repository webhook integration, so GitHub Actions does not need Coolify credentials or a duplicate deploy request.
+- consequences: A failed image blocks the GitHub release, but Coolify's webhook may start deployment before the images publish. Compose pulls the GHCR image tags.
 - related: [Production deployment](README.md#production-deployment), [Docker-gate plan](.plans/20261104-1200-production-release-docker-gate/spec.md)

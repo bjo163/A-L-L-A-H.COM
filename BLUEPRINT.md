@@ -58,7 +58,7 @@ Tenant IDs: negative = personal, positive = org, zero = unassigned → [DECISION
 
 ## Delivery
 
-CI promotion → build and publish all Compose images to GHCR → Coolify webhook → versioned GitHub release. The webhook cannot run unless every Docker image build and push succeeds.
+CI promotion → validate Compose and build/publish all images to GHCR → versioned GitHub release. Coolify independently receives its GitHub webhook and may deploy concurrently with image publication.
 
 ## Decision Rule
 

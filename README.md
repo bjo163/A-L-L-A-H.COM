@@ -56,11 +56,7 @@ Run `pnpm dev` to start Arsy and all three Next.js apps concurrently: Arsy on po
 Never commit secrets, `.env` files, local databases, generated build output, or unrelated user changes.
 
 ## Production deployment
-The root `docker-compose.yml` pulls the `arsy`, `dock`, `headquarter`, and `id` images from GHCR. The `Publish and deploy` GitHub Actions workflow validates the Compose configuration, builds and publishes every service image on GitHub, and only then notifies Coolify. Coolify pulls those exact published images instead of rebuilding them. Successful CI promotion explicitly dispatches this workflow because pushes made with `GITHUB_TOKEN` do not start a second workflow. A versioned GitHub release is created after the Coolify webhook is accepted.
-
-Configure these repository secrets in GitHub:
-- `COOLIFY_WEBHOOK_URL` â€” the deployment webhook URL for the Compose application in Coolify.
-- `COOLIFY_API_TOKEN` â€” a Coolify API token authorized to deploy that application.
+The root `docker-compose.yml` pulls the `arsy`, `dock`, `headquarter`, and `id` images from GHCR. The `Publish production images` GitHub Actions workflow validates the Compose configuration and builds and publishes every service image. Coolify receives its own GitHub webhook and pulls these images rather than rebuilding them. CI promotion explicitly dispatches the image workflow because it uses `GITHUB_TOKEN`; a versioned GitHub release is created after all images publish successfully. Coolify's GitHub webhook and image publishing can run concurrently, so Coolify may try to deploy before the new image tags are available.
 
 Before the first deployment, set the GHCR packages to public in GitHub's package settings or configure GHCR read credentials in Coolify. Public packages can be pulled without registry credentials, so Docker Hub is not required. Set `IMAGE_PREFIX` to `ghcr.io/<owner>/<repository>` only if the image namespace differs from the default, `ghcr.io/bjo163/a-l-l-a-h.com`; set `IMAGE_TAG` to `latest` or a published `sha-<short-commit>` tag for a pinned rollback.
 

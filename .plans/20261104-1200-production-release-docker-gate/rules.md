@@ -8,10 +8,10 @@ last_verified: "2026-11-04"
 ---
 # Production Release and Docker Gate Rules
 
-- Never invoke the Coolify webhook if any production Docker image fails to build or publish.
+- Never create a production GitHub release if any production Docker image fails to build or publish.
+- Do not invoke Coolify from GitHub Actions; deployment is triggered by Coolify's GitHub webhook integration.
 - Run production Docker builds only on GitHub Actions, not on developer machines.
 - Configure Compose to pull the exact GHCR images produced by the GitHub gate.
-- Do not expose Coolify webhook URLs or API tokens in logs or source.
 - Release only the commit promoted to `main` and only after the production workflow succeeds.
 - Preserve the Rust server retirement record and Git history while removing its unused source and build pipeline.
 - Do not modify untracked or unrelated workspace files.
