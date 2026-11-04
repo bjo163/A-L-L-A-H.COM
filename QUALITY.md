@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "QUALITY"
-version: "1.3.0"
+version: "1.4.0"
 owner: "qa"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -27,7 +27,9 @@ States: `IMPLEMENTED` ≠ `VERIFIED` ≠ `RELEASED` ≠ `DEPLOYED`. Each require
 | Standard | Spec |
 |---|---|
 | UI controls | `@moonwitness/ui` only. No raw `<button>` / `<input>` / `<select>` / `<textarea>` / `<a>` / `<form>` / `<label>` / `<table>`, and no hand-written `mw-*` class names. |
-| Style source | Tokens from `packages/ui/src/theme.css`. No colour or type literals, no `--background`/`--foreground`, no painted inline styles beyond the ratchet baseline. |
+| Style source | Tokens from `packages/ui/src/theme.css`. No colour or type literals, no `--background`/`--foreground`, no painted inline styles. `STYLE_PURITY` and `INLINE_STYLE_PURITY` are absolute: the ratchet baselines are empty. |
+| Markup colour | No Tailwind palette hue in app JSX (`PALETTE_PURITY`). A palette utility cannot be re-themed, so the world stops deciding the look. |
+| Composition | Hero, kicker, section heading, route shell, status, destination card, and state panel come from `@moonwitness/ui` blocks. Apps add layout, not a second copy of the vocabulary. |
 | Client comms | `@allah/sdk` only |
 | UI states | loading · empty · error — all three required, per app, as `loading.tsx`, an empty panel, and `error.tsx` |
 | Route files | Every app ships `error.tsx` · `loading.tsx` · `not-found.tsx` |

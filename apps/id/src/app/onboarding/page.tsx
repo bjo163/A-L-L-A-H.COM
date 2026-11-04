@@ -53,7 +53,7 @@ export default function OnboardingPage() {
       router.push('/account');
     } catch {
       setSetupState('created');
-      setError('The first superuser was created, but automatic sign-in failed. Sign in with the account you just created.');
+      setError(null);
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
               )}
               {setupState === 'created' && (
                 <StatusMessage tone="warning" title="Account created, sign-in needed">
-                  The first superuser account exists. Use the sign-in page to continue; do not submit onboarding again.
+                  The account exists, but automatic sign-in did not complete. Use the sign-in page to continue; do not submit onboarding again.
                 </StatusMessage>
               )}
               {setupState === 'error' && (

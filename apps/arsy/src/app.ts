@@ -81,6 +81,10 @@ const PROTECTED_GENERIC_MODELS = new Set([
   'auth.verification',
   'auth.setup',
   'arsy.audit.event',
+  'ai.provider',
+  'ai.virtual_key',
+  'nexus.nas',
+  'nexus.nas_secret_log',
 ]);
 
 export async function buildArsyApp(options: BuildAppOptions = {}): Promise<FastifyInstance<any, any, any, any, any>> {
@@ -181,6 +185,9 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   };
 
   const parseTenantCompanyId = (raw: unknown): number => {
+    if ((typeof raw !== 'string' && typeof raw !== 'number') || String(raw).trim() === '') {
+      throw new AppError('A non-zero target company_id is required', 400, 'VALIDATION_ERROR');
+    }
     const companyId = Number(raw);
     if (!Number.isSafeInteger(companyId) || companyId === 0) {
       throw new AppError('A non-zero target company_id is required', 400, 'VALIDATION_ERROR');
@@ -560,6 +567,14 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       if (!target || target.role === 'system') {
         throw new AppError('This identity cannot receive a login role', 409, 'ROLE_NOT_ASSIGNABLE');
       }
+      const targetCompanyId = Number(target.company_id);
+      if (
+        !Number.isSafeInteger(targetCompanyId) ||
+        targetCompanyId === 0 ||
+        Number(authUser.company_id) !== targetCompanyId
+      ) {
+        throw new AppError('Authentication and ORM tenant assignments do not match', 409, 'TENANT_LINK_MISMATCH');
+      }
 
       if (target.role === 'superuser' && nextRole === 'user' && activeSuperusers.length <= 1) {
         throw new AppError('The last active superuser cannot be demoted', 409, 'LAST_SUPERUSER');
@@ -568,7 +583,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       await recordAdminRead(
         request,
         principal,
-        Number(target.company_id),
+        targetCompanyId,
         'res.users',
         String(target.id),
         reasonHash,
@@ -579,7 +594,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       const roleChange = await repository('res.users', executor).updateById(
         target.id,
         { role: nextRole },
-        { companyId: Number(target.company_id) },
+        { companyId: targetCompanyId },
         adminActor(request, reasonHash, principal),
         {}
       );

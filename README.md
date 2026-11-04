@@ -34,7 +34,11 @@ This repository contains a Fastify/TypeScript ARSY Hub, a Sentinel RADIUS daemon
 10. [DECISIONS.md](DECISIONS.md) â€” accepted decisions.
 11. [CHANGELOG.md](CHANGELOG.md) â€” actual repository changes.
 
-ARSY provisions an idempotent `res.users` system identity named `bot` for system-owned audit writes. First-run onboarding creates the initial superuser without a seeded password; all model writes record required `create_uid` and `write_uid` ORM user IDs.
+ARSY provisions an idempotent `res.users` system identity named `bot` for system-owned writes. First-run onboarding creates the initial superuser without a seeded password; model writes record required `create_uid` and `write_uid` ORM user IDs and append a redacted audit event in the same transaction.
+
+Superusers access other tenants only through explicit `/v1/admin/*` routes. Each cross-tenant request supplies a non-zero target `company_id` and a reason; the audit event stores the reason hash, actor, target, request ID, operation, and changed field names. Generic CRUD never exposes identity, audit, or credential-bearing models, even when they appear in `GENERIC_MODEL_ALLOWLIST`. Audit events do not retain before/after values and have no automatic purge; configure a retention policy before claiming a retention period. See [D-014](DECISIONS.md#d-014-explicit-global-admin-and-append-only-audit-history).
+
+Persistent PGlite upgrades apply idempotent schema sync plus versioned identity and audit migrations at startup. Before upgrading a persistent data directory, test on a restorable copy and verify identity links, audit UID foreign keys, tenant boundaries, and migration retry/rollback; production data was not migrated as part of this change.
 
 ## Ecosystem scope
 Discover and reconcile MoonWitness historical generations, Reborn, XV, narrative canon, ROCKSOUL, MYLUFT, research, creative assets, Moon UI, Headquarter, Dock, Cockpit, Qorpus, and related repositories or technical work where accessible. This is a discovery scope, not a claim that every item is implemented here or must be a separate application.

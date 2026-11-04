@@ -139,6 +139,9 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     await migrateAuthIdentities(dbEngine, modelRegistry, executor, systemBotId);
     await migrator.enforceAuditConstraints(systemBotId, executor);
   });
+  await migrator.runMigration('arsy-immutable-audit-history-v1', (executor) =>
+    migrator.enforceAuditConstraints(systemBotId, executor)
+  );
 
   await fastify.register(fastifyJwt, { secret });
 

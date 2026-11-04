@@ -291,7 +291,7 @@ export class SchemaMigrator {
           IF actor_setting IS NOT NULL THEN
             actor_id := actor_setting::INTEGER;
           ELSIF TG_OP = 'DELETE' THEN
-            actor_id := COALESCE(NULLIF(old_data ->> 'write_uid', '')::INTEGER, bot_id);
+            actor_id := bot_id;
           ELSE
             actor_id := COALESCE(NULLIF(new_data ->> 'write_uid', '')::INTEGER, bot_id);
           END IF;

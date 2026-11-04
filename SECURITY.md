@@ -34,11 +34,33 @@ To report a vulnerability, please use one of the following private channels:
 
 ## Security Practices
 
-This project follows these security invariants:
+These invariants are enforced by code and checked by the local quality gates:
 
-- **No secrets in code**: GitHub Actions secret scanning + `@moonwitness/lint` enforce this.
-- **Parameterized SQL only**: No raw string queries (via `@allah/arsy-orm`).
-- **Tenant isolation**: `company_id` on every row.
-- **SSRF protection**: `base_url` validated before every upstream request.
-- **Dependency scanning**: Dependabot + CodeQL run automatically.
-- **SBOM**: Generated on every release.
+- **Default-deny authentication.** Every hub route requires a verified principal; only an
+  explicit allowlist (`/health`, `/ready`, onboarding/sign-in, and non-production `/docs`)
+  is reachable anonymously.
+- **Tenant isolation is fail-closed.** `company_id` is derived from the verified principal,
+  never from the request body. Repository reads and writes without a resolvable tenant are
+  rejected rather than widened.
+- **Parameterized SQL only.** Values bind through `$n` placeholders; column and sort
+  identifiers pass an allowlist, so an unexpected field fails closed with `UnknownFieldError`.
+- **No raw-SQL surface.** The unauthenticated arbitrary-query tool is removed; the MCP
+  surface exposes only named, tenant-scoped tools.
+- **Secret hygiene.** NAS credentials round-trip through `encryptSecret`/`decryptSecret` and
+  are redacted from reads and audit history; the KDF salt travels in the envelope so
+  ciphertext survives restarts. AI virtual keys are stored only as SHA-256 hashes.
+- **Session expiry and revocation.** Bearer tokens carry a TTL and sessions are rejected once
+  `revoked` or past `expires_at`.
+- **SSRF protection.** `base_url` is validated before the request and the post-resolution IP
+  is re-checked, so a domain that resolves to a private or loopback address is refused.
+- **Hardened transport.** Hub binds to loopback unless `HOST` is set; a strict
+  `Content-Security-Policy` is applied; CORS fails closed in production; write-heavy routes
+  are rate-limited.
+- **Content-addressed storage.** Digests are validated as bare SHA-256 hex before any path is
+  formed, so path segments cannot reach the filesystem.
+- **RADIUS password verification.** Subscriber credentials are verified against the stored
+  hash (constant-time) instead of accepted on presence alone.
+- **No secrets in code.** `@moonwitness/lint` scans for hardcoded credentials and blocks
+  interpolation inside query calls.
+- **Dependency scanning.** Dependabot and CodeQL run automatically; an SBOM is generated on
+  every release.

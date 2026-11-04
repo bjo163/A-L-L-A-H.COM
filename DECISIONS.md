@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DECISIONS"
-version: "1.4.0"
+version: "1.5.0"
 owner: "architecture"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -120,3 +120,48 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: A single identity namespace makes audit references consistent across ORM and authentication, while provisioning the bot avoids null or fabricated actor IDs and onboarding avoids shipping a shared privileged credential.
 - consequences: Existing databases are migrated by backfilling invalid/missing audit references to the system bot before enforcing non-null foreign keys. Applications must pass an authenticated user actor or the explicit system actor to repository writes. The initial superuser credentials are supplied during first-run onboarding and are not seeded.
 - related: D-008, [BLUEPRINT.md](BLUEPRINT.md), `packages/arsy-orm`, `packages/arsy-plugin-auth`
+
+### D-014 — Explicit Global Admin and Append-Only Audit History
+- status: ACCEPTED — 2026-11-04
+- context: The initial superuser identity existed, but did not yet grant explicit global access or provide an immutable record of model changes.
+- decision: A verified `superuser` may use dedicated `/v1/admin/*` routes for cross-tenant access. Every operation names one non-zero target tenant and supplies a reason; the event stores a SHA-256 reason hash, actor, target, request ID, model, record, and operation. Generic CRUD always blocks identity, audit, and credential-bearing models. A current superuser may promote an active account or demote another superuser only if at least one active superuser remains. Database triggers append one event for every insert, update, and delete in the same transaction, and overwrite caller-supplied audit UIDs. Events store changed field names only; before/after values are not retained.
+- alternatives: Grant global access by converting every superuser request to `systemScope`; expose identity models through generic CRUD; store complete before/after snapshots; retain only latest-writer UIDs.
+- rationale: Explicit tenant-bound admin routes make the privilege exception reviewable, while field-name-only events avoid copying credentials or business data into history.
+- consequences: PGlite triggers prevent application-level update/delete/truncate of audit events, but an operator controlling the embedded database process or files can alter the database and is outside this guarantee. No automatic purge is configured; event retention remains indefinite until an approved retention and legal-hold policy exists. Cross-tenant reads and writes are available only for models enabled in `GENERIC_MODEL_ALLOWLIST`, with identity, audit, and credential-bearing models excluded.
+- related: D-008, D-013, [BLUEPRINT.md](BLUEPRINT.md), `packages/arsy-orm`, `apps/arsy`
+
+### D-015 — Default-Deny Trust Boundary with Principal-Derived Tenancy
+- status: ACCEPTED — 2026-11-04
+- context: Ultra-review found routes reachable anonymously, a raw-SQL tool without auth, tenant taken from the request body, and secret/SSRF/RADIUS gaps.
+- decision: A root `onRequest` guard requires a verified principal on every route except an explicit public allowlist (`/health`, `/ready`, onboarding/sign-in, non-production `/docs`). The tenant is resolved from the principal and the request fails closed when none exists; body `company_id` is never trusted. The arbitrary-SQL tool is removed; the MCP surface exposes only named, tenant-scoped tools. Added on top: fixed-window rate limits, a strict CSP, CORS that fails closed in production, loopback-by-default binding, hashed virtual keys, persisted KDF salt with the plaintext fallback removed, post-resolution SSRF checks, RADIUS password verification, session expiry/revocation, and SHA-256 digest validation before any storage path is formed.
+- alternatives: Keep allow-by-default and add per-route auth; trust a body `company_id` and validate it softly; leave the raw-SQL tool behind an env flag.
+- rationale: Deny-by-default and fail-closed tenancy make a forgotten guard a hard failure rather than a silent data leak.
+- consequences: Breaking change for any caller relying on anonymous access or body-supplied tenancy; deployment must set `HOST` to expose the hub. Covered by `apps/arsy/test/trust_boundary.test.mjs` and `packages/arsy-orm/test/query_safety.test.mjs`.
+- related: D-013, D-014, [SECURITY.md](SECURITY.md), `apps/arsy`, `packages/arsy-orm`, `packages/sentinel-radius`
+
+### D-016 — Collapse Duplicate ORM Module Instances with globalThis Singletons
+- status: ACCEPTED — 2026-11-04
+- context: Under source resolution the hub loaded two copies of `@allah/arsy-orm`, each with its own `modelRegistry` and `dbEngine`, so addon models registered into one copy were invisible to the other ("model not registered").
+- decision: Back the `modelRegistry` and `dbEngine` singletons with `globalThis` keyed by `Symbol.for('@allah/arsy-orm.<name>')`, so duplicate module copies share one instance. A bundled build already de-duplicates; the singleton makes the source path behave identically.
+- alternatives: Force a single module copy via bundler-only resolution; pass the engine explicitly everywhere; alias the package in every tsconfig.
+- rationale: Process-wide `Symbol.for` identity is the smallest change that guarantees one registry and one database regardless of how many copies of the package are imported.
+- consequences: The singleton is process-scoped; tests that need isolation boot one hub per process. The ORM now exposes `singleton.ts` as an internal detail.
+- related: D-013, D-017, `packages/arsy-orm/src/singleton.ts`
+
+### D-017 — One Hub Application Per Test Process
+- status: ACCEPTED — 2026-11-04
+- context: The hub boots a single in-memory PGlite per process, so multiple test files sharing a process contend over one database and its onboarding state.
+- decision: Each hub test file builds and owns exactly one application instance (and thus one in-memory database); the runner uses `--test-force-exit` so an open handle cannot hang the suite.
+- alternatives: A shared external Postgres fixture; truncating tables between files; one giant test file.
+- rationale: One-app-per-process gives clean isolation without external services and matches the embedded-database runtime model.
+- consequences: Test files cannot share already-authenticated state; each authenticates what it needs (helpers `buildAuthenticatedApp` / `authenticateSecondTenant`).
+- related: D-016, `apps/arsy/test/helpers.mjs`
+
+### D-015 — One Composition Vocabulary and an Absolute Style Ratchet
+- status: ACCEPTED — 2026-11-04
+- context: Five applications each carried their own kicker, hero, section heading, route shell, status banner, destination card, and empty state. The same vocabulary existed six times over, one world was claimed by two apps, three apps had no route states at all, and literal colour lived in app CSS (52 lines in headquarter alone) and in Tailwind palette utilities in app markup (99 lines), which no skin can re-theme. The first ratchet rule shipped with a broken hex pattern (`#\h{3,8}` matches `#hhh`, never a real colour), so its own baseline under-counted findings.
+- decision: The composition vocabulary exists once, as props-only blocks in `packages/ui/src/blocks/` (`Kicker`, `PageHero`, `SectionHeading`, `RouteShell`, `StatusMessage`, `DestinationCard`, `DestinationGrid`, `StatePanel`, `SkipLink`), styled in `skins.css` with a variant per world. Applications keep only their own layout. One world per application is now real: dock IMPERIUM LUMEN, headquarter NEXUS PARADOX, id LUNAR CHRONICLES, jizz MYCELIUM, gate ROCKSOUL, with RIOT ANARCHY proven only in the Skin Laboratory. `STYLE_PURITY`, `INLINE_STYLE_PURITY`, `PALETTE_PURITY`, and `STATE_PARITY` have empty baselines: a new literal, painted inline style, palette hue, or missing route state fails the gate immediately.
+- alternatives: Keep per-app hero copies and enforce consistency by review; keep the ratchet open-ended so migration can stall; give each app two worlds and drop the six-DNA claim; leave the broken hex pattern in place because the gate already reported PASS.
+- rationale: A rule that cannot fail is not enforcement; the previous gate reported 100% compliance over 24 violations, and the same class of bug hid the hex pattern. Absorbing the vocabulary into the package is what lets the six worlds differ in composition while sharing behaviour, accessibility, and state.
+- consequences: Adding a world-level visual change now means editing one `[data-moonframe-skin]` block instead of five apps. Applications cannot introduce a one-off hero, an unstyled state, or a palette colour without a failing gate. Measured contrast for every skin pair is available with `pnpm ui:contrast`; the tightest ratio in the set is 4.99:1 (ROCKSOUL accent text on accent), which clears WCAG AA for normal text.
+- related: D-007, D-012, [DNA/07-COMPONENT-MAPPING.md](DNA/07-COMPONENT-MAPPING.md), [DESIGN.md](DESIGN.md), [QUALITY.md](QUALITY.md)

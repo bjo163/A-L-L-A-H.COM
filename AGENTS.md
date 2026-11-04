@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.5.0"
+version: "1.6.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -31,7 +31,7 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | `apps/id/` | Next.js 16 · React 19 · Tailwind v4 · SSO | 3003 |
 | `apps/jizz/` | Next.js 16 · React 19 · Tailwind v4 | 3004 |
 | `apps/sentinel/` | Sentinel RADIUS daemon · UDP auth/accounting + HTTP health | 1812/1813/9181 |
-| `addons/` | `base` · `mw_storage` · `mw_llm_router` · `mw_qorpus` | — |
+| `addons/` | `base` · `works` · `nexus` · `orbit` · `mw_storage` · `mw_llm_router` · `mw_qorpus` | — |
 | `packages/ui/` | `@moonwitness/ui` — **MANDATORY** all UI controls | — |
 | `packages/sdk/` | `@allah/sdk` — **MANDATORY** all client↔hub comms | — |
 | `packages/types/` | `@moonwitness/types` — **MANDATORY** shared contracts | — |
@@ -45,14 +45,19 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | Rule | Spec |
 |---|---|
 | Storage | SHA-256 content-addressed · write-once · `data/storage/<digest>` |
-| SQL | Parameterized only. No raw string queries. |
-| Tenant | `company_id` on every row |
+| SQL | Parameterized values only, plus a column/sort identifier allowlist. No raw string queries; no arbitrary-SQL tool on the public surface. |
+| Auth | Default-deny: every hub route needs a verified principal. Only an explicit public allowlist (`/health`, `/ready`, onboarding, non-prod `/docs`) is anonymous. |
+| Tenant | `company_id` on every row, derived from the principal and fail-closed — never taken from the request body. |
 | ORM | Embedded PGlite via `@allah/arsy-orm` only. Zero overlap. |
+| Audit | Every model insert/update/delete writes one append-only event in the same transaction; events store changed field names, not values. |
+| Global admin | Superuser access is server-authorized per admin route, requires a reason, and records the target tenant; generic CRUD never exposes identity, audit, or credential-bearing models. |
 | Style source | `packages/ui/src/theme.css` maps Tailwind utilities onto skin tokens. Apps define no colour, type, or theme variables and target no private `mw-*` class (`STYLE_PURITY`). |
+| Markup colour | App JSX never paints with a Tailwind palette hue (`PALETTE_PURITY`). Colour arrives from a component variant, a composition block, or a token-driven utility, so the selected world can restyle it. |
+| Composition blocks | Hero, kicker, section heading, route shell, status message, destination card, and state panel exist once in `packages/ui/src/blocks/`. Applications compose them instead of redefining the same vocabulary per app. |
 | Route states | Every app ships `error.tsx`, `loading.tsx`, and `not-found.tsx` built from `StatePanel` (`STATE_PARITY`). |
 | One world per app | Each app renders `SkinRoot` with a valid, unclaimed skin (`SKIN_ROOT`). |
 | Retention | Fail-closed: reject on `legal_hold` / `retention_until` |
-| SSRF | Validate `base_url` before every upstream request |
+| SSRF | Validate `base_url` before the request and re-check the resolved IP, so a domain that resolves to a private or loopback address is refused. |
 
 ## Quality Gates
 
@@ -62,6 +67,7 @@ pnpm lint:arch           # arch invariants
 pnpm lint                # eslint, --max-warnings 0
 pnpm typecheck           # TS strict in packages/ui, dock, headquarter, id, jizz, gate
 pnpm ui:test             # design system component and skin contracts
+pnpm ui:contrast         # measured WCAG ratios for every skin's token pairs
 pnpm dock:build
 pnpm headquarter:build
 pnpm id:build

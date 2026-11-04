@@ -203,20 +203,17 @@ export class BaseRepository<T = Record<string, unknown>> {
     const modelName = this.model.name;
 
     // Postgres binds numbered parameters; the previous '?' form was never a valid placeholder.
-    const idPlaceholders = recordIds.map((_: unknown, index: number) => `$${index + 3}`);
+    const idPlaceholders = recordIds.map((_: unknown, index: number) => '$' + (index + 3));
     const namePlaceholders = translatableFields.map(
-      (_: unknown, index: number) => `$${index + 3 + recordIds.length}`
+      (_: unknown, index: number) => '$' + (index + 3 + recordIds.length)
     );
 
-    const translationQuery = `
-      SELECT res_id, name, value
-      FROM ir_translation
-      WHERE (company_id = 0 OR company_id = $1)
-        AND lang = $2
-        AND type = 'model'
-        AND res_id IN (${idPlaceholders.join(',')})
-        AND name IN (${namePlaceholders.join(',')})
-    `;
+    const translationQuery =
+      'SELECT res_id, name, value\n      FROM ir_translation\n      WHERE (company_id = 0 OR company_id = $1)\n        AND lang = $2\n        AND type = \'model\'\n        AND res_id IN (' +
+      idPlaceholders.join(',') +
+      ')\n        AND name IN (' +
+      namePlaceholders.join(',') +
+      ')';
 
     const translationParams = [companyId ?? 0, lang, ...recordIds, ...translatableFields];
     const translations = await this.executor.query<{

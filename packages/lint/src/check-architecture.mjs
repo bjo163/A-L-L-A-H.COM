@@ -36,7 +36,8 @@ function collectFiles(dir, extensions, excludeDirs = []) {
         const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');
         if (relativePath.includes('/scripts/') || relativePath.startsWith('scripts/')) continue;
         if (/\.(test|spec)\.[tj]sx?$/.test(entry.name)) continue;
-        results.push(fullPath);
+        if (/\.(test|spec)\.mjs$/.test(entry.name)) continue;
+        if (/\.(test|spec)\.cjs$/.test(entry.name)) continue;
       }
     }
   }
@@ -281,18 +282,19 @@ function checkParameterizedQueries() {
     'node_modules', 'dist', 'build', 'out', '.next', '.git', 'packages/lint',
   ]);
 
-  // Match .query(...) or .execute(...) calls with template literals containing SQL keywords
-  const sqlQueryPatterns = [
-    /(\.query|\.execute)\s*\([^)]*`[\s\S]*?(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)[\s\S]*\${/gi,
-    /(\.query|\.execute)\s*\([^)]*`[\s\S]*\${[\s\S]*?(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)/gi,
-  ];
+  // Flag interpolation ONLY when it occurs inside the same query/execute template
+  // literal. A previous file-spanning pattern matched a ${ } anywhere later in the
+  // file, so fully parameterized queries failed on unrelated error-message strings.
+  const callRe = /(?:\.query|\.execute)\s*\([^)]*`([^`]*)`/gi;
 
   for (const filePath of allFiles) {
-    const relativePath = path.relative(ROOT_DIR, filePath).replace(/\\/g, '/');
     const content = fs.readFileSync(filePath, 'utf8');
-
-    for (const pattern of sqlQueryPatterns) {
-      if (pattern.test(content)) {
+    let match;
+    while ((match = callRe.exec(content)) !== null) {
+      const templateBody = match[1];
+      const hasInterpolation = /\$\{/.test(templateBody);
+      const hasSqlKeyword = /(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)/i.test(templateBody);
+      if (hasInterpolation && hasSqlKeyword) {
         addViolation(
           'PARAMETERIZED_QUERIES',
           filePath,

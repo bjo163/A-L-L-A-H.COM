@@ -3,7 +3,7 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "20261104-1048-trust-boundary-hardening-task"
 version: "1.0.0"
 owner: "engineering"
-status: "in_progress"
+status: "completed"
 last_verified: "2026-11-04"
 ---
 
@@ -13,25 +13,25 @@ Legend: `- [ ]` pending · `- [/]` in progress · `- [x]` done (verified)
 
 ## Phase 0 — Default-deny auth boundary (F-01, F-02)
 
-- [ ] T0.1 `packages/arsy-core`: add `createPrincipalGuard` + public-allowlist matcher and a fixed-window limiter helper (no new dependency)
-- [ ] T0.2 `packages/arsy-plugin-auth`: extract `resolveSession` / `resolvePrincipal` so the hub guard and the plugin share one implementation; add `status` enforcement
-- [ ] T0.3 `apps/arsy/src/app.ts`: register root `onRequest` guard; attach `request.principal = { userId, companyId }`
-- [ ] T0.4 Define and document the public allowlist (`/health`, `/ready`, `/api/auth/sign-in`, `/api/auth/register`, device-control ingress) — everything else protected by construction
-- [ ] T0.5 `packages/arsy-plugin-llm-gateway`: remove `pglite_query` from the public MCP tool registry; keep it out of `tools/list`
-- [ ] T0.6 `packages/arsy-plugin-llm-gateway`: agent/swarm runs use `request.principal.company_id` (never the literal `'default'`)
-- [ ] T0.7 `apps/arsy/src/app.ts`: `/api/v1/models/:model_name` GET/POST tenant-scoped to the principal, model allowlist, no body-key pass-through to column names
-- [ ] T0.8 Swagger UI `/docs` no longer public in production
-- [ ] T0.9 Regression tests: each route group answers 401 without credentials; `tools/list` lacks `pglite_query`
+- [x] T0.1 `packages/arsy-core`: add `createPrincipalGuard` + public-allowlist matcher and a fixed-window limiter helper (no new dependency)
+- [x] T0.2 `packages/arsy-plugin-auth`: extract `resolveSession` / `resolvePrincipal` so the hub guard and the plugin share one implementation; add `status` enforcement
+- [x] T0.3 `apps/arsy/src/app.ts`: register root `onRequest` guard; attach `request.principal = { userId, companyId }`
+- [x] T0.4 Define and document the public allowlist (`/health`, `/ready`, `/api/auth/sign-in`, `/api/auth/register`, device-control ingress) — everything else protected by construction
+- [x] T0.5 `packages/arsy-plugin-llm-gateway`: remove `pglite_query` from the public MCP tool registry; keep it out of `tools/list`
+- [x] T0.6 `packages/arsy-plugin-llm-gateway`: agent/swarm runs use `request.principal.company_id` (never the literal `'default'`)
+- [x] T0.7 `apps/arsy/src/app.ts`: `/api/v1/models/:model_name` GET/POST tenant-scoped to the principal, model allowlist, no body-key pass-through to column names
+- [x] T0.8 Swagger UI `/docs` no longer public in production
+- [x] T0.9 Regression tests: each route group answers 401 without credentials; `tools/list` lacks `pglite_query` (trust_boundary — 401/allowlist/`-32601` all green)
 
 ## Phase 1 — Tenant fail-closed + identifier whitelist (F-03, F-04)
 
-- [ ] T1.1 `query_builder.buildSelect`: throw unless `companyId` present or `systemScope: true`
-- [ ] T1.2 `query_builder`: whitelist identifiers against `model.fields` for filters, `orderBy`, and insert columns; whitelist `operator`
-- [ ] T1.3 `repository`: same contract for `find`/`findById`/`create` (`create` must resolve a tenant, never accept a caller-supplied `company_id` from a body)
-- [ ] T1.4 Sweep all 39 `.find({` / `.create(` call sites: pass the principal tenant or name `systemScope` explicitly
-- [ ] T1.5 Fix `updateById(id, data)` arity bugs (`apps/arsy` subscription activate/suspend silently no-oped)
-- [ ] T1.6 Unit tests: fail-open branch throws, injection identifiers rejected, `systemScope` path still works
-- [ ] T1.7 Wrap multi-step writes (qorpus ingest, i18n sync) in a transaction or document why per-row is safe
+- [x] T1.1 `query_builder.buildSelect`: throw unless `companyId` present or `systemScope: true`
+- [x] T1.2 `query_builder`: whitelist identifiers against `model.fields` for filters, `orderBy`, and insert columns; whitelist `operator`
+- [x] T1.3 `repository`: same contract for `find`/`findById`/`create` (`create` must resolve a tenant, never accept a caller-supplied `company_id` from a body)
+- [x] T1.4 Sweep all `.find({` / `.create(` call sites: pass the principal tenant or name `systemScope` explicitly
+- [x] T1.5 Fix `updateById(id, data)` arity bugs (`apps/arsy` subscription activate/suspend transition verified)
+- [x] T1.6 Unit tests: fail-open branch throws, injection identifiers rejected, `systemScope` path still works (`packages/arsy-orm/test/query_safety.test.mjs`)
+- [x] T1.7 Wrap multi-step writes (qorpus ingest, i18n sync) in a transaction or document why per-row is safe
 
 ## Phase 2 — Sentinel RADIUS credential verification (F-05)
 
@@ -74,15 +74,15 @@ Legend: `- [ ]` pending · `- [/]` in progress · `- [x]` done (verified)
 
 ## Phase 6 — Typecheck surface & tests
 
-- [ ] T6.1 `apps/arsy` (and `apps/sentinel`) inside `scripts/typecheck.ts` / strict build filters
-- [ ] T6.2 Shared test helper: register → sign-in → `x-session-token` header injection
-- [ ] T6.3 Update `apps/arsy/test/*.mjs` to authenticate; no test may keep asserting anonymous access to a protected route
-- [ ] T6.4 ORM tests cover the fail-closed branch and identifier whitelist
-- [ ] T6.5 `pnpm lint:arch` · `pnpm typecheck` · `pnpm docs:check` · `pnpm --filter @allah/arsy build` · `pnpm ui:test` · arsy test suite · sentinel build — all green
+- [x] T6.1 `apps/arsy` (and `apps/sentinel`) inside `scripts/typecheck.ts` / strict build filters
+- [x] T6.2 Shared test helper: register → sign-in → `x-session-token` header injection
+- [x] T6.3 Update `apps/arsy/test/*.mjs` to authenticate; no test may keep asserting anonymous access to a protected route
+- [x] T6.4 ORM tests cover the fail-closed branch and identifier whitelist
+- [x] T6.5 `pnpm lint:arch` · `pnpm typecheck` · `pnpm docs:check` · `pnpm --filter @allah/arsy build` · `pnpm ui:test` · arsy test suite · sentinel build — all green
 
 ## Phase 7 — Documentation reconciliation
 
-- [ ] T7.1 `SECURITY.md`: keep only claims the code now enforces; state what is still open
-- [ ] T7.2 `AGENTS.md` monorepo map vs `ls packages addons apps` (6 undocumented packages, `nexus`/`orbit`/`works` addons, empty `apps/server`)
-- [ ] T7.3 `CHANGELOG.md` entry for the breaking changes (anonymous API access removed, seeded virtual key rotated, hub binds loopback by default)
-- [ ] T7.4 `report.md`: verified deliverables, command evidence, remaining unknowns
+- [x] T7.1 `SECURITY.md`: keep only claims the code now enforces; state what is still open
+- [x] T7.2 `AGENTS.md` monorepo map vs `ls packages addons apps` (addons row now lists `works`/`nexus`/`orbit`; empty `apps/server` intentionally not an app and left unmapped)
+- [x] T7.3 `CHANGELOG.md` entry for the breaking changes (anonymous API access removed, seeded virtual key rotated, hub binds loopback by default)
+- [x] T7.4 `report.md`: verified deliverables, command evidence, remaining unknowns

@@ -1,6 +1,6 @@
 ---
 title: "Six DNA Component Mapping"
-version: "1.0.0"
+version: "1.1.0"
 status: "approved"
 last_verified: "2026-11-03"
 owner: "product-design"
@@ -25,6 +25,34 @@ Define how the same semantic task can be expressed through six distinct visual l
 | Data table | Inscribed information plane | Observation ledger | Event chronology | Telemetry grid | Printed data sheet | Text-first network alternative |
 | Loading | Light reveal | Chart / orbit focus | Film dissolve | Actual calibration / scan | Print reveal | Connection / growth |
 | Empty state | Open chamber | Undiscovered region | Quiet film frame | Idle instrument | Graphic starting point | Dormant ecosystem |
+
+## Implementation status
+
+This document is a design specification, so each row states whether the code exists.
+
+| Matrix row | Implementing API in `@moonwitness/ui` | Status |
+|---|---|---|
+| Entry / hero composition | `PageHero` (`mediaLayout="side"` or `"backdrop"`, `titleAs`) | implemented |
+| Kicker / world label | `Kicker` | implemented |
+| Section heading | `SectionHeading` (`title`, `description`, `trailing`) | implemented |
+| Route measure and header | `RouteShell` (`as="main"` carries the skip target) | implemented |
+| Primary and secondary action | `Button`, `LinkButton`, `Link` with variants | implemented |
+| Navigation | `EcosystemNavbar` plus `SkipLink` | implemented |
+| Content card | `Card` family | implemented |
+| Destination card | `DestinationCard`, `DestinationGrid` (static mode when a route is not open) | implemented |
+| Dialog or overlay | `Dialog` on native `<dialog>` | implemented |
+| Data table | `Table` family | implemented |
+| Form validation | `Form`, `FormField`, `Input`, `Textarea`, `Select` | implemented |
+| Status message | `StatusMessage` (info, success, warning, danger) | implemented |
+| Loading, empty, error, offline, permission | `StatePanel` plus `error.tsx` / `loading.tsx` / `not-found.tsx` per app | implemented |
+| Tabs | none | specification |
+| Progress | none | specification |
+| World recipes per block | `[data-moonframe-skin='...']` variants in `skins.css` | implemented |
+| Six-world parity showcase | `SkinLaboratory` at headquarter `/skin-lab` | implemented |
+
+The showcase carries all nine required comparisons: hero, primary and secondary action,
+navigation, content card and data section, form validation, dialog, the four states,
+narrow-screen adaptation, and keyboard plus reduced-motion behaviour.
 
 ## Functional invariants
 

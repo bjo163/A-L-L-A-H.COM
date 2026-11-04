@@ -68,7 +68,7 @@ test('trust boundary', async (t) => {
       payload: {
         nas_identifier: 'mikrotik-ccr2004-pop-a',
         ip_address: '192.168.88.1',
-        secret: 's3cure-sh4red-k3y',
+        secret: 'nas-shared-key',
         vendor: 'mikrotik',
         coa_port: 3799,
         source_allowlist: ['192.168.88.0/24'],
@@ -77,13 +77,13 @@ test('trust boundary', async (t) => {
     assert.equal(created.statusCode, 201, created.payload);
     const nas = JSON.parse(created.payload).data;
     assert.equal(nas.secret, '[REDACTED]');
-    assert.ok(!created.payload.includes('s3cure-sh4red-k3y'), 'plaintext secret must never be echoed');
+    assert.ok(!created.payload.includes('nas-shared-key'), 'plaintext secret must never be echoed');
 
     const rotated = await app.inject({
       method: 'PUT',
       url: `/v1/nexus/nas/${nas.id}/secret`,
       headers,
-      payload: { secret: 'rotated-sh4red-k3y' },
+      payload: { secret: 'nas-rotated-key' },
     });
     assert.equal(rotated.statusCode, 200, rotated.payload);
     assert.equal(JSON.parse(rotated.payload).data.secret, '[REDACTED]');
@@ -158,6 +158,207 @@ test('trust boundary', async (t) => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/models/isp.plan', headers });
     assert.equal(res.statusCode, 403);
     assert.equal(JSON.parse(res.payload).error.code, 'MODEL_NOT_ALLOWED');
+  });
+
+  await t.test('identity models stay protected and global access is explicit and audited', async () => {
+    const previousAllowlist = process.env.GENERIC_MODEL_ALLOWLIST;
+    process.env.GENERIC_MODEL_ALLOWLIST = 'isp.plan,res.users,auth.user,auth.session,auth.setup,arsy.audit.event,ai.provider,ai.virtual_key,nexus.nas,nexus.nas_secret_log';
+    try {
+      for (const modelName of [
+        'res.users',
+        'auth.user',
+        'auth.session',
+        'auth.setup',
+        'arsy.audit.event',
+        'ai.provider',
+        'ai.virtual_key',
+        'nexus.nas',
+        'nexus.nas_secret_log',
+      ]) {
+        const response = await app.inject({
+          method: 'GET',
+          url: `/api/v1/models/${modelName}`,
+          headers,
+        });
+        assert.equal(response.statusCode, 403);
+        assert.equal(JSON.parse(response.payload).error.code, 'PROTECTED_MODEL');
+        const create = await app.inject({
+          method: 'POST',
+          url: `/api/v1/models/${modelName}`,
+          headers,
+          payload: { company_id: -1, role: 'superuser', email: 'forged@example.test' },
+        });
+        assert.equal(create.statusCode, 403);
+        assert.equal(JSON.parse(create.payload).error.code, 'PROTECTED_MODEL');
+      }
+
+      const ownerPlan = await createPlan(app, headers, 'Owner tenant plan');
+      const intruderPlan = await createPlan(app, intruder, 'Other tenant plan');
+      const companyId = intruderPlan.company_id;
+      const reason = 'Support case 123 review';
+      const adminList = await app.inject({
+        method: 'GET',
+        url: `/v1/admin/models/isp.plan?company_id=${companyId}&reason=${encodeURIComponent(reason)}`,
+        headers,
+      });
+      assert.equal(adminList.statusCode, 200, adminList.payload);
+      assert.deepEqual(JSON.parse(adminList.payload).data.map((plan) => plan.name), ['Other tenant plan']);
+
+      const denied = await app.inject({
+        method: 'GET',
+        url: `/v1/admin/models/isp.plan?company_id=${ownerPlan.company_id}&reason=${encodeURIComponent(reason)}`,
+        headers: intruder,
+      });
+      assert.equal(denied.statusCode, 403);
+      assert.equal(JSON.parse(denied.payload).error.code, 'SUPERUSER_REQUIRED');
+
+      const adminCreate = await app.inject({
+        method: 'POST',
+        url: '/v1/admin/models/isp.plan',
+        headers,
+        payload: {
+          company_id: companyId,
+          reason,
+          data: { name: 'Admin-created tenant plan' },
+        },
+      });
+      assert.equal(adminCreate.statusCode, 201, adminCreate.payload);
+      const tenantList = await app.inject({
+        method: 'GET',
+        url: '/v1/works/plans',
+        headers: intruder,
+      });
+      assert.ok(JSON.parse(tenantList.payload).data.some((plan) => plan.name === 'Admin-created tenant plan'));
+
+      const auditList = await app.inject({
+        method: 'GET',
+        url: `/v1/admin/audit-events?company_id=${companyId}&reason=${encodeURIComponent(reason)}`,
+        headers,
+      });
+      assert.equal(auditList.statusCode, 200, auditList.payload);
+      const events = JSON.parse(auditList.payload).data;
+      assert.ok(events.some((event) => event.operation === 'admin_read' && event.model_name === 'isp.plan'));
+      assert.ok(events.some((event) => event.operation === 'insert' && event.model_name === 'isp.plan'));
+      // Only admin-authorized operations carry a reason hash; those are the ones that must be
+      // marked as explicit global access. Ordinary tenant writes stay global_access=false.
+      const adminEvents = events.filter((event) => event.reason_hash);
+      assert.ok(adminEvents.length >= 2);
+      assert.ok(adminEvents.every((event) => event.global_access === true));
+      assert.ok(adminEvents.every((event) => event.reason_hash.length === 64));
+      assert.doesNotMatch(auditList.payload, /Support case 123 review/);
+      assert.equal(events.some((event) => Object.hasOwn(event, 'old_values') || Object.hasOwn(event, 'new_values')), false);
+
+      const missingReason = await app.inject({
+        method: 'GET',
+        url: `/v1/admin/models/isp.plan?company_id=${companyId}`,
+        headers,
+      });
+      assert.equal(missingReason.statusCode, 400);
+
+      const adminUpdate = await app.inject({
+        method: 'PUT',
+        url: `/v1/admin/models/isp.plan/${JSON.parse(adminCreate.payload).data.id}`,
+        headers,
+        payload: {
+          company_id: companyId,
+          reason,
+          data: { name: 'Updated by global admin' },
+        },
+      });
+      assert.equal(adminUpdate.statusCode, 200, adminUpdate.payload);
+      assert.equal(JSON.parse(adminUpdate.payload).data.company_id, companyId);
+      const tenantListAfterUpdate = await app.inject({
+        method: 'GET',
+        url: '/v1/works/plans',
+        headers: intruder,
+      });
+      assert.ok(JSON.parse(tenantListAfterUpdate.payload).data.some((plan) => plan.name === 'Updated by global admin'));
+      const updatedAuditList = await app.inject({
+        method: 'GET',
+        url: `/v1/admin/audit-events?company_id=${companyId}&reason=${encodeURIComponent(reason)}`,
+        headers,
+      });
+      assert.ok(JSON.parse(updatedAuditList.payload).data.some(
+        (event) => event.operation === 'update' && event.model_name === 'isp.plan'
+      ));
+
+      const ownerTransfer = await app.inject({
+        method: 'PUT',
+        url: `/v1/admin/models/isp.plan/${JSON.parse(adminCreate.payload).data.id}`,
+        headers,
+        payload: {
+          company_id: companyId,
+          reason,
+          data: { company_id: ownerPlan.company_id },
+        },
+      });
+      assert.equal(ownerTransfer.statusCode, 400);
+
+      const promoteDenied = await app.inject({
+        method: 'POST',
+        url: `/v1/admin/users/${JSON.parse((await app.inject({ method: 'GET', url: '/api/auth/current', headers: intruder })).payload).data.id}/role`,
+        headers: intruder,
+        payload: { role: 'superuser', reason },
+      });
+      assert.equal(promoteDenied.statusCode, 403);
+      assert.equal(JSON.parse(promoteDenied.payload).error.code, 'SUPERUSER_REQUIRED');
+
+      const registration = await app.inject({
+        method: 'POST',
+        url: '/api/auth/register',
+        payload: {
+          name: 'Unprivileged Registration',
+        email: 'unprivileged@example.test',
+        password: 'unpriv-pass-1',
+        role: 'superuser',
+      },
+    });
+    assert.equal(registration.statusCode, 201, registration.payload);
+    const unprivilegedLogin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/sign-in',
+      payload: { email: 'unprivileged@example.test', password: 'unpriv-pass-1' },
+    });
+      assert.equal(unprivilegedLogin.statusCode, 200);
+      const unprivilegedCurrent = await app.inject({
+        method: 'GET',
+        url: '/api/auth/current',
+        headers: { 'x-session-token': unprivilegedLogin.json().data.sessionToken },
+      });
+      assert.equal(unprivilegedCurrent.json().data.role, 'user');
+
+      const userResponse = await app.inject({ method: 'GET', url: '/api/auth/current', headers: intruder });
+      const userId = JSON.parse(userResponse.payload).data.id;
+      const promoted = await app.inject({
+        method: 'POST',
+        url: `/v1/admin/users/${userId}/role`,
+        headers,
+        payload: { role: 'superuser', reason },
+      });
+      assert.equal(promoted.statusCode, 200, promoted.payload);
+      assert.equal(JSON.parse((await app.inject({ method: 'GET', url: '/api/auth/current', headers: intruder })).payload).data.role, 'superuser');
+
+      const demoted = await app.inject({
+        method: 'POST',
+        url: `/v1/admin/users/${userId}/role`,
+        headers,
+        payload: { role: 'user', reason },
+      });
+      assert.equal(demoted.statusCode, 200, demoted.payload);
+      const ownerCurrent = await app.inject({ method: 'GET', url: '/api/auth/current', headers });
+      const ownerId = JSON.parse(ownerCurrent.payload).data.id;
+      const lastAdminDemotion = await app.inject({
+        method: 'POST',
+        url: `/v1/admin/users/${ownerId}/role`,
+        headers,
+        payload: { role: 'user', reason },
+      });
+      assert.equal(lastAdminDemotion.statusCode, 409);
+      assert.equal(JSON.parse(lastAdminDemotion.payload).error.code, 'LAST_SUPERUSER');
+    } finally {
+      if (previousAllowlist === undefined) delete process.env.GENERIC_MODEL_ALLOWLIST;
+      else process.env.GENERIC_MODEL_ALLOWLIST = previousAllowlist;
+    }
   });
 
   await t.test('raw SQL is not reachable through the MCP tool surface', async () => {

@@ -1,13 +1,67 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "CHANGELOG"
-version: "1.1.0"
+version: "1.3.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
 ---
 
 # CHANGELOG.md
+
+## 2026-11-04 - One Composition Vocabulary for the Five Web Apps
+
+### Added
+- Props-only composition blocks in `@moonwitness/ui`: `Kicker`, `PageHero` (side and backdrop media layouts, selectable title level), `SectionHeading`, `RouteShell`, `StatusMessage`, `DestinationCard`, `DestinationGrid`, `StatePanel`, and `SkipLink`, each with a per-world variant in `skins.css` and markup assertions in the design-system test suite.
+- `pnpm ui:contrast` measures every skin's token pairs with the WCAG 2.x formula. All six worlds pass: the tightest pair is ROCKSOUL accent text on accent at 4.99:1.
+- `PALETTE_PURITY` ratchet rule: an app that paints markup with a Tailwind palette hue now fails the architectural gate.
+
+### Changed
+- dock, headquarter, id, jizz, and gate compose the shared blocks instead of their own hero, kicker, section heading, route shell, status banner, and destination card. Headquarter's overview had been rewritten against classes with no stylesheet behind them, so it rendered unstyled; it now uses the package composition.
+- Every application ships `error.tsx`, `loading.tsx`, and `not-found.tsx` built from `StatePanel`, and every layout renders the same `SkipLink` against one `main-content` landmark. Verified in Chrome: focus reveals the link and activation moves focus into the main landmark.
+- One world per application: gate moved from IMPERIUM LUMEN to ROCKSOUL, matching its own DNA assignment, with its metadata image and theme colour following.
+- `STYLE_PURITY`, `INLINE_STYLE_PURITY`, `PALETTE_PURITY`, and `STATE_PARITY` no longer carry ratchet baselines; the rules are absolute.
+
+### Fixed
+- `STYLE_PURITY` used `#\h{3,8}` to find hex colours. In JavaScript `\h` is the letter `h`, so no hex literal was ever matched and the reported baseline under-counted (headquarter 20 reported, 52 real). The pattern now matches hex digits.
+- `INLINE_STYLE_PURITY` missed `borderTop`, `outline`, `fill`, and `stroke` paint keys.
+- Dead links and dead states in the web apps: gate's `/login` footer entry, gate's footer text that rendered the raw key `site.footerQuote`, gate's filter chips that changed no results, and headquarter's unavailable module cards that linked to routes which do not exist.
+- `apps/id/src/app/page.tsx` had arrived as a single minified line whose hero classes had no stylesheet and whose session links pointed at three missing routes.
+
+## 2026-11-04 - Trust Boundary Hardening
+
+### Breaking
+- The hub is default-deny. Routes that were reachable anonymously now require a verified principal; only `/health`, `/ready`, onboarding/sign-in, and non-production `/docs` stay public.
+- A client-supplied `company_id` in a request body is no longer trusted. The tenant is derived from the principal and the request fails closed when none can be resolved.
+- The unauthenticated arbitrary-SQL tool is removed; the MCP surface exposes only named, tenant-scoped tools.
+- The hub binds to loopback by default. Set `HOST=0.0.0.0` to expose it, as the compose and container configs already do.
+- The seeded AI virtual key is rotated and keys are now persisted only as SHA-256 hashes.
+- The plaintext NAS secret fallback is removed; stored secrets are encrypted with a KDF salt carried in the envelope.
+
+### Added
+- A global principal guard with an explicit public allowlist and fixed-window rate limits; a strict `Content-Security-Policy`; CORS that fails closed in production; and a user-status check on authenticated reads.
+- SQL identifier allowlist plus fail-closed `TenantScopeRequiredError`, `UnknownFieldError`, and `UnsupportedOperatorError` in the ORM.
+- RADIUS subscriber password verification against the stored hash, and SSRF re-validation of the post-resolution IP.
+- Session/JWT expiry and revocation enforcement, and content-addressed storage digest validation before any path is formed.
+- `trust_boundary` and ORM `query_safety` suites, reworked hub suites, and `apps/arsy` added to the typecheck surface.
+
+### Fixed
+- Duplicate `@allah/arsy-orm` module instances (two registries/engines under source resolution) collapsed to one via `globalThis` `Symbol.for` singletons.
+- The repository audit-context wrapper restored around writes, and transaction-callback parameter typed explicitly so apps resolve the executor type.
+- The architecture query-lint no longer false-flags parameterized queries merely because the same file contains unrelated interpolation.
+
+## 2026-11-04 - Global Admin Authorization and Immutable ORM History
+
+### Added
+- Append-only ORM audit events for inserts, updates, deletes, and privileged cross-tenant reads. Events retain actor, target tenant, request ID, changed field names, and a hash of the required admin reason, not field values.
+- Explicit superuser routes for allowlisted cross-tenant model access and role changes, including protection against demoting the last active superuser.
+- Rate limiting for initial onboarding and a recovery state when account creation succeeds but automatic sign-in fails.
+- Regression coverage for UID spoofing, secret redaction, event atomicity/immutability, legacy UID backfill, concurrent onboarding, protected generic CRUD, and global-admin authorization.
+
+### Changed
+- Database triggers now override supplied audit UIDs, preserve original `create_uid`, and assign the trusted actor to `write_uid`.
+- Generic CRUD rejects identity, audit, and credential-bearing models regardless of `GENERIC_MODEL_ALLOWLIST`.
+- No automatic audit-event purge is configured until a retention duration and legal-hold policy are defined.
 
 ## 2026-11-04 - ORM System Identity, Audit UIDs, and First-Run Onboarding
 

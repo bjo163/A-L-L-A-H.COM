@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DESIGN"
-version: "1.3.0"
+version: "1.4.0"
 owner: "product-design"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -41,9 +41,12 @@ One shared functional UI engine. No behavioral or accessibility forking across D
 - UI controls: `@moonwitness/ui` only. Blocked by `@moonwitness/lint` (`UI_PURITY`).
 - Primitives engine: native-first. `<select>`, `<dialog>`, `<table>`, and `<form>` carry the behaviour; Base UI is added only inside `packages/ui` where native cannot meet a documented requirement. See D-012. Do not migrate the primitive layer during skin work.
 - Token source: `packages/ui/src/theme.css` maps Tailwind colour and font utilities onto the skin tokens published by `SkinRoot`. Applications define no colour, type, or theme variables and paint no colour inline (`STYLE_PURITY`, `INLINE_STYLE_PURITY`).
+- Markup colour: a Tailwind palette hue in app JSX is blocked by `PALETTE_PURITY`. Use a component variant, a composition block, or a mapped utility such as `text-muted-foreground`, so the world keeps authority over colour.
+- Composition blocks: `Kicker`, `PageHero`, `SectionHeading`, `RouteShell`, `StatusMessage`, `DestinationCard`, `DestinationGrid`, `StatePanel`, and `SkipLink` live in `packages/ui/src/blocks/` and are styled in `skins.css` with a variant per world. They take props only: no fetching, no business logic.
+- One world per application: dock IMPERIUM LUMEN · headquarter NEXUS PARADOX · id LUNAR CHRONICLES · jizz MYCELIUM · gate ROCKSOUL. RIOT ANARCHY stays unassigned and is proven in the Skin Laboratory (D-014).
 - Product-specific variants: only when behavior genuinely differs from shared.
 - Inspect existing UI package before extending.
-- Skin Laboratory comparison: pending.
+- Skin Laboratory comparison: shipped at `/skin-lab` in headquarter; it renders the shared blocks, not a private copy of them.
 
 ## Interaction Standards
 
