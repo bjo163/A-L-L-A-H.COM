@@ -10,6 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -304,3 +305,8 @@ jobs:
           git checkout main || git checkout -b main origin/main
           git merge --ff-only dev
           git push origin main
+
+      - name: Start production publish and deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run publish-deploy.yml --ref main

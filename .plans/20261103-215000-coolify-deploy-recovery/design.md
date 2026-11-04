@@ -4,6 +4,8 @@ status: in_progress
 
 # Coolify Deploy Recovery Design
 
+> Superseded by [Production Release and Docker Gate](../20261104-1200-production-release-docker-gate/spec.md). This design describes the former Rust/Loco deployment architecture.
+
 ## Architecture Context
 
 ### Current State

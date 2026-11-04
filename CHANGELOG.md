@@ -9,6 +9,14 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - Production Docker Gate and Release Automation
+
+### Changed
+- Retired the unused Rust/Loco server from the active tree; Arsy Fastify remains the canonical backend.
+- Included the shared TypeScript config in Arsy, Dock, Headquarter, and ID container builds.
+- Added Arsy and ID to the GHCR production matrix; Coolify is triggered only after all four images publish.
+- Dispatch production publishing after successful dev-to-main promotion and create the versioned GitHub release after the Coolify webhook succeeds.
+
 ## 2026-11-04 - VS Code Extension Deep Runtime Hardening
 
 ### Added

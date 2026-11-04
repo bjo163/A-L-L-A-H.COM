@@ -13,7 +13,7 @@ A-L-L-A-H.COM is the central home for the continued evolution of the MoonWitness
 
 Its mission is to preserve the legacy, reconcile generations, connect products and applications, consolidate useful technology, and provide one coherent platform without erasing the identity or history of earlier work.
 
-This repository contains a Fastify/TypeScript ARSY Hub backend and three Next.js web applications (Dock, Headquarters, and MoonWitness ID). Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
+This repository contains a Fastify/TypeScript ARSY Hub backend and four Next.js web applications (Dock, Headquarters, MoonWitness ID, and WORLD OBSERVATORY). Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
 
 ## Start here
 1. [GOAL.md](GOAL.md) â€” master mission and local AI entrypoint.
@@ -56,13 +56,13 @@ Run `pnpm dev` to start Arsy and all three Next.js apps concurrently: Arsy on po
 Never commit secrets, `.env` files, local databases, generated build output, or unrelated user changes.
 
 ## Production deployment
-The root `docker-compose.yml` builds the `arsy`, `dock`, `headquarter`, and `id` services from their app Dockerfiles. The `Publish and deploy` GitHub Actions workflow builds the dock and headquarter images in parallel, publishes `latest` and commit-specific tags to GHCR, then triggers Coolify.
+The root `docker-compose.yml` pulls the `arsy`, `dock`, `headquarter`, and `id` images from GHCR. The `Publish and deploy` GitHub Actions workflow validates the Compose configuration, builds and publishes every service image on GitHub, and only then notifies Coolify. Coolify pulls those exact published images instead of rebuilding them. Successful CI promotion explicitly dispatches this workflow because pushes made with `GITHUB_TOKEN` do not start a second workflow. A versioned GitHub release is created after the Coolify webhook is accepted.
 
 Configure these repository secrets in GitHub:
 - `COOLIFY_WEBHOOK_URL` â€” the deployment webhook URL for the Compose application in Coolify.
 - `COOLIFY_API_TOKEN` â€” a Coolify API token authorized to deploy that application.
 
-After the first successful publish, set the GHCR packages to public in GitHub's package settings; public packages can be pulled by Coolify without registry credentials, so Docker Hub is not required. If the images stay private, configure GHCR read credentials in Coolify. Set `IMAGE_PREFIX` to `ghcr.io/<owner>/<repository>` only if the image namespace differs from the default, `ghcr.io/bjo163/a-l-l-a-h.com`; set `IMAGE_TAG` to `latest` or a published `sha-<short-commit>` tag for a pinned rollback.
+Before the first deployment, set the GHCR packages to public in GitHub's package settings or configure GHCR read credentials in Coolify. Public packages can be pulled without registry credentials, so Docker Hub is not required. Set `IMAGE_PREFIX` to `ghcr.io/<owner>/<repository>` only if the image namespace differs from the default, `ghcr.io/bjo163/a-l-l-a-h.com`; set `IMAGE_TAG` to `latest` or a published `sha-<short-commit>` tag for a pinned rollback.
 
 ## VS Code Extension
 The extension in `packages/vscode-extension` integrates the `.plans` workflow, the MoonWitness LLM gateway, and the Arsy Fastify API.
@@ -79,4 +79,4 @@ The extension in `packages/vscode-extension` integrates the `.plans` workflow, t
 ## Branch Strategy & CI/CD Release Gate
 - `dev`: Primary development branch. All commits and features are pushed here.
 - CI Gate (`.github/workflows/ci-dev.yml`): Validates Dock, Headquarter, and VS Code extension, plus the documentation contract, before promotion.
-- `main`: Production release branch. Auto-promoted from `dev` only when all CI checks pass 100%. Pushes to `main` trigger GHCR image publishing and Coolify deployment.
+- `main`: Production release branch. Auto-promoted from `dev` only when all CI checks pass. Promotion dispatches the Docker-gated GHCR publish and Coolify workflow; the workflow creates the root package's versioned GitHub release after the webhook succeeds.

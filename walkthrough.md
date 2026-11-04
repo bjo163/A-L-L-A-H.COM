@@ -13,8 +13,8 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 
 ## Recent Changes (Autonomous Evolution Engine)
 
-### Rust Server Removed
-- **Retired**: `apps/server/` (Rust/Loco backend) and `apps/web/` (legacy web app), in favour of Arsy, Dock, and Headquarter
+### Legacy Server Retired
+- **Retired from the active tree**: `apps/server/` (Rust/Loco backend) and `apps/web/` (legacy web app), in favour of Arsy, Dock, Headquarter, and MoonWitness ID. Rust source history remains in Git.
 - **Added**: `apps/headquarter/` Next.js command center, `apps/id/` MoonWitness ID account & SSO center, `packages/types/`, `packages/sdk/`, and `packages/lint/`
 - **Added**: `packages/arsy-plugin-*` (auth, sdui, llm-gateway, storage) technical plugins
 
@@ -29,8 +29,11 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 - ✅ ARSY build: `pnpm --filter @allah/arsy build` passes
 - ✅ VS Code extension build: `pnpm extension:build` passes
 
+## Production Delivery
+- Build and publish the Arsy, Dock, Headquarter, and ID Docker images to GHCR.
+- Trigger Coolify only after every image builds and publishes successfully.
+- Create the versioned GitHub release after the production webhook succeeds.
+
 ## Next Steps
-- Publish dock and headquarter images to GHCR
-- Deploy to Coolify with custom domains
 - Configure upstream LLM providers
 - Enable SDUI dynamic form components

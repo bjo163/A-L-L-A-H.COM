@@ -9,6 +9,7 @@ FROM base AS builder
 WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY tsconfig.base.json ./
 COPY apps/dock/package.json ./apps/dock/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/sdk/package.json ./packages/sdk/

@@ -4,6 +4,8 @@ status: in_progress
 
 # Coolify Deploy Recovery Task List
 
+> Superseded by [Production Release and Docker Gate](../20261104-1200-production-release-docker-gate/spec.md). The Rust server was retired, so the Cargo build, Rust image, and Rust deployment steps below are historical.
+
 ## Priority Order
 
 ### Task 1: Fix Rust Module Duplication (BLOCKER)

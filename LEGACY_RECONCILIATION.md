@@ -35,7 +35,7 @@ All accessible: MoonWitness generations (Reborn, XV, archives) · repos/branches
 
 | Source | Disposition | Rationale |
 |---|---|---|
-| `apps/server/` (Rust/Loco) | `retire` | Replaced by Arsy Fastify. History in Git + migration plan. |
+| `apps/server/` (retired Rust/Loco app) | `retire` | Removed from the active tree after Arsy Fastify became the canonical backend. Source history remains in Git. |
 | `apps/web/` (legacy Next.js) | `retire` | Superseded by Dock. Historical refs in identity report. |
 
 ## Canon Integrity Rules

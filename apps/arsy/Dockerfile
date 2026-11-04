@@ -9,6 +9,7 @@ FROM base AS builder
 WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY tsconfig.base.json ./
 COPY apps/arsy/package.json ./apps/arsy/
 COPY packages/arsy-core/package.json ./packages/arsy-core/
 COPY packages/arsy-orm/package.json ./packages/arsy-orm/

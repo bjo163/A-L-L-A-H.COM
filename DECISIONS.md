@@ -74,3 +74,21 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: Existing integer `company_id` + user sequence provides distinct per-account IDs without collisions.
 - consequences: New accounts isolated by default. Org sharing requires explicit admin assignment. Tenant-scoped queries must treat ID as opaque non-zero key.
 - related: WINDOWS-VSCODE-LOCAL-AGENT
+
+### D-009 — Retire the Rust/Loco Server
+- status: ACCEPTED — 2026-11-04
+- context: Arsy Fastify is the canonical backend, while the unused Rust/Loco app and Dockerfile fail production builds and diverge from the active Compose stack.
+- decision: Remove `apps/server/`, its Cargo manifests, Rust sources, Dockerfile, and standalone CI. Keep its retirement rationale here and its source history in Git.
+- alternatives: Repair and continue maintaining both backend stacks.
+- rationale: One backend authority reduces deploy complexity and prevents stale Rust builds from blocking production.
+- consequences: Production Docker builds contain only Arsy and the web applications. Rust history remains recoverable from Git.
+- related: [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md), [Coolify deployment plan](.plans/20261104-1200-production-release-docker-gate/spec.md)
+
+### D-010 — Docker-Gated Production Release
+- status: ACCEPTED — 2026-11-04
+- context: Coolify deployments were triggered despite incomplete or failing application image builds.
+- decision: Build and publish every root Compose service before calling the Coolify webhook. Dispatch production publishing only after CI promotes `dev` to `main`, and create a GitHub release after the webhook succeeds.
+- alternatives: Let Coolify build arbitrary source revisions without a prior image gate.
+- rationale: The deployed source must pass the same Docker build requirements before the deployment trigger is sent.
+- consequences: A failed Docker image blocks both Coolify notification and release creation. Compose pulls the same GHCR images that passed the GitHub build gate.
+- related: [Production deployment](README.md#production-deployment), [Docker-gate plan](.plans/20261104-1200-production-release-docker-gate/spec.md)

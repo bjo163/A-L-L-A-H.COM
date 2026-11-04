@@ -9,6 +9,8 @@ last_verified: "2026-11-03"
 
 # Coolify Deploy Recovery Plan
 
+> Superseded by [Production Release and Docker Gate](../20261104-1200-production-release-docker-gate/spec.md). This records the original Rust/Loco failure; do not execute its Cargo build or server-image steps.
+
 ## Problem
 
 A-L-L-A-H.COM deployment to Coolify is failing. The application status is `exited:unhealthy` with `fqdn: null`. Root cause analysis of the failed deployment pipeline reveals:

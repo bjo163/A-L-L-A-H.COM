@@ -35,7 +35,6 @@ const REQUIRED_DOCS: Array<{ path: string; expectedId: string; owner: string }> 
   { path: 'apps/dock/README.md', expectedId: 'APP_DOCK_README', owner: 'frontend' },
   { path: 'apps/headquarter/README.md', expectedId: 'APP_HEADQUARTER_README', owner: 'frontend' },
   { path: 'apps/jizz/README.md', expectedId: 'APP_JIZZ_README', owner: 'frontend' },
-  { path: 'apps/server/README.md', expectedId: 'APP_SERVER_README', owner: 'backend' },
 ];
 
 const VALID_STATUSES = ['discovered', 'ready', 'in_progress', 'implemented', 'verified', 'released'];

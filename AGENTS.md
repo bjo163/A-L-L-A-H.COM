@@ -63,6 +63,8 @@ pnpm --filter @allah/arsy build
 
 Pre-commit: `docs:check` + `lint:arch` + `typecheck`. Pre-push: all build gates. Self-heal all errors. Never prompt user.
 
+Production Docker builds run on GitHub Actions only. The workflow builds and publishes every Compose image before the Coolify webhook; do not duplicate this resource-heavy gate locally.
+
 ## Plans Standard
 
 Path: `.plans/<timestamp>-<slug>/`

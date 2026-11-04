@@ -4,6 +4,8 @@ status: active
 
 # Coolify Deploy Recovery Rules
 
+> Superseded by [Production Release and Docker Gate](../20261104-1200-production-release-docker-gate/spec.md). The Rust module and server-image rules below are retained only as historical context.
+
 ## Invariants
 
 ### 1. Rust Module Path Uniqueness
