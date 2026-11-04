@@ -27,6 +27,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,13 +35,72 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const PLANS_DIR = path.join(REPO_ROOT, '.plans');
 const LOG_DIR = path.join(REPO_ROOT, 'logs');
 const STATE_FILE = path.join(LOG_DIR, 'plan-exec-state.json');
+const RUN_LOG = path.join(LOG_DIR, 'plan-exec.log');
+const LOCK_FILE = path.join(LOG_DIR, 'plan-exec.lock');
+const LOCK_TTL_MS = 45 * 60 * 1000; // a run older than 45 min is considered stale
+
+function milestone(message) {
+  const line = `[${new Date().toISOString()}] ${message}`;
+  try {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+    fs.appendFileSync(RUN_LOG, `${line}\n`, 'utf8');
+  } catch {
+    /* logging must never break selection */
+  }
+  if (process.env.PLAN_NEXT_VERBOSE) console.error(line);
+}
 
 const argv = process.argv.slice(2);
 const MODE = argv.includes('--list')
   ? 'list'
   : argv.includes('--record-fail')
     ? 'record-fail'
-    : 'json';
+    : argv.includes('--sync')
+      ? 'sync'
+      : argv.includes('--release')
+        ? 'release'
+        : 'json';
+
+// Deterministic, non-interactive git for the dedicated exec clone. No interactive
+// credential prompts, so an unattended run can never hang waiting on a modal.
+function runGit(args, { allowFail = false } = {}) {
+  try {
+    const out = execFileSync('git', args, {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return { ok: true, stdout: out.trim() };
+  } catch (err) {
+    const detail = `${err.message || err}${err.stderr ? `\n${String(err.stderr).trim()}` : ''}`;
+    if (!allowFail) throw new Error(`git ${args.join(' ')} failed: ${detail}`);
+    return { ok: false, stdout: '', error: detail };
+  }
+}
+
+// Bring the clone exactly to origin/dev. Safe here because this directory is
+// dedicated to the automation; any leftover WIP from a stalled prior run is
+// discarded so the next run starts clean.
+function cmdSync() {
+  milestone('sync start');
+  const fetch = runGit(['fetch', 'origin', 'dev'], { allowFail: true });
+  if (!fetch.ok) {
+    milestone(`sync FAILED (fetch): ${fetch.error}`);
+    console.log(JSON.stringify({ synced: false, reason: fetch.error }));
+    return;
+  }
+  const reset = runGit(['reset', '--hard', 'origin/dev'], { allowFail: true });
+  if (!reset.ok) {
+    milestone(`sync FAILED (reset): ${reset.error}`);
+    console.log(JSON.stringify({ synced: false, reason: reset.error }));
+    return;
+  }
+  const head = runGit(['rev-parse', '--short', 'HEAD']).stdout;
+  milestone(`sync OK -> origin/dev @ ${head}`);
+  console.log(JSON.stringify({ synced: true, head }));
+}
 
 function flagValue(name, envName, fallback) {
   const arg = argv.find((a) => a.startsWith(`${name}=`));
@@ -179,14 +239,43 @@ function cmdRecordFail(state) {
   if (entry.fails >= SKIP_AFTER) console.log(`plan ${rel} now quarantined (>= ${SKIP_AFTER} fails)`);
 }
 
+// A fresh lock means another exec run is still active — refuse to hand out a
+// second plan so two runs never collide on the same plan or the same clone.
+function activeRun() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
+    const age = Date.now() - new Date(raw.at).getTime();
+    if (age < LOCK_TTL_MS) return raw;
+  } catch {
+    /* no/invalid lock -> none */
+  }
+  return null;
+}
+function claimLock(planRel) {
+  try {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+    fs.writeFileSync(LOCK_FILE, JSON.stringify({ plan: planRel, at: new Date().toISOString() }), 'utf8');
+  } catch {
+    /* best effort */
+  }
+}
+
 function cmdJson(state) {
+  const active = activeRun();
+  if (active) {
+    milestone(`select refused: run active for ${active.plan} since ${active.at}`);
+    console.log(JSON.stringify({ plan: null, reason: 'ACTIVE_RUN', activeSince: active.at, activePlan: active.plan }));
+    return;
+  }
   const candidates = collectCandidates(state);
   if (candidates.length === 0) {
+    milestone('select: NO_PENDING_PLAN');
     console.log(JSON.stringify({ plan: null, reason: 'NO_PENDING_PLAN' }));
     return;
   }
   const smallest = candidates[0];
   if (smallest.openTasks > MAX_OPEN) {
+    milestone(`select: NONE_TOO_BIG smallest=${smallest.openTasks} max=${MAX_OPEN}`);
     console.log(
       JSON.stringify({
         plan: null,
@@ -198,6 +287,8 @@ function cmdJson(state) {
     );
     return;
   }
+  claimLock(smallest.rel);
+  milestone(`select: claimed ${smallest.rel} (openTasks=${smallest.openTasks})`);
   console.log(
     JSON.stringify({
       plan: smallest.rel,
@@ -210,9 +301,22 @@ function cmdJson(state) {
   );
 }
 
+// Release the run lock (called by the agent after commit+push or a clean stop).
+function cmdRelease() {
+  try {
+    fs.rmSync(LOCK_FILE, { force: true });
+    milestone('lock released');
+    console.log('released');
+  } catch (e) {
+    console.error(`release failed: ${e.message}`);
+  }
+}
+
 function main() {
   const state = loadState();
-  if (MODE === 'list') cmdList(state);
+  if (MODE === 'sync') cmdSync();
+  else if (MODE === 'release') cmdRelease();
+  else if (MODE === 'list') cmdList(state);
   else if (MODE === 'record-fail') cmdRecordFail(state);
   else cmdJson(state);
 }
