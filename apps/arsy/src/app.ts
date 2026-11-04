@@ -420,5 +420,108 @@ const repo = new BaseRepository(model);
     }
   });
 
+  // i18n Endpoints
+  app.get<{ Querystring: { lang?: string; company_id?: string } }>('/v1/i18n/languages', async (request, reply) => {
+    try {
+      const companyId = (request.query?.company_id as string) || '';
+      const model = modelRegistry.get('res.lang');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'res.lang model not registered');
+      }
+      const repo = new BaseRepository(model);
+      const filters: any[] = [];
+      if (companyId) {
+        filters.push({ field: 'company_id', operator: '=' as const, value: Number(companyId) });
+      } else {
+        filters.push({ field: 'company_id', operator: '=', value: 0 });
+      }
+      filters.push({ field: 'active', operator: '=', value: true });
+      const languages = await repo.find({ filters, limit: 100 });
+      return ok(languages, { totalItems: languages.length });
+    } catch (err: any) {
+      logger.error({ err }, 'i18n languages failed');
+      reply.status(500);
+      return fail('I18N_ERROR', err.message);
+    }
+  });
+
+  app.get<{ Params: { lang: string }; Querystring: { company_id?: string } }>('/v1/i18n/terms/:lang', async (request, reply) => {
+    try {
+      const lang = request.params.lang;
+      const companyId = (request.query?.company_id as string) || '';
+      const model = modelRegistry.get('ir.translation');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'ir.translation model not registered');
+      }
+      const repo = new BaseRepository(model);
+      const filters: any[] = [];
+      if (companyId) {
+        filters.push({ field: 'company_id', operator: '=' as const, value: Number(companyId) });
+      } else {
+        filters.push({ field: 'company_id', operator: '=', value: 0 });
+      }
+      filters.push({ field: 'lang', operator: '=', value: lang });
+      filters.push({ field: 'type', operator: '=', value: 'ui' });
+      filters.push({ field: 'active', operator: '=', value: true });
+      const terms = await repo.find({ filters, limit: 100 });
+      return ok(terms, { totalItems: terms.length });
+    } catch (err: any) {
+      logger.error({ err }, 'i18n terms failed');
+      reply.status(500);
+      return fail('I18N_ERROR', err.message);
+    }
+  });
+
+  app.post<{ Body: { terms: Record<string, string>; lang: string; company_id: number } }>('/v1/i18n/terms/sync', async (request, reply) => {
+    try {
+      const { terms, lang, company_id } = request.body as any;
+      const model = modelRegistry.get('ir.translation');
+      if (!model) {
+        reply.status(500);
+        return fail('MODEL_NOT_FOUND', 'ir.translation model not registered');
+      }
+
+      const repo = new BaseRepository(model);
+      const currentTime = new Date().toISOString();
+
+      for (const [name, value] of Object.entries(terms)) {
+        // Try to find existing translation
+        const existing = await repo.find({
+          filters: [
+            { field: 'company_id', operator: '=', value: company_id },
+            { field: 'lang', operator: '=', value: lang },
+            { field: 'name', operator: '=', value: name },
+            { field: 'type', operator: '=', value: 'ui' }
+          ],
+          limit: 1
+        });
+
+        if (existing && existing.length > 0) {
+          // Update existing
+          await repo.updateById(existing[0].id, { value, state: 'translated', write_date: currentTime }, company_id);
+        } else {
+          // Create new
+          await repo.create({
+            company_id,
+            lang,
+            name,
+            src: value,
+            value,
+            state: 'translated',
+            type: 'ui'
+          }, company_id);
+        }
+      }
+
+      return ok({ message: 'Translation catalog synchronized successfully' });
+    } catch (err: any) {
+      logger.error({ err }, 'i18n terms sync failed');
+      reply.status(500);
+      return fail('I18N_ERROR', err.message);
+    }
+  });
+
   return app;
 }

@@ -66,3 +66,4 @@ erDiagram
 ## 3. Performance & Caching Strategy
 - Translation terms are cached in-memory with SHA-256 ETag generation.
 - Response payload is compressed (Gzip/Brotli) resulting in $< 15\text{KB}$ transfer for ~2,000 UI keys.
+

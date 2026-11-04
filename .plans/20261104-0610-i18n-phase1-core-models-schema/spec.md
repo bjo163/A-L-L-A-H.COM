@@ -1,6 +1,6 @@
 ---
 title: "i18n Localization Phase 1: Core Translation Models & Addon Schema"
-status: "proposed"
+status: "completed"
 timestamp: "2026-11-04T05:00:00+07:00"
 author: "Antigravity Assistant"
 target_branch: "dev"
@@ -72,3 +72,4 @@ flowchart TD
 1. Skema `res.lang` dan `ir.translation` terdaftar dan termigrasi di PGlite tanpa error.
 2. Query model dengan `{ translate: true }` mengembalikan teks bahasa lokal sesuai konteks pengguna dalam $< 2\text{ms}$ (cache-hit).
 3. Monorepo quality gates (`pnpm docs:check`, `pnpm lint:arch`, `pnpm typecheck`) pass 100%.
+

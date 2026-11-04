@@ -23,3 +23,4 @@ parent_issue: 5
 
 ## 3. Security
 - Only authenticated tenant administrators (`role: 'admin'`) can mutate translations or trigger catalog syncs.
+

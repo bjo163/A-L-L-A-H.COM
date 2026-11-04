@@ -8,6 +8,7 @@ export interface QueryFilter {
 
 export interface QueryOptions {
   companyId?: string | number | null;
+  lang?: string;
   filters?: QueryFilter[];
   limit?: number;
   offset?: number;
