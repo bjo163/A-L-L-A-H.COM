@@ -189,6 +189,54 @@ jobs:
       - name: Build ID App
         run: pnpm id:build
 
+  verify-harbor:
+    name: Verify Harbor (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Harbor App
+        run: pnpm harbor:build
+
+  verify-moonsky:
+    name: Verify Moonsky (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Moonsky App
+        run: pnpm moonsky:build
+
   verify-jizz:
     name: Verify Jizz (Next.js)
     runs-on: ubuntu-latest
@@ -369,7 +417,7 @@ jobs:
     permissions:
       contents: write
       actions: write
-    needs: [verify-scaffolds, verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-gate, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
+    needs: [verify-scaffolds, verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-harbor, verify-moonsky, verify-gate, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - name: Check out dev branch

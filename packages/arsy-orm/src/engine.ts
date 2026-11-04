@@ -5,6 +5,10 @@ import { singleton } from './singleton';
 export interface QueryExecutor {
   query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
   exec(sql: string): Promise<void>;
+  // Marks an executor that is bound to an open database transaction. Audit
+  // writes use SET LOCAL, which is only meaningful inside a transaction; a
+  // caller-supplied executor must be verifiably transactional (roadmap T12).
+  readonly transactional?: boolean;
 }
 
 export interface PGliteOptions {
@@ -22,10 +26,14 @@ export class PGliteEngine {
       return this.client;
     }
 
-    const target = this.options.dataDir ? `disk: ${this.options.dataDir}` : 'in-memory (:memory:)';
+    // Resolve dataDir at connect time, not module-load, so a caller can set
+    // PG_DATA_DIR after import (e.g. dotenv in main.ts) and still be honored
+    // (roadmap T15).
+    const dataDir = this.options.dataDir ?? process.env.PG_DATA_DIR;
+    const target = dataDir ? `disk: ${dataDir}` : 'in-memory (:memory:)';
     logger.info(`Starting embedded PGlite instance (${target})...`);
 
-    this.client = new PGlite(this.options.dataDir);
+    this.client = new PGlite(dataDir);
     await this.client.waitReady;
     this.isConnected = true;
 
@@ -68,6 +76,7 @@ export class PGliteEngine {
 
   private createTransactionExecutor(transaction: Transaction): QueryExecutor {
     return {
+      transactional: true,
       query: async <T>(sql: string, params?: unknown[]): Promise<T[]> => {
         const result = await transaction.query<T>(
           sql,
@@ -82,6 +91,4 @@ export class PGliteEngine {
   }
 }
 
-export const dbEngine = singleton('dbEngine', () => new PGliteEngine({
-  dataDir: process.env.PG_DATA_DIR,
-}));
+export const dbEngine = singleton('dbEngine', () => new PGliteEngine());

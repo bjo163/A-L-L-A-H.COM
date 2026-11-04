@@ -113,6 +113,36 @@ services:
     depends_on:
       - arsy
 
+  harbor:
+    build:
+      context: .
+      dockerfile: apps/harbor/Dockerfile
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    environment:
+      - PORT=3006
+      - NODE_ENV=production
+      - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    depends_on:
+      - arsy
+
+  moonsky:
+    build:
+      context: .
+      dockerfile: apps/moonsky/Dockerfile
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - NODE_ENV=production
+      - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    depends_on:
+      - arsy
+
   sentinel:
     build:
       context: .

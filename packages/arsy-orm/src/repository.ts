@@ -4,47 +4,21 @@ import { QueryBuilder, QueryOptions, TenantScope, isSystemScope, tenantCompanyId
 import { logger } from '@allah/arsy-core';
 
 /**
- * Simple LRU cache for translations
- * Key format: `${modelName}:${recordId}:${fieldName}:${lang}:${companyId}`
+ * Assert that a caller-supplied executor is bound to a real database
+ * transaction. Audit writes rely on `SET LOCAL`, which silently degrades to
+ * session scope (and leaks across operations) when run outside a transaction,
+ * so we fail closed rather than infer transactionality from object identity
+ * (roadmap T12).
  */
-class TranslationCache {
-  private cache: Map<string, { value: string; expiry: number }> = new Map();
-  private readonly maxSize = 1000;
-  private readonly ttlMs = 5 * 60 * 1000; // 5 minutes
-
-  get(key: string): string | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    if (Date.now() > entry.expiry) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.value;
-  }
-
-  set(key: string, value: string): void {
-    if (this.cache.size >= this.maxSize) {
-      // Remove oldest entry
-      for (const [oldKey] of this.cache) {
-        this.cache.delete(oldKey);
-        break;
-      }
-    }
-
-    this.cache.set(key, {
-      value,
-      expiry: Date.now() + this.ttlMs,
-    });
-  }
-
-  clear(): void {
-    this.cache.clear();
+export function assertTransactional(executor: QueryExecutor): void {
+  if (executor.transactional !== true) {
+    throw new Error(
+      'Audit write requires a transactional executor; the provided executor is not '
+        + 'bound to a transaction and SET LOCAL audit context would leak to session scope.',
+    );
   }
 }
 
-const translationCache = new TranslationCache();
 const systemActorIds = new WeakMap<PGliteEngine, Promise<number>>();
 
 export class BaseRepository<T = Record<string, unknown>> {
@@ -120,9 +94,15 @@ export class BaseRepository<T = Record<string, unknown>> {
       }
     };
 
-    return this.executor === this.engine
-      ? this.engine.transaction(run)
-      : run(this.executor);
+    // The engine is the only executor we know how to wrap in a fresh
+    // transaction ourselves. Any caller-supplied executor must already be
+    // transactional, or the SET LOCAL audit GUCs would leak to session scope
+    // (roadmap T12: fail closed instead of inferring from identity).
+    if (this.executor === this.engine) {
+      return this.engine.transaction(run);
+    }
+    assertTransactional(this.executor);
+    return run(this.executor);
   }
 
   async find(options: QueryOptions): Promise<T[]> {
@@ -170,6 +150,26 @@ export class BaseRepository<T = Record<string, unknown>> {
     return created;
   }
 
+  // Batched insert: N rows in a single statement inside one audit-context
+  // transaction, replacing per-row create() loops that each opened their own
+  // transaction + trigger set (roadmap T14).
+  async createMany(
+    rows: Record<string, unknown>[],
+    scope: TenantScope,
+    actor: AuditActor
+  ): Promise<T[]> {
+    if (rows.length === 0) return [];
+    const actorId = await this.resolveActor(actor);
+    const { sql, params } = this.queryBuilder.buildInsertMany(rows, scope, actorId);
+    const created = await this.withAuditContext(actor, actorId, async (executor) => {
+      return executor.query<T>(sql, params);
+    });
+    if (created.length !== rows.length) {
+      throw new Error(`Batch insert into '${this.model.tableName}' expected ${rows.length} rows, got ${created.length}.`);
+    }
+    return created;
+  }
+
   async updateById(
     id: string | number,
     data: Record<string, unknown>,
@@ -182,6 +182,26 @@ export class BaseRepository<T = Record<string, unknown>> {
     return this.withAuditContext(actor, actorId, async (executor) => {
       const rows = await executor.query<T>(sql, params);
       return rows[0] || null;
+    });
+  }
+
+  // Batched update: run many row updates inside a single audit-context
+  // transaction instead of one transaction per updateById call (roadmap T14).
+  async updateMany(
+    updates: Array<{ id: string | number; data: Record<string, unknown> }>,
+    scope: TenantScope,
+    actor: AuditActor
+  ): Promise<T[]> {
+    if (updates.length === 0) return [];
+    const actorId = await this.resolveActor(actor);
+    return this.withAuditContext(actor, actorId, async (executor) => {
+      const out: T[] = [];
+      for (const { id, data } of updates) {
+        const { sql, params } = this.queryBuilder.buildUpdate(id, data, scope, actorId);
+        const rows = await executor.query<T>(sql, params);
+        if (rows[0]) out.push(rows[0]);
+      }
+      return out;
     });
   }
 

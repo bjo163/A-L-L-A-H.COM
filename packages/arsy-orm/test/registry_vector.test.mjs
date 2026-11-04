@@ -3,7 +3,7 @@ import test from 'node:test';
 
 // Import the built package so these run against the shipped artifact.
 process.env.NODE_ENV = 'test';
-const { ModelRegistry, ModelCollisionError, defineModel, fields, dotProduct, cosineSimilarity, euclideanDistance } =
+const { ModelRegistry, ModelCollisionError, defineModel, fields, dotProduct, cosineSimilarity, euclideanDistance, assertTransactional } =
   await import('../dist/index.js');
 
 function model(name, tableName) {
@@ -41,6 +41,27 @@ test('overwrite option permits replacing a divergent definition', () => {
   assert.equal(registry.get('over.thing'), replacement);
 });
 
+test('a structurally identical duplicate (second module instance) is idempotent', () => {
+  const registry = new ModelRegistry();
+  const first = model('shared.logical', 'shared_logical');
+  const second = model('shared.logical', 'shared_logical'); // distinct object, same shape
+  registry.register(first);
+  registry.register(second);
+  assert.equal(registry.get('shared.logical'), first, 'keeps the first registration');
+});
+
+test('same name and table but a divergent field set throws ModelCollisionError', () => {
+  const registry = new ModelRegistry();
+  registry.register(defineModel({ name: 'isp.plan', tableName: 'isp_plan', fields: { state: fields.char({}) } }));
+  assert.throws(
+    () =>
+      registry.register(
+        defineModel({ name: 'isp.plan', tableName: 'isp_plan', fields: { status: fields.char({}) } }),
+      ),
+    ModelCollisionError,
+  );
+});
+
 test('vector math fails closed on mismatched dimensions', () => {
   assert.throws(() => dotProduct([1, 2, 3], [1, 2]), RangeError);
   assert.throws(() => cosineSimilarity([1, 2, 3], [1, 2]), RangeError);
@@ -51,4 +72,14 @@ test('vector math matches equal-length inputs', () => {
   assert.equal(dotProduct([1, 2, 3], [4, 5, 6]), 32);
   assert.equal(euclideanDistance([0, 0], [3, 4]), 5);
   assert.equal(cosineSimilarity([1, 0], [1, 0]), 1);
+});
+
+test('assertTransactional fails closed on a non-transactional executor', () => {
+  const plain = { query: async () => [], exec: async () => {} };
+  assert.throws(() => assertTransactional(plain), /transactional executor/);
+});
+
+test('assertTransactional accepts a transaction-bound executor', () => {
+  const txn = { transactional: true, query: async () => [], exec: async () => {} };
+  assert.doesNotThrow(() => assertTransactional(txn));
 });

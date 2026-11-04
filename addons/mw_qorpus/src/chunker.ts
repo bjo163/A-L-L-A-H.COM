@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { sha256Hex } from '@allah/arsy-orm';
 
 export function chunkText(text: string, windowSize = 512, overlap = 64): Array<{ content: string; tokenCount: number }> {
   // Simple word-based approximation for token count
@@ -22,5 +22,5 @@ export function chunkText(text: string, windowSize = 512, overlap = 64): Array<{
 }
 
 export function computeSha256(text: string): string {
-  return crypto.createHash('sha256').update(text).digest('hex');
+  return sha256Hex(text);
 }

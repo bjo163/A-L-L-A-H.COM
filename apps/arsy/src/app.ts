@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -14,6 +13,7 @@ import {
   isEncrypted,
   modelRegistry,
   redactSecret,
+  sha256Hex,
   type AuditActor,
   type QueryExecutor,
   type TenantScope,
@@ -197,7 +197,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     if (typeof raw !== 'string' || raw.trim().length < 8 || raw.trim().length > 500) {
       throw new AppError('A reason between 8 and 500 characters is required', 400, 'VALIDATION_ERROR');
     }
-    return crypto.createHash('sha256').update(raw.trim()).digest('hex');
+    return sha256Hex(raw.trim());
   };
 
   const assertSuperuser = (request: FastifyRequest): Principal => {
@@ -286,18 +286,21 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         limit: chunks.length,
       });
       const present = new Set(indexed.map((chunk) => Number(chunk.chunk_index)));
-      let backfilled = 0;
+      // Backfill the missing indexes in a single batched insert rather than one
+      // transaction + trigger set per chunk (roadmap T14).
+      const missing: Array<Record<string, unknown>> = [];
       for (let i = 0; i < chunks.length; i++) {
         if (present.has(i)) continue;
-        await chunkRepo.create({
+        missing.push({
           document_id: document.id,
           chunk_index: i,
           content: chunks[i].content,
           token_count: chunks[i].tokenCount,
           embedding: null,
-        }, scope, actor);
-        backfilled += 1;
+        });
       }
+      if (missing.length > 0) await chunkRepo.createMany(missing, scope, actor);
+      const backfilled = missing.length;
       return ok({ message: 'Document already exists', document, deduplicated: true, backfilled }, { totalItems: chunks.length });
     }
 
@@ -309,15 +312,16 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       content,
     }, scope, actor);
 
-    for (let i = 0; i < chunks.length; i++) {
-      await chunkRepo.create({
-        document_id: document.id,
-        chunk_index: i,
-        content: chunks[i].content,
-        token_count: chunks[i].tokenCount,
-        embedding: null,
-      }, scope, actor);
-    }
+    // Ingest every chunk in one batched write (single txn + trigger set) instead
+    // of one create() call per chunk (roadmap T14).
+    const chunkRows = chunks.map((c, i) => ({
+      document_id: document.id,
+      chunk_index: i,
+      content: c.content,
+      token_count: c.tokenCount,
+      embedding: null,
+    }));
+    if (chunkRows.length > 0) await chunkRepo.createMany(chunkRows, scope, actor);
 
     reply.status(201);
     return ok({ document, chunksCreated: chunks.length }, { totalItems: chunks.length });
@@ -330,21 +334,45 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     const minScore = Number(body.min_score ?? 0.75);
     const scope = tenantOf(request);
 
-    const docs = await repository('qorpus.document').find({ scope, limit: 100 });
-    const chunks = await repository('qorpus.chunk').find({ scope, limit: 1000 });
+    // Push filtering and the row cap down to SQL with a tenant-scoped ILIKE
+    // OR-predicate over the query terms, then re-rank only that candidate window
+    // in JS. This replaces loading 1000 chunks + 100 docs and an O(N×M)
+    // docs.find() per chunk (roadmap T14).
+    const queryTerms = query.trim().split(/\s+/).filter(Boolean);
+    if (queryTerms.length === 0) {
+      return ok({ chunks: [] }, { totalItems: 0 });
+    }
+    const chunkRepo = repository('qorpus.chunk');
+    const candidateLimit = Math.max(limit * 4, limit, 20);
+    const chunks = await chunkRepo.find({
+      scope,
+      filters: queryTerms.map((term, index) => ({
+        field: 'content',
+        operator: 'ILIKE' as const,
+        value: `%${term}%`,
+        connector: index === 0 ? ('AND' as const) : ('OR' as const),
+      })),
+      limit: candidateLimit,
+    });
+
+    // Join documents for the matched chunks only, via one scoped IN query.
+    const docIds = Array.from(new Set(chunks.map((chunk) => Number(chunk.document_id)).filter(Boolean)));
+    const docs =
+      docIds.length > 0
+        ? await repository('qorpus.document').find({ scope, filters: [{ field: 'id', operator: 'IN', value: docIds }] })
+        : [];
+    const docById = new Map(docs.map((doc) => [Number(doc.id), doc]));
 
     const queryLower = query.toLowerCase();
-    const queryTerms = queryLower.split(/\s+/).filter(Boolean);
     const results = chunks
       .map((chunk) => {
         const content = String(chunk.content ?? '');
         const contentLower = content.toLowerCase();
-        let score = 0;
-        if (contentLower.includes(queryLower)) score += 0.5;
+        let score = contentLower.includes(queryLower) ? 0.5 : 0;
         for (const term of queryTerms) {
-          if (contentLower.includes(term)) score += 0.1;
+          if (contentLower.includes(term.toLowerCase())) score += 0.1;
         }
-        const document = docs.find((doc) => doc.id === chunk.document_id);
+        const document = docById.get(Number(chunk.document_id));
         return {
           id: chunk.id,
           document_title: document?.title ?? 'Unknown',
@@ -655,7 +683,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       rotated_at: new Date().toISOString(),
       // Legacy rows may still hold a plaintext secret; only an envelope can be read back.
       previous_secret_hash: isEncrypted(previous)
-        ? crypto.createHash('sha256').update(decryptSecret(previous)).digest('hex')
+        ? sha256Hex(decryptSecret(previous))
         : null,
       metadata: {},
     }, scope, actorOf(request));
@@ -791,24 +819,38 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     const actor = actorOf(request);
     const repo = repository('ir.translation');
 
-    for (const [name, value] of Object.entries(terms)) {
-      const existing = await repo.find({
-        scope,
-        filters: [
-          { field: 'lang', operator: '=', value: lang },
-          { field: 'name', operator: '=', value: name },
-          { field: 'type', operator: '=', value: 'ui' },
-        ],
-        limit: 1,
-      });
-
-      if (existing.length > 0) {
-        await repo.updateById(existing[0].id, { value, state: 'translated' }, scope, actor);
-        continue;
-      }
-
-      await repo.create({ lang, name, src: value, value, state: 'translated', type: 'ui' }, scope, actor);
+    // Resolve every touched term with one scoped read, then split into a single
+    // batched update txn and a single batched insert, instead of a find + write
+    // per term (roadmap T14).
+    const entries = Object.entries(terms);
+    if (entries.length === 0) {
+      return ok({ message: 'Translation catalog synchronized successfully' });
     }
+    const names = entries.map(([name]) => name);
+    const existingRows = await repo.find({
+      scope,
+      filters: [
+        { field: 'lang', operator: '=', value: lang },
+        { field: 'type', operator: '=', value: 'ui' },
+        { field: 'name', operator: 'IN', value: names },
+      ],
+      limit: names.length,
+    });
+    const byName = new Map(existingRows.map((row) => [String(row.name), row]));
+
+    const updates: Array<{ id: string | number; data: Record<string, unknown> }> = [];
+    const newRows: Array<Record<string, unknown>> = [];
+    for (const [name, value] of entries) {
+      const existing = byName.get(name);
+      if (existing) {
+        updates.push({ id: existing.id, data: { value, state: 'translated' } });
+      } else {
+        newRows.push({ lang, name, src: value, value, state: 'translated', type: 'ui' });
+      }
+    }
+
+    if (updates.length > 0) await repo.updateMany(updates, scope, actor);
+    if (newRows.length > 0) await repo.createMany(newRows, scope, actor);
 
     return ok({ message: 'Translation catalog synchronized successfully' });
   });

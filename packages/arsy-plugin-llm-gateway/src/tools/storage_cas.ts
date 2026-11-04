@@ -1,7 +1,6 @@
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { modelRegistry, BaseRepository, SYSTEM_ACTOR } from '@allah/arsy-orm';
+import { modelRegistry, BaseRepository, SYSTEM_ACTOR, sha256Hex } from '@allah/arsy-orm';
 import { logger } from '@allah/arsy-core';
 import type { Tool, ToolContext, ToolResult } from './base';
 
@@ -35,7 +34,7 @@ export class StorageCasTool implements Tool {
   };
 
   private computeDigest(content: string): string {
-    return crypto.createHash('sha256').update(content, 'utf-8').digest('hex');
+    return sha256Hex(content);
   }
 
   private async recordAttachment(

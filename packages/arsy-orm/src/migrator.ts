@@ -1,14 +1,49 @@
 import { PGliteEngine, QueryExecutor } from './engine';
 import { ModelRegistry, modelRegistry } from './registry';
 import { FieldDefinition } from './fields';
-import { AuditEvent, ResUsers } from './auth_models';
+import { AuditEvent } from './auth_models';
+import { RESERVED_COLUMN_SET, AUDIT_EXCLUDED_COLUMNS, sqlQuotedColumnList } from './constants';
 import { logger } from '@allah/arsy-core';
 
 export class SchemaMigrator {
+  // Human-readable record of columns this sync had to add, so incremental
+  // schema changes are visible in the boot log instead of silent (roadmap T11).
+  private driftReport: string[] = [];
+
   constructor(
     private readonly engine: PGliteEngine,
     private readonly registry: ModelRegistry = modelRegistry
   ) {}
+
+  // Virtual relational fields (one2many/many2many) have no physical column of
+  // their own — their data lives in the inverse table's foreign key — so
+  // emitting a column for them only produces junk TEXT.
+  private isVirtualRelation(field: FieldDefinition): boolean {
+    return field.type === 'one2many' || field.type === 'many2many';
+  }
+
+  private sqlLiteral(value: unknown): string {
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    return `'${String(value).replace(/'/g, "''")}'`;
+  }
+
+  private defaultValueFor(field: FieldDefinition): string {
+    if (field.default !== undefined && typeof field.default !== 'function') {
+      return this.sqlLiteral(field.default);
+    }
+    switch (field.type) {
+      case 'boolean':
+        return 'false';
+      case 'integer':
+      case 'float':
+      case 'many2one':
+        return '0';
+      case 'json':
+        return `'{}'::jsonb`;
+      default:
+        return `''`;
+    }
+  }
 
   private mapFieldToSqlType(field: FieldDefinition): string {
     switch (field.type) {
@@ -35,9 +70,9 @@ export class SchemaMigrator {
   }
 
   async sync(): Promise<void> {
-    if (!this.registry.get('res.users')) {
-      this.registry.register(ResUsers);
-    }
+    // res.users is guaranteed registered by the base addon / auth models over the
+    // shared singleton registry; auto-registering it here previously masked
+    // addon-wiring errors (roadmap T11).
     const models = this.registry.getAll();
     logger.info(`Starting schema sync for ${models.length} registered models...`);
 
@@ -52,17 +87,8 @@ export class SchemaMigrator {
         'company_id INTEGER',
       ];
 
-      const reservedColumns = new Set([
-        'id',
-        'active',
-        'create_date',
-        'write_date',
-        'create_uid',
-        'write_uid',
-        'company_id',
-      ]);
       for (const [fieldName, fieldDef] of Object.entries(model.fields)) {
-        if (reservedColumns.has(fieldName)) {
+        if (RESERVED_COLUMN_SET.has(fieldName) || this.isVirtualRelation(fieldDef)) {
           continue;
         }
         const sqlType = this.mapFieldToSqlType(fieldDef);
@@ -92,11 +118,28 @@ export class SchemaMigrator {
         );
       }
 
+      // Incremental column reconciliation with constraint parity: a field added
+      // to an existing table must arrive with the same NOT NULL/UNIQUE the
+      // initial CREATE TABLE applies, otherwise the schema silently drifts. Newly
+      // added columns are recorded in a drift report (roadmap T11).
+      const existingColumns = new Set(
+        (
+          await this.engine.query<{ column_name: string }>(
+            `SELECT "column_name" FROM "information_schema"."columns" WHERE "table_name" = $1;`,
+            [model.tableName]
+          )
+        ).map((row) => row.column_name)
+      );
       for (const [fieldName, fieldDef] of Object.entries(model.fields)) {
-        if (reservedColumns.has(fieldName)) continue;
+        if (RESERVED_COLUMN_SET.has(fieldName) || this.isVirtualRelation(fieldDef)) continue;
+        if (existingColumns.has(fieldName)) continue;
         const sqlType = this.mapFieldToSqlType(fieldDef);
-        await this.engine.exec(
-          `ALTER TABLE "${model.tableName}" ADD COLUMN IF NOT EXISTS "${fieldName}" ${sqlType};`
+        let clause = `ALTER TABLE "${model.tableName}" ADD COLUMN IF NOT EXISTS "${fieldName}" ${sqlType}`;
+        if (fieldDef.required) clause += ` NOT NULL DEFAULT ${this.defaultValueFor(fieldDef)}`;
+        if (fieldDef.unique) clause += ' UNIQUE';
+        await this.engine.exec(`${clause};`);
+        this.driftReport.push(
+          `${model.tableName}.${fieldName} ${sqlType}${fieldDef.required ? ' NOT NULL' : ''}${fieldDef.unique ? ' UNIQUE' : ''}`
         );
       }
 
@@ -136,6 +179,9 @@ export class SchemaMigrator {
       await this.enforceAuditConstraints(botId);
     }
 
+    if (this.driftReport.length > 0) {
+      logger.info(`Schema drift — ${this.driftReport.length} column(s) added: ${this.driftReport.join('; ')}`);
+    }
     logger.info('Schema sync complete.');
   }
 
@@ -302,14 +348,14 @@ export class SchemaMigrator {
             SELECT COALESCE(array_agg("key" ORDER BY "key"), ARRAY[]::TEXT[])
               INTO changed
               FROM jsonb_object_keys(old_data) AS keys("key")
-             WHERE "key" NOT IN ('id', 'create_date', 'write_date', 'create_uid', 'write_uid');
+             WHERE "key" NOT IN (${sqlQuotedColumnList(AUDIT_EXCLUDED_COLUMNS)});
           ELSIF TG_OP = 'INSERT' THEN
             event_company_id := COALESCE(NEW."company_id", 0);
             event_record_id := NEW."id"::TEXT;
             SELECT COALESCE(array_agg("key" ORDER BY "key"), ARRAY[]::TEXT[])
               INTO changed
               FROM jsonb_object_keys(new_data) AS keys("key")
-             WHERE "key" NOT IN ('id', 'create_date', 'write_date', 'create_uid', 'write_uid');
+             WHERE "key" NOT IN (${sqlQuotedColumnList(AUDIT_EXCLUDED_COLUMNS)});
           ELSE
             event_company_id := COALESCE(NEW."company_id", 0);
             event_record_id := NEW."id"::TEXT;
@@ -318,7 +364,7 @@ export class SchemaMigrator {
               FROM jsonb_each(new_data) AS new_fields("key", "value")
               JOIN jsonb_each(old_data) AS old_fields("key", "value") USING ("key")
              WHERE new_fields."value" IS DISTINCT FROM old_fields."value"
-               AND new_fields."key" NOT IN ('id', 'create_date', 'write_date', 'create_uid', 'write_uid');
+               AND new_fields."key" NOT IN (${sqlQuotedColumnList(AUDIT_EXCLUDED_COLUMNS)});
           END IF;
 
           INSERT INTO "arsy_audit_event" (

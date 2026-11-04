@@ -56,6 +56,10 @@ jobs:
             dockerfile: apps/jizz/Dockerfile
           - component: sentinel
             dockerfile: apps/sentinel/Dockerfile
+          - component: harbor
+            dockerfile: apps/harbor/Dockerfile
+          - component: moonsky
+            dockerfile: apps/moonsky/Dockerfile
     steps:
       - name: Check out source
         uses: actions/checkout@v7

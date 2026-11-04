@@ -17,23 +17,51 @@ export class ModelCollisionError extends Error {
   }
 }
 
+// A stable signature of a model's physical shape: name, backing table, and the
+// set of fields with their type/relation/constraints. Two independently built
+// module instances of the same logical model (which share the Symbol.for
+// registry) produce identical signatures, whereas a divergent duplicate — the
+// `works` isp_* bug — differs.
+function modelSignature(model: ModelDefinition): string {
+  const fieldSig = Object.entries(model.fields)
+    .map(([name, def]) => {
+      const selection = def.selection ? Object.keys(def.selection).sort().join('|') : '';
+      return `${name}:${def.type}:${def.relation ?? ''}:${def.required ? 1 : 0}:${def.unique ? 1 : 0}:${selection}`;
+    })
+    .sort()
+    .join(',');
+  return `${model.name}#${model.tableName}#${fieldSig}`;
+}
+
 export class ModelRegistry {
   private models = new Map<string, ModelDefinition>();
   private tableMap = new Map<string, ModelDefinition>();
 
   register(model: ModelDefinition, options: RegisterOptions = {}): this {
-    // Re-registering the identical definition (shared module instance) is idempotent.
-    // A different object claiming the same name or table is a wiring bug — fail closed.
+    const existingByName = this.models.get(model.name);
+    const existingByTable = this.tableMap.get(model.tableName);
+
     if (!options.overwrite) {
-      const byName = this.models.get(model.name);
-      if (byName && byName !== model) {
-        throw new ModelCollisionError(model.name, byName.tableName, model.tableName);
+      // A different object claiming the same name.
+      if (existingByName && existingByName !== model) {
+        // Structurally identical (same table + same fields): the same logical
+        // model arriving from a second module instance over the shared
+        // singleton registry. Treat as idempotent and keep the first.
+        if (
+          existingByName.tableName === model.tableName &&
+          modelSignature(existingByName) === modelSignature(model)
+        ) {
+          return this;
+        }
+        // Genuinely divergent definition — fail closed.
+        throw new ModelCollisionError(model.name, existingByName.tableName, model.tableName);
       }
-      const byTable = this.tableMap.get(model.tableName);
-      if (byTable && byTable !== model) {
-        throw new ModelCollisionError(model.tableName, byTable.name, model.name);
+      // A different model reaching for an already-owned table is always a bug.
+      if (existingByTable && existingByTable !== model && existingByTable.name !== model.name) {
+        throw new ModelCollisionError(model.tableName, existingByTable.name, model.name);
       }
     }
+
     this.models.set(model.name, model);
     this.tableMap.set(model.tableName, model);
     return this;

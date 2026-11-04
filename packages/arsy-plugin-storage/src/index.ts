@@ -1,10 +1,9 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { ok, fail } from '@allah/arsy-core';
-import { BaseRepository, modelRegistry, SYSTEM_ACTOR } from '@allah/arsy-orm';
+import { BaseRepository, modelRegistry, SYSTEM_ACTOR, sha256Hex } from '@allah/arsy-orm';
 
 export interface StoragePluginOptions {
   storageDir?: string;
@@ -22,7 +21,7 @@ export class ContentAddressedStorage {
   }
 
   computeDigest(buffer: Buffer): string {
-    return crypto.createHash('sha256').update(buffer).digest('hex');
+    return sha256Hex(buffer);
   }
 
   async put(buffer: Buffer): Promise<{ digest: string; size: number }> {

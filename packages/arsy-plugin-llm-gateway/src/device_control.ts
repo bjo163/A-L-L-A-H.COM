@@ -9,6 +9,7 @@ import {
   modelRegistry,
   SchemaMigrator,
   SYSTEM_ACTOR,
+  sha256Hex,
 } from '@allah/arsy-orm';
 import {
   AgentDevice,
@@ -61,7 +62,7 @@ const allowedDeviceEvents = new Set([
 ]);
 
 function hash(value: string): string {
-  return crypto.createHash('sha256').update(value, 'utf8').digest('hex');
+  return sha256Hex(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { modelRegistry, BaseRepository, dbEngine, SYSTEM_ACTOR } from '@allah/arsy-orm';
+import { modelRegistry, BaseRepository, dbEngine, SYSTEM_ACTOR, sha256Hex } from '@allah/arsy-orm';
 import { logger } from '@allah/arsy-core';
 import type { VirtualKeyRecord } from './types';
 
@@ -17,7 +17,7 @@ export interface UsageRecordParams {
 }
 
 export function hashVirtualKey(rawKey: string): string {
-  return crypto.createHash('sha256').update(rawKey, 'utf-8').digest('hex');
+  return sha256Hex(rawKey);
 }
 
 export function generateVirtualKey(): { raw: string; prefix: string; hash: string } {

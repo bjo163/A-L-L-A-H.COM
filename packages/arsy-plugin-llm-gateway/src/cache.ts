@@ -1,6 +1,5 @@
-import crypto from 'crypto';
 import type { ChatMessage, ChatCompletionResponse } from './types';
-import { dbEngine, BaseRepository, modelRegistry, cosineSimilarity, SYSTEM_ACTOR } from '@allah/arsy-orm';
+import { BaseRepository, modelRegistry, cosineSimilarity, SYSTEM_ACTOR, sha256Hex } from '@allah/arsy-orm';
 
 export interface CacheEntry {
   response: ChatCompletionResponse;
@@ -8,7 +7,28 @@ export interface CacheEntry {
 }
 
 export class GatewayCache {
+  // Bounded LRU: JS Map preserves insertion order, so the oldest entry is the
+  // first key. Without a cap this map grew unbounded across the process lifetime
+  // (roadmap T13). Eviction is checked on every insert and lazily on read.
+  private readonly maxEntries: number;
   private inMemoryCache = new Map<string, CacheEntry>();
+
+  constructor(maxEntries = 512) {
+    this.maxEntries = maxEntries > 0 ? maxEntries : 512;
+  }
+
+  private evictIfNeeded(): void {
+    // Drop expired entries opportunistically, then trim to the cap from the oldest.
+    const now = Date.now();
+    for (const [key, entry] of this.inMemoryCache) {
+      if (now > entry.expiresAt) this.inMemoryCache.delete(key);
+    }
+    while (this.inMemoryCache.size > this.maxEntries) {
+      const oldest = this.inMemoryCache.keys().next().value;
+      if (oldest === undefined) break;
+      this.inMemoryCache.delete(oldest);
+    }
+  }
 
   generateKey(model: string, messages: ChatMessage[], temperature?: number): string {
     const serialized = JSON.stringify({
@@ -16,7 +36,7 @@ export class GatewayCache {
        messages: messages.map(m => ({ role: m.role, content: Array.isArray(m.content) ? m.content.filter(c => c.type === 'text').map(c => c.text.trim()).join(' ') : m.content.trim() })),
       temperature: temperature ?? 0.7,
     });
-    return crypto.createHash('sha256').update(serialized).digest('hex');
+    return sha256Hex(serialized);
   }
 
   get(key: string): ChatCompletionResponse | null {
@@ -103,10 +123,13 @@ export class GatewayCache {
   }
 
   set(key: string, response: ChatCompletionResponse, ttlSeconds = 3600): void {
+    // Re-insert so the entry moves to the newest position (LRU recency).
+    this.inMemoryCache.delete(key);
     this.inMemoryCache.set(key, {
       response,
       expiresAt: Date.now() + ttlSeconds * 1000,
     });
+    this.evictIfNeeded();
   }
 
   clear(): void {

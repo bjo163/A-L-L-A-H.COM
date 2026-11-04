@@ -18,9 +18,9 @@ const APPS_DIR = path.join(ROOT, 'apps');
  * App type definitions with their required structures
  */
 const APP_TYPES = {
-  // Next.js App Router apps (require next.config.ts + src/app/)
+  // Next.js App Router apps (require next.config.ts + src/app/ + Dockerfile)
   nextjs: {
-    requiredFiles: ['next.config.ts', 'src/app'],
+    requiredFiles: ['next.config.ts', 'src/app', 'Dockerfile'],
     apps: ['dock', 'gate', 'harbor', 'headquarter', 'id', 'jizz', 'moonsky'],
   },
   // Fastify app (requires package.json with fastify, src/app.ts or similar)

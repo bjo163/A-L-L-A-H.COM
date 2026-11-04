@@ -31,6 +31,15 @@ export class SmartRouter {
   readonly circuitBreaker = new ProviderCircuitBreaker();
   private initialized = false;
 
+  // Platform routing configuration (providers/models/routes) changes rarely, but
+  // resolveRoute used to re-SELECT all three on every request. Cache the raw rows
+  // behind a short TTL so steady-state routing issues at most one read per window
+  // (roadmap T13). The cache is keyed on the visible-tenant set so a tenant never
+  // sees another tenant's config; adapters are rebuilt by initialize()/write paths.
+  private readonly configTtlMs = Number(process.env.LLM_ROUTE_CONFIG_TTL_MS ?? 15000);
+  private configCache: { key: string; fetchedAt: number; providers: ProviderRecord[]; models: ModelRecord[] } | null = null;
+  private routeCache = new Map<string, { fetchedAt: number; route: RouteRecord | undefined }>();
+
   constructor(private readonly options: LlmGatewayOptions = {}) {}
 
   async initialize(): Promise<void> {
@@ -180,38 +189,49 @@ export class SmartRouter {
     // Reads are scoped to the platform tenant plus the requesting tenant, so a tenant can never
     // resolve another tenant's provider/model/route rows. All values are parameterized via the ORM.
     const visibleCompanyIds = typeof companyId === 'number' && companyId !== 0 ? [0, companyId] : [0];
+    const visibleKey = visibleCompanyIds.join(',');
+    const now = Date.now();
 
     // 1. Check if model is a recognized route alias (e.g. "dx-default", "dx-reasoning", "dx-fast")
-    const routeRows = await this.repo<RouteRecord>('ai.route').find({
-      scope: { systemScope: true },
-      filters: [
-        { field: 'company_id', operator: 'IN', value: visibleCompanyIds },
-        { field: 'alias', operator: '=', value: requestedModelOrAlias },
-      ],
-      limit: 1,
-    });
-
-    const route: RouteRecord = routeRows[0] || {
-      id: 0,
-      name: 'Ad-hoc Route',
-      alias: requestedModelOrAlias,
-      strategy: 'fallback',
-    };
+    const routeCacheKey = `${visibleKey}::${requestedModelOrAlias}`;
+    const cachedRoute = this.routeCache.get(routeCacheKey);
+    let route: RouteRecord;
+    if (cachedRoute && now - cachedRoute.fetchedAt < this.configTtlMs) {
+      route = cachedRoute.route || { id: 0, name: 'Ad-hoc Route', alias: requestedModelOrAlias, strategy: 'fallback' };
+    } else {
+      const routeRows = await this.repo<RouteRecord>('ai.route').find({
+        scope: { systemScope: true },
+        filters: [
+          { field: 'company_id', operator: 'IN', value: visibleCompanyIds },
+          { field: 'alias', operator: '=', value: requestedModelOrAlias },
+        ],
+        limit: 1,
+      });
+      route = routeRows[0] || { id: 0, name: 'Ad-hoc Route', alias: requestedModelOrAlias, strategy: 'fallback' };
+      this.routeCache.set(routeCacheKey, { fetchedAt: now, route: routeRows[0] });
+    }
 
     // 2. Fetch healthy providers and available models visible to this tenant, ordered by priority.
-    const providerRows = await this.repo<ProviderRecord>('ai.provider').find({
-      scope: { systemScope: true },
-      filters: [
-        { field: 'company_id', operator: 'IN', value: visibleCompanyIds },
-        { field: 'is_healthy', operator: '=', value: true },
-      ],
-      orderBy: 'priority',
-    });
-
-    const modelRows = await this.repo<ModelRecord>('ai.model').find({
-      scope: { systemScope: true },
-      filters: [{ field: 'company_id', operator: 'IN', value: visibleCompanyIds }],
-    });
+    let providerRows: ProviderRecord[];
+    let modelRows: ModelRecord[];
+    if (this.configCache && this.configCache.key === visibleKey && now - this.configCache.fetchedAt < this.configTtlMs) {
+      providerRows = this.configCache.providers;
+      modelRows = this.configCache.models;
+    } else {
+      providerRows = await this.repo<ProviderRecord>('ai.provider').find({
+        scope: { systemScope: true },
+        filters: [
+          { field: 'company_id', operator: 'IN', value: visibleCompanyIds },
+          { field: 'is_healthy', operator: '=', value: true },
+        ],
+        orderBy: 'priority',
+      });
+      modelRows = await this.repo<ModelRecord>('ai.model').find({
+        scope: { systemScope: true },
+        filters: [{ field: 'company_id', operator: 'IN', value: visibleCompanyIds }],
+      });
+      this.configCache = { key: visibleKey, fetchedAt: now, providers: providerRows, models: modelRows };
+    }
 
     const targetChain: RouteResolution['targetChain'] = [];
 
