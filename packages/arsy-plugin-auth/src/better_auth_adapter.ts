@@ -260,6 +260,9 @@ function createRepositoryAdapter(
 
     if (model === 'session') {
       const user = await findUser(values.user_id, executor, engine);
+      if (user.status !== 'active') {
+        throw new Error('Disabled authentication users cannot start a Better Auth session.');
+      }
       const expiry = values.expires_at;
       if (!(expiry instanceof Date) && typeof expiry !== 'string') {
         throw new Error('Better Auth session expiry is required.');
@@ -440,13 +443,16 @@ function createRepositoryAdapter(
         const rows = await findRows(key, where, { limit: 1 }, transaction);
         const row = rows[0];
         if (!row) return null;
-        return repository(key, transaction, engine).incrementById(
+        // BaseRepository<AuthRow> is the storage truth; the caller-chosen row
+        // shape is asserted, mirroring findOne's `as T` contract above.
+        const updated = await repository(key, transaction, engine).incrementById(
           Number(row.id),
           increment,
           toWritableData(set ?? {}),
           scopeFor(row.company_id),
           actor()
-        ) as Promise<T | null>;
+        );
+        return (updated ?? null) as T | null;
       });
     },
   };
@@ -456,8 +462,8 @@ function createAdapter(
   options: BetterAuthOptions,
   executor: QueryExecutor = dbEngine,
   inTransaction = false
-) {
-  return createAdapterFactory({
+): ReturnType<ReturnType<typeof createAdapterFactory>> {
+  const adapterFactory = createAdapterFactory({
     adapter: ({ options: adapterOptions }) =>
       createRepositoryAdapter(executor, dbEngine, adapterOptions),
     config: {
@@ -475,6 +481,7 @@ function createAdapter(
             ),
     },
   })(options);
+  return adapterFactory;
 }
 
 export function arsyBetterAuthAdapter(options: BetterAuthOptions) {

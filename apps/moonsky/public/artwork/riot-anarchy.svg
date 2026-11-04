@@ -1,0 +1,34 @@
+<svg data-world-artwork="riot-anarchy" xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <pattern id="halftone" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.4" fill="#171715" fill-opacity=".14"/>
+    </pattern>
+    <pattern id="halftone-red" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="3.5" cy="3.5" r="2.2" fill="#a5282d" fill-opacity=".5"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="#e9e3d3"/>
+  <path fill="url(#halftone)" d="M0 0h1600v900H0z"/>
+  <g stroke="#171715" stroke-width="4">
+    <path d="M96 96v708M1504 96v708M96 96h1408M96 804h1408"/>
+  </g>
+  <path fill="#171715" d="m170 150h520v220l-88 88H170z"/>
+  <path fill="#a5282d" d="m730 130h330v170l-70 70H730z"/>
+  <path fill="url(#halftone-red)" d="M730 130h330v170l-70 70H730z"/>
+  <path fill="#0759a8" d="M1120 210h330v240l-90 90h-240z"/>
+  <path fill="#f5f0e2" stroke="#171715" stroke-width="5" d="M170 460h430v180l-70 70H170z"/>
+  <path fill="#a5282d" d="M680 520h380v234H680z"/>
+  <path fill="#171715" d="m1120 560 330-46v286l-330 46z"/>
+  <g stroke="#171715" stroke-width="6" stroke-linecap="square">
+    <path d="M210 500h330m-330 46h300m-300 46h250"/>
+  </g>
+  <g stroke="#fffaf1" stroke-width="6" stroke-linecap="square">
+    <path d="M1160 640h250m-250 60h250m-250 60h180"/>
+  </g>
+  <path fill="#0759a8" d="M210 700h150l-40 40H210zm200 0h150l-40 40H410z"/>
+  <g fill="#a5282d">
+    <circle cx="1504" cy="96" r="16"/>
+    <circle cx="96" cy="96" r="16"/>
+  </g>
+  <path stroke="#a5282d" stroke-width="10" d="m1230 330 240-70"/>
+</svg>

@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@moonwitness/ui/theme.css";
+@import "@moonwitness/ui/skins.css";
+@import "tw-animate-css";
+
+/* Harbor keeps its own rhythm; colour, type, radius and shape come from the skin. */
+.harbor-shell {
+  --mw-route-gap: clamp(3rem, 7vw, 6rem);
+}
+
+/* Customer portal dashboard */
+.harbor-console__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--mw-card-padding);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .harbor-console__grid {
+    grid-template-columns: 1fr;
+  }
+}

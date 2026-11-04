@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Button, buttonVariants } from '../components/button';
+import { Button } from '../components/button';
 import { Badge } from '../components/badge';
+import { Emblem } from '../components/emblem';
+import { Link, LinkButton } from '../components/link';
 import { cn } from '../lib/utils';
 import { resolveEcosystemEndpoints, type EcosystemAppEndpoints } from './endpoints';
 import { SoundToggle } from './sound-toggle';
@@ -10,7 +12,7 @@ import { VisualEffectsToggle } from './visual-effects-toggle';
 
 export interface EcosystemNavbarProps {
   /** App id shown in the badge. Any workspace name is accepted so a new app can reuse the shared navbar. */
-  currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz' | 'gate';
+  currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz' | 'gate' | 'moonsky' | 'harbor';
   userName?: string;
   userEmail?: string;
   onSignOut?: () => void;
@@ -37,6 +39,8 @@ export function EcosystemNavbar({
     currentApp === 'headquarter' ? 'HQ' :
     currentApp === 'jizz' ? 'OBSERVATORY' :
     currentApp === 'gate' ? 'GATE' :
+    currentApp === 'moonsky' ? 'MOONSKY' :
+    currentApp === 'harbor' ? 'HARBOR' :
     currentApp.toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const menuButtonRef = React.useRef<HTMLButtonElement>(null);
@@ -60,6 +64,7 @@ export function EcosystemNavbar({
   return (
     <header
       className={cn('mw-navbar', className)}
+      data-slot="navbar"
       onKeyDown={(event) => {
         if (!isMenuOpen || event.key !== 'Escape') return;
 
@@ -71,9 +76,7 @@ export function EcosystemNavbar({
       <div className="mw-navbar__inner">
         {/* Brand & Badge */}
         <div className="mw-navbar__brand">
-          <div className="mw-navbar__brand-mark">
-            MW
-          </div>
+          <Emblem className="mw-navbar__brand-mark" />
           <div className="mw-navbar__identity">
             <span className="mw-navbar__brand-name">
               A-L-L-A-H.COM
@@ -92,57 +95,73 @@ export function EcosystemNavbar({
           data-open={isMenuOpen}
           aria-label="Ecosystem navigation and controls"
         >
-          <a
+          <Link
             href={endpoints.dock}
             className="mw-navbar__link"
-            aria-current={currentApp === 'dock' ? 'page' : undefined}
+            current={currentApp === 'dock'}
             onClick={() => setIsMenuOpen(false)}
           >
             Dock (Discovery)
-          </a>
-          <a
+          </Link>
+          <Link
             href={endpoints.gate}
             className="mw-navbar__link"
-            aria-current={currentApp === 'gate' ? 'page' : undefined}
+            current={currentApp === 'gate'}
             onClick={() => setIsMenuOpen(false)}
           >
             Gate (Entrance)
-          </a>
-          <a
+          </Link>
+          <Link
             href={endpoints.headquarter}
             className="mw-navbar__link"
-            aria-current={currentApp === 'headquarter' ? 'page' : undefined}
+            current={currentApp === 'headquarter'}
             onClick={() => setIsMenuOpen(false)}
           >
             Headquarter (Ops)
-          </a>
-          <a
+          </Link>
+          <Link
             href={`${endpoints.id}${endpoints.accountPath}`}
             className="mw-navbar__link"
-            aria-current={currentApp === 'id' ? 'page' : undefined}
+            current={currentApp === 'id'}
             onClick={() => setIsMenuOpen(false)}
           >
             MoonWitness ID
-          </a>
-          <a
+          </Link>
+          <Link
             href={endpoints.jizz}
             className="mw-navbar__link"
-            aria-current={currentApp === 'jizz' ? 'page' : undefined}
+            current={currentApp === 'jizz'}
             onClick={() => setIsMenuOpen(false)}
           >
             WORLD OBSERVATORY
-          </a>
+          </Link>
+          <Link
+            href={endpoints.moonsky}
+            className="mw-navbar__link"
+            current={currentApp === 'moonsky'}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            MOONSKY Console
+          </Link>
+          <Link
+            href={endpoints.harbor}
+            className="mw-navbar__link"
+            current={currentApp === 'harbor'}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            HARBOR Portal
+          </Link>
           <div className="mw-navbar__actions">
             <VisualEffectsToggle />
             <SoundToggle />
             {showAuthActions && isSignedIn ? (
               <div className="mw-navbar__action-group">
-                <a
-                  href={`${endpoints.id}${endpoints.accountPath}`}
-                  className="mw-navbar__identity-link"
-                >
-                  <span>{userName || userEmail}</span>
-                </a>
+              <Link
+                href={`${endpoints.id}${endpoints.accountPath}`}
+                className="mw-navbar__identity-link"
+              >
+                <span>{userName || userEmail}</span>
+              </Link>
                 {onSignOut && (
                   <Button variant="ghost" size="sm" onClick={onSignOut}>
                     Sign Out
@@ -151,18 +170,12 @@ export function EcosystemNavbar({
               </div>
             ) : showAuthActions ? (
               <div className="mw-navbar__action-group">
-                <a
-                  href={`${endpoints.id}${endpoints.signInPath}`}
-                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-                >
+                <LinkButton href={`${endpoints.id}${endpoints.signInPath}`} variant="outline" size="sm">
                   Sign In
-                </a>
-                <a
-                  href={`${endpoints.id}${endpoints.registerPath}`}
-                  className={cn(buttonVariants({ variant: 'default', size: 'sm' }))}
-                >
+                </LinkButton>
+                <LinkButton href={`${endpoints.id}${endpoints.registerPath}`} size="sm">
                   Get ID
-                </a>
+                </LinkButton>
               </div>
             ) : null}
           </div>

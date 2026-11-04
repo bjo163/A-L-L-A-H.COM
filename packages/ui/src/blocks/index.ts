@@ -1,8 +1,10 @@
 export * from './navbar';
 export * from './endpoints';
-export * from './session_card';
+export * from './session-card';
 export * from './sound-toggle';
 export * from './visual-effects-toggle';
+export * from './use-ecosystem-session';
+export * from './world-artwork';
 
 export * from './destination-card';
 export * from './kicker';
