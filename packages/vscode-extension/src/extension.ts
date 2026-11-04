@@ -376,8 +376,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           models.map((model) => ({
             label: model.id,
             description: model.owned_by ? `Catalog entry: ${model.owned_by}` : 'Gateway catalog entry',
-            // Show vision support status
-            ...(model.supportsVision ? { description: `${model.description} (vision supported)` } : {}),
           })),
           { placeHolder: 'Choose a model identifier for plan requests' }
         );

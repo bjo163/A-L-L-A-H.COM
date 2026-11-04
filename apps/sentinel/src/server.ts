@@ -13,11 +13,12 @@ import { RadiusServer, RadiusCodec, RadiusCode, RadiusAttributeType, RadiusPacke
 import { registerNexusAddon } from '../../../addons/nexus/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // Get models
 const SentinelAccountModel = modelRegistry.get('sentinel.account');
 const SentinelSessionModel = modelRegistry.get('sentinel.session');
-const NexusNasModel = modelRegistry.get('nexus.nas');
 
 // Configuration
 const AUTH_PORT = Number(process.env.SENTINEL_AUTH_PORT) || 1812;
@@ -648,7 +649,7 @@ async function startSentinel() {
 }
 
 // Start if run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   startSentinel().catch((err) => {
     logger.error({ err }, 'Failed to start Sentinel');
     process.exit(1);

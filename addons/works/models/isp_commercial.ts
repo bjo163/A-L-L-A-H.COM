@@ -45,7 +45,7 @@ export const IspInvoice = defineModel({
     subscription_id: fields.many2one('isp.subscription', { label: 'Subscription' }),
     amount: fields.float({ label: 'Amount', default: 0 }),
     currency: fields.char({ label: 'Currency', default: 'IDR' }),
-    due_date: fields.date({ label: 'Due Date' }),
+    due_date: fields.datetime({ label: 'Due Date' }),
     payment_ref: fields.char({ label: 'Payment Reference' }),
     state: fields.selection(
       { draft: 'Draft', open: 'Open', paid: 'Paid', overdue: 'Overdue' },
