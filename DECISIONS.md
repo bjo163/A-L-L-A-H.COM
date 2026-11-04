@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DECISIONS"
-version: "1.2.0"
+version: "1.3.0"
 owner: "architecture"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -60,7 +60,7 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 
 ### D-007 — One Shared Runtime Skin Engine
 - status: ACCEPTED — 2026-11-03
-- context: Six DNA must shape shared components without forking interaction, accessibility, or business behavior.
+- context: Six DNA must shape shared components without fragmenting shared behavior, accessibility, or business logic.
 - decision: All six skin IDs + tokens + recipes in `packages/ui/`. Apps select typed skin at SSR root. Deterministic IMPERIUM LUMEN fallback.
 - alternatives: Global style switch · client-only detection · six independent component libraries.
 - consequences: Dock→IMPERIUM LUMEN · Headquarter→NEXUS PARADOX · ID→LUNAR CHRONICLES · World Observatory→MYCELIUM. ROCKSOUL + RIOT ANARCHY reserved for future. Skin Laboratory pending.
@@ -92,3 +92,12 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: Coolify already owns the repository webhook integration, so GitHub Actions does not need Coolify credentials or a duplicate deploy request.
 - consequences: A failed image blocks the GitHub release, but Coolify's webhook may start deployment before the images publish. Compose pulls the GHCR image tags.
 - related: [Production deployment](README.md#production-deployment), [Docker-gate plan](.plans/20261104-1200-production-release-docker-gate/spec.md)
+
+### D-011 — MOONSKY as an Independent Communication Service
+- status: ACCEPTED — 2026-11-04
+- context: The historical `bjo163/moonsky` repository already contains a Fastify communication runtime, PostgreSQL/Drizzle persistence, WhatsApp (Baileys) and Telegram adapters, webhook/event infrastructure, and an operator console. ARSY is the canonical backend authority, but provider sessions and message delivery have different runtime and persistence needs from ARSY business logic.
+- decision: Integrate MOONSKY into the A-L-L-A-H.COM monorepo as an independently deployable communication service at `apps/moonsky`, with its own communication API/runtime, PostgreSQL persistence, provider-session storage, and dedicated operator console. ARSY remains authoritative for user identity, tenant membership, authorization, business data, and ecosystem policy. MOONSKY owns channel connections, provider sessions, conversations, messages, routing, webhooks, delivery lifecycle, and communication operations. HEADQUARTER shows aggregate communication health and deep-links to MOONSKY; it does not absorb the operator inbox or channel configuration UI. Consumer apps use documented typed APIs/SDK contracts and never access provider internals or MOONSKY tables directly.
+- alternatives: Move all communication logic into ARSY addons; keep MOONSKY as an unrelated standalone repository; embed the full operator console in HEADQUARTER.
+- rationale: Preserve independent provider lifecycle, fault isolation, scaling, persistence, and operator workflows without creating a second identity/business authority or fragmenting the ecosystem repository.
+- consequences: MOONSKY runtime and PostgreSQL remain separate services within the monorepo. Operator authentication and tenant authorization must integrate with ARSY; static broad service keys and standalone production operator identity are not accepted as the final ecosystem model. MOONSKY UI must use the shared `@moonwitness/ui` engine. Baileys remains an unofficial WhatsApp Web adapter behind a provider-neutral contract; an official WhatsApp Business provider can be added separately. No production data migration or deployment is authorized by this decision.
+- related: [MOONSKY Integration Plan](.plans/20261104-moonsky-integration/spec.md), D-003, D-007, D-008
