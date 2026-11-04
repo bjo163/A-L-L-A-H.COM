@@ -2,6 +2,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { findPrivateUiClass } from './ui-purity.mjs';
 
 const ROOT_DIR = path.resolve(process.cwd());
 
@@ -84,7 +85,7 @@ function checkUiPurity() {
   };
 
   for (const scanDir of scanDirs) {
-    const files = collectFiles(scanDir, ['.tsx', '.jsx']);
+    const files = collectFiles(scanDir, ['.tsx', '.jsx', '.css']);
 
     for (const filePath of files) {
       const relativePath = path.relative(ROOT_DIR, filePath).replace(/\\/g, '/');
@@ -92,6 +93,7 @@ function checkUiPurity() {
 
       const content = fs.readFileSync(filePath, 'utf8');
       const lines = content.split(/\r?\n/);
+      const isAppFile = relativePath.startsWith('apps/');
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -107,23 +109,25 @@ function checkUiPurity() {
           continue;
         }
 
-        for (const [element, remedy] of Object.entries(rawElements)) {
-          if (hasRawHTMLElement(line, element)) {
-            addViolation(
-              'UI_PURITY',
-              filePath,
-              `Raw <${element}> element detected. All controls must come from '@moonwitness/ui'. ${remedy}`,
-              i + 1
-            );
+        if (filePath.endsWith('.tsx') || filePath.endsWith('.jsx')) {
+          for (const [element, remedy] of Object.entries(rawElements)) {
+            if (hasRawHTMLElement(line, element)) {
+              addViolation(
+                'UI_PURITY',
+                filePath,
+                `Raw <${element}> element detected. All controls must come from '@moonwitness/ui'. ${remedy}`,
+                i + 1
+              );
+            }
           }
         }
 
-        // Hand-written internal classes bypass the component API and its side effects.
-        if (/mw-button--|mw-input-field__|mw-card__|mw-badge--/.test(trimmed)) {
+        const privateUiClass = isAppFile ? findPrivateUiClass(trimmed) : null;
+        if (privateUiClass) {
           addViolation(
             'UI_PURITY',
             filePath,
-            `Internal '@moonwitness/ui' class names used directly. Consume the component API instead of the class output.`,
+            `Internal '@moonwitness/ui' class '${privateUiClass}' used directly. Use a public component API or app-owned class.`,
             i + 1
           );
         }

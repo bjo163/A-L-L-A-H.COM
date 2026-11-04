@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
+import { Card, CardContent, CardHeader, CardTitle, MotionFrame, RawStack } from "@moonwitness/ui";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
 
 interface ClosingHorizonProps {
@@ -36,7 +36,7 @@ export function ClosingHorizon({ locale = "id" }: ClosingHorizonProps) {
           </p>
         </blockquote>
 
-        <nav aria-label="Destinasi ekosistem" className="mw-raw-grid" data-gap="regular" style={{ maxWidth: "60rem", margin: "0 auto" }}>
+        <nav aria-label="Destinasi ekosistem" className="gate-closing-horizon__destinations">
           {destinations.map((dest) => (
             <Link
               key={dest.id}
@@ -57,14 +57,14 @@ export function ClosingHorizon({ locale = "id" }: ClosingHorizonProps) {
           ))}
         </nav>
 
-        <div className="mw-raw-stack" data-gap="tight" style={{ marginTop: "3rem", paddingTop: "2rem", borderTop: "1px solid var(--mw-border)", textAlign: "center" }}>
+        <RawStack gap="tight" style={{ marginTop: "3rem", paddingTop: "2rem", borderTop: "1px solid var(--mw-border)", textAlign: "center" }}>
           <p style={{ margin: 0, color: "var(--mw-muted-text)", fontSize: "0.875rem" }}>
             {locale === "id" ? "A-L-L-A-H.COM — Empire of the Light" : "A-L-L-A-H.COM — Empire of the Light"}
           </p>
           <p style={{ margin: "0.5rem 0 0", color: "var(--mw-muted-text)", fontSize: "0.75rem", fontFamily: "var(--mw-font-numeric)" }}>
             {t("site.slogan")}
           </p>
-        </div>
+        </RawStack>
       </footer>
     </MotionFrame>
   );

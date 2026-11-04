@@ -62,6 +62,7 @@ export function Dialog({
     <dialog
       ref={dialogRef}
       className={cn('mw-dialog', className)}
+      data-slot="dialog"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >

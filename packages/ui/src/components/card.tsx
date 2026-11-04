@@ -14,13 +14,14 @@ export function Card({ className, as: Tag = 'div', ...props }: CardProps) {
         'mw-card',
         className
       )}
+      data-slot="card"
       {...props}
     />
   );
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <RawStack gap="tight" className={cn('mw-card__header', className)} {...props} />;
+  return <RawStack gap="tight" className={cn('mw-card__header', className)} data-slot="card-header" {...props} />;
 }
 
 export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
@@ -32,15 +33,16 @@ export function CardTitle({ className, as: Tag = 'h3', ...props }: CardTitleProp
   return (
     <Tag
       className={cn('mw-card__title', className)}
+      data-slot="card-title"
       {...props}
     />
   );
 }
 
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('mw-card__description', className)} {...props} />;
+  return <p className={cn('mw-card__description', className)} data-slot="card-description" {...props} />;
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('mw-card__content', className)} {...props} />;
+  return <div className={cn('mw-card__content', className)} data-slot="card-content" {...props} />;
 }

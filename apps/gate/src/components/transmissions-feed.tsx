@@ -2,6 +2,7 @@
 
 import {
   Badge,
+  Card,
   Link,
   MotionFrame,
   RawCluster,
@@ -57,7 +58,7 @@ export function TransmissionsFeed({ locale = "id" }: TransmissionsFeedProps) {
                   <h3 style={{ margin: "0 0 0.5rem", fontFamily: "var(--mw-font-display)", fontSize: "clamp(1.75rem, 3vw, 2.5rem)", color: "var(--mw-text)" }}>{featured.title}</h3>
                   
                   {/* Provenance Block - Required */}
-                  <div className="mw-card" style={{ margin: "1.5rem 0", padding: "1.5rem" }}>
+                  <Card style={{ margin: "1.5rem 0", padding: "1.5rem" }}>
                     <RawStack data-gap="tight">
                       <RawCluster data-gap="tight" style={{ flexWrap: "wrap" }}>
                         <Badge variant="default">{sourceTypeLabels[featured.provenance.sourceType][locale]}</Badge>
@@ -81,7 +82,7 @@ export function TransmissionsFeed({ locale = "id" }: TransmissionsFeedProps) {
                         </Badge>
                       </div>
                     </RawStack>
-                  </div>
+                  </Card>
 
                   <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7, fontSize: "1.125rem" }}>
                     {locale === "id" ? featured.excerptID : featured.excerptEN}
@@ -114,7 +115,7 @@ export function TransmissionsFeed({ locale = "id" }: TransmissionsFeedProps) {
                 {recent.map((tx) => {
                   const txProv: Provenance = tx.provenance;
                   return (
-                    <article key={tx.id} className="mw-card" role="listitem">
+                    <Card as="article" key={tx.id} role="listitem">
                       <RawStack data-gap="regular">
                         <RawCluster data-gap="tight" style={{ flexWrap: "wrap" }}>
                           <Badge variant="default">{sourceTypeLabels[txProv.sourceType][locale]}</Badge>
@@ -124,24 +125,24 @@ export function TransmissionsFeed({ locale = "id" }: TransmissionsFeedProps) {
                         <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.6 }}>
                           {locale === "id" ? tx.excerptID : tx.excerptEN}
                         </p>
-                        <div className="mw-raw-stack" data-gap="tight" style={{ fontSize: "0.875rem", color: "var(--mw-muted-text)" }}>
+                        <RawStack gap="tight" style={{ fontSize: "0.875rem", color: "var(--mw-muted-text)" }}>
                           <span>{txProv.author} · {new Date(txProv.date).toLocaleDateString(locale === "id" ? "id-ID" : "en-US")}</span>
-                          <Link href={tx.proposedRoute} className="mw-link mw-link--underline">{t("transmissions.readMore")}</Link>
-                        </div>
+                          <Link href={tx.proposedRoute} underline>{t("transmissions.readMore")}</Link>
+                        </RawStack>
                       </RawStack>
-                    </article>
+                    </Card>
                   );
                 })}
               </RawStack>
             ) : (
-              <div className="mw-card" style={{ textAlign: "center", padding: "3rem" }}>
+              <Card style={{ textAlign: "center", padding: "3rem" }}>
                 <p style={{ margin: 0, color: "var(--mw-muted-text)", lineHeight: 1.7 }}>
                   {t("transmissions.emptyState")}
                 </p>
                 <Link href="/explore" className="gate-hero__link" style={{ marginTop: "1.5rem", display: "inline-flex" }}>
                   {locale === "id" ? "Jelajahi Dunia Cerita" : "Explore Story Worlds"}
                 </Link>
-              </div>
+              </Card>
             )}
           </RawContainer>
         </section>

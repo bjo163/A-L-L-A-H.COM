@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/input";
 import { Textarea } from "../components/textarea";
 import { Badge } from "../components/badge";
+import { Dialog } from "../components/dialog";
 import { cn } from "../lib/utils";
 import { MotionFrame } from "../primitives/visual-effects";
 import { SkinRoot } from "../skins/root";
@@ -279,35 +280,30 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
         </SkinRoot>
       </div>
 
-      {dialogOpen && (
-        <div className="mw-skin-lab__dialog-backdrop" role="presentation">
-          <div className="mw-skin-lab__dialog" role="dialog" aria-modal="true" aria-labelledby="lab-dialog-title">
-            <header className="mw-skin-lab__dialog-header">
-              <div>
-                <p className="mw-skin-lab__kicker">OVERLAY / DIALOG</p>
-                <h4 id="lab-dialog-title">Representative dialog</h4>
-              </div>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setDialogOpen(false)}>
-                Close
-              </Button>
-            </header>
-            <div className="mw-skin-lab__dialog-body">
-              <p>
-                Dialog composition changes by world while semantics, focus trap expectation, escape behavior, and
-                keyboard accessibility remain equivalent.
-              </p>
-              <div className="mw-skin-lab__inline-actions">
-                <Button type="button" onClick={() => setDialogOpen(false)}>
-                  Confirm
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="Representative dialog"
+        description="OVERLAY / DIALOG"
+        className="mw-skin-lab__dialog"
+        footer={
+          <div className="mw-skin-lab__inline-actions">
+            <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>
+              Close
+            </Button>
+            <Button type="button" onClick={() => setDialogOpen(false)}>
+              Confirm
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p>
+          Dialog composition changes by world while semantics, focus, Escape behavior, and keyboard accessibility remain equivalent.
+        </p>
+      </Dialog>
     </section>
   );
 }

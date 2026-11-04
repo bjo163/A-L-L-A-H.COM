@@ -7,6 +7,7 @@ export interface FormFieldContextValue {
   errorId?: string;
   hintId?: string;
   invalid: boolean;
+  required: boolean;
 }
 
 export const FormFieldContext = React.createContext<FormFieldContextValue | null>(null);

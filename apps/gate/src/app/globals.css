@@ -246,6 +246,14 @@
   margin-bottom: 1.5rem;
 }
 
+.gate-closing-horizon__destinations {
+  display: grid;
+  width: min(100%, 60rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--mw-card-padding);
+  margin-inline: auto;
+}
+
 .gate-section__heading h2 {
   margin: 0.5rem 0 0;
   color: #f3efe5;

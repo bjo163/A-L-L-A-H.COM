@@ -63,7 +63,7 @@ export function DiscoverFilters({ locale = "id" }: DiscoverFiltersProps) {
       {/* Filter Panel */}
       <MotionFrame effect="enter">
         <RawContainer>
-          <div className="mw-card" style={{ marginBottom: "2rem" }}>
+          <Card style={{ marginBottom: "2rem" }}>
             <RawStack data-gap="regular">
               <h3 style={{ margin: 0, fontFamily: "var(--mw-font-heading)", color: "var(--mw-text)" }}>
                 {locale === "id" ? "Saring Hasil" : "Filter Results"}
@@ -143,7 +143,7 @@ export function DiscoverFilters({ locale = "id" }: DiscoverFiltersProps) {
                 </Button>
               )}
             </RawStack>
-          </div>
+          </Card>
 
           {/* Results */}
           <div aria-live="polite" aria-label={locale === "id" ? "Hasil filter" : "Filter results"}>

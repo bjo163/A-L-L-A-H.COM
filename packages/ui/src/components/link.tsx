@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
 import { sfx } from '../sfx';
-import { buttonVariants, type ButtonProps } from './button';
+import { buttonVariants, composeClickHandlers, type ButtonProps } from './button';
 
 export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   external?: boolean;
@@ -14,22 +14,41 @@ export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement>
 
 export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
   ({ className, external, underline = false, current, asChild = false, target, rel, children, ...props }, ref) => {
-    const isExternal = external ?? (typeof target === 'string' && target !== '_self');
-    // A new-tab link without noopener lets the target rewrite window.opener.
-    const relValue = rel ?? (isExternal ? 'noopener noreferrer' : undefined);
+    const opensInNewTab = external === true || target === '_blank';
+    const targetValue = external ? '_blank' : target;
+    const relValue = rel ?? (opensInNewTab ? 'noopener noreferrer' : undefined);
     const ariaCurrent = current ? 'page' : props['aria-current'];
     const linkClass = cn('mw-link', underline && 'mw-link--underline', className);
 
     if (asChild) {
       const child = React.Children.only(children) as React.ReactElement<
-        Record<string, unknown> & { className?: string }
+        Record<string, unknown> & {
+          className?: string;
+          children?: React.ReactNode;
+          onClick?: React.MouseEventHandler<HTMLElement>;
+        }
       >;
       return React.cloneElement(child, {
         ...props,
         ref,
         className: cn('mw-link', underline && 'mw-link--underline', child.props.className, className),
         'aria-current': ariaCurrent,
+        target: targetValue,
         rel: relValue,
+        onClick: composeClickHandlers(
+          child.props.onClick,
+          props.onClick
+            ? (event) => props.onClick?.(event as React.MouseEvent<HTMLAnchorElement>)
+            : undefined
+        ),
+        ...(opensInNewTab && {
+          children: (
+            <>
+              {child.props.children}
+              <span className="mw-sr-only">Opens in a new tab.</span>
+            </>
+          ),
+        }),
       });
     }
 
@@ -37,13 +56,14 @@ export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
       <a
         ref={ref}
         className={linkClass}
-        target={target}
+        target={targetValue}
         rel={relValue}
+        data-slot="link"
         {...props}
         aria-current={ariaCurrent}
       >
         {children}
-        {isExternal && (
+        {opensInNewTab && (
           <span className="mw-sr-only">Opens in a new tab.</span>
         )}
       </a>
@@ -66,8 +86,9 @@ export interface LinkButtonProps
  */
 export const LinkButton = React.forwardRef<HTMLAnchorElement, LinkButtonProps>(
   ({ className, variant, size, enableSfx = true, external, target, rel, children, onClick, ...props }, ref) => {
-    const isExternal = external ?? (typeof target === 'string' && target !== '_self');
-    const relValue = rel ?? (isExternal ? 'noopener noreferrer' : undefined);
+    const opensInNewTab = external === true || target === '_blank';
+    const targetValue = external ? '_blank' : target;
+    const relValue = rel ?? (opensInNewTab ? 'noopener noreferrer' : undefined);
 
     const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
       if (enableSfx) {
@@ -81,13 +102,14 @@ export const LinkButton = React.forwardRef<HTMLAnchorElement, LinkButtonProps>(
       <a
         ref={ref}
         className={cn(buttonVariants({ variant, size }), className)}
-        target={isExternal ? '_blank' : target}
+        target={targetValue}
         rel={relValue}
+        data-slot="button"
         onClick={handleClick}
         {...props}
       >
         {children}
-        {isExternal && (
+        {opensInNewTab && (
           <span className="mw-sr-only">Opens in a new tab.</span>
         )}
       </a>

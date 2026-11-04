@@ -161,7 +161,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-.hq-route .mw-card {
+.hq-route [data-slot="card"] {
   border-color: rgb(105 211 229 / 0.3);
   background-color: rgb(12 20 25 / 0.88);
 }
@@ -371,7 +371,7 @@ body {
 }
 
 .remote-agent-control__heading p,
-.remote-agent-control :is(.mw-card__description, .mw-card__content) {
+.remote-agent-control :is([data-slot="card-description"], [data-slot="card-content"]) {
   color: #a0afb4;
 }
 
@@ -530,9 +530,9 @@ body {
     flex-direction: column;
   }
 
-  .remote-agent-control__heading > .mw-button,
-  .remote-agent-control__device > .mw-button,
-  .remote-agent-control__mission-list li > .mw-button:not(.remote-agent-control__mission) {
+  .remote-agent-control__heading > [data-slot="button"],
+  .remote-agent-control__device > [data-slot="button"],
+  .remote-agent-control__mission-list li > [data-slot="button"]:not(.remote-agent-control__mission) {
     width: 100%;
   }
 

@@ -1,0 +1,182 @@
+{
+  "github": {
+    "owner": "bjo163",
+    "repo": "A-L-L-A-H.COM",
+    "branch": "dev",
+    "apiBase": "https://api.github.com"
+  },
+  "monitor": {
+    "intervalMs": 600000,
+    "maxConcurrentRuns": 1,
+    "lookbackRuns": 20,
+    "onlyFailures": true
+  },
+  "fixEngine": {
+    "llm": {
+      "provider": "openai",
+      "model": "gpt-4-turbo-preview",
+      "temperature": 0.1,
+      "maxTokens": 4000,
+      "timeoutMs": 60000
+    },
+    "confidence": {
+      "minToAttempt": 0.3,
+      "minToCommit": 0.75,
+      "minToRollback": 0.2
+    },
+    "strategies": [
+      "llm-fix",
+      "pattern-fix",
+      "revert-last",
+      "clean-rebuild"
+    ],
+    "validation": {
+      "runTypecheck": true,
+      "runLint": true,
+      "runBuild": true,
+      "runTests": false,
+      "timeoutMs": 300000
+    },
+    "rollback": {
+      "enabled": true,
+      "maxRollbacks": 3,
+      "rollbackOnValidationFail": true,
+      "rollbackOnNewErrors": true
+    },
+    "memory": {
+      "enabled": true,
+      "storePath": "data/fixes/memory.json",
+      "maxEntries": 10000,
+      "similarityThreshold": 0.85,
+      "ttlDays": 90
+    }
+  },
+  "parsers": {
+    "errorPatterns": {
+      "typescript": [
+        {
+          "regex": {},
+          "group": "message"
+        },
+        {
+          "regex": {},
+          "groups": [
+            "line",
+            "col",
+            "code",
+            "message"
+          ]
+        }
+      ],
+      "eslint": [
+        {
+          "regex": {},
+          "groups": [
+            "line",
+            "col",
+            "severity",
+            "message",
+            "rule"
+          ]
+        }
+      ],
+      "jest": [
+        {
+          "regex": {},
+          "groups": [
+            "test",
+            "error"
+          ]
+        }
+      ],
+      "nextjs": [
+        {
+          "regex": {},
+          "groups": [
+            "message",
+            "stack"
+          ]
+        },
+        {
+          "regex": {},
+          "group": "message"
+        }
+      ],
+      "generic": [
+        {
+          "regex": {},
+          "group": "message"
+        }
+      ]
+    },
+    "contextLines": 10,
+    "maxLogSize": 500000
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": {
+      "slack": {
+        "enabled": false,
+        "channel": "#ci-alerts",
+        "mentionOnFailure": true
+      },
+      "discord": {
+        "enabled": false
+      },
+      "email": {
+        "enabled": false,
+        "smtp": {
+          "port": 587
+        },
+        "to": []
+      },
+      "github": {
+        "enabled": true,
+        "createIssueOnUnfixable": true,
+        "issueLabels": [
+          "ci-failure",
+          "needs-manual-fix"
+        ]
+      }
+    },
+    "throttle": {
+      "maxPerHour": 10,
+      "cooldownMs": 300000
+    }
+  },
+  "dashboard": {
+    "enabled": true,
+    "port": 3005,
+    "host": "0.0.0.0",
+    "auth": {
+      "enabled": true,
+      "type": "github-oauth",
+      "allowedUsers": []
+    },
+    "retentionDays": 30
+  },
+  "safety": {
+    "blacklistPatterns": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "whitelistDirs": [
+      "apps/",
+      "packages/",
+      "scripts/",
+      ".github/"
+    ],
+    "maxFilesPerFix": 5,
+    "maxLinesChangedPerFix": 100,
+    "requireApproval": {
+      "newDependencies": true,
+      "configChanges": true,
+      "securityRelated": true
+    }
+  }
+}

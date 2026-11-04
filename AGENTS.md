@@ -26,6 +26,7 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 |---|---|---|
 | `apps/arsy/` | Fastify 5 · `@allah/arsy-orm` (PGlite) | 5150 |
 | `apps/dock/` | Next.js 16 · React 19 · Tailwind v4 | 3001 |
+| `apps/gate/` | Next.js 16 · React 19 · Tailwind v4 | 3000 |
 | `apps/headquarter/` | Next.js 16 · React 19 · Tailwind v4 | 3002 |
 | `apps/id/` | Next.js 16 · React 19 · Tailwind v4 · SSO | 3003 |
 | `apps/jizz/` | Next.js 16 · React 19 · Tailwind v4 | 3004 |
@@ -37,7 +38,7 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | `packages/lint/` | `@moonwitness/lint` → `pnpm lint:arch` | — |
 | `packages/arsy-orm/` | `@allah/arsy-orm` — sole ORM | — |
 
-**Forbidden in `apps/`**: raw `<button>` / `<input>` / `<select>` / `<textarea>` / `<a>` / `<form>` / `<label>` / `<table>` · hand-written `mw-*` component class names · local type redefinition · direct DB calls. The design system is the only place a native control may appear; `@moonwitness/ui` owns `Select`, `Table`, `Dialog`, `Form`/`FormField`, and `Link`, and `Button asChild` turns any router link into a button.
+**Forbidden in `apps/`**: raw `<button>` / `<input>` / `<select>` / `<textarea>` / `<a>` / `<form>` / `<label>` / `<table>` · hand-written `mw-*` component class names · local type redefinition · direct DB calls. The design system is the only place a native control may appear; `@moonwitness/ui` owns `Select`, `Table`, `Dialog`, `Form`/`FormField`, and `Link`, and `Button asChild` turns any router link into a button. Shared components expose `data-slot` attributes as the supported CSS hook; app CSS must not target private component classes.
 
 ## Invariants
 

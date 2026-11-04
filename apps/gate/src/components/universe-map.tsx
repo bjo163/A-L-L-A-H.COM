@@ -1,6 +1,6 @@
 'use client';
 
-import { RawCluster, RawContainer, RawGrid, RawStack } from "@moonwitness/ui";
+import { Card, RawCluster, RawContainer, RawGrid, RawStack } from "@moonwitness/ui";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
 import { getDestinations, type Destination } from "@/lib/content-manifest";
 
@@ -138,7 +138,7 @@ export function UniverseMap({ locale = "id" }: { locale?: "id" | "en" }) {
       <RawContainer style={{ marginTop: "2rem" }}>
         <RawStack data-gap="tight" role="list" aria-label="Daftar destinasi semantik">
           {destinations.map((dest: Destination) => (
-            <article key={dest.id} className="mw-card" role="listitem">
+            <Card as="article" key={dest.id} role="listitem">
               <RawStack data-gap="tight">
                 <RawCluster data-gap="tight">
                   <strong style={{ fontFamily: "var(--mw-font-heading)" }}>{dest.name}</strong>
@@ -148,7 +148,7 @@ export function UniverseMap({ locale = "id" }: { locale?: "id" | "en" }) {
                 </RawCluster>
                 <p style={{ margin: 0, color: "var(--mw-muted-text)", fontSize: "0.875rem" }}>{dest.description}</p>
               </RawStack>
-            </article>
+            </Card>
           ))}
         </RawStack>
       </RawContainer>

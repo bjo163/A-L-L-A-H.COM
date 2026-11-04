@@ -37,8 +37,25 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
+export function composeClickHandlers<E extends { preventDefault(): void; stopPropagation(): void }>(
+  childHandler: ((event: E) => void) | undefined,
+  buttonHandler: ((event: E) => void) | undefined,
+  disabled = false
+): (event: E) => void {
+  return (event) => {
+    if (disabled) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    childHandler?.(event);
+    buttonHandler?.(event);
+  };
+}
+
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, enableSfx = true, asChild = false, onClick, children, ...props }, ref) => {
+  ({ className, variant, size, enableSfx = true, asChild = false, onClick, children, disabled = false, ...props }, ref) => {
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (enableSfx) {
         if (variant === 'destructive') sfx.revoke();
@@ -51,13 +68,36 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // instead of nesting a button inside it.
     if (asChild) {
       const child = React.Children.only(children) as React.ReactElement<
-        Record<string, unknown> & { className?: string }
+        Record<string, unknown> & {
+          className?: string;
+          onClick?: React.MouseEventHandler<HTMLElement>;
+          ref?: React.Ref<HTMLElement>;
+        }
       >;
+      const childRef = child.props.ref;
+      const mergedRef: React.RefCallback<HTMLElement> = (node) => {
+        if (typeof childRef === 'function') childRef(node);
+        else if (childRef) childRef.current = node;
+
+        if (typeof ref === 'function') ref(node as HTMLButtonElement);
+        else if (ref) ref.current = node as HTMLButtonElement;
+      };
+
       return React.cloneElement(child, {
         ...props,
-        ref,
+        ref: mergedRef,
         className: cn(buttonVariants({ variant, size }), child.props.className, className),
-        onClick: handleClick,
+        'data-slot': 'button',
+        ...(child.type === 'button'
+          ? { disabled }
+          : disabled
+            ? { 'aria-disabled': true, tabIndex: -1 }
+            : {}),
+        onClick: composeClickHandlers(
+          child.props.onClick,
+          (event) => handleClick(event as React.MouseEvent<HTMLButtonElement>),
+          disabled
+        ),
       });
     }
 
@@ -65,6 +105,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(buttonVariants({ variant, size, className }))}
+        data-slot="button"
+        disabled={disabled}
         onClick={handleClick}
         {...props}
       >

@@ -27,7 +27,7 @@ export interface BadgeProps
 
 export function Badge({ className, variant, dot = false, children, ...props }: BadgeProps) {
   return (
-    <span className={cn(badgeVariants({ variant }), className)} {...props}>
+    <span className={cn(badgeVariants({ variant }), className)} data-slot="badge" {...props}>
       {dot && (
         <span
           aria-hidden="true"

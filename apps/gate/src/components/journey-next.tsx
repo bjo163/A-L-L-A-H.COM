@@ -8,6 +8,7 @@ import {
   RawContainer,
   RawGrid,
   RawStack,
+  Skeleton,
 } from "@moonwitness/ui";
 import Link from "next/link";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
@@ -60,10 +61,10 @@ export function JourneyNext({ locale = "id" }: JourneyNextProps) {
       <MotionFrame effect="enter">
         <RawContainer>
           {loading ? (
-            <div className="mw-raw-stack" data-gap="tight" role="status" style={{ textAlign: "center", padding: "3rem" }}>
-              <div className="mw-skeleton mw-skeleton--lg" aria-hidden="true" style={{ width: "200px", height: "48px", margin: "0 auto" }} />
-              <div className="mw-skeleton mw-skeleton--md" aria-hidden="true" style={{ width: "300px", height: "24px", margin: "0.5rem auto 0" }} />
-            </div>
+            <RawStack gap="tight" role="status" aria-label="Loading journey" style={{ textAlign: "center", padding: "3rem" }}>
+              <Skeleton size="lg" style={{ width: "200px", height: "48px", margin: "0 auto" }} />
+              <Skeleton size="md" style={{ width: "300px", height: "24px", margin: "0.5rem auto 0" }} />
+            </RawStack>
           ) : user ? (
             // Signed In State
             <>

@@ -16,12 +16,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const field = useFormFieldContext();
     const autoId = React.useId();
     const selectId = props.id ?? field?.id ?? autoId;
-    const errorId = error ? `${selectId}-error` : undefined;
-    const describedBy = mergeDescribedBy(props['aria-describedby'], hint, errorId);
+    const hintId = hint ? `${selectId}-hint` : field?.hintId;
+    const errorId = error ? `${selectId}-error` : field?.errorId;
+    const describedBy = mergeDescribedBy(props['aria-describedby'], hintId, errorId);
 
     return (
       <RawStack gap="tight" className="mw-select-field">
-        {label && (
+        {label && !field && (
           <label className="mw-select-field__label" htmlFor={selectId}>
             {label}
           </label>
@@ -30,8 +31,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           <select
             id={selectId}
             className={cn('mw-select', className)}
+            data-slot="select"
             ref={ref}
             {...props}
+            required={props.required ?? field?.required}
             aria-invalid={error || field?.invalid ? true : props['aria-invalid']}
             aria-describedby={describedBy}
           >
@@ -39,8 +42,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           <span className="mw-select__caret" aria-hidden="true" />
         </span>
+        {hint && (
+          <p className="mw-select-field__hint" id={hintId} data-slot="select-hint">
+            {hint}
+          </p>
+        )}
         {error && (
-          <p className="mw-select-field__error" id={errorId} role="alert">
+          <p className="mw-select-field__error" id={errorId} role="alert" data-slot="select-error">
             {error}
           </p>
         )}

@@ -241,7 +241,7 @@
   letter-spacing: -0.04em;
 }
 
-.id-auth-form .mw-card {
+.id-auth-form [data-slot="card"] {
   border-color: rgb(177 190 216 / 0.24);
   background: rgb(16 21 32 / 0.9);
 }
@@ -277,7 +277,7 @@
   color: #eef0f3;
 }
 
-.id-account-content .mw-card {
+.id-account-content [data-slot="card"] {
   border-color: rgb(177 190 216 / 0.22);
   background: rgb(16 21 32 / 0.88);
 }
@@ -352,14 +352,14 @@
     background-position var(--mw-motion-standard) var(--mw-motion-easing);
 }
 
-.id-auth-form .mw-card,
-.id-account-content .mw-card {
+.id-auth-form [data-slot="card"],
+.id-account-content [data-slot="card"] {
   transition:
     border-color var(--mw-motion-standard) var(--mw-motion-easing),
     box-shadow var(--mw-motion-standard) var(--mw-motion-easing);
 }
 
-.id-auth-form :is(.mw-input, .mw-button) {
+.id-auth-form :is([data-slot="input"], [data-slot="button"]) {
   transition-duration: var(--mw-motion-fast);
   transition-timing-function: var(--mw-motion-easing);
 }

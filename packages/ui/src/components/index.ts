@@ -9,3 +9,4 @@ export * from './avatar';
 export * from './table';
 export * from './dialog';
 export * from './link';
+export * from './skeleton';

@@ -15,6 +15,7 @@ export const Form = React.forwardRef<HTMLFormElement, FormProps>(
       ref={ref}
       className={cn('mw-form', className)}
       data-layout={layout}
+      data-slot="form"
       {...props}
     />
   )
@@ -45,8 +46,8 @@ export function FormField({
   const hintId = hint ? `${id}-hint` : undefined;
 
   const context = React.useMemo<FormFieldContextValue>(
-    () => ({ id, errorId, hintId, invalid: Boolean(error) }),
-    [id, errorId, hintId, error]
+    () => ({ id, errorId, hintId, invalid: Boolean(error), required }),
+    [id, errorId, hintId, error, required]
   );
 
   return (
@@ -55,9 +56,10 @@ export function FormField({
         gap="tight"
         className={cn('mw-form-field', className)}
         data-invalid={error ? 'true' : undefined}
+        data-slot="form-field"
         {...props}
       >
-        <label className="mw-form-field__label" htmlFor={id}>
+        <label className="mw-form-field__label" htmlFor={id} data-slot="form-field-label">
           {label}
           {required && (
             <span className="mw-form-field__required" aria-hidden="true">
@@ -67,12 +69,12 @@ export function FormField({
         </label>
         {children}
         {hint && (
-          <p className="mw-form-field__hint" id={hintId}>
+          <p className="mw-form-field__hint" id={hintId} data-slot="form-field-hint">
             {hint}
           </p>
         )}
         {error && (
-          <p className="mw-form-field__error" id={errorId} role="alert">
+          <p className="mw-form-field__error" id={errorId} role="alert" data-slot="form-field-error">
             {error}
           </p>
         )}

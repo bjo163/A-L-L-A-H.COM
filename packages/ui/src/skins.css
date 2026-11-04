@@ -372,6 +372,23 @@
   opacity: 0.58;
 }
 
+.mw-skin-root .mw-skeleton {
+  border-radius: var(--mw-control-radius);
+  background: var(--mw-surface-raised);
+}
+
+.mw-skin-root .mw-skeleton--sm {
+  min-height: 1rem;
+}
+
+.mw-skin-root .mw-skeleton--md {
+  min-height: 1.5rem;
+}
+
+.mw-skin-root .mw-skeleton--lg {
+  min-height: 3rem;
+}
+
 .mw-skin-root .mw-input[aria-invalid='true'] {
   border-color: var(--mw-danger);
 }
@@ -1300,35 +1317,8 @@
   font-size: 0.8125rem;
 }
 
-.mw-skin-root .mw-skin-lab__dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: color-mix(in oklab, var(--mw-canvas) 72%, transparent);
-}
-
-.mw-skin-root .mw-skin-lab__dialog {
-  display: grid;
-  gap: 1rem;
-  width: min(30rem, 100%);
-  border: var(--mw-border-width) solid var(--mw-border);
-  border-radius: var(--mw-surface-radius);
-  padding: 1.25rem;
-  background: var(--mw-surface);
-  box-shadow: var(--mw-surface-shadow);
-}
-
-.mw-skin-root .mw-skin-lab__dialog-header {
-  display: grid;
-  gap: 0.375rem;
-}
-
-.mw-skin-root .mw-skin-lab__dialog-body {
-  color: var(--mw-muted-text);
-  font-size: 0.875rem;
+.mw-skin-root .mw-dialog.mw-skin-lab__dialog {
+  width: min(30rem, calc(100vw - 2rem));
 }
 
 @media (max-width: 70rem) {

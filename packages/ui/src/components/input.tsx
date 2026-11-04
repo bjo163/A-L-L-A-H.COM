@@ -16,12 +16,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const field = useFormFieldContext();
     const generatedId = React.useId();
     const inputId = props.id ?? field?.id ?? generatedId;
-    const errorId = error ? `${inputId}-error` : undefined;
-    const describedBy = mergeDescribedBy(props['aria-describedby'], hint, errorId);
+    const hintId = hint ? `${inputId}-hint` : field?.hintId;
+    const errorId = error ? `${inputId}-error` : field?.errorId;
+    const describedBy = mergeDescribedBy(props['aria-describedby'], hintId, errorId);
 
     return (
       <RawStack gap="tight" className="mw-input-field">
-        {label && (
+        {label && !field && (
           <label className="mw-input-field__label" htmlFor={inputId}>
             {label}
           </label>
@@ -33,13 +34,20 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             'mw-input',
             className
           )}
+          data-slot="input"
           ref={ref}
           {...props}
+          required={props.required ?? field?.required}
           aria-invalid={error || field?.invalid ? true : props['aria-invalid']}
           aria-describedby={describedBy}
         />
+        {hint && (
+          <p className="mw-input-field__hint" id={hintId} data-slot="input-hint">
+            {hint}
+          </p>
+        )}
         {error && (
-          <p className="mw-input-field__error" id={errorId} role="alert">
+          <p className="mw-input-field__error" id={errorId} role="alert" data-slot="input-error">
             {error}
           </p>
         )}

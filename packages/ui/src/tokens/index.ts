@@ -1,3 +1,4 @@
+/** @deprecated Runtime colors are owned by the selected skin in `skinRegistry`. */
 export const tokens = {
   colors: {
     gold: {

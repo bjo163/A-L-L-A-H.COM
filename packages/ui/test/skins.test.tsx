@@ -141,7 +141,7 @@ test('Textarea exposes its visible label and associated error state', () => {
   assert.match(markup, /<label[^>]+for="([^"]+)"[^>]*>Tool arguments<\/label>/);
   assert.match(markup, /<textarea[^>]+aria-invalid="true"/);
   assert.match(markup, /aria-describedby="[^"]+-error"/);
-  assert.match(markup, /role="alert">Enter valid JSON\.<\/p>/);
+  assert.match(markup, /role="alert"[^>]*>Enter valid JSON\.<\/p>/);
 });
 
 test('component recipes remain scoped to SkinRoot', () => {
