@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-amber-500/20 selection:text-amber-200">
+    <html lang="en">
+      <body className="min-h-screen antialiased">
         <SkinRoot skin="lunar-chronicles">
           <EcosystemNavbar apps={resolveEcosystemEndpoints(process.env)} currentApp="id" showAuthActions={false} />
           {children}
