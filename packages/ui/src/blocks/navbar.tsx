@@ -33,15 +33,24 @@ export function EcosystemNavbar({
   const menuButtonRef = React.useRef<HTMLButtonElement>(null);
   const navigationId = React.useId();
 
+  React.useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+
+      event.preventDefault();
+      setIsMenuOpen(false);
+      menuButtonRef.current?.focus();
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMenuOpen]);
+
   return (
     <header
       className={cn('mw-navbar', className)}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape' && isMenuOpen) {
-          setIsMenuOpen(false);
-          menuButtonRef.current?.focus();
-        }
-      }}
     >
       <div className="mw-navbar__inner">
         {/* Brand & Badge */}

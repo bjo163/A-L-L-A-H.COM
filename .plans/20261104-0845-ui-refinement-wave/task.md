@@ -5,8 +5,8 @@ status: in_progress
 
 # Focused UI Refinement Wave Tasks
 
-- [ ] Record baseline screenshots, scores, and affected route inventory.
-- [ ] Audit shared navbar, controls, recipes, and states.
+- [/] Record baseline screenshots, scores, and affected route inventory.
+- [/] Audit shared navbar, controls, recipes, and states.
 - [ ] Refine Dock shell and destination hierarchy.
 - [ ] Refine WORLD OBSERVATORY entry and source states.
 - [ ] Refine ID authentication and account surfaces.

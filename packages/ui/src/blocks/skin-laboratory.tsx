@@ -50,7 +50,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
             The same navigation, content, form, status, and empty-state task rendered across all six approved DNA worlds.
           </p>
         </div>
-        <Badge variant="gold">Six worlds · one engine</Badge>
+        <Badge variant="gold">Six worlds â€¢ one engine</Badge>
       </header>
 
       <nav className="mw-skin-lab__nav" aria-label="Select DNA world">
@@ -124,7 +124,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
                     <p className="mw-skin-lab__kicker">CONTENT / CARDS</p>
                     <h3 id="lab-content-title">Content card and data section</h3>
                   </div>
-                  <Badge variant="gold">Real action · keyboard accessible</Badge>
+                  <Badge variant="gold">Real action â€¢ keyboard accessible</Badge>
                 </div>
                 <div className="mw-skin-lab__cards">
                   <Card>
@@ -157,11 +157,11 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
                         </div>
                         <div>
                           <dt>States</dt>
-                          <dd>Idle · submitted · empty · dialog</dd>
+                          <dd>Idle â€¢ submitted â€¢ empty â€¢ dialog</dd>
                         </div>
                         <div>
                           <dt>Targets</dt>
-                          <dd>=44px · focus visible</dd>
+                          <dd>=44px â€¢ focus visible</dd>
                         </div>
                       </dl>
                     </CardContent>
@@ -213,7 +213,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
               <section id="lab-states" className="mw-skin-lab__states" aria-labelledby="lab-states-title">
                 <div className="mw-skin-lab__section-header">
                   <div>
-                    <p className="mw-skin-lab__kicker">STATES / LOADING · EMPTY · ERROR · SUCCESS</p>
+                    <p className="mw-skin-lab__kicker">STATES / LOADING â€¢ EMPTY â€¢ ERROR â€¢ SUCCESS</p>
                     <h3 id="lab-states-title">Truthful states</h3>
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
                     <CardContent>
                       <div className="mw-skin-lab__state-row" role="status" aria-live="polite">
                         <span className="mw-skin-lab__pulse" aria-hidden="true" />
-                        <span>Loading representative records…</span>
+                        <span>Loading representative recordsâ€¦</span>
                       </div>
                     </CardContent>
                   </Card>
