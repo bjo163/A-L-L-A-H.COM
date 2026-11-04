@@ -32,9 +32,9 @@ updates:
       - "bjo163"
     assignees:
       - "bjo163"
-    auto-merge:
-      enabled: true
-      merge-type: "squash"
+    # Auto-merge is handled by .github/workflows/auto-merge-dependabot.yml
+    # (dependabot.yml `auto-merge` requires branch protection `merge queue` and
+    # silently no-ops otherwise).
 
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
@@ -54,13 +54,18 @@ updates:
       - "bjo163"
     assignees:
       - "bjo163"
-    auto-merge:
-      enabled: true
-      merge-type: "squash"
 
-  # Docker dependencies
+  # Docker base images. Dependabot scans <directory>/Dockerfile, so each
+  # service Dockerfile needs its own entry — the repo root has no Dockerfile.
   - package-ecosystem: "docker"
-    directory: "/"
+    directories:
+      - "/apps/arsy"
+      - "/apps/gate"
+      - "/apps/dock"
+      - "/apps/headquarter"
+      - "/apps/id"
+      - "/apps/jizz"
+      - "/apps/sentinel"
     schedule:
       interval: "weekly"
       day: "monday"

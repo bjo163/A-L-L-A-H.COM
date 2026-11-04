@@ -20,9 +20,10 @@ These are not six color themes. Each Master DNA defines a world model, visual gr
 - **Specification:** DOCUMENTED in this directory.
 - **Shared UI foundation:** EXISTS at `../packages/ui/`; inspect its actual source before extending it.
 - **Shared skin engine and semantic recipes:** IMPLEMENTED in `../packages/ui/` for all six DNA IDs.
-- **Application root assignments:** IMPLEMENTED for Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, and WORLD OBSERVATORY / Mycelium.
-- **Six complete runtime experiences:** NOT YET VERIFIED; app-specific composition and Skin Laboratory comparison remain pending.
-- **Showcase / Skin Laboratory:** NOT YET IMPLEMENTED or verified.
+- **Application root assignments:** Gate and Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, and WORLD OBSERVATORY / Mycelium.
+- **Route-specific world scopes:** ROCKSOUL and RIOT ANARCHY use `SkinScope` within WORLD OBSERVATORY; the app retains MYCELIUM as its root world.
+- **Six runtime worlds:** shared vector artwork and world-specific component recipes are implemented; the full cross-app experience remains subject to visual and accessibility verification.
+- **Showcase / Skin Laboratory:** implemented in Headquarter at `/skin-lab`; visual, responsive, and interaction verification remains an explicit release gate.
 
 A documented direction must never be reported as a shipped feature.
 
@@ -68,11 +69,11 @@ The shared UI package is the functional foundation. The six DNA specifications a
 
 ## Delivery sequence
 
-1. Build the Skin Laboratory comparison surface.
-2. Prove all six worlds with the same small set of representative tasks.
-3. Implement token contracts and world-specific layout recipes.
+1. Keep the Skin Laboratory task equivalent across all six worlds.
+2. Implement token contracts, shared vector scenes, and world-specific layout recipes.
+3. Apply each DNA to its app root or explicitly scoped route.
 4. Extend the component catalogue in controlled batches.
 5. Verify accessibility, responsive behavior, performance, reduced motion, and functional parity.
 6. Promote only evidence-backed capabilities from documented to implemented and verified.
 
-The shared package and four application roots now provide the implementation foundation before the Skin Laboratory, at the user's direction. This foundation does not replace the deferred comparison or full verification steps.
+Gate and Dock intentionally share the IMPERIUM LUMEN root. The architecture lint baseline records this product-mapping exception; the remaining root skins stay distinct.

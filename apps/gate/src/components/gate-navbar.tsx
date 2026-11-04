@@ -1,31 +1,17 @@
 'use client';
 
-import { EcosystemNavbar, resolveEcosystemEndpoints } from "@moonwitness/ui";
-import { useEffect, useState } from "react";
+import { EcosystemNavbar, resolveEcosystemEndpoints, useEcosystemSession } from "@moonwitness/ui";
 import { mwClient } from "@allah/sdk";
-import { getCurrentUser, type GateUser } from "@/lib/auth";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
+
+const sessionAuth = {
+  getCurrentUser: () => mwClient.auth.getCurrentUser(),
+  signOut: () => mwClient.auth.signOut(),
+};
 
 export function GateNavbar() {
   const { tm } = useTranslationCatalog();
-  const [user, setUser] = useState<GateUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getCurrentUser().then((u) => {
-      if (!cancelled) {
-        setUser(u);
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleSignOut = async () => {
-    await mwClient.auth.signOut();
-    setUser(null);
-  };
+  const { user, signOut } = useEcosystemSession(sessionAuth);
 
   const endpoints = resolveEcosystemEndpoints(process.env);
 
@@ -35,7 +21,7 @@ export function GateNavbar() {
       currentApp="gate"
       userName={user?.name}
       userEmail={user?.email}
-      onSignOut={handleSignOut}
+      onSignOut={signOut}
       showAuthActions={true}
     />
   );

@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.6.0"
+version: "1.7.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -30,6 +30,8 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | `apps/headquarter/` | Next.js 16 · React 19 · Tailwind v4 | 3002 |
 | `apps/id/` | Next.js 16 · React 19 · Tailwind v4 · SSO | 3003 |
 | `apps/jizz/` | Next.js 16 · React 19 · Tailwind v4 | 3004 |
+| `apps/moonsky/` | Next.js 16 · React 19 · Tailwind v4 | 3005 |
+| `apps/harbor/` | Next.js 16 · React 19 · Tailwind v4 · E-ISP customer portal | 3006 |
 | `apps/sentinel/` | Sentinel RADIUS daemon · UDP auth/accounting + HTTP health | 1812/1813/9181 |
 | `addons/` | `base` · `works` · `nexus` · `orbit` · `mw_storage` · `mw_llm_router` · `mw_qorpus` | — |
 | `packages/ui/` | `@moonwitness/ui` — **MANDATORY** all UI controls | — |
@@ -53,9 +55,12 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | Global admin | Superuser access is server-authorized per admin route, requires a reason, and records the target tenant; generic CRUD never exposes identity, audit, or credential-bearing models. |
 | Style source | `packages/ui/src/theme.css` maps Tailwind utilities onto skin tokens. Apps define no colour, type, or theme variables and target no private `mw-*` class (`STYLE_PURITY`). |
 | Markup colour | App JSX never paints with a Tailwind palette hue (`PALETTE_PURITY`). Colour arrives from a component variant, a composition block, or a token-driven utility, so the selected world can restyle it. |
+| Icon source | Third-party icon libraries (`lucide-react`, `react-icons`, `@tabler/icons-react`, `heroicons`) are imported only by `packages/ui/src/components/icon.tsx`; apps consume the design-system `Icon` component (`ICON_PURITY`). |
+| Landmark purity | The skip-link `id="main-content"` landmark belongs to the design-system `RouteShell`; apps never hand-roll it (`LANDMARK_PURITY`). |
+| Client secrets | No `'use client'` file may read a `NEXT_PUBLIC_*` value carrying a key/secret/token (`NO_PUBLIC_CLIENT_SECRETS`). Upstream credentials live server-side only — apps proxy through a same-origin route handler. |
 | Composition blocks | Hero, kicker, section heading, route shell, status message, destination card, and state panel exist once in `packages/ui/src/blocks/`. Applications compose them instead of redefining the same vocabulary per app. |
 | Route states | Every app ships `error.tsx`, `loading.tsx`, and `not-found.tsx` built from `StatePanel` (`STATE_PARITY`). |
-| One world per app | Each app renders `SkinRoot` with a valid, unclaimed skin (`SKIN_ROOT`). |
+| Skin ownership | Each app declares a valid `SkinRoot`; duplicate root worlds require an explicit lint-baseline exception. Route-specific experiences may use `SkinScope` without creating another app root or motion provider. |
 | Retention | Fail-closed: reject on `legal_hold` / `retention_until` |
 | SSRF | Validate `base_url` before the request and re-check the resolved IP, so a domain that resolves to a private or loopback address is refused. |
 
@@ -76,7 +81,7 @@ pnpm gate:build
 pnpm --filter @allah/arsy build
 ```
 
-Pre-commit: `docs:check` + `lint:arch` + `typecheck`. Pre-push: all build gates. Self-heal all errors. Never prompt user.
+Pre-commit: `docs:check` + `lint:arch` + `lint` + `typecheck` + `ui:contrast`. Pre-push: all build gates + `ui:test` + `ui:contrast`. Commit-msg: commitlint. Self-heal all errors. Never prompt user.
 
 Production Docker builds run on GitHub Actions only. Coolify receives its own GitHub webhook; image publication and Coolify deployment may run concurrently. Do not duplicate the resource-heavy Docker gate locally.
 

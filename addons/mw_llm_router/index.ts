@@ -119,7 +119,7 @@ export const AiThread = defineModel({
   displayName: 'AI Thread',
   fields: {
     company_id: fields.integer({ label: 'Company ID', required: true }),
-    user_id: fields.many2one('res.user', { label: 'User' }),
+    user_id: fields.many2one('res.users', { label: 'User' }),
     title: fields.char({ label: 'Title' }),
     active_model: fields.char({ label: 'Active Model' }),
     metadata: fields.json({ label: 'Metadata' }),
@@ -139,7 +139,7 @@ export const AiMessage = defineModel({
   },
 });
 
-export function registerMlLlmRouterAddon(): void {
+export function registerMwLlmRouterAddon(): void {
   modelRegistry.register(AiProvider);
   modelRegistry.register(AiModel);
   modelRegistry.register(AiRoute);

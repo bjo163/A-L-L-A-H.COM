@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "QUALITY"
-version: "1.4.0"
+version: "1.5.0"
 owner: "qa"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -55,13 +55,18 @@ Never report skipped checks as passing.
 
 ## Verification Baseline (2026-11-04)
 
+Every row is a command run against the current worktree with its recorded exit code and counts. `IMPLEMENTED` claims without a row here are unverified.
+
 | Check | Result |
 |---|---|
-| `pnpm typecheck` | 0 errors (all 12 packages/apps) |
-| `pnpm lint:arch` | 100% — UI Purity · Single ORM · Universal SDK · Shared Types |
-| `pnpm docs:check` | 100/100 pts |
-| `pnpm dock:build` + `pnpm headquarter:build` + `pnpm id:build` + `pnpm --filter @allah/arsy build` | pass |
-| `swarm.test.mjs` | 5/5 pass |
-| `ai_gateway.test.mjs` | model catalog · chat · virtual key · telemetry · usage — pass |
-| `tools_mcp.test.mjs` | tools/list · pglite_query · storage_cas · SSRF guard · qorpus_retrieve · audit log — pass |
-| `agent_loop.test.mjs` | run/session · max_steps — pass. SSE mock tool-call gaps: pre-existing. |
+| `pnpm typecheck` | pass — 28 projects, strict mode enabled in 9, 0 errors (EXIT=0) |
+| `pnpm lint:arch` | pass — all invariants (18 rules incl. ICON_PURITY, LANDMARK_PURITY, NO_PUBLIC_CLIENT_SECRETS, artwork existence) · 2,397 files scanned (EXIT=0) |
+| `pnpm lint` | pass — eslint `--max-warnings 0`, 0 errors / 0 warnings (EXIT=0) |
+| `pnpm docs:check` | 100/100 · 95 plans audited (EXIT=0) |
+| `pnpm ui:test` | 43/43 pass — component, skin, and brand-asset contracts incl. artwork existence and HD preview checks (EXIT=0) |
+| `pnpm ui:contrast` | pass — 6 skins, every token pair measured ≥ WCAG threshold (EXIT=0) |
+| `pnpm gate:build` · `dock:build` · `headquarter:build` · `id:build` · `jizz:build` | pass (EXIT=0 each) |
+| `pnpm --filter @moonwitness/moonsky build` · `--filter @moonwitness/harbor build` | pass (EXIT=0 each) |
+| `pnpm --filter @allah/arsy build` | pass (EXIT=0) |
+| `pnpm --filter @moonwitness/sentinel build` · `pnpm extension:build` | pass (EXIT=0 each) |
+| `pnpm --filter @allah/arsy test` | 60/60 pass — hub suite (swarm · ai_gateway · tools_mcp · agent_loop · onboarding · trust boundary) run serially via `--test-concurrency=1` (EXIT=0) |

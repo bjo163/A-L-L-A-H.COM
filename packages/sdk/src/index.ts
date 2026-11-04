@@ -280,6 +280,7 @@ export class MoonWitnessClient {
         method: 'POST',
         headers,
         body: JSON.stringify({ ...req, stream: true }),
+        credentials: 'include',
       });
 
       if (!response.ok || !response.body) {

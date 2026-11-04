@@ -1,1 +1,11 @@
-{"name":"works","version":"0.1.0","description":"WORKS ISP Commercial Foundation & Billing Lifecycle","category":"commerce","dependencies":["base"],"models":["isp.plan","isp.subscription","isp.invoice"]}
+{
+  "name": "works",
+  "version": "0.1.0",
+  "category": "Commerce",
+  "summary": "WORKS ISP Commercial Foundation & Billing Lifecycle",
+  "depends": ["base"],
+  "models": ["isp.plan", "isp.subscription", "isp.invoice"],
+  "views": [],
+  "installable": true,
+  "application": true
+}

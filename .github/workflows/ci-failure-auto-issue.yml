@@ -3,10 +3,12 @@ name: CI Failure -> Auto Issue
 on:
   workflow_run:
     workflows:
-      - "CI"
-      - "Build"
-      - "TypeCheck"
-      - "Quality Gates"
+      # Exact `name:` values of the gated workflows. A workflow_run trigger
+      # only fires for names that exist; stale names here silently kill the
+      # automation (previous state of this file: CI/Build/TypeCheck/Quality
+      # Gates match nothing in this repo).
+      - "CI Validation Gate & Promotion"
+      - "Quick CI Health Check"
     types:
       - completed
     branches:
@@ -18,81 +20,82 @@ permissions:
   issues: write
 
 jobs:
-  auto-issue:
-    name: Auto-create Issue on Failure
+  report-failure:
+    name: File issue on failure
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPOSITORY: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+      RUN_WORKFLOW: ${{ github.event.workflow_run.name }}
+      RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_STARTED: ${{ github.event.workflow_run.run_started_at }}
+      RUN_FINISHED: ${{ github.event.workflow_run.updated_at }}
     steps:
-      - name: Extract failure info
-        id: info
+      # Every github.event value is consumed through env, never interpolated
+      # into the shell line — head_branch is attacker-controllable and a
+      # `"; curl …` branch name used to execute here.
+      - name: Collect failed jobs
         run: |
-          echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
-          echo "run_url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
-          echo "workflow=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
-          echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
-          echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
-          echo "commit_url=https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
-          echo "started=${{ github.event.workflow_run.run_started_at }}" >> $GITHUB_OUTPUT
-          echo "finished=${{ github.event.workflow_run.updated_at }}" >> $GITHUB_OUTPUT
-
-      - name: Get failed job logs
-        id: logs
-        run: |
-          # Get failed jobs and their failed steps
-          JOBS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ steps.info.outputs.run_id }}/jobs")
-          
-          # Extract failure details
-          ERROR_DETAILS=$(echo "$JOBS" | jq -r '
-            .jobs[] 
-            | select(.conclusion == "failure") 
-            | "## Job: \(.name)\n\(.steps[] | select(.conclusion == "failure") | "### Step: \(.name)\nStatus: \(.conclusion)\n")"
-          ' 2>/dev/null | head -c 2000)
-          
-          # Escape for issue body
-          if [ -z "$ERROR_DETAILS" ] || [ "$ERROR_DETAILS" = "null" ]; then
-            ERROR_DETAILS="Could not fetch detailed logs. Check the workflow run directly."
+          gh api "repos/${REPOSITORY}/actions/runs/${RUN_ID}/jobs" --paginate \
+            --jq '.jobs[] | select(.conclusion == "failure")
+                  | "## Job: \(.name)\n" + ([.steps[] | select(.conclusion == "failure") | "### Failed step: \(.name)"] | join("\n"))' \
+            | head -c 4000 > "$RUNNER_TEMP/details.md" || true
+          if [ ! -s "$RUNNER_TEMP/details.md" ]; then
+            printf 'Could not extract per-step failure details. Check the run logs.\n' > "$RUNNER_TEMP/details.md"
           fi
-          
-          echo "details<<EOF" >> $GITHUB_OUTPUT
-          echo "$ERROR_DETAILS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Create or update issue
-        uses: peter-evans/create-issue-from-file@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "[CI Failure] ${{ steps.info.outputs.workflow }} failed on ${{ steps.info.outputs.branch }}"
-          content-filepath: .github/issue-templates/ci-failure.md
-          labels: |
-            ci-failure
-            auto-created
-            branch:${{ steps.info.outputs.branch }}
-          assignees: |
-        env:
-          WORKFLOW_NAME: ${{ steps.info.outputs.workflow }}
-          RUN_URL: ${{ steps.info.outputs.run_url }}
-          BRANCH: ${{ steps.info.outputs.branch }}
-          COMMIT_SHA: ${{ steps.info.outputs.sha }}
-          COMMIT_URL: ${{ steps.info.outputs.commit_url }}
-          RUN_STARTED: ${{ steps.info.outputs.started }}
-          RUN_FINISHED: ${{ steps.info.outputs.finished }}
-          ERROR_SUMMARY: ${{ steps.logs.outputs.details }}
-
-      - name: Close issue on success
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+      - name: Create or refresh issue
         run: |
-          # Find and close related open issues
-          ISSUES=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues?state=open&labels=ci-failure,auto-created,branch:${{ steps.info.outputs.branch }}")
-          
-          echo "$ISSUES" | jq -r '.[] | .number' | while read -r ISSUE_NUM; do
-            if [ -n "$ISSUE_NUM" ]; then
-              curl -X PATCH -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUM" \
-                -d '{"state": "closed", "state_reason": "completed"}'
-              echo "Closed issue #$ISSUE_NUM"
-            fi
+          {
+            printf '## CI Failure Detected\n\n'
+            printf '**Workflow:** %s\n' "$RUN_WORKFLOW"
+            printf '**Branch:** %s\n' "$RUN_BRANCH"
+            printf '**Commit:** %s\n' "$RUN_SHA"
+            printf '**Run:** [View Logs](%s)\n' "$RUN_URL"
+            printf '**Started:** %s · **Finished:** %s\n\n' "$RUN_STARTED" "$RUN_FINISHED"
+            printf '## Failed jobs and steps\n\n'
+            cat "$RUNNER_TEMP/details.md"
+            printf '\n## Next Steps\n\n1. Open the run logs above.\n2. Reproduce locally: `pnpm typecheck && pnpm lint:arch && pnpm lint`.\n3. Push a fix; this issue auto-closes when the workflow goes green.\n'
+          } > "$RUNNER_TEMP/body.md"
+
+          title="[CI Failure] ${RUN_WORKFLOW} failed on ${RUN_BRANCH}"
+          existing=$(gh issue list --repo "$REPOSITORY" --state open \
+            --label ci-failure --label auto-created \
+            --search "${RUN_URL} in:body" --json number --jq '.[0].number' || true)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPOSITORY" \
+              --body "Seen again on a later run of \`${RUN_WORKFLOW}\`: ${RUN_URL}"
+          else
+            gh issue create --repo "$REPOSITORY" --title "$title" \
+              --body-file "$RUNNER_TEMP/body.md" \
+              --label ci-failure --label auto-created
+          fi
+
+  close-on-green:
+    name: Close issue when green again
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPOSITORY: ${{ github.repository }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+      RUN_WORKFLOW: ${{ github.event.workflow_run.name }}
+      RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+    steps:
+      - name: Close matching open issues
+        run: |
+          nums=$(gh issue list --repo "$REPOSITORY" --state open \
+            --label ci-failure --label auto-created \
+            --search "[CI Failure] ${RUN_WORKFLOW} failed on ${RUN_BRANCH} in:title" \
+            --json number --jq '.[].number' || true)
+          for n in $nums; do
+            gh issue close "$n" --repo "$REPOSITORY" --reason completed \
+              --comment "Workflow is green again: ${RUN_URL}"
+            echo "Closed issue #$n"
           done

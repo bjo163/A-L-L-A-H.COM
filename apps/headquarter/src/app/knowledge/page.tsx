@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { mwClient } from '@allah/sdk';
 import type { GatewayTelemetry } from '@moonwitness/types';
-import { Button, Form, Input, Card } from '@moonwitness/ui';
+import { Button, Form, Input, Card, RouteShell } from '@moonwitness/ui';
 
 interface KnowledgeChunk {
   id: number | string;
@@ -89,7 +89,7 @@ export default function KnowledgePage() {
   }, []);
 
   return (
-    <main id="main-content" tabIndex={-1} className="hq-route hq-knowledge p-6 max-w-6xl mx-auto">
+    <RouteShell as="main" className="hq-route hq-knowledge p-6 max-w-6xl mx-auto">
       <header className="mb-6">
         <p className="hq-kicker">QORPUS / KNOWLEDGE INDEX</p>
         <h1 className="text-2xl font-bold mb-2">Knowledge Explorer</h1>
@@ -191,6 +191,6 @@ export default function KnowledgePage() {
           </Card>
         </section>
       </div>
-    </main>
+    </RouteShell>
   );
 }

@@ -1,5 +1,5 @@
 import { logger, resolveLocalSecret } from '@allah/arsy-core';
-import { dbEngine, decryptSecret } from '@allah/arsy-orm';
+import { BaseRepository, SYSTEM_ACTOR, decryptSecret, modelRegistry } from '@allah/arsy-orm';
 import { OpenAiAdapter } from './adapters/openai';
 import { AnthropicAdapter } from './adapters/anthropic';
 import { GeminiAdapter } from './adapters/gemini';
@@ -54,42 +54,84 @@ export class SmartRouter {
     this.initialized = true;
   }
 
+  private repo<T = Record<string, any>>(modelName: string): BaseRepository<T> {
+    const model = modelRegistry.get(modelName);
+    if (!model) {
+      throw new Error(`LLM gateway model '${modelName}' is not registered. Did the mw_llm_router addon load?`);
+    }
+    return new BaseRepository<T>(model);
+  }
+
   private async seedDefaultsIfEmpty(): Promise<void> {
     try {
-      const providers = (await dbEngine.query(
-        'SELECT count(*) as count FROM ai_provider'
-      )) as Array<{ count: number | string }>;
-
-      if (Number(providers[0]?.count || 0) > 0) return;
-
+      const providerRepo = this.repo('ai.provider');
       // Provider, model and route rows are platform configuration, not tenant data: they
-      // live under the shared platform tenant, the same convention res_translation uses
-      // for global terms.
-      await dbEngine.query(
-        'INSERT INTO ai_provider (company_id, name, slug, provider_type, base_url, priority, is_healthy) VALUES ' +
-          '(0, \'OpenAI Platform\', \'openai\', \'openai_compatible\', \'https://api.openai.com/v1\', 10, true), ' +
-          '(0, \'Anthropic Cloud\', \'anthropic\', \'anthropic\', \'https://api.anthropic.com/v1\', 20, true), ' +
-          '(0, \'Google Gemini\', \'gemini\', \'gemini\', \'https://generativelanguage.googleapis.com/v1beta\', 30, true), ' +
-          '(0, \'Local Ollama\', \'ollama\', \'ollama\', \'http://localhost:11434/v1\', 40, true)'
-      );
+      // live under the shared platform tenant (company_id = 0), the same convention
+      // res_translation uses for global terms. Written through the ORM so every value is
+      // parameterized and each row is audit-logged like any other record.
+      const existing = await providerRepo.count({
+        scope: { systemScope: true },
+        filters: [{ field: 'company_id', operator: '=', value: 0 }],
+      });
 
-      await dbEngine.query(
-        'INSERT INTO ai_model (company_id, name, model_id, provider_id, context_window, input_cost_per_m, output_cost_per_m) VALUES ' +
-          '(0, \'GPT-4o\', \'gpt-4o\', 1, 128000, 2.5, 10.0), ' +
-          '(0, \'GPT-4o Mini\', \'gpt-4o-mini\', 1, 128000, 0.15, 0.6), ' +
-          '(0, \'Claude 3.5 Sonnet\', \'claude-3-5-sonnet-20241022\', 2, 200000, 3.0, 15.0), ' +
-          '(0, \'Gemini 2.5 Flash\', \'gemini-2.5-flash\', 3, 1000000, 0.075, 0.3), ' +
-          '(0, \'Llama 3.3 70B Local\', \'llama3.3\', 4, 32768, 0, 0)'
-      );
+      if (existing === 0) {
+        const providerSpecs = [
+          { name: 'OpenAI Platform', slug: 'openai', provider_type: 'openai_compatible', base_url: 'https://api.openai.com/v1', priority: 10 },
+          { name: 'Anthropic Cloud', slug: 'anthropic', provider_type: 'anthropic', base_url: 'https://api.anthropic.com/v1', priority: 20 },
+          { name: 'Google Gemini', slug: 'gemini', provider_type: 'gemini', base_url: 'https://generativelanguage.googleapis.com/v1beta', priority: 30 },
+          { name: 'Local Ollama', slug: 'ollama', provider_type: 'ollama', base_url: 'http://localhost:11434/v1', priority: 40 },
+        ] as const;
 
-      await dbEngine.query(
-        'INSERT INTO ai_route (company_id, name, alias, strategy) VALUES ' +
-          '(0, \'Default Adaptive Route\', \'dx-default\', \'fallback\'), ' +
-          '(0, \'Ultra Fast Route\', \'dx-fast\', \'lowest_cost\'), ' +
-          '(0, \'Deep Reasoning Route\', \'dx-reasoning\', \'fallback\')'
-      );
+        const providerIds = new Map<string, number>();
+        for (const spec of providerSpecs) {
+          const row = await providerRepo.create(
+            { ...spec, company_id: 0, is_healthy: true },
+            { systemScope: true },
+            SYSTEM_ACTOR
+          );
+          providerIds.set(spec.slug, Number((row as { id: number }).id));
+        }
 
-      logger.info('Successfully bootstrapped default AI Gateway routing models in PGlite');
+        const modelSpecs = [
+          { name: 'GPT-4o', model_id: 'gpt-4o', provider: 'openai', context_window: 128000, input_cost_per_m: 2.5, output_cost_per_m: 10.0 },
+          { name: 'GPT-4o Mini', model_id: 'gpt-4o-mini', provider: 'openai', context_window: 128000, input_cost_per_m: 0.15, output_cost_per_m: 0.6 },
+          { name: 'Claude 3.5 Sonnet', model_id: 'claude-3-5-sonnet-20241022', provider: 'anthropic', context_window: 200000, input_cost_per_m: 3.0, output_cost_per_m: 15.0 },
+          { name: 'Gemini 2.5 Flash', model_id: 'gemini-2.5-flash', provider: 'gemini', context_window: 1000000, input_cost_per_m: 0.075, output_cost_per_m: 0.3 },
+          { name: 'Llama 3.3 70B Local', model_id: 'llama3.3', provider: 'ollama', context_window: 32768, input_cost_per_m: 0, output_cost_per_m: 0 },
+        ] as const;
+
+        const modelRepo = this.repo('ai.model');
+        for (const spec of modelSpecs) {
+          const providerId = providerIds.get(spec.provider);
+          if (!providerId) continue;
+          await modelRepo.create(
+            {
+              name: spec.name,
+              model_id: spec.model_id,
+              provider_id: providerId,
+              context_window: spec.context_window,
+              input_cost_per_m: spec.input_cost_per_m,
+              output_cost_per_m: spec.output_cost_per_m,
+              company_id: 0,
+            },
+            { systemScope: true },
+            SYSTEM_ACTOR
+          );
+        }
+
+        const routeSpecs = [
+          { name: 'Default Adaptive Route', alias: 'dx-default', strategy: 'fallback' },
+          { name: 'Ultra Fast Route', alias: 'dx-fast', strategy: 'lowest_cost' },
+          { name: 'Deep Reasoning Route', alias: 'dx-reasoning', strategy: 'fallback' },
+        ] as const;
+
+        const routeRepo = this.repo('ai.route');
+        for (const spec of routeSpecs) {
+          await routeRepo.create({ ...spec, company_id: 0 }, { systemScope: true }, SYSTEM_ACTOR);
+        }
+
+        logger.info('Successfully bootstrapped default AI Gateway routing models in PGlite');
+      }
     } catch (err: any) {
       logger.warn({ err }, 'Could not seed AI gateway defaults (schema might be booting)');
     }
@@ -99,17 +141,31 @@ export class SmartRouter {
 
   private async seedPlatformVirtualKey(): Promise<void> {
     try {
-      const existing = (await dbEngine.query(
-        "SELECT 1 FROM ai_virtual_key WHERE name = $1 LIMIT 1",
-        ['Platform Master Key']
-      )) as unknown[];
-      if (existing && existing.length > 0) return;
+      const keyRepo = this.repo('ai.virtual_key');
+      const existing = await keyRepo.find({
+        scope: { systemScope: true },
+        filters: [
+          { field: 'company_id', operator: '=', value: 0 },
+          { field: 'name', operator: '=', value: 'Platform Master Key' },
+        ],
+        limit: 1,
+      });
+      if (existing.length > 0) return;
 
       const raw = resolveLocalSecret('GATEWAY_VIRTUAL_KEY', 'gateway.virtual.key');
-      await dbEngine.query(
-        'INSERT INTO ai_virtual_key (company_id, name, key_prefix, key_hash, budget_limit, rate_limit_rpm, rate_limit_tpm, revoked) ' +
-          'VALUES (0, $1, $2, $3, 1000.0, 120, 200000, false)',
-        ['Platform Master Key', raw.slice(0, 15), hashVirtualKey(raw)]
+      await keyRepo.create(
+        {
+          company_id: 0,
+          name: 'Platform Master Key',
+          key_prefix: raw.slice(0, 15),
+          key_hash: hashVirtualKey(raw),
+          budget_limit: 1000.0,
+          rate_limit_rpm: 120,
+          rate_limit_tpm: 200000,
+          revoked: false,
+        },
+        { systemScope: true },
+        SYSTEM_ACTOR
       );
       logger.info('Seeded platform master virtual key; the secret is in GATEWAY_VIRTUAL_KEY or data/keys');
     } catch (err: any) {
@@ -117,13 +173,23 @@ export class SmartRouter {
     }
   }
 
-  async resolveRoute(requestedModelOrAlias: string): Promise<RouteResolution> {
+  async resolveRoute(requestedModelOrAlias: string, companyId?: number): Promise<RouteResolution> {
     await this.initialize();
 
+    // Platform routing configuration lives under the shared platform tenant (company_id = 0).
+    // Reads are scoped to the platform tenant plus the requesting tenant, so a tenant can never
+    // resolve another tenant's provider/model/route rows. All values are parameterized via the ORM.
+    const visibleCompanyIds = typeof companyId === 'number' && companyId !== 0 ? [0, companyId] : [0];
+
     // 1. Check if model is a recognized route alias (e.g. "dx-default", "dx-reasoning", "dx-fast")
-    const routeRows = (await dbEngine.query('SELECT * FROM ai_route WHERE alias = $1 LIMIT 1', [
-      requestedModelOrAlias,
-    ])) as RouteRecord[];
+    const routeRows = await this.repo<RouteRecord>('ai.route').find({
+      scope: { systemScope: true },
+      filters: [
+        { field: 'company_id', operator: 'IN', value: visibleCompanyIds },
+        { field: 'alias', operator: '=', value: requestedModelOrAlias },
+      ],
+      limit: 1,
+    });
 
     const route: RouteRecord = routeRows[0] || {
       id: 0,
@@ -132,12 +198,20 @@ export class SmartRouter {
       strategy: 'fallback',
     };
 
-    // 2. Fetch all healthy providers and available models from DB
-    const providerRows = (await dbEngine.query(
-      'SELECT * FROM ai_provider WHERE is_healthy = true ORDER BY priority ASC'
-    )) as ProviderRecord[];
+    // 2. Fetch healthy providers and available models visible to this tenant, ordered by priority.
+    const providerRows = await this.repo<ProviderRecord>('ai.provider').find({
+      scope: { systemScope: true },
+      filters: [
+        { field: 'company_id', operator: 'IN', value: visibleCompanyIds },
+        { field: 'is_healthy', operator: '=', value: true },
+      ],
+      orderBy: 'priority',
+    });
 
-    const modelRows = (await dbEngine.query('SELECT * FROM ai_model')) as ModelRecord[];
+    const modelRows = await this.repo<ModelRecord>('ai.model').find({
+      scope: { systemScope: true },
+      filters: [{ field: 'company_id', operator: 'IN', value: visibleCompanyIds }],
+    });
 
     const targetChain: RouteResolution['targetChain'] = [];
 
@@ -274,9 +348,9 @@ export class SmartRouter {
     throw new Error(`All streaming providers in fallback chain failed: ${JSON.stringify(errors)}`);
   }
 
-  async routeChat(req: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+  async routeChat(req: ChatCompletionRequest, companyId?: number): Promise<ChatCompletionResponse> {
     const model = req.model || 'dx-default';
-    const resolution = await this.resolveRoute(model);
+    const resolution = await this.resolveRoute(model, companyId);
     const { response } = await this.executeWithFallback(resolution, req);
     return response;
   }

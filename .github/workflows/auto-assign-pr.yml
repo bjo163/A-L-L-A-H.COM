@@ -3,26 +3,76 @@ name: Auto-assign PR Reviewers
 on:
   pull_request:
     types: [opened, reopened, ready_for_review]
-  pull_request_review:
-    types: [requested]
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  auto-assign:
-    name: Auto-assign Reviewers
+  request-reviewers:
+    name: Request Reviewers from CODEOWNERS
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Auto-assign based on CODEOWNERS
-        uses: actions/checkout@v4
-      
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      # Honest reviewer request: parse .github/CODEOWNERS, match the changed
+      # files, and REQUEST reviews. This workflow must never submit an
+      # APPROVAL — CODEOWNERS approval is the human/CODEOWNERS gate per
+      # CONTRIBUTING.md, and an auto-approving bot voids it.
       - name: Request review from CODEOWNERS
-        uses: hmarr/auto-approve-action@v4
+        uses: actions/github-script@v7
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-        # This will request reviews from CODEOWNERS based on changed files
+          script: |
+            const fs = require('fs');
+            const owners = fs.readFileSync('.github/CODEOWNERS', 'utf8').split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => line && !line.startsWith('#'))
+              .map((line) => line.split(/\s+/))
+              .map(([pattern, ...handles]) => ({
+                pattern,
+                handles: handles.filter((h) => h.startsWith('@') && !h.endsWith('[bot]')),
+              }));
+
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+            const files = await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number, per_page: 100 });
+
+            const toRegex = (pattern) => {
+              let p = pattern;
+              const anchored = p.startsWith('/');
+              if (anchored) p = p.slice(1);
+              // A trailing slash means "everything under this directory".
+              if (p.endsWith('/')) p = `${p}**`;
+              const esc = p
+                .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+                .replace(/\*\*/g, '\u0000')
+                .replace(/\*/g, '[^/]*')
+                .replace(/\u0000/g, '.*')
+                .replace(/\?/g, '[^/]');
+              return new RegExp(`^(${anchored ? '' : '.*\\/'})?${esc}(\\/.*|)$`);
+            };
+
+            const reviewers = new Set();
+            for (const file of files) {
+              // Last matching CODEOWNERS rule wins, per GitHub semantics.
+              let matched = [];
+              for (const rule of owners) {
+                if (toRegex(rule.pattern).test(file.filename)) matched = rule.handles;
+              }
+              for (const handle of matched) reviewers.add(handle.slice(1));
+            }
+            // The PR author cannot review their own pull request.
+            reviewers.delete(context.payload.pull_request.user.login);
+
+            const list = [...reviewers];
+            if (list.length === 0) {
+              core.info('No CODEOWNERS matches to request; relying on branch protection.');
+            } else {
+              await github.rest.pulls.requestReviewers({ owner, repo, pull_number, reviewers: list });
+              core.info(`Requested review from: ${list.join(', ')}`);
+            }
 
       - name: Add size label
         uses: actions/github-script@v7
@@ -33,18 +83,16 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number
             });
-            
-            const additions = pr.additions;
-            const deletions = pr.deletions;
-            const total = additions + deletions;
-            
+
+            const total = pr.additions + pr.deletions;
+
             let sizeLabel = '';
             if (total < 50) sizeLabel = 'size:xs';
             else if (total < 200) sizeLabel = 'size:s';
             else if (total < 500) sizeLabel = 'size:m';
             else if (total < 1000) sizeLabel = 'size:l';
             else sizeLabel = 'size:xl';
-            
+
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,

@@ -1,17 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { SkipLink, SkinRoot } from "@moonwitness/ui";
+import { SkipLink, SkinRoot, buildAppIcons, skinRegistry } from "@moonwitness/ui";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -27,6 +16,7 @@ export const metadata: Metadata = {
       en: "/en",
     },
   },
+  icons: buildAppIcons("imperium-lumen"),
   openGraph: {
     type: "website",
     locale: "id_ID",
@@ -36,7 +26,7 @@ export const metadata: Metadata = {
     description: "Public entrance to the Empire of the Light.",
     images: [
       {
-        url: "/artwork/rocksoul.png",
+        url: skinRegistry["imperium-lumen"].identity.hero,
         width: 1600,
         height: 900,
         alt: "A-L-L-A-H.COM Empire of the Light",
@@ -47,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "A-L-L-A-H.COM | Gate",
     description: "Public entrance to the Empire of the Light.",
-    images: ["/artwork/rocksoul.png"],
+    images: [skinRegistry["imperium-lumen"].identity.hero],
   },
   robots: {
     index: false,
@@ -56,7 +46,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#141516",
+  themeColor: skinRegistry["imperium-lumen"].identity.themeColor,
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -66,13 +56,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="id" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <head>
-        <link rel="icon" href="/brand/emblem.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/brand/emblem.svg" />
-      </head>
+    <html lang="id" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <SkinRoot skin="rocksoul">
+        <SkinRoot skin="imperium-lumen">
           <SkipLink />
           {children}
         </SkinRoot>

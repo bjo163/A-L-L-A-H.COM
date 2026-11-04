@@ -2,15 +2,16 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { execFileSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-const ROOT_DIR = path.resolve(__dirname, '..');
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const EXCLUDE_DIRS = new Set([
   'node_modules',
   'dist',
   '.next',
   '.git',
-  'scripts',
 ]);
 
 function collectTsconfigs(dir: string): string[] {
@@ -46,12 +47,15 @@ function main() {
     const relativePath = path.relative(ROOT_DIR, tsconfigPath).replace(/\\/g, '/');
     console.log(`  Checking: ${relativePath}`);
 
-    const { execSync } = require('child_process');
+    // Resolve the workspace tsc binary directly: spawning `npx` via
+    // execFileSync fails on Windows (npx.cmd is not resolvable without a shell).
+    const tscBin = path.join(ROOT_DIR, 'node_modules', 'typescript', 'bin', 'tsc');
     try {
-      execSync(`npx tsc --noEmit --project "${tsconfigPath}"`, {
+      execFileSync(process.execPath, [tscBin, '--noEmit', '--project', tsconfigPath], {
         stdio: 'pipe',
         cwd: ROOT_DIR,
         encoding: 'utf8',
+        maxBuffer: 20 * 1024 * 1024,
       });
     } catch (err: any) {
       failed = true;

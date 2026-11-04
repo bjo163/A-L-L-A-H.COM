@@ -3,26 +3,40 @@ name: Auto-merge Dependabot PRs
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
-  pull_request_review:
-    types: [submitted]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
   auto-merge:
-    name: Auto-merge Dependabot PRs
+    name: Queue auto-merge for Dependabot patch/minor updates
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto-merge
-        uses: peter-evans/enable-auto-merge@v3
-        with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          pull-request-number: "${{ github.event.pull_request.number }}"
-          merge-method: squash
-      
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Classify update severity
+        id: classify
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        shell: bash
+        run: |
+          # Dependabot commits are prefixed chore(deps)...; major bumps carry
+          # "Bumps ... from X to Y" with a major jump. Only patch/minor get
+          # queued for auto-merge; majors stay human-reviewed.
+          if printf '%s' "$PR_TITLE" | grep -Eqi 'bump .* from [0-9]+\.[0-9]+\.[0-9]+ to [0-9]+'; then
+            from="$(printf '%s' "$PR_TITLE" | sed -E 's/.*from ([0-9]+)\..*/\1/')"
+            to="$(printf '%s' "$PR_TITLE" | sed -E 's/.*to ([0-9]+)\..*/\1/')"
+            if [ "$from" != "$to" ]; then
+              echo "major=true" >> "$GITHUB_OUTPUT"
+              echo "Major version bump — leaving for human review."
+              exit 0
+            fi
+          fi
+          echo "major=false" >> "$GITHUB_OUTPUT"
+
       - name: Add labels
         uses: actions/github-script@v7
         with:
@@ -31,18 +45,18 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              labels: ['dependencies', 'auto-merge-enabled']
+              labels: ['dependencies', 'auto-merge-queued']
             });
-      
-      - name: Approve if minor/patch
-        if: contains(github.event.pull_request.title, 'patch') || contains(github.event.pull_request.title, 'minor')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              event: 'APPROVE',
-              body: 'Auto-approved: Dependabot minor/patch update'
-            });
+
+      - name: Enable squash auto-merge once checks pass
+        if: steps.classify.outputs.major == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          # GitHub rejects a review authored by the PR author, and GITHUB_TOKEN
+          # cannot satisfy CODEOWNERS requirements — so we never self-approve.
+          # Auto-merge only fires after all required checks (and any required
+          # human approval) are green, which keeps the review contract intact.
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash

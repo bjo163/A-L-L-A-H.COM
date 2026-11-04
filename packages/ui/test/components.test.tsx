@@ -160,7 +160,7 @@ test('PageHero wires its title to the section name and skips empty slots', () =>
 test('PageHero backdrop mode keeps one h1 and puts the caption over the art', () => {
   const markup = renderToStaticMarkup(
     <PageHero
-      titleAs="h2"
+      as="h2"
       title="One identity."
       summary="Sign in."
       mediaLayout="backdrop"

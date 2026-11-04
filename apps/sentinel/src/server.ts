@@ -18,7 +18,7 @@ import {
   RadiusAttribute,
   verifySubscriberPassword,
 } from '@allah/sentinel-radius';
-import { registerNexusAddon } from '../../../addons/nexus/index';
+import { registerAddonsFor } from '../../../addons/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
 import { resolve } from 'node:path';
@@ -499,7 +499,9 @@ async function startSentinel() {
   logger.info(`CoA Port: ${config.coaPort}`);
   logger.info(`HTTP Port: ${config.httpPort}`);
 
-  registerNexusAddon();
+  // Dependency-ordered load (T8): requesting `nexus` transitively pulls `base`
+  // so the sentinel registers the same foundational models as the hub.
+  registerAddonsFor(['nexus'], (message) => logger.info(message));
   await dbEngine.connect();
   logger.info('Database connected');
 

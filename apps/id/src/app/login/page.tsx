@@ -1,11 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../../lib/auth-client';
 import { mwClient } from '@allah/sdk';
-import { Button, Card, CardContent, Form, Input, Link, PageHero, StatusMessage, sfx } from '@moonwitness/ui';
+import { Button, Card, CardContent, Form, Input, Link, PageHero, RouteShell, StatusMessage, WorldArtwork, sfx } from '@moonwitness/ui';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,18 +42,8 @@ export default function LoginPage() {
   };
 
   return (
-    <main id="main-content" tabIndex={-1} className="id-auth-page">
+    <RouteShell as="main" className="id-auth-page">
       <div className="id-auth-layout">
-        <PageHero
-          titleAs="h2"
-          kicker="MOONWITNESS / IDENTITY ARCHIVE"
-          title="One identity. A connected universe."
-          summary="Sign in to manage your account and the sessions linked to it."
-          mediaLayout="backdrop"
-          media={<Image src="/artwork/lunar-chronicles.png" alt="" width={1600} height={900} priority />}
-          captionRight="L / 02 / OBSERVATORY"
-        />
-
         <div className="id-auth-form">
           <h1 className="id-auth-form__title">MoonWitness ID</h1>
           <p className="id-auth-form__note">
@@ -132,7 +121,18 @@ export default function LoginPage() {
             Sessions are issued by the Fastify hub and stored in its embedded PGlite engine.
           </p>
         </div>
+
+        <PageHero
+          as="h2"
+          className="id-auth-hero"
+          kicker="MOONWITNESS / IDENTITY ARCHIVE"
+          title="One identity. A connected universe."
+          summary="Sign in to manage your account and the sessions linked to it."
+          mediaLayout="backdrop"
+          media={<WorldArtwork skin="lunar-chronicles" />}
+          captionRight="L / 02 / OBSERVATORY"
+        />
       </div>
-    </main>
+    </RouteShell>
   );
 }

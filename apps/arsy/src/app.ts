@@ -24,13 +24,7 @@ import { sduiPlugin } from '@allah/arsy-plugin-sdui';
 import { llmGatewayPlugin } from '@allah/arsy-plugin-llm-gateway';
 import { storagePlugin } from '@allah/arsy-plugin-storage';
 
-import { registerBaseAddon } from '../../../addons/base/index';
-import { registerMlLlmRouterAddon } from '../../../addons/mw_llm_router/index';
-import { registerMwStorageAddon } from '../../../addons/mw_storage/index';
-import { registerMwQorpusAddon } from '../../../addons/mw_qorpus/index';
-import { registerNexusAddon } from '../../../addons/nexus/index';
-import { registerOrbitAddon } from '../../../addons/orbit/index';
-import { registerWorksAddon } from '../../../addons/works/index';
+import { registerAllAddons } from '../../../addons/index';
 import { chunkText, computeSha256 } from '../../../addons/mw_qorpus/src/chunker';
 
 export interface BuildAppOptions {
@@ -136,13 +130,9 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   await app.register(swaggerUi, { routePrefix: '/docs' });
 
   await dbEngine.connect();
-  registerBaseAddon();
-  registerMlLlmRouterAddon();
-  registerMwStorageAddon();
-  registerMwQorpusAddon();
-  registerNexusAddon();
-  registerOrbitAddon();
-  registerWorksAddon();
+  // Manifest-driven, dependency-ordered registration (T8): the load order is
+  // resolved from each addon's `__manifest__.json`, not hand-wired here.
+  registerAllAddons((message) => logger.info(message));
 
   const migrator = new SchemaMigrator(dbEngine);
   await migrator.sync();
@@ -153,7 +143,10 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     return ok({ ready: true, database: 'pglite', check: rows[0] });
   });
 
-  await app.register(authPlugin, { prefix: '/api/auth' });
+  await app.register(authPlugin, {
+    prefix: '/api/auth',
+    trustedOrigins: resolveCorsOrigins(),
+  });
   await app.register(sduiPlugin, { prefix: '/v1/sdui' });
   await app.register(llmGatewayPlugin, { prefix: '/v1' });
   await app.register(storagePlugin, { prefix: '/api/storage' });
@@ -234,7 +227,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     modelName: string,
     recordId: string,
     reasonHash: string,
-    executor = dbEngine
+    executor: QueryExecutor = dbEngine
   ): Promise<void> => {
     await repository('arsy.audit.event', executor).create(
       {

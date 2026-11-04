@@ -5,14 +5,7 @@
     "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "paths": {
-       "@allah/arsy-orm": ["../../packages/arsy-orm/dist/index.mjs"],
-       "@allah/arsy-core": ["../../packages/arsy-core/dist/index.mjs"],
-       "@allah/arsy-plugin-auth": ["../../packages/arsy-plugin-auth/dist/index.mjs"],
-       "@allah/arsy-plugin-sdui": ["../../packages/arsy-plugin-sdui/dist/index.mjs"],
-       "@allah/arsy-plugin-llm-gateway": ["../../packages/arsy-plugin-llm-gateway/dist/index.mjs"],
-       "@allah/arsy-plugin-storage": ["../../packages/arsy-plugin-storage/dist/index.mjs"]
-     }
+    "resolveJsonModule": true
   },
   "include": ["src/**/*"]
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import * as React from 'react';
@@ -13,6 +13,7 @@ import { RouteShell } from '../src/blocks/route-shell';
 import { SessionCard } from '../src/blocks/session-card';
 import { SoundToggle } from '../src/blocks/sound-toggle';
 import { VisualEffectsToggle } from '../src/blocks/visual-effects-toggle';
+import { WorldArtwork } from '../src/blocks/world-artwork';
 import { buildAppIcons, skinIds, skinRegistry, type SkinId } from '../src/skins/registry';
 
 const { createElement: h } = React;
@@ -25,13 +26,13 @@ const { createElement: h } = React;
 const artworkOwners: Record<SkinId, string[]> = {
   'imperium-lumen': ['dock', 'gate'],
   'lunar-chronicles': ['id'],
-  rocksoul: ['gate', 'jizz'],
+  rocksoul: ['gate', 'jizz', 'harbor'],
   'nexus-paradox': ['headquarter'],
-  'riot-anarchy': ['jizz'],
+  'riot-anarchy': ['jizz', 'moonsky'],
   mycelium: ['jizz'],
 };
 
-const brandApps = ['dock', 'gate', 'headquarter', 'id', 'jizz'];
+const brandApps = ['dock', 'gate', 'harbor', 'headquarter', 'id', 'jizz', 'moonsky'];
 
 test('every skin declares identity artwork and a valid theme color', () => {
   for (const id of skinIds) {
@@ -57,6 +58,40 @@ test('registry artwork paths resolve to files in the owning apps', () => {
   }
 
   assert.deepEqual(missing, []);
+});
+
+test('public world previews match their source skin and retain HD dimensions', () => {
+  for (const id of skinIds) {
+    const { hero } = skinRegistry[id].identity;
+    const expectedSvg = renderToStaticMarkup(h(WorldArtwork, { skin: id }));
+
+    for (const app of artworkOwners[id]) {
+      const base = join(process.cwd(), 'apps', app, 'public', 'artwork', id);
+      const svg = readFileSync(`${base}.svg`, 'utf8');
+      const png = readFileSync(`${base}.png`);
+
+      assert.equal(svg, expectedSvg, `${app}/${id}.svg must match the shared WorldArtwork source`);
+      assert.match(svg, new RegExp(`data-world-artwork="${id}"`), `${app}/${id}.svg must identify its source skin`);
+      assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], `${app}/${id}.png must be PNG`);
+      assert.equal(png.readUInt32BE(16), 1600, `${app}/${id}.png must be 1600px wide`);
+      assert.equal(png.readUInt32BE(20), 900, `${app}/${id}.png must be 900px tall`);
+      assert.ok(png.length <= 350_000, `${app}/${id}.png exceeds the reviewed 350KB hero-image budget`);
+      assert.ok(hero.endsWith(`${id}.png`));
+    }
+  }
+});
+
+test('stroked artwork shapes declare their fill behavior', () => {
+  for (const skin of skinIds) {
+    const markup = renderToStaticMarkup(h(WorldArtwork, { skin }));
+    const artworkShapes = markup.match(/<(?:path|circle|ellipse|rect|polygon|polyline)\b[^>]*>/g) ?? [];
+
+    for (const shape of artworkShapes) {
+      if (/\bstroke=/.test(shape)) {
+        assert.match(shape, /\bfill=/, `${skin} has a stroked shape with an implicit SVG fill`);
+      }
+    }
+  }
 });
 
 test('every app serves the brand emblem the favicon factory points at', () => {

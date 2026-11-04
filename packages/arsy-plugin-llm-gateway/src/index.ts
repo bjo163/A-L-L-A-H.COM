@@ -199,7 +199,7 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
     // Resolve Route and Fallback Chain
     let resolution;
     try {
-      resolution = await router.resolveRoute(model);
+      resolution = await router.resolveRoute(model, tenant);
     } catch (err: any) {
       reply.status(500);
       return fail('ROUTER_RESOLUTION_ERROR', `Failed resolving route for '${model}': ${err.message}`);

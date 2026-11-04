@@ -162,7 +162,7 @@ ${this.extractText(msg.content)}` : this.extractText(msg.content);
       id: json.id || `msg-${crypto.randomBytes(8).toString('hex')}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: req.model,
+      model: upstreamModel,
       choices: [
         {
           index: 0,
@@ -263,7 +263,7 @@ ${this.extractText(msg.content)}` : this.extractText(msg.content);
                 id: streamId,
                 object: 'chat.completion.chunk',
                 created: Math.floor(Date.now() / 1000),
-                model: req.model,
+                model: upstreamModel,
                 choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }],
               });
             } else if (data.type === 'content_block_delta' && data.delta?.text) {
@@ -271,7 +271,7 @@ ${this.extractText(msg.content)}` : this.extractText(msg.content);
                 id: streamId,
                 object: 'chat.completion.chunk',
                 created: Math.floor(Date.now() / 1000),
-                model: req.model,
+                model: upstreamModel,
                 choices: [{ index: 0, delta: { content: data.delta.text }, finish_reason: null }],
               });
             } else if (data.type === 'message_delta' && data.usage) {
@@ -281,7 +281,7 @@ ${this.extractText(msg.content)}` : this.extractText(msg.content);
                 id: streamId,
                 object: 'chat.completion.chunk',
                 created: Math.floor(Date.now() / 1000),
-                model: req.model,
+                model: upstreamModel,
                 choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
               });
             }

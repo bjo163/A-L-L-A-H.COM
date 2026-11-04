@@ -13,22 +13,37 @@ jobs:
     name: Check Workflow Permissions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v7
+
       - name: Check for overly permissive workflows
         run: |
-          echo "Checking workflow permissions..."
-          find .github/workflows -name "*.yml" -o -name "*.yaml" | while read file; do
-            echo "Checking $file..."
-            # Check for permissions: write-all or contents: write without restriction
-            if grep -q "contents: write" "$file" && ! grep -q "permissions:" "$file"; then
-              echo "⚠️  $file has 'contents: write' without explicit permissions block"
+          # The previous condition (`contents: write` present AND no
+          # `permissions:` at all) was unsatisfiable: `contents: write` only
+          # ever appears inside a permissions block. These checks test what
+          # actually matters and fail the run on findings.
+          status=0
+          for file in $(find .github/workflows -name "*.yml" -o -name "*.yaml"); do
+            # 1. Every workflow must declare an explicit top-level permissions block.
+            if ! grep -qE '^permissions:' "$file"; then
+              echo "::warning file=$file::no top-level permissions block (inherits write-all on many events)"
+              status=1
             fi
-            if grep -q "permissions: write-all" "$file"; then
-              echo "⚠️  $file has 'permissions: write-all' - consider least privilege"
+            # 2. write-all is never acceptable.
+            if grep -qE 'permissions:\s*write-all' "$file"; then
+              echo "::warning file=$file::permissions write-all — use least privilege"
+              status=1
+            fi
+            # 3. pull_request jobs must not hold contents: write at workflow level.
+            if grep -qE '^\s*on:\s*$|pull_request:' "$file" && grep -qE '^permissions:' "$file"; then
+              top_perms=$(awk '/^permissions:/{f=1;next} f && /^[^ ]/{f=0} f' "$file")
+              if echo "$top_perms" | grep -qE 'contents:\s*write' && grep -qE '^\s+pull_request:' "$file"; then
+                echo "::warning file=$file::workflow-level contents: write while triggered by pull_request — scope it to the jobs that need it"
+                status=1
+              fi
             fi
           done
-      
-      - name: Report
-        run: |
-          echo "Permission audit complete. Check logs for warnings."
+          if [ "$status" -ne 0 ]; then
+            echo "Permission audit found issues."
+            exit 1
+          fi
+          echo "Permission audit complete: all workflows declare least-privilege permissions."

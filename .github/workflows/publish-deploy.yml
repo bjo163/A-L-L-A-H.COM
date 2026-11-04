@@ -23,6 +23,15 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Validate Compose configuration
+        # docker-compose.yml fails closed on missing secrets (`:?` interpolation).
+        # Validation only checks the topology, so throwaway placeholder material
+        # is sufficient — it never reaches a built image or a real deployment.
+        env:
+          JWT_SECRET: compose-validation-placeholder-not-a-real-secret
+          ARSY_MASTER_KEY: compose-validation-placeholder-not-a-real-secret
+          BETTER_AUTH_URL: https://arsy.example.com
+          BETTER_AUTH_SECRET: compose-validation-placeholder-not-a-real-secret
+          CORS_ORIGINS: https://example.com
         run: docker compose config --quiet
 
   publish:
@@ -35,6 +44,8 @@ jobs:
         include:
           - component: arsy
             dockerfile: apps/arsy/Dockerfile
+          - component: gate
+            dockerfile: apps/gate/Dockerfile
           - component: dock
             dockerfile: apps/dock/Dockerfile
           - component: headquarter
@@ -101,7 +112,11 @@ jobs:
         shell: bash
         run: |
           version="$(node -p "require('./package.json').version")"
-          tag="v${version}"
+          # package.json version rarely bumps per release, so a plain v<version>
+          # tag collides after the first run and releases silently stop. Derive a
+          # unique tag from the run counter, falling back to the run id.
+          suffix="${GITHUB_RUN_NUMBER:-$GITHUB_RUN_ID}"
+          tag="v${version}-run${suffix}"
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Release $tag already exists; skipping."
           else

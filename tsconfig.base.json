@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": true,
     "target": "ES2022",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "Node16",
@@ -19,7 +20,6 @@
     ".next/**",
     "out/**",
     "build/**",
-    "scripts/**",
     "**/*.test.*",
     "**/*.spec.*"
   ]

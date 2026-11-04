@@ -213,7 +213,7 @@ export class GeminiAdapter implements ProviderAdapter {
       id: `gemini-${crypto.randomBytes(8).toString('hex')}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: req.model,
+      model: upstreamModel,
       choices: [
         {
           index: 0,
@@ -329,7 +329,7 @@ export class GeminiAdapter implements ProviderAdapter {
                 id: streamId,
                 object: 'chat.completion.chunk',
                 created: Math.floor(Date.now() / 1000),
-                model: req.model,
+                model: upstreamModel,
                 choices: [
                   {
                     index: 0,
@@ -345,7 +345,7 @@ export class GeminiAdapter implements ProviderAdapter {
                 id: streamId,
                 object: 'chat.completion.chunk',
                 created: Math.floor(Date.now() / 1000),
-                model: req.model,
+                model: upstreamModel,
                 choices: [
                   {
                     index: 0,

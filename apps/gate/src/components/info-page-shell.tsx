@@ -16,7 +16,7 @@ interface InfoPageShellProps {
   description: string;
   descriptionEn: string;
   /** The info pages have no other title, so their section heading is the h1. */
-  titleAs?: 'h1' | 'h2';
+  as?: 'h1' | 'h2';
   locale?: "id" | "en";
 }
 
@@ -28,13 +28,13 @@ const products = [
   { name: "Moon UI", roleId: "Bahasa Desain Bersama", roleEn: "Shared Design Language", descId: "Token, komponen, pola, aksesibilitas, primitif interaksi", descEn: "Tokens, components, patterns, accessibility, interaction primitives" },
 ];
 
-export function InfoPageShell({ title, titleEn, description, descriptionEn, titleAs = "h1", locale = "id" }: InfoPageShellProps) {
+export function InfoPageShell({ title, titleEn, description, descriptionEn, as: Heading = "h1", locale = "id" }: InfoPageShellProps) {
   const { t } = useTranslationCatalog(locale);
   const en = locale === "en";
 
   return (
     <section className="gate-section" aria-labelledby="info-title">
-      <SectionHeading as={titleAs} titleId="info-title" kicker={t("nav.about")} title={en ? titleEn : title} />
+      <SectionHeading as={Heading} titleId="info-title" kicker={t("nav.about")} title={en ? titleEn : title} />
 
       <MotionFrame effect="enter">
         <div className="gate-measure">

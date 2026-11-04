@@ -10,6 +10,23 @@
     "statusPlanned": "Direncanakan",
     "statusDraft": "Draf"
   },
+  "states": {
+    "errorLabel": "Masalah",
+    "errorTitle": "Halaman ini tidak dapat ditampilkan",
+    "errorCause": "Tampilan berhenti dimuat.",
+    "errorCauseRef": "Tampilan berhenti dimuat. Referensi dukungan:",
+    "errorNext": "Muat ulang halaman ini. Jika terus gagal, kembali ke gerbang.",
+    "errorRetry": "Coba lagi",
+    "backToGate": "Kembali ke gerbang",
+    "loadingLabel": "Memuat",
+    "loadingTitle": "Menyiapkan halaman",
+    "loadingCause": "Halaman gerbang ini sedang dimuat.",
+    "notFoundLabel": "Tidak ditemukan",
+    "notFoundTitle": "Halaman tidak ditemukan",
+    "notFoundCause": "Tidak ada halaman Gate yang terdaftar pada alamat ini. Halamannya mungkin belum pernah ada atau sudah pindah.",
+    "notFoundNext": "Kembali ke gerbang, atau buka peta alam semesta untuk mencari destinasi yang aktif.",
+    "openUniverse": "Buka peta alam semesta"
+  },
   "nav": {
     "home": "Beranda",
     "universe": "Semesta",

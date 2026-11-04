@@ -10,6 +10,23 @@
     "statusPlanned": "Planned",
     "statusDraft": "Draft"
   },
+  "states": {
+    "errorLabel": "Problem",
+    "errorTitle": "This page could not be shown",
+    "errorCause": "The view stopped loading.",
+    "errorCauseRef": "The view stopped loading. Support reference:",
+    "errorNext": "Reload this page. If it keeps failing, return to the gate.",
+    "errorRetry": "Try again",
+    "backToGate": "Return to the gate",
+    "loadingLabel": "Working",
+    "loadingTitle": "Preparing the page",
+    "loadingCause": "This gate page is loading.",
+    "notFoundLabel": "Not found",
+    "notFoundTitle": "Page not found",
+    "notFoundCause": "No Gate page is registered at this address. The page may never have existed or has moved.",
+    "notFoundNext": "Return to the gate, or open the universe map to find an active destination.",
+    "openUniverse": "Open the universe map"
+  },
   "nav": {
     "home": "Home",
     "universe": "Universe",

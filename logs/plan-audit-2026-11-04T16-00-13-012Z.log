@@ -1,0 +1,96 @@
+[2026-11-04T16:00:13.013Z] [INFO] === Plan audit start ===
+[2026-11-04T16:00:13.013Z] [INFO] repo=Z:\project\rocksoul-dx plans=Z:\project\rocksoul-dx\.plans branch=dev dryRun=false log=Z:\project\rocksoul-dx\logs\plan-audit-2026-11-04T16-00-13-012Z.log
+[2026-11-04T16:00:13.015Z] [WARN] skip .plans/2026-11-04T07-23-41-new-platform-capability: not completed (status='proposed')
+[2026-11-04T16:00:13.016Z] [WARN] skip .plans/2026-11-04T08-13-57-new-platform-capability-4: missing report.md
+[2026-11-04T16:00:13.017Z] [WARN] skip .plans/2026-11-04T08-15-20-new-platform-capability-4-simulated-new-platform-capability: not completed (status='proposed')
+[2026-11-04T16:00:13.017Z] [WARN] skip .plans/2026-11-04T08-24-04-new-platform-capability-4-simulated-new-platform-capability: missing report.md
+[2026-11-04T16:00:13.019Z] [WARN] skip .plans/2026-11-04T08-26-37-new-platform-capability-4-simulated-new-platform-capability: not completed (status='proposed')
+[2026-11-04T16:00:13.019Z] [WARN] skip .plans/2026-11-04T08-29-02-new-platform-capability-4-simulated-new-platform-capability: missing report.md
+[2026-11-04T16:00:13.019Z] [WARN] skip .plans/2026-11-04T09-04-05-new-platform-capability-6: missing report.md
+[2026-11-04T16:00:13.020Z] [WARN] skip .plans/2026-11-04T09-09-50-new-platform-capability-7: missing report.md
+[2026-11-04T16:00:13.020Z] [WARN] skip .plans/2026-11-04T09-16-42-new-platform-capability-6-new-platform-capability: simulated scaffold plan
+[2026-11-04T16:00:13.022Z] [WARN] skip .plans/2026-11-04T09-16-42-new-platform-capability-7-new-platform-capability: simulated scaffold plan
+[2026-11-04T16:00:13.022Z] [WARN] skip .plans/2026-11-04T09-19-48-new-platform-capability-8: missing report.md
+[2026-11-04T16:00:13.022Z] [WARN] skip .plans/2026-11-04T09-24-24-new-platform-capability-8-new-platform-capability: report has no substantive content
+[2026-11-04T16:00:13.023Z] [WARN] skip .plans/2026-11-04T09-26-31-new-platform-capability-9: missing report.md
+[2026-11-04T16:00:13.023Z] [WARN] skip .plans/2026-11-04T09-28-52-new-platform-capability-9-new-platform-capability: missing report.md
+[2026-11-04T16:00:13.023Z] [WARN] skip .plans/2026-11-04T09-33-11-new-platform-capability-9-new-platform-capability: report has no substantive content
+[2026-11-04T16:00:13.024Z] [WARN] skip .plans/2026-11-04T09-34-20-new-platform-capability-10: missing report.md
+[2026-11-04T16:00:13.024Z] [WARN] skip .plans/2026-11-04T09-39-26-new-platform-capability-10-new-platform-capability: missing report.md
+[2026-11-04T16:00:13.024Z] [WARN] skip .plans/2026-11-04T09-43-15-new-platform-capability-10-new-platform-capability: report has no substantive content
+[2026-11-04T16:00:13.024Z] [WARN] skip .plans/2026-11-04T09-44-14-new-platform-capability-11: missing report.md
+[2026-11-04T16:00:13.025Z] [WARN] skip .plans/2026-11-04T09-46-02-new-platform-capability-11-new-platform-capability: report has no substantive content
+[2026-11-04T16:00:13.025Z] [WARN] skip .plans/20261103-1914-tighten-lint-types-husky-ci: missing report.md
+[2026-11-04T16:00:13.026Z] [WARN] skip .plans/20261103-2150-agi-ai-gateway-foundation: 12 unchecked task(s) in task.md
+[2026-11-04T16:00:13.026Z] [WARN] skip .plans/20261103-215000-coolify-deploy-recovery: missing report.md
+[2026-11-04T16:00:13.027Z] [WARN] skip .plans/20261103-2207-six-master-dna: 2 unchecked task(s) in task.md
+[2026-11-04T16:00:13.027Z] [WARN] skip .plans/20261103-2309-cherry-pick-moonframe-feature: not completed (status='blocked')
+[2026-11-04T16:00:13.028Z] [WARN] skip .plans/20261103-2310-world-observatory: 2 unchecked task(s) in task.md
+[2026-11-04T16:00:13.028Z] [WARN] skip .plans/20261104-0043-jizz-phase-1-foundation-scaffold: 9 unchecked task(s) in task.md
+[2026-11-04T16:00:13.029Z] [WARN] skip .plans/20261104-0044-jizz-phase-2-typed-adapter-contracts: 5 unchecked task(s) in task.md
+[2026-11-04T16:00:13.029Z] [WARN] skip .plans/20261104-0045-jizz-phase-3-observatory-perspective-screens: 6 unchecked task(s) in task.md
+[2026-11-04T16:00:13.029Z] [WARN] skip .plans/20261104-0046-jizz-phase-4-integration-verification: 8 unchecked task(s) in task.md
+[2026-11-04T16:00:13.030Z] [WARN] skip .plans/20261104-0052-isp-domain-model-contracts: not completed (status='proposed')
+[2026-11-04T16:00:13.031Z] [WARN] skip .plans/20261104-0054-nexus-inventory-nas-registry: 18 unchecked task(s) in task.md
+[2026-11-04T16:00:13.031Z] [WARN] skip .plans/20261104-0105-sentinel-radius-core-issue10: 14 unchecked task(s) in task.md
+[2026-11-04T16:00:13.032Z] [WARN] skip .plans/20261104-0106-sentinel-mikrotik-pppoe-pap-issue11: 11 unchecked task(s) in task.md
+[2026-11-04T16:00:13.032Z] [WARN] skip .plans/20261104-0107-sentinel-radius-accounting-issue12: 11 unchecked task(s) in task.md
+[2026-11-04T16:00:13.033Z] [WARN] skip .plans/20261104-0108-works-sentinel-sync-issue13: 8 unchecked task(s) in task.md
+[2026-11-04T16:00:13.033Z] [WARN] skip .plans/20261104-0109-works-frontend-operator-workspace-issue14: 10 unchecked task(s) in task.md
+[2026-11-04T16:00:13.034Z] [WARN] skip .plans/20261104-0110-harbor-customer-portal-issue15: 9 unchecked task(s) in task.md
+[2026-11-04T16:00:13.035Z] [WARN] skip .plans/20261104-0112-chronicle-syslog-collector-issue16: 9 unchecked task(s) in task.md
+[2026-11-04T16:00:13.035Z] [WARN] skip .plans/20261104-0113-heliogrid-energy-infrastructure: missing report.md
+[2026-11-04T16:00:13.035Z] [WARN] skip .plans/20261104-0113-watchtower-monitoring-probes-issue17: missing report.md
+[2026-11-04T16:00:13.036Z] [WARN] skip .plans/20261104-0114-forge-config-templates-issue18: missing report.md
+[2026-11-04T16:00:13.036Z] [WARN] skip .plans/20261104-0114-moonlab-research-sandbox: missing report.md
+[2026-11-04T16:00:13.036Z] [WARN] skip .plans/20261104-0115-pulse-network-job-lifecycle-issue19: missing report.md
+[2026-11-04T16:00:13.036Z] [WARN] skip .plans/20261104-0115-shadow-creative-production: missing report.md
+[2026-11-04T16:00:13.036Z] [WARN] skip .plans/20261104-0116-cockpit-realtime-operations-console: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0116-oracle-analytics-projections-issue20: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0117-ecosystem-app-boundaries-canon-issue21: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0200-operator-ui-enhancements: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0210-analytics-dashboard: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0335-real-time-alert-system: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0340-multi-tenant-rbac: missing report.md
+[2026-11-04T16:00:13.037Z] [WARN] skip .plans/20261104-0400-observability-telemetry-platform: missing report.md
+[2026-11-04T16:00:13.038Z] [WARN] skip .plans/20261104-0500-observability-advanced: missing report.md
+[2026-11-04T16:00:13.038Z] [WARN] skip .plans/20261104-0510-ir-translation-phase1-canonical-ast: 24 unchecked task(s) in task.md
+[2026-11-04T16:00:13.039Z] [WARN] skip .plans/20261104-0520-ir-translation-phase2-sdui-lowering: 25 unchecked task(s) in task.md
+[2026-11-04T16:00:13.039Z] [WARN] skip .plans/20261104-0530-ir-translation-phase3-sql-lowerer: missing report.md
+[2026-11-04T16:00:13.039Z] [WARN] skip .plans/20261104-0540-ir-translation-phase4-visual-graph-canvas: missing report.md
+[2026-11-04T16:00:13.039Z] [WARN] skip .plans/20261104-0620-i18n-phase2-frontend-runtime-rtl: missing report.md
+[2026-11-04T16:00:13.040Z] [WARN] skip .plans/20261104-0630-i18n-phase3-ai-translation-pipeline: missing report.md
+[2026-11-04T16:00:13.040Z] [WARN] skip .plans/20261104-0700-i18n-extended-overview: missing report.md
+[2026-11-04T16:00:13.040Z] [WARN] skip .plans/20261104-0700-i18n-language-switcher-ui: missing report.md
+[2026-11-04T16:00:13.040Z] [WARN] skip .plans/20261104-0710-i18n-backend-api-rate-limiting-caching: missing report.md
+[2026-11-04T16:00:13.040Z] [WARN] skip .plans/20261104-0720-i18n-key-extraction-generation: missing report.md
+[2026-11-04T16:00:13.041Z] [WARN] skip .plans/20261104-0730-i18n-ci-validation-pipeline: missing report.md
+[2026-11-04T16:00:13.041Z] [WARN] skip .plans/20261104-0740-i18n-multi-tenant-isolation-overrides: missing report.md
+[2026-11-04T16:00:13.041Z] [WARN] skip .plans/20261104-0750-i18n-rtl-accessibility-wcag: missing report.md
+[2026-11-04T16:00:13.041Z] [WARN] skip .plans/20261104-0800-i18n-performance-edge-caching-distribution: missing report.md
+[2026-11-04T16:00:13.041Z] [WARN] skip .plans/20261104-0810-i18n-incontext-visual-editor: missing report.md
+[2026-11-04T16:00:13.042Z] [WARN] skip .plans/20261104-0820-i18n-continuous-localization-tms-sync: missing report.md
+[2026-11-04T16:00:13.042Z] [WARN] skip .plans/20261104-0911-vscode-extension-deep-runtime: 1 unchecked task(s) in task.md
+[2026-11-04T16:00:13.042Z] [WARN] skip .plans/20261104-1200-production-release-docker-gate: missing report.md
+[2026-11-04T16:00:13.043Z] [WARN] skip .plans/20261104-131923-evolve-platform-foundations: not completed (status='unknown')
+[2026-11-04T16:00:13.043Z] [WARN] skip .plans/20261104-1344-vscode-mission-timeline: missing report.md
+[2026-11-04T16:00:13.043Z] [WARN] skip .plans/20261104-1430-bugfix-api-validation: missing report.md
+[2026-11-04T16:00:13.043Z] [WARN] skip .plans/20261104-1450-feature-brainstorm: missing report.md
+[2026-11-04T16:00:13.044Z] [WARN] skip .plans/20261104-1530-bugfix-api-validation-deep: missing report.md
+[2026-11-04T16:00:13.044Z] [WARN] skip .plans/20261104-1550-feature-brainstorm-feature-arch: missing report.md
+[2026-11-04T16:00:13.044Z] [WARN] skip .plans/20261104-175034-evolve-loop-guard: not completed (status='in_progress')
+[2026-11-04T16:00:13.044Z] [WARN] skip .plans/20261104-2030-orbit-cloud-compute-lifecycle: missing report.md
+[2026-11-04T16:00:13.045Z] [WARN] skip .plans/20261104-2157-six-world-premium-skins: missing report.md
+[2026-11-04T16:00:13.045Z] [WARN] skip .plans/20261104-2257-advanced-llm-router-feature: missing report.md
+[2026-11-04T16:00:13.045Z] [WARN] skip .plans/20261104-docker-compose-domains: missing report.md
+[2026-11-04T16:00:13.045Z] [WARN] skip .plans/20261104-domain-routing: not completed (status='proposed')
+[2026-11-04T16:00:13.046Z] [WARN] skip .plans/20261104-gate-empire-gateway: missing report.md
+[2026-11-04T16:00:13.046Z] [WARN] skip .plans/20261104-moonsky-integration: missing report.md
+[2026-11-04T16:00:13.046Z] [WARN] skip .plans/20261104-new-capability-1: missing report.md
+[2026-11-04T16:00:13.046Z] [WARN] skip .plans/20261104-new-capability-2: missing report.md
+[2026-11-04T16:00:13.046Z] [WARN] skip .plans/20261104-new-capability-3: missing report.md
+[2026-11-04T16:00:13.080Z] [WARN] skip .plans/20261104-type-safety-improvement-spec: missing report.md
+[2026-11-04T16:00:15.804Z] [INFO] committed: chore(plans): archive 0 audited plan(s) as closed issues [skip ci] (skipHooks=true)
+[2026-11-04T16:00:19.865Z] [INFO] pushed to dev
+[2026-11-04T16:00:19.865Z] [INFO] === Summary ===
+[2026-11-04T16:00:19.866Z] [INFO] total=91 processed=0 invalid=90 errors=0

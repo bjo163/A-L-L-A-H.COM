@@ -9,8 +9,8 @@ import { Badge } from "../components/badge";
 import { Dialog } from "../components/dialog";
 import { cn } from "../lib/utils";
 import { MotionFrame } from "../primitives/visual-effects";
-import { SkinRoot } from "../skins/root";
 import { skinIds, skinRegistry, type SkinId } from "../skins/registry";
+import { SkinScope, WorldArtwork } from "./world-artwork";
 import { Kicker } from "./kicker";
 import { PageHero } from "./page-hero";
 import { SectionHeading } from "./section-heading";
@@ -86,7 +86,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
       </nav>
 
       <div className="mw-skin-lab__comparison">
-        <SkinRoot skin={activeSkin} className="mw-skin-lab__skin-root">
+        <SkinScope skin={activeSkin} className="mw-skin-lab__skin-root">
           <div className="mw-skin-lab__app-shell">
             <header className="mw-skin-lab__app-header">
               <div className="mw-skin-lab__app-brand">
@@ -108,11 +108,13 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
               <section id="lab-overview" aria-labelledby="lab-hero-title">
                 <MotionFrame effect="enter">
                   <PageHero
-                    titleAs="h2"
+                    as="h2"
                     titleId="lab-hero-title"
                     kicker="ENTRY / COMPARISON TASK"
                     title="A task that reads the same across all worlds."
                     summary="Navigation, cards, forms, status messages, states, dialogs, and focus behavior are equivalent while composition, geometry, typography, material, and motion change by design."
+                    media={<WorldArtwork skin={activeSkin} />}
+                    mediaLayout="side"
                     actions={
                       <>
                         <Button type="button" onClick={() => setDialogOpen(true)}>
@@ -273,7 +275,7 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
               </section>
             </main>
           </div>
-        </SkinRoot>
+        </SkinScope>
       </div>
 
       <Dialog

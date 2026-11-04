@@ -10,6 +10,7 @@ export function VisualEffectsToggle() {
     <button
       className="mw-effects-toggle"
       type="button"
+      data-slot="effects-toggle"
       aria-pressed={!paused}
       aria-label={
         prefersReducedMotion

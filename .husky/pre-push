@@ -1,47 +1,31 @@
 #!/bin/sh
 
+TOTAL=11
+STEP=0
+
+gate() {
+  STEP=$((STEP + 1))
+  LABEL="$1"
+  echo "[HUSKY] ${STEP}/${TOTAL} ${LABEL}..."
+  shift
+  if ! "$@"; then
+    echo "[HUSKY ERROR] ${LABEL} failed. Push aborted."
+    exit 1
+  fi
+}
+
 echo "[HUSKY] Running Full Monorepo Build Gate..."
 
-echo "[HUSKY] 1/5 Re-running Strict TypeScript Typecheck..."
-pnpm typecheck || {
-  echo "[HUSKY ERROR] TypeScript compilation failed. Push aborted."
-  exit 1
-}
-
-echo "[HUSKY] 2/5 Building Dock App..."
-pnpm dock:build || {
-  echo "[HUSKY ERROR] Dock build failed. Push aborted."
-  exit 1
-}
-
-echo "[HUSKY] 3/5 Building Headquarter App..."
-pnpm headquarter:build || {
-  echo "[HUSKY ERROR] Headquarter build failed. Push aborted."
-  exit 1
-}
-
-echo "[HUSKY] 4/5 Building ID App..."
-pnpm id:build || {
-  echo "[HUSKY ERROR] ID build failed. Push aborted."
-  exit 1
-}
-
-echo "[HUSKY] 5/5 Building Jizz App..."
-pnpm jizz:build || {
-  echo "[HUSKY ERROR] Jizz build failed. Push aborted."
-  exit 1
-}
-
-echo "[HUSKY] 6/6 Building Arsy Fastify Hub..."
-pnpm arsy:build || {
-  echo "[HUSKY ERROR] Arsy build failed. Push aborted."
-  exit 1
-}
-
-echo "[HUSKY] 7/7 Building VS Code Extension..."
-pnpm extension:build || {
-  echo "[HUSKY ERROR] Extension build failed. Push aborted."
-  exit 1
-}
+gate "Re-running Strict TypeScript Typecheck" pnpm typecheck
+gate "Building Dock App" pnpm dock:build
+gate "Building Headquarter App" pnpm headquarter:build
+gate "Building ID App" pnpm id:build
+gate "Building Jizz App" pnpm jizz:build
+gate "Building Gate App" pnpm gate:build
+gate "Building Arsy Fastify Hub" pnpm arsy:build
+gate "Building Sentinel RADIUS Daemon" pnpm sentinel:build
+gate "Building VS Code Extension" pnpm extension:build
+gate "Running Design System Tests" pnpm ui:test
+gate "Running Skin Contrast Gate" pnpm ui:contrast
 
 echo "[HUSKY] Pre-push gate passed successfully."

@@ -9,7 +9,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <RouteShell>
+    <RouteShell as="main">
       <StatePanel
         kind="error"
         cause={

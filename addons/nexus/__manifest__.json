@@ -1,14 +1,11 @@
 {
   "name": "nexus",
   "version": "0.1.0",
-  "description": "Network Inventory & MikroTik NAS Registry Foundation",
-  "category": "network",
-  "dependencies": ["base"],
-  "models": [
-    "nexus.site",
-    "nexus.device",
-    "nexus.nas",
-    "nexus.ip_pool",
-    "nexus.nas_secret_log"
-  ]
+  "category": "Network",
+  "summary": "Network Inventory & MikroTik NAS Registry Foundation",
+  "depends": ["base"],
+  "models": ["nexus.site", "nexus.device", "nexus.nas", "nexus.ip_pool", "nexus.nas_secret_log"],
+  "views": [],
+  "installable": true,
+  "application": true
 }

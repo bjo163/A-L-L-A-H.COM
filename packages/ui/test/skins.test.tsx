@@ -9,6 +9,7 @@ import { VisualEffectsToggle } from '../src/blocks/visual-effects-toggle';
 import { RawCluster, RawContainer, RawGrid, RawSection, RawStack } from '../src/raw';
 import { VisualEffectsProvider } from '../src/primitives/visual-effects';
 import { SkinRoot } from '../src/skins/root';
+import { SkinScope, WorldArtwork } from '../src/blocks/world-artwork';
 import {
   defaultSkinId,
   resolveSkinId,
@@ -47,6 +48,7 @@ test('each skin keeps semantic text and control colors legible', () => {
     for (const background of [colors.canvas, colors.surface, colors.elevatedSurface]) {
       if (contrast(colors.text, background) < 4.5) failures.push(`${id}: text on ${background}`);
       if (contrast(colors.mutedText, background) < 4.5) failures.push(`${id}: muted text on ${background}`);
+      if (contrast(colors.accentLabel, background) < 4.5) failures.push(`${id}: accent label on ${background}`);
       if (contrast(colors.focus, background) < 3) failures.push(`${id}: focus on ${background}`);
       if (contrast(colors.border, background) < 3) failures.push(`${id}: border on ${background}`);
     }
@@ -58,6 +60,36 @@ test('each skin keeps semantic text and control colors legible', () => {
   }
 
   assert.deepEqual(failures, []);
+});
+
+test('world artwork is vector-based and route skin scopes reuse the app motion provider', () => {
+  const signatures = new Set<string>();
+
+  for (const id of skinIds) {
+    const artwork = renderToStaticMarkup(<WorldArtwork skin={id} />);
+    assert.match(artwork, /viewBox="0 0 1600 900"/);
+    assert.match(artwork, /width="1600" height="900"/);
+    assert.match(artwork, new RegExp(`data-world-artwork="${id}"`));
+    assert.match(artwork, /aria-hidden="true"/);
+    assert.match(artwork, /<defs>/);
+    const signature = artwork.match(/data-artwork-signature="([^"]+)"/)?.[1];
+    assert.ok(signature, `${id}: artwork must declare its visual signature`);
+    signatures.add(signature);
+  }
+
+  assert.equal(signatures.size, skinIds.length);
+
+  const markup = renderToStaticMarkup(
+    <SkinRoot skin="mycelium">
+      <SkinScope skin="riot-anarchy">
+        <WorldArtwork skin="riot-anarchy" />
+      </SkinScope>
+    </SkinRoot>
+  );
+
+  assert.match(markup, /class="mw-skin-root mw-skin-scope" data-moonframe-skin="riot-anarchy"/);
+  assert.match(markup, /--mw-canvas:#e9e3d3/);
+  assert.equal((markup.match(/class="mw-motion-root"/g) ?? []).length, 1);
 });
 
 test('all six skins have distinct geometry, typography, and motion recipes', () => {
@@ -154,6 +186,10 @@ test('component recipes remain scoped to SkinRoot', () => {
     assert.match(styles, new RegExp(`\\.mw-skin-root\\[data-moonframe-skin='${id}'\\] \\.mw-ambient-layer`));
   }
   assert.match(styles, /data-effects-paused='true'\].*animation-play-state: paused/s);
+  assert.match(styles, /@media \(prefers-reduced-motion: no-preference\)[\s\S]*\.mw-world-artwork__orbit/);
+  assert.match(styles, /\.mw-motion-root:not\(\[data-effects-paused='true'\]\) \.mw-world-artwork__rain/);
+  assert.match(styles, /\.mw-motion-root:not\(\[data-effects-paused='true'\]\) \.mw-world-artwork__print/);
+  assert.match(styles, /@keyframes mw-art-print/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 

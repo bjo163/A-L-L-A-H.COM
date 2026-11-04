@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
-import { EcosystemNavbar, Link as MwLink, StatusMessage, resolveEcosystemEndpoints } from '@moonwitness/ui';
+import { EcosystemNavbar, Link as MwLink, StatusMessage, resolveEcosystemEndpoints, useEcosystemSession } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 
 const workspaces = [
@@ -15,38 +15,14 @@ const workspaces = [
   { href: '/knowledge', label: 'Knowledge', note: 'Qorpus search' },
 ];
 
+const sessionAuth = {
+  getCurrentUser: () => mwClient.auth.getCurrentUser(),
+  signOut: () => mwClient.auth.signOut(),
+};
+
 export function HeadquarterShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [authNotice, setAuthNotice] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    mwClient.auth.getCurrentUser()
-      .then((res) => {
-        if (active && res?.user) setUser(res.user);
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setAuthNotice(error instanceof Error ? error.message : 'Session status is unavailable.');
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await mwClient.auth.signOut();
-      setUser(null);
-      setAuthNotice(null);
-    } catch (error) {
-      setAuthNotice(error instanceof Error ? error.message : 'Unable to sign out.');
-    }
-  };
+  const { user, notice: authNotice, signOut } = useEcosystemSession(sessionAuth);
 
   return (
     <div className="hq-shell">
@@ -55,7 +31,7 @@ export function HeadquarterShell({ children }: { children: ReactNode }) {
         currentApp="headquarter"
         userName={user?.name}
         userEmail={user?.email}
-        onSignOut={handleSignOut}
+        onSignOut={signOut}
       />
       {authNotice && (
         <StatusMessage tone="warning" title="Session status">

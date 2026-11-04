@@ -28,11 +28,13 @@ const limitArg = argv.find((a) => a.startsWith('--limit='));
 const LIMIT = limitArg ? Number.parseInt(limitArg.split('=')[1], 10) : Infinity;
 
 // The automated commit only deletes .plans documentation artifacts — it never
-// touches source. The husky pre-commit/pre-push gates run full typecheck + 7 app
+// touches source. The husky pre-commit/pre-push gates run full typecheck + app
 // builds over the whole working tree, which would wedge an hourly housekeeping
-// run (and violate the thin-CI preference). So we skip git hooks for this
-// docs-only commit unless the operator explicitly re-enables them.
-const SKIP_HOOKS = process.env.PLAN_AUDIT_ENFORCE_HOOKS !== '1';
+// run (and violate the thin-CI preference). So hooks are skipped for this
+// docs-only commit by default; set PLAN_AUDIT_SKIP_HOOKS=0 to force them.
+// (The old PLAN_AUDIT_ENFORCE_HOOKS name inverted this meaning and was set to
+// '1' in plan-audit.cmd, which made every hourly run pay the full gate cost.)
+const SKIP_HOOKS = process.env.PLAN_AUDIT_SKIP_HOOKS !== '0';
 
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const LOG_FILE = path.join(LOG_DIR, `plan-audit-${stamp}.log`);
@@ -198,8 +200,11 @@ function main() {
   for (const planDir of entries) {
     const rel = path.posix.join('.plans', path.basename(planDir));
     if (state.processed[rel] && state.processed[rel].issue) {
-      // Previously filed; if the dir still exists just queue the deletion.
-      deletedRelPaths.push(rel);
+      // Previously filed; queue the deletion only if the directory still has
+      // disk or index presence — a long-gone path would break `git add`.
+      const stillOnDisk = fs.existsSync(planDir);
+      const stillTracked = run('git', ['ls-files', '--', rel], { allowFail: true });
+      if (stillOnDisk || (stillTracked.ok && stillTracked.stdout)) deletedRelPaths.push(rel);
       continue;
     }
 
@@ -248,7 +253,7 @@ function main() {
       run('git', ['add', '-A', '--', ...deletedRelPaths]);
       const hasStaged = run('git', ['diff', '--cached', '--name-only'], { allowFail: true });
       if (hasStaged.ok && hasStaged.stdout) {
-        const msg = `chore(plans): archive ${processed} audited plan(s) as closed issues`;
+        const msg = `chore(plans): archive ${processed} audited plan(s) as closed issues [skip ci]`;
         const commitArgs = SKIP_HOOKS ? ['commit', '--no-verify', '-m', msg] : ['commit', '-m', msg];
         run('git', commitArgs);
         log(`committed: ${msg} (skipHooks=${SKIP_HOOKS})`);

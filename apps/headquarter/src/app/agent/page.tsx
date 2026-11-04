@@ -10,6 +10,7 @@ import {
   CardContent,
   Input,
   Badge,
+  RouteShell,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import { RemoteAgentControlPanel } from '@/components/remote-agent-control-panel';
@@ -176,8 +177,7 @@ export default function AgentStudioPage() {
   };
 
   return (
-    <div className="hq-route hq-agent">
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
+    <RouteShell as="main" className="hq-route hq-agent flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
         {/* Agent Controls */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -373,7 +373,6 @@ SDUI view rendering - preview not yet connected to backend
           )}
         </section>
         <RemoteAgentControlPanel />
-      </main>
-    </div>
+    </RouteShell>
   );
 }

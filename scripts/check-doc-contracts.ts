@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 interface DocMetadata {
   contract?: string;
@@ -26,7 +27,7 @@ const REQUIRED_DOCS: Array<{ path: string; expectedId: string; owner: string }> 
   { path: 'DOCUMENTATION_CONTRACT.md', expectedId: 'DOCUMENTATION_CONTRACT', owner: 'engineering' },
   { path: 'BLUEPRINT.md', expectedId: 'BLUEPRINT', owner: 'architecture' },
   { path: 'DESIGN.md', expectedId: 'DESIGN', owner: 'product-design' },
-  { path: 'BACKLOG.md', expectedId: 'BACKLOG', owner: 'product-management' },
+  { path: 'BACKLOG.md', expectedId: 'BACKLOG', owner: 'product' },
   { path: 'ROADMAP.md', expectedId: 'ROADMAP', owner: 'product-management' },
   { path: 'CHANGELOG.md', expectedId: 'CHANGELOG', owner: 'engineering' },
   { path: 'DECISIONS.md', expectedId: 'DECISIONS', owner: 'architecture' },
@@ -38,6 +39,8 @@ const REQUIRED_DOCS: Array<{ path: string; expectedId: string; owner: string }> 
 ];
 
 const VALID_STATUSES = ['discovered', 'ready', 'in_progress', 'implemented', 'verified', 'released'];
+// DNA canon files carry their own lifecycle vocabulary (approved/engine-contract).
+const VALID_DNA_STATUSES = [...VALID_STATUSES, 'approved', 'engine-contract', 'draft'];
 const SLOP_PATTERNS = [
   /\blorem ipsum\b/i,
   /\bTODO: write description\b/i,
@@ -155,8 +158,44 @@ function checkPlansStandard(repoRoot: string): { errors: string[]; plansChecked:
   return { errors, plansChecked };
 }
 
+function checkDnaCanon(repoRoot: string): string[] {
+  const dnaDir = path.resolve(repoRoot, 'DNA');
+  const errors: string[] = [];
+  if (!fs.existsSync(dnaDir)) {
+    return ['DNA/ canon directory is missing entirely'];
+  }
+  const files = fs.readdirSync(dnaDir).filter((name) => name.endsWith('.md'));
+  if (files.length === 0) {
+    return ['DNA/ contains no Markdown canon files'];
+  }
+  for (const name of files) {
+    const relPath = `DNA/${name}`;
+    const content = fs.readFileSync(path.join(dnaDir, name), 'utf-8');
+    const { metadata, body } = parseFrontmatter(content);
+    if (!metadata) {
+      errors.push(`[${relPath}] Missing YAML frontmatter standard (---)`);
+      continue;
+    }
+    if (!metadata.version || !/^\d+\.\d+\.\d+$/.test(metadata.version)) {
+      errors.push(`[${relPath}] Invalid semantic version: "${metadata.version}"`);
+    }
+    if (!metadata.owner) {
+      errors.push(`[${relPath}] Missing owner field in frontmatter`);
+    }
+    if (!metadata.status || !VALID_DNA_STATUSES.includes(metadata.status)) {
+      errors.push(`[${relPath}] Invalid status: "${metadata.status}". Allowed: ${VALID_DNA_STATUSES.join(', ')}`);
+    }
+    if (!metadata.last_verified || !/^\d{4}-\d{2}-\d{2}$/.test(metadata.last_verified)) {
+      errors.push(`[${relPath}] Invalid date format for last_verified (expected YYYY-MM-DD): "${metadata.last_verified}"`);
+    }
+    errors.push(...checkRelativeLinks(relPath, body, repoRoot));
+    errors.push(...checkAntislop(relPath, body));
+  }
+  return errors;
+}
+
 function main() {
-  const repoRoot = path.resolve(__dirname, '..');
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   console.log(`\n============================================================`);
   console.log(`  A-L-L-A-H.COM Documentation Contract & Linter Engine`);
   console.log(`============================================================\n`);
@@ -209,6 +248,15 @@ function main() {
         insp.errors.push(`Invalid date format for last_verified (expected YYYY-MM-DD): "${metadata.last_verified}"`);
         frontmatterScore = Math.max(0, frontmatterScore - 1);
       }
+      // The contract declares owner on every governed document — enforce it,
+      // and against the expected owner when the register names one.
+      if (!metadata.owner) {
+        insp.errors.push(`Missing owner field in frontmatter`);
+        frontmatterScore = Math.max(0, frontmatterScore - 2);
+      } else if (req.owner && metadata.owner !== req.owner) {
+        insp.errors.push(`Invalid owner: expected "${req.owner}", got "${metadata.owner}"`);
+        frontmatterScore = Math.max(0, frontmatterScore - 2);
+      }
     }
 
     const linkErrors = checkRelativeLinks(req.path, body, repoRoot);
@@ -231,6 +279,13 @@ function main() {
   if (planCheck.errors.length > 0) {
     totalErrors.push(...planCheck.errors);
     changeSyncScore = Math.max(0, changeSyncScore - planCheck.errors.length * 5);
+  }
+
+  // DNA canon coverage: every design-DNA document must obey the same contract.
+  const dnaErrors = checkDnaCanon(repoRoot);
+  if (dnaErrors.length > 0) {
+    totalErrors.push(...dnaErrors);
+    frontmatterScore = Math.max(0, frontmatterScore - dnaErrors.length * 2);
   }
 
   for (const insp of inspections) {
@@ -267,7 +322,7 @@ function main() {
   }
 
   if (finalScore < 100 || totalErrors.length > 0) {
-    console.error(`❌ Documentation Contract Validation FAILED. Score ${finalScore} < 95 or violations present.`);
+    console.error(`❌ Documentation Contract Validation FAILED. Score ${finalScore}/100 (threshold: 100)${totalErrors.length > 0 ? ` with ${totalErrors.length} violation(s)` : ''}.`);
     process.exit(1);
   }
 

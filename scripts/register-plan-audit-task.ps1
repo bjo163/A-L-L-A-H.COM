@@ -12,7 +12,7 @@ $cmd  = Join-Path $repo "scripts\plan-audit.cmd"
 
 if (-not (Test-Path $cmd)) { throw "Runner not found: $cmd" }
 
-# The .cmd wrapper resolves node, sets PLAN_AUDIT_ENFORCE_HOOKS, and runs the audit.
+# The .cmd wrapper resolves node, sets PLAN_AUDIT_SKIP_HOOKS, and runs the audit.
 $action  = New-ScheduledTaskAction -Execute $cmd -WorkingDirectory $repo
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes($FirstRunDelayMinutes) `
     -RepetitionInterval (New-TimeSpan -Hours $IntervalHours) `
@@ -25,6 +25,6 @@ Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
     -Settings $settings -Force | Out-Null
 
 Write-Host "Registered '$TaskName' to run every $IntervalHours hour(s)."
-Write-Host "  runner : $cmd (sets PLAN_AUDIT_ENFORCE_HOOKS=1)"
+Write-Host "  runner : $cmd (sets PLAN_AUDIT_SKIP_HOOKS=1 for docs-only commits)"
 Write-Host "Remove with: Unregister-ScheduledTask -TaskName $TaskName -Confirm:`$false"
 Write-Host "NOTE: interactive-user task; runs only while you are signed in."

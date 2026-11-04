@@ -7,5 +7,6 @@ export {
   resolveSkinId,
   skinIds,
   skinRegistry,
+  buildAppIcons,
 } from './registry';
-export type { SkinDefinition, SkinId, SkinStyle, SkinTokens } from './registry';
+export type { AppIconDescriptor, SkinDefinition, SkinId, SkinIdentity, SkinStyle, SkinTokens } from './registry';

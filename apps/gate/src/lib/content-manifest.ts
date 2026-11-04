@@ -1,4 +1,5 @@
 import manifest from "@/content/manifest.json";
+import { hasIconName, type IconName } from "@moonwitness/ui";
 
 export interface Provenance {
   sourceType: "quran" | "hadith" | "historical" | "personal" | "fictional";
@@ -50,7 +51,8 @@ export interface Destination {
   description: string;
   href: string;
   status: "available" | "unavailable" | "restricted" | "planned";
-  icon: string;
+  /** Governed by the design system's icon registry; unknown names are dropped at read time. */
+  icon: IconName;
 }
 
 export interface GateManifest {
@@ -110,7 +112,13 @@ export function getFeaturedTransmission(): Transmission | undefined {
 }
 
 export function getDestinations(): Destination[] {
-  return typedManifest.destinations;
+  return typedManifest.destinations.filter((destination) => {
+    if (!hasIconName(destination.icon)) {
+      console.warn(`[gate] manifest destination "${destination.id}" uses unknown icon "${destination.icon}"`);
+      return false;
+    }
+    return true;
+  });
 }
 
 export function getDestinationById(id: string): Destination | undefined {

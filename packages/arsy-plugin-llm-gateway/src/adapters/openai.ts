@@ -152,7 +152,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       id: json.id || `chatcmpl-${crypto.randomBytes(8).toString('hex')}`,
       object: 'chat.completion',
       created: json.created || Math.floor(Date.now() / 1000),
-      model: req.model,
+      model: upstreamModel,
       choices: (json.choices || []).map((c: any, idx: number) => {
         const message: any = {
           role: c.message?.role || 'assistant',
@@ -251,7 +251,7 @@ export class OpenAiAdapter implements ProviderAdapter {
               id: data.id || `chatcmpl-${crypto.randomBytes(6).toString('hex')}`,
               object: 'chat.completion.chunk',
               created: data.created || Math.floor(Date.now() / 1000),
-              model: req.model,
+              model: upstreamModel,
               choices: (data.choices || []).map((c: any, idx: number) => {
                 const delta: any = {
                   role: c.delta?.role,
@@ -307,7 +307,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       id: `chatcmpl-${crypto.randomBytes(8).toString('hex')}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: req.model,
+      model: upstreamModel,
       choices: [
         {
           index: 0,
@@ -341,7 +341,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       id: streamId,
       object: 'chat.completion.chunk',
       created: Math.floor(Date.now() / 1000),
-      model: req.model,
+      model: upstreamModel,
       choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }],
     });
 
@@ -350,7 +350,7 @@ export class OpenAiAdapter implements ProviderAdapter {
         id: streamId,
         object: 'chat.completion.chunk',
         created: Math.floor(Date.now() / 1000),
-        model: req.model,
+        model: upstreamModel,
         choices: [{ index: 0, delta: { content: `${word} ` }, finish_reason: null }],
       });
     }
@@ -360,7 +360,7 @@ export class OpenAiAdapter implements ProviderAdapter {
       id: streamId,
       object: 'chat.completion.chunk',
       created: Math.floor(Date.now() / 1000),
-      model: req.model,
+      model: upstreamModel,
       choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
     });
 

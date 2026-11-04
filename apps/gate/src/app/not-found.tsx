@@ -1,20 +1,23 @@
 import { LinkButton, RouteShell, StatePanel } from '@moonwitness/ui';
+import { catalogCopy } from '@/lib/translation-catalog';
 
 export default function NotFound() {
+  const t = catalogCopy();
+
   return (
     <RouteShell as="main" className="gate-shell">
       <StatePanel
         kind="error"
         role="status"
-        label="Tidak ditemukan"
-        title="Halaman tidak ditemukan"
-        cause="Tidak ada halaman Gate yang terdaftar pada alamat ini. Halamannya mungkin belum pernah ada atau sudah pindah."
-        nextAction="Kembali ke gerbang, atau buka peta alam semesta untuk mencari destinasi yang aktif."
+        label={t('states.notFoundLabel')}
+        title={t('states.notFoundTitle')}
+        cause={t('states.notFoundCause')}
+        nextAction={t('states.notFoundNext')}
         action={
           <>
-            <LinkButton href="/">Kembali ke gerbang</LinkButton>
+            <LinkButton href="/">{t('states.backToGate')}</LinkButton>
             <LinkButton href="/universe" variant="outline">
-              Buka peta alam semesta
+              {t('states.openUniverse')}
             </LinkButton>
           </>
         }

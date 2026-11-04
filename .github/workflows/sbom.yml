@@ -17,21 +17,28 @@ jobs:
     name: Generate SBOM
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
         with:
-          node-version: '24'
-          cache: 'pnpm'
-      
+          version: 12.16.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
       - run: pnpm install --frozen-lockfile
-      
+
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
           format: spdx-json
           output-file: sbom.spdx.json
-      
+          # Repo ships pnpm; the action defaults to npm and would mis-scan.
+          package-manager: pnpm
+
       - name: Upload SBOM
         uses: github/codeql-action/upload-sbom@v3
         with:

@@ -21,6 +21,7 @@ export interface SkinTokens {
     border: string;
     accent: string;
     accentText: string;
+    accentLabel: string;
     focus: string;
     success: string;
     danger: string;
@@ -57,10 +58,20 @@ export interface SkinTokens {
   };
 }
 
+export interface SkinIdentity {
+  /** Hero artwork served from the rendering app's public directory. Apps reference this path instead of hand-writing a URL literal. */
+  hero: string;
+  /** Per-world brand emblem served from the rendering app's public directory. */
+  emblem: string;
+  /** Browser-chrome color for viewport.themeColor; always the world canvas. */
+  themeColor: string;
+}
+
 export interface SkinDefinition {
   id: SkinId;
   name: string;
   signature: string;
+  identity: SkinIdentity;
   tokens: SkinTokens;
 }
 
@@ -69,6 +80,7 @@ export const skinRegistry = {
     id: 'imperium-lumen',
     name: 'IMPERIUM LUMEN',
     signature: 'Monumental frames, axial order, and restrained warm light.',
+    identity: { hero: '/artwork/imperium-lumen.png', emblem: '/brand/emblem.svg', themeColor: '#11110f' },
     tokens: {
       colors: {
         canvas: '#11110f',
@@ -79,6 +91,7 @@ export const skinRegistry = {
         border: '#908b7d',
         accent: '#d3b77b',
         accentText: '#17150f',
+        accentLabel: '#f4f1e8',
         focus: '#f3d996',
         success: '#6ec39a',
         danger: '#ff938b',
@@ -119,6 +132,7 @@ export const skinRegistry = {
     id: 'lunar-chronicles',
     name: 'LUNAR CHRONICLES',
     signature: 'Layered atlas surfaces and observatory-grade alignment.',
+    identity: { hero: '/artwork/lunar-chronicles.png', emblem: '/brand/emblem.svg', themeColor: '#101923' },
     tokens: {
       colors: {
         canvas: '#101923',
@@ -129,6 +143,7 @@ export const skinRegistry = {
         border: '#9eacb8',
         accent: '#c5d5e1',
         accentText: '#14202a',
+        accentLabel: '#f1f5f8',
         focus: '#f0cc75',
         success: '#79d2a4',
         danger: '#ff9b91',
@@ -169,6 +184,7 @@ export const skinRegistry = {
     id: 'rocksoul',
     name: 'ROCKSOUL',
     signature: 'Cinematic framing, tactile edges, and selective crimson.',
+    identity: { hero: '/artwork/rocksoul.png', emblem: '/brand/emblem.svg', themeColor: '#141516' },
     tokens: {
       colors: {
         canvas: '#141516',
@@ -179,6 +195,7 @@ export const skinRegistry = {
         border: '#aaa39b',
         accent: '#bd4144',
         accentText: '#fff8f2',
+        accentLabel: '#f1eee8',
         focus: '#efd278',
         success: '#83d1a2',
         danger: '#ff9890',
@@ -219,6 +236,7 @@ export const skinRegistry = {
     id: 'nexus-paradox',
     name: 'NEXUS PARADOX',
     signature: 'Instrument planes, clipped coordinates, and precise signals.',
+    identity: { hero: '/artwork/nexus-paradox.png', emblem: '/brand/emblem.svg', themeColor: '#0c171c' },
     tokens: {
       colors: {
         canvas: '#0c171c',
@@ -229,6 +247,7 @@ export const skinRegistry = {
         border: '#92b8be',
         accent: '#55c4d2',
         accentText: '#071a1e',
+        accentLabel: '#eff9fa',
         focus: '#f3d06e',
         success: '#80d4a9',
         danger: '#ff968e',
@@ -269,6 +288,7 @@ export const skinRegistry = {
     id: 'riot-anarchy',
     name: 'RIOT ANARCHY',
     signature: 'Hard print edges, poster contrast, and controlled disruption.',
+    identity: { hero: '/artwork/riot-anarchy.png', emblem: '/brand/emblem.svg', themeColor: '#e9e3d3' },
     tokens: {
       colors: {
         canvas: '#e9e3d3',
@@ -279,6 +299,7 @@ export const skinRegistry = {
         border: '#34332e',
         accent: '#a5282d',
         accentText: '#fffaf1',
+        accentLabel: '#171715',
         focus: '#0759a8',
         success: '#155e35',
         danger: '#8f1b1f',
@@ -319,6 +340,7 @@ export const skinRegistry = {
     id: 'mycelium',
     name: 'MYCELIUM',
     signature: 'Connected organic surfaces and quiet mineral color.',
+    identity: { hero: '/artwork/mycelium.png', emblem: '/brand/emblem.svg', themeColor: '#10201b' },
     tokens: {
       colors: {
         canvas: '#10201b',
@@ -329,6 +351,7 @@ export const skinRegistry = {
         border: '#9eb4a3',
         accent: '#9dc8ad',
         accentText: '#12231a',
+        accentLabel: '#f1f4e8',
         focus: '#e5cc79',
         success: '#8bd5a6',
         danger: '#ff9b91',
@@ -369,6 +392,29 @@ export const skinRegistry = {
 
 export const defaultSkinId: SkinId = 'imperium-lumen';
 
+export interface AppIconDescriptor {
+  rel: string;
+  url: string;
+  type?: string;
+  sizes?: string;
+}
+
+/**
+ * Favicons derived from a world's identity, so one owner (the skin registry)
+ * decides emblem paths and each app spreads the result into its `Metadata`.
+ */
+export function buildAppIcons(skin: SkinId): {
+  icon: AppIconDescriptor[];
+  apple: AppIconDescriptor[];
+} {
+  const { emblem } = skinRegistry[skin].identity;
+
+  return {
+    icon: [{ rel: 'icon', url: emblem, type: 'image/svg+xml', sizes: 'any' }],
+    apple: [{ rel: 'apple-touch-icon', url: emblem, sizes: '180x180' }],
+  };
+}
+
 const skinIdSet: ReadonlySet<string> = new Set(skinIds);
 
 export function isSkinId(value: string): value is SkinId {
@@ -404,6 +450,7 @@ export function getSkinStyle(skin: SkinDefinition): SkinStyle {
     '--mw-border': colors.border,
     '--mw-accent': colors.accent,
     '--mw-accent-text': colors.accentText,
+    '--mw-accent-label': colors.accentLabel,
     '--mw-focus': colors.focus,
     '--mw-success': colors.success,
     '--mw-danger': colors.danger,

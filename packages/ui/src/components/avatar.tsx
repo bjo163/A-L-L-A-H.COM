@@ -22,12 +22,23 @@ export interface AvatarProps
   src?: string;
 }
 
+function initialsOf(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('');
+}
+
 export function Avatar({ className, size, name, src, ...props }: AvatarProps) {
-  const initial = name ? name.charAt(0).toUpperCase() : 'U';
+  const initials = name ? initialsOf(name) : 'U';
 
   return (
     <div
       className={cn(avatarVariants({ size, className }))}
+      data-slot="avatar"
+      {...(src ? {} : { role: 'img', 'aria-label': name ?? 'User' })}
       {...props}
     >
       {src ? (
@@ -39,7 +50,7 @@ export function Avatar({ className, size, name, src, ...props }: AvatarProps) {
           className="mw-avatar__image"
         />
       ) : (
-        <span>{initial}</span>
+        <span>{initials}</span>
       )}
     </div>
   );

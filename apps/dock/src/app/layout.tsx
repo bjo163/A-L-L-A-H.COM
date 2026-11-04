@@ -1,26 +1,25 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { SkipLink, SkinRoot } from "@moonwitness/ui";
+import type { Metadata, Viewport } from "next";
+import { SkipLink, SkinRoot, buildAppIcons, skinRegistry } from "@moonwitness/ui";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "A-L-L-A-H.COM | Dock",
   description: "Public discovery homepage for the A-L-L-A-H.COM MoonWitness platform",
+  icons: buildAppIcons("imperium-lumen"),
+  openGraph: {
+    images: [{ url: skinRegistry["imperium-lumen"].identity.hero, width: 1600, height: 900 }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: skinRegistry["imperium-lumen"].identity.themeColor,
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <SkinRoot skin="imperium-lumen">
           <SkipLink />

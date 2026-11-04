@@ -215,6 +215,11 @@ export interface ToolParameter {
   properties?: Record<string, ToolParameter>;
   required?: string[];
   default?: unknown;
+  minimum?: number;
+  maximum?: number;
+  format?: string;
+  pattern?: string;
+  step?: number;
 }
 
 export interface ToolFunction {

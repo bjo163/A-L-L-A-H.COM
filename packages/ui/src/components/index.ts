@@ -12,5 +12,7 @@ export * from './link';
 export * from './skeleton';
 export * from './icon';
 export * from './emblem';
+export * from './checkbox';
 export * from './ToolRegistryCard';
 export * from './ToolDetailPanel';
+export * from './ToolParameterField';

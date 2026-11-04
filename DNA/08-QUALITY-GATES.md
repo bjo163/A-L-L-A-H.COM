@@ -1,8 +1,8 @@
 ---
 title: "Six DNA Quality Gates"
-version: "1.0.0"
+version: "1.1.0"
 status: "approved"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 owner: "quality"
 ---
 
@@ -34,7 +34,7 @@ A Master DNA can be marked SPECIFIED only when it has:
 - hard exclusions and anti-slop rules;
 - clear relationship to its parent product or experience.
 
-All six DNA specifications in this directory meet the documentation-level target. Runtime skins remain unimplemented until the engineering gates below pass.
+All six DNA specifications in this directory meet the documentation-level target. Runtime skins are implemented as token sets in `packages/ui/src/skins/registry.ts`, scalable vector scenes in `packages/ui/src/blocks/world-artwork.tsx`, and recipes rendered through `SkinRoot` or route-level `SkinScope`; they reach VERIFIED only when the engineering gates below pass for every consuming app.
 
 ## Runtime implementation acceptance criteria
 
@@ -49,9 +49,13 @@ For each DNA:
 - [ ] Motion behavior plus reduced-motion fallback.
 - [ ] Responsive behavior for wide, medium, and narrow screens.
 - [ ] Original or properly licensed visual assets.
+- [ ] Original vector artwork renders without animation and scales without raster loss.
 - [ ] No change to business behavior or accessibility contract.
 - [ ] Visual comparison evidence in Skin Laboratory.
 - [ ] Build, typecheck, accessibility, and relevant interaction tests pass.
+- [ ] Measured WCAG contrast ratios for every skin's token pairs pass `pnpm ui:contrast` (a failing pair exits non-zero and blocks the commit).
+- [ ] Design-system component and skin contracts pass `pnpm ui:test`.
+- [ ] Glyphs render only through `Icon` from `@moonwitness/ui` (`ICON_PURITY`) and the skip landmark stays owned by `RouteShell`/`SkipLink` (`LANDMARK_PURITY`).
 
 ## Cross-skin anti-slop review
 
@@ -72,9 +76,10 @@ Reject the implementation when:
 - Keyboard-only navigation for all tasks.
 - Visible focus that remains recognisable against each DNA's surface.
 - Screen-reader names, roles, descriptions, and dynamic announcements.
-- Contrast checked for text, controls, focus, and data states.
+- Contrast checked for text, controls, focus, and data states — measured automatically per skin by `pnpm ui:contrast`, not eyeballed.
 - Zoom and reflow without clipped essential content.
 - Reduced-motion mode and no required ambient animation.
+- Motion starts paused, is user-pauseable, and remains disabled when reduced motion is requested.
 - Static fallback for canvas, WebGL, video, remote image, or shader failure.
 - Sound disabled by default and explicitly user-controlled.
 - No visual-only critical content.

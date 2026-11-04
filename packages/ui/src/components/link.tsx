@@ -31,6 +31,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
       return React.cloneElement(child, {
         ...props,
         ref,
+        'data-slot': 'link',
         className: cn('mw-link', underline && 'mw-link--underline', child.props.className, className),
         'aria-current': ariaCurrent,
         target: targetValue,

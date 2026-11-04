@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import { mwClient } from '@allah/sdk';
 import {
   DestinationCard,
@@ -14,6 +12,8 @@ import {
   SectionHeading,
   StatusMessage,
   resolveEcosystemEndpoints,
+  WorldArtwork,
+  useEcosystemSession,
   type EcosystemAppEndpoints,
 } from '@moonwitness/ui';
 
@@ -41,30 +41,14 @@ const destinations = [
   },
 ];
 
+const sessionAuth = {
+  getCurrentUser: () => mwClient.auth.getCurrentUser(),
+  signOut: () => mwClient.auth.signOut(),
+};
+
 export default function DockHomePage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const { user, notice: authNotice, signOut } = useEcosystemSession(sessionAuth);
   const endpoints = resolveEcosystemEndpoints(process.env);
-
-  useEffect(() => {
-    mwClient.auth.getCurrentUser()
-      .then((res) => {
-        if (res?.user) setUser(res.user);
-      })
-      .catch((error: unknown) => {
-        setAuthNotice(error instanceof Error ? error.message : 'Session status is unavailable.');
-      });
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await mwClient.auth.signOut();
-      setUser(null);
-      setAuthNotice(null);
-    } catch (error) {
-      setAuthNotice(error instanceof Error ? error.message : 'Unable to sign out.');
-    }
-  };
 
   return (
     <>
@@ -73,7 +57,7 @@ export default function DockHomePage() {
         currentApp="dock"
         userName={user?.name}
         userEmail={user?.email}
-        onSignOut={handleSignOut}
+        onSignOut={signOut}
       />
 
       <RouteShell as="main" className="dock-shell">
@@ -90,7 +74,7 @@ export default function DockHomePage() {
             title="A platform with room to explore."
             summary="Enter the MoonWitness ecosystem through a clear map of its discovery, identity, operations, and observatory spaces."
             actions={<LinkButton href="#dock-index-title" variant="outline">Explore destinations</LinkButton>}
-            media={<Image src="/artwork/imperium-lumen.png" alt="" width={1600} height={900} priority />}
+            media={<WorldArtwork skin="imperium-lumen" />}
             captionLeft="IMPERIUM LUMEN / THRESHOLD"
             captionRight="01 / ENTRANCE"
           />

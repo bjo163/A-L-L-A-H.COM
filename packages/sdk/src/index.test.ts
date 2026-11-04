@@ -74,6 +74,33 @@ test('browser API requests use HttpOnly cookies and never read browser token sto
   }
 });
 
+test('browser chat streams include Better Auth cookies without exposing session tokens', async () => {
+  const originalFetch = globalThis.fetch;
+  let request: { headers: Headers; credentials?: RequestCredentials } | undefined;
+  globalThis.fetch = async (_input, init) => {
+    request = {
+      headers: new Headers(init?.headers),
+      credentials: init?.credentials,
+    };
+    return new Response('data: [DONE]\n\n', {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    });
+  };
+  try {
+    const client = createClient({ baseUrl: 'https://gateway.example' });
+    await client.router.chatStream(
+      { messages: [{ role: 'user', content: 'hello' }] },
+      () => undefined
+    );
+    assert.equal(request?.credentials, 'include');
+    assert.equal(request?.headers.has('x-session-token'), false);
+    assert.equal(request?.headers.has('Authorization'), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('session store read failures are surfaced', async () => {
   const client = createClient({
     sessionStore: {

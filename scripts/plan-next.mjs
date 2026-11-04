@@ -80,21 +80,34 @@ function runGit(args, { allowFail = false } = {}) {
   }
 }
 
-// Bring the clone exactly to origin/dev. Safe here because this directory is
-// dedicated to the automation; any leftover WIP from a stalled prior run is
-// discarded so the next run starts clean.
+// Bring this checkout up to origin/dev WITHOUT ever destroying local work.
+// The historical `reset --hard` assumed a dedicated automation clone, but
+// REPO_ROOT is a live developer tree — a dirty tree must block the sync, and a
+// clean tree advances by fast-forward merge only, never by discarding commits.
 function cmdSync() {
   milestone('sync start');
+  const status = runGit(['status', '--porcelain'], { allowFail: true });
+  if (!status.ok) {
+    milestone(`sync FAILED (status): ${status.error}`);
+    console.log(JSON.stringify({ synced: false, reason: status.error }));
+    return;
+  }
+  if (status.stdout.length > 0) {
+    milestone('sync refused: working tree has uncommitted changes');
+    console.log(JSON.stringify({ synced: false, reason: 'DIRTY_WORKING_TREE — refusing to touch local changes' }));
+    return;
+  }
   const fetch = runGit(['fetch', 'origin', 'dev'], { allowFail: true });
   if (!fetch.ok) {
     milestone(`sync FAILED (fetch): ${fetch.error}`);
     console.log(JSON.stringify({ synced: false, reason: fetch.error }));
     return;
   }
-  const reset = runGit(['reset', '--hard', 'origin/dev'], { allowFail: true });
-  if (!reset.ok) {
-    milestone(`sync FAILED (reset): ${reset.error}`);
-    console.log(JSON.stringify({ synced: false, reason: reset.error }));
+  // Fast-forward only; a divergence means local commits exist and a human decides.
+  const ff = runGit(['merge', '--ff-only', 'origin/dev'], { allowFail: true });
+  if (!ff.ok) {
+    milestone(`sync refused (not fast-forwardable): ${ff.error}`);
+    console.log(JSON.stringify({ synced: false, reason: 'DIVERGED — local commits ahead of origin/dev, not touching them' }));
     return;
   }
   const head = runGit(['rev-parse', '--short', 'HEAD']).stdout;
@@ -251,12 +264,20 @@ function activeRun() {
   }
   return null;
 }
+// Claim with O_EXCL ('wx'): two schedulers racing past activeRun() cannot both
+// win — the loser gets EEXIST and the plan stays unclaimed.
 function claimLock(planRel) {
   try {
     fs.mkdirSync(LOG_DIR, { recursive: true });
-    fs.writeFileSync(LOCK_FILE, JSON.stringify({ plan: planRel, at: new Date().toISOString() }), 'utf8');
-  } catch {
-    /* best effort */
+    fs.writeFileSync(
+      LOCK_FILE,
+      JSON.stringify({ plan: planRel, at: new Date().toISOString(), pid: process.pid }),
+      { encoding: 'utf8', flag: 'wx' },
+    );
+    return true;
+  } catch (err) {
+    if (err && err.code === 'EEXIST') return false;
+    return false;
   }
 }
 
@@ -287,7 +308,11 @@ function cmdJson(state) {
     );
     return;
   }
-  claimLock(smallest.rel);
+  if (!claimLock(smallest.rel)) {
+    milestone(`select refused: lock raced for ${smallest.rel}`);
+    console.log(JSON.stringify({ plan: null, reason: 'ACTIVE_RUN', activePlan: 'lock claimed by a concurrent run' }));
+    return;
+  }
   milestone(`select: claimed ${smallest.rel} (openTasks=${smallest.openTasks})`);
   console.log(
     JSON.stringify({

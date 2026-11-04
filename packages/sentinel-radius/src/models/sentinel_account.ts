@@ -19,7 +19,10 @@ export const SentinelAccount = defineModel({
       expired: 'Expired',
       cancelled: 'Cancelled',
     }, { label: 'Status', default: 'active', required: true }),
-    plan_id: fields.many2one('sentinel.plan', { label: 'Service Plan' }),
+    // Stored as a plain integer: there is no `sentinel.plan` model to relate to
+    // (a many2one here would be a dangling reference). The physical column is
+    // identical to a many2one (INTEGER), so this only removes the invalid claim.
+    plan_id: fields.integer({ label: 'Service Plan ID' }),
     email: fields.char({ label: 'Email' }),
     phone: fields.char({ label: 'Phone' }),
     mac_address: fields.char({ label: 'MAC Address' }),

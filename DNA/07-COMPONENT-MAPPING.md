@@ -1,8 +1,8 @@
 ---
 title: "Six DNA Component Mapping"
-version: "1.1.0"
+version: "1.2.0"
 status: "approved"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 owner: "product-design"
 ---
 
@@ -32,11 +32,14 @@ This document is a design specification, so each row states whether the code exi
 
 | Matrix row | Implementing API in `@moonwitness/ui` | Status |
 |---|---|---|
-| Entry / hero composition | `PageHero` (`mediaLayout="side"` or `"backdrop"`, `titleAs`) | implemented |
+| Entry / hero composition | `PageHero` (`mediaLayout="side"` or `"backdrop"`, `as`) | implemented |
+| Original world artwork | `WorldArtwork` (scalable 1600 × 900 vector scenes for all six DNA IDs) | implemented |
+| Route-specific DNA | `SkinScope` (token scope only; shares the app motion provider) | implemented |
 | Kicker / world label | `Kicker` | implemented |
 | Section heading | `SectionHeading` (`title`, `description`, `trailing`) | implemented |
-| Route measure and header | `RouteShell` (`as="main"` carries the skip target) | implemented |
+| Route measure and header | `RouteShell` (`as="main"` carries the skip target; `LANDMARK_PURITY` lint keeps `id="main-content"` owned by the design system) | implemented |
 | Primary and secondary action | `Button`, `LinkButton`, `Link` with variants | implemented |
+| Icon glyph | `Icon` (`@moonwitness/ui` glyph registry; `ICON_PURITY` lint blocks third-party icon libraries outside the design system) | implemented |
 | Navigation | `EcosystemNavbar` plus `SkipLink` | implemented |
 | Content card | `Card` family | implemented |
 | Destination card | `DestinationCard`, `DestinationGrid` (static mode when a route is not open) | implemented |

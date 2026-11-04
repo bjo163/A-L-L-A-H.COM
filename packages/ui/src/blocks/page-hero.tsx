@@ -16,7 +16,9 @@ export interface PageHeroProps {
   captionRight?: React.ReactNode;
   /** Wire this to the section's aria-labelledby so the heading stays the accessible name. */
   titleId?: string;
-  /** A hero that sits under a route title passes "h2" so the page keeps one h1. */
+  /** A hero that sits under a route title passes "h2" so the page keeps one h1. Same spelling as SectionHeading and StatePanel. */
+  as?: 'h1' | 'h2';
+  /** @deprecated Renamed to `as` for one heading-tag vocabulary across blocks. Kept for one release. */
   titleAs?: 'h1' | 'h2';
   className?: string;
 }
@@ -35,11 +37,12 @@ export function PageHero({
   captionLeft,
   captionRight,
   titleId,
-  titleAs = 'h1',
+  as,
+  titleAs,
   className,
 }: PageHeroProps) {
   const hasCaption = captionLeft !== undefined || captionRight !== undefined;
-  const Title = titleAs;
+  const Title = as ?? titleAs ?? 'h1';
 
   return (
     <section

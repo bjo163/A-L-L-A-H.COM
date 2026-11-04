@@ -1,7 +1,6 @@
 'use client';
 
-import Image from "next/image";
-import { LinkButton, MotionFrame, PageHero } from "@moonwitness/ui";
+import { LinkButton, MotionFrame, PageHero, WorldArtwork } from "@moonwitness/ui";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
 
 interface HeroArrivalProps {
@@ -26,8 +25,9 @@ export function HeroArrival({ locale = "id" }: HeroArrivalProps) {
             <LinkButton href="/about" variant="ghost">{t("hero.ctaSecondary")}</LinkButton>
           </>
         }
-        media={<Image src="/artwork/rocksoul.png" alt="" width={1600} height={900} priority />}
-        captionLeft="ROCKSOUL / THRESHOLD"
+        mediaLayout="backdrop"
+        media={<WorldArtwork skin="imperium-lumen" />}
+        captionLeft="IMPERIUM LUMEN / THRESHOLD"
         captionRight="01 / ARRIVAL"
       />
     </MotionFrame>

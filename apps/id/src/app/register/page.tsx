@@ -1,10 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../../lib/auth-client';
-import { Button, Card, CardContent, Form, Input, Link, PageHero, StatusMessage, sfx } from '@moonwitness/ui';
+import { Button, Card, CardContent, Form, Input, Link, PageHero, RouteShell, StatusMessage, WorldArtwork, sfx } from '@moonwitness/ui';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -48,15 +47,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <main id="main-content" tabIndex={-1} className="id-auth-page">
+    <RouteShell as="main" className="id-auth-page">
       <div className="id-auth-layout">
         <PageHero
-          titleAs="h2"
+          as="h2"
           kicker="MOONWITNESS / IDENTITY ARCHIVE"
           title="Begin with a secure account."
           summary="Create the identity used to access your MoonWitness destinations."
           mediaLayout="backdrop"
-          media={<Image src="/artwork/lunar-chronicles.png" alt="" width={1600} height={900} priority />}
+          media={<WorldArtwork skin="lunar-chronicles" />}
           captionRight="L / 02 / ARCHIVE"
         />
 
@@ -130,6 +129,6 @@ export default function RegisterPage() {
           </Card>
         </div>
       </div>
-    </main>
+    </RouteShell>
   );
 }

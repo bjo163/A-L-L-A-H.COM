@@ -2,30 +2,35 @@
 
 import { Button, LinkButton, RouteShell, StatePanel } from '@moonwitness/ui';
 import { useEffect } from 'react';
+import { catalogCopy } from '@/lib/translation-catalog';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error('GATE error boundary:', error);
   }, [error]);
 
+  // Copy comes from the same bilingual catalog as the rest of gate; the locale
+  // follows <html lang>. Switch the argument when localized segments land.
+  const t = catalogCopy();
+
   return (
     <RouteShell as="main" className="gate-shell">
       <StatePanel
         kind="error"
-        label="Masalah"
-        title="Halaman ini tidak dapat ditampilkan"
+        label={t('states.errorLabel')}
+        title={t('states.errorTitle')}
         cause={
           error.digest
-            ? `Tampilan berhenti dimuat. Referensi dukungan: ${error.digest}.`
-            : 'Tampilan berhenti dimuat.'
+            ? `${t('states.errorCauseRef')} ${error.digest}.`
+            : t('states.errorCause')
         }
-        nextAction="Muat ulang halaman ini. Jika terus gagal, kembali ke gerbang."
+        nextAction={t('states.errorNext')}
         action={
           <>
             <Button variant="outline" onClick={reset}>
-              Coba lagi
+              {t('states.errorRetry')}
             </Button>
-            <LinkButton href="/">Kembali ke gerbang</LinkButton>
+            <LinkButton href="/">{t('states.backToGate')}</LinkButton>
           </>
         }
       />

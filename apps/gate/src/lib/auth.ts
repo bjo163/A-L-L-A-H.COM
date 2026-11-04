@@ -1,24 +1,13 @@
 import { mwClient } from "@allah/sdk";
+import type { UserSubject } from "@moonwitness/types";
 
-export interface GateUser {
-  id: number;
-  email: string;
-  name: string;
-  status: string;
-}
+/** The hub already owns this shape; the app only names it locally. */
+export type GateUser = UserSubject;
 
 export async function getCurrentUser(): Promise<GateUser | null> {
   try {
-    const result = await mwClient.auth.getCurrentUser();
-    if (result?.user) {
-      return {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        status: result.user.status,
-      };
-    }
-    return null;
+    const { user } = await mwClient.auth.getCurrentUser();
+    return user ?? null;
   } catch {
     return null;
   }

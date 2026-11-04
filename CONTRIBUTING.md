@@ -6,7 +6,7 @@ Thank you for your interest in contributing! This document outlines the process 
 
 ### Prerequisites
 
-- Node.js 24+
+- Node.js 22 (matches the CI toolchain)
 - pnpm 12.16.1
 - Docker (for local development with Compose)
 
@@ -110,8 +110,15 @@ pnpm typecheck
 # Architecture lint
 pnpm lint:arch
 
+# ESLint code style (--max-warnings 0)
+pnpm lint
+
 # Documentation contract
 pnpm docs:check
+
+# Design system + skin contrast gates
+pnpm ui:test
+pnpm ui:contrast
 
 # Build affected apps
 pnpm --filter @moonwitness/<app> build
@@ -193,6 +200,12 @@ All checks must pass:
 
 - Skin: `mycelium`
 - Palette: Connected organic surfaces
+
+The design system also ships the `rocksoul` and `riot-anarchy` worlds. Every
+registered skin must clear the measured WCAG pairs enforced by `pnpm ui:contrast`;
+`apps/gate/` and `apps/dock/` both present the `imperium-lumen` world as the shared
+public entrance, and duplicate app-root worlds are covered by an explicit lint
+exception rather than silently re-declared.
 
 ### Shared Components
 

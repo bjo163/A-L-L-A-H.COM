@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -8,22 +7,24 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Icon,
   LinkButton,
   MotionFrame,
   SectionHeading,
   StatePanel,
   resolveEcosystemEndpoints,
+  useEcosystemSession,
+  type IconName,
 } from "@moonwitness/ui";
+import { mwClient } from "@allah/sdk";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
-import { getCurrentUser, type GateUser } from "@/lib/auth";
-import { Compass, UsersRound, Settings, LayoutDashboard, BookOpen } from "lucide-react";
 
 interface JourneyNextProps {
   locale?: "id" | "en";
 }
 
 interface JourneyAction {
-  icon: typeof Compass;
+  icon: IconName;
   label: string;
   description: string;
   href?: string;
@@ -31,34 +32,27 @@ interface JourneyAction {
   variant?: "default" | "gold";
 }
 
+const sessionAuth = {
+  getCurrentUser: () => mwClient.auth.getCurrentUser(),
+  signOut: () => mwClient.auth.signOut(),
+};
+
 export function JourneyNext({ locale = "id" }: JourneyNextProps) {
   const { t } = useTranslationCatalog(locale);
   const en = locale === "en";
   const endpoints = resolveEcosystemEndpoints(process.env);
-  const [user, setUser] = useState<GateUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getCurrentUser().then((currentUser) => {
-      if (!cancelled) {
-        setUser(currentUser);
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const { user, loading, notice } = useEcosystemSession(sessionAuth);
 
   const anonymousActions: JourneyAction[] = [
-    { icon: Compass, label: en ? "Explore the archive" : "Jelajahi arsip", description: en ? "Public stories and transmissions, no account needed." : "Cerita dan transmisi publik tanpa akun.", href: "/explore" },
-    { icon: UsersRound, label: en ? "Learn the community" : "Pelajari komunitas", description: en ? "How participation, sourcing, and feedback work here." : "Cara berpartisipasi, menyumberkan, dan memberi umpan balik.", href: "/community" },
-    { icon: Settings, label: t("journey.anonymous.signIn"), description: en ? "Needed only for a personal workspace." : "Dibutuhkan hanya untuk ruang kerja pribadi.", href: `${endpoints.id}${endpoints.signInPath}`, external: true, variant: "gold" },
+    { icon: "compass", label: en ? "Explore the archive" : "Jelajahi arsip", description: en ? "Public stories and transmissions, no account needed." : "Cerita dan transmisi publik tanpa akun.", href: "/explore" },
+    { icon: "users-round", label: en ? "Learn the community" : "Pelajari komunitas", description: en ? "How participation, sourcing, and feedback work here." : "Cara berpartisipasi, menyumberkan, dan memberi umpan balik.", href: "/community" },
+    { icon: "settings", label: t("journey.anonymous.signIn"), description: en ? "Needed only for a personal workspace." : "Dibutuhkan hanya untuk ruang kerja pribadi.", href: `${endpoints.id}${endpoints.signInPath}`, external: true, variant: "gold" },
   ];
 
   const signedInActions: JourneyAction[] = [
-    { icon: LayoutDashboard, label: t("journey.signedIn.cockpit"), description: en ? "AI tools, saved work, and preferences." : "Alat AI, kerja tersimpan, dan preferensi." },
-    { icon: BookOpen, label: t("journey.signedIn.saved"), description: en ? "Transmissions and research you kept." : "Transmisi dan penelitian yang Anda simpan." },
-    { icon: Settings, label: t("journey.signedIn.account"), description: en ? "Manage the account and its active sessions." : "Kelola akun dan sesi aktif.", href: `${endpoints.id}${endpoints.accountPath}`, external: true },
+    { icon: "layout-dashboard", label: t("journey.signedIn.cockpit"), description: en ? "AI tools, saved work, and preferences." : "Alat AI, kerja tersimpan, dan preferensi." },
+    { icon: "book-open", label: t("journey.signedIn.saved"), description: en ? "Transmissions and research you kept." : "Transmisi dan penelitian yang Anda simpan." },
+    { icon: "settings", label: t("journey.signedIn.account"), description: en ? "Manage the account and its active sessions." : "Kelola akun dan sesi aktif.", href: `${endpoints.id}${endpoints.accountPath}`, external: true },
   ];
 
   const actions = user ? signedInActions : anonymousActions;
@@ -73,6 +67,13 @@ export function JourneyNext({ locale = "id" }: JourneyNextProps) {
             kind="loading"
             label={t("common.loading")}
             cause={en ? "Checking for a signed-in MoonWitness ID." : "Memeriksa MoonWitness ID yang sedang masuk."}
+          />
+        ) : notice ? (
+          <StatePanel
+            kind="error"
+            label={t("common.error")}
+            cause={notice}
+            nextAction={en ? "Refresh the page to check the session again." : "Muat ulang halaman untuk memeriksa sesi kembali."}
           />
         ) : (
           <>
@@ -96,7 +97,7 @@ export function JourneyNext({ locale = "id" }: JourneyNextProps) {
               {actions.map((action) => (
                 <Card as="article" key={action.label} className="gate-tile">
                   <span className={action.href ? "gate-tile__mark" : "gate-tile__mark gate-tile__mark--blocked"} aria-hidden="true">
-                    <action.icon size={28} />
+                    <Icon name={action.icon} size={28} />
                   </span>
                   <CardHeader>
                     <CardTitle>{action.label}</CardTitle>

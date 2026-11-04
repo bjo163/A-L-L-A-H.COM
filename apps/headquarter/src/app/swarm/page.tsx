@@ -12,6 +12,7 @@ import {
   Input,
   Avatar,
   StatusMessage,
+  RouteShell,
 } from '@moonwitness/ui';
 import { mwClient, type SwarmRole, type SwarmExecutionResult } from '@allah/sdk';
 
@@ -130,8 +131,7 @@ export default function SwarmOperationsPage() {
   };
 
   return (
-    <div className="hq-route hq-swarm">
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <RouteShell as="main" className="hq-route hq-swarm flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="flex items-center gap-3">
@@ -272,7 +272,6 @@ export default function SwarmOperationsPage() {
             </Card>
           </section>
         )}
-      </main>
-    </div>
+    </RouteShell>
   );
 }

@@ -16,8 +16,13 @@
   display: grid;
   width: min(100%, 76rem);
   grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+  grid-template-areas: "hero form";
   align-items: center;
   gap: clamp(2rem, 6vw, 6rem);
+}
+
+.id-auth-hero {
+  grid-area: hero;
 }
 
 .id-auth-form {
@@ -25,6 +30,7 @@
   width: 100%;
   min-width: 0;
   max-width: 28rem;
+  grid-area: form;
   gap: 1rem;
   justify-self: center;
 }
@@ -203,9 +209,16 @@
 }
 
 @media (max-width: 58rem) {
+  .id-auth-page {
+    place-items: start center;
+  }
+
   .id-auth-layout {
     max-width: 32rem;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "form"
+      "hero";
     gap: 1.5rem;
   }
 

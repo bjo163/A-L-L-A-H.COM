@@ -15,11 +15,23 @@ test('Better Auth uses ORM identities, bcrypt credentials, HttpOnly sessions, an
   delete process.env.PG_DATA_DIR;
   const previousOrigins = process.env.CORS_ORIGINS;
   const previousAuthUrl = process.env.BETTER_AUTH_URL;
-  process.env.CORS_ORIGINS = 'http://localhost:3003';
+  process.env.CORS_ORIGINS = '';
   process.env.BETTER_AUTH_URL = 'http://localhost:5150';
   const app = await buildArsyApp({ enableLogging: false });
 
   try {
+    const untrustedOrigin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/better/sign-up/email',
+      headers: { origin: 'https://untrusted.example' },
+      payload: {
+        name: 'Untrusted Origin',
+        email: 'untrusted@example.test',
+        password: 'untrusted-password-2026',
+      },
+    });
+    assert.ok(untrustedOrigin.statusCode >= 400);
+
     const earlyRegistration = await app.inject({
       method: 'POST',
       url: '/api/auth/better/sign-up/email',
@@ -32,17 +44,43 @@ test('Better Auth uses ORM identities, bcrypt credentials, HttpOnly sessions, an
     });
     assert.ok(earlyRegistration.statusCode >= 400);
 
-    const owner = await app.inject({
+    const legacyBrowserRegistration = await app.inject({
       method: 'POST',
-      url: '/api/auth/onboarding',
+      url: '/api/auth/register',
       headers: { origin: 'http://localhost:3003' },
       payload: {
-        name: 'Initial Owner',
-        email: 'owner@example.test',
-        password: 'owner-password-2026',
+        name: 'Legacy Browser Member',
+        email: 'legacy-browser@example.test',
+        password: 'legacy-browser-password-2026',
       },
     });
-    assert.equal(owner.statusCode, 201);
+    assert.equal(legacyBrowserRegistration.statusCode, 410);
+
+    const ownerRequests = await Promise.all([
+      app.inject({
+        method: 'POST',
+        url: '/api/auth/onboarding',
+        headers: { origin: 'http://localhost:3003' },
+        payload: {
+          name: 'Initial Owner',
+          email: 'owner@example.test',
+          password: 'owner-password-2026',
+        },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/auth/onboarding',
+        headers: { origin: 'http://localhost:3003' },
+        payload: {
+          name: 'Initial Owner',
+          email: 'owner@example.test',
+          password: 'owner-password-2026',
+        },
+      }),
+    ]);
+    assert.deepEqual(ownerRequests.map((response) => response.statusCode).sort(), [201, 409]);
+    const owner = ownerRequests.find((response) => response.statusCode === 201);
+    assert.ok(owner);
 
     const legacyBrowserLogin = await app.inject({
       method: 'POST',
@@ -96,7 +134,7 @@ test('Better Auth uses ORM identities, bcrypt credentials, HttpOnly sessions, an
     assert.equal(memberProfile.statusCode, 200, memberProfile.body);
     assert.equal(memberProfile.json().data.role, 'user');
 
-    const { dbEngine } = await import('@allah/arsy-orm');
+    const { BaseRepository, SYSTEM_ACTOR, dbEngine, modelRegistry } = await import('@allah/arsy-orm');
     const duplicateRegistration = await app.inject({
       method: 'POST',
       url: '/api/auth/better/sign-up/email',
@@ -144,6 +182,65 @@ test('Better Auth uses ORM identities, bcrypt credentials, HttpOnly sessions, an
     });
     assert.equal(sessions.statusCode, 200, sessions.body);
     const sessionId = sessions.json().data[0].id;
+
+    const authUserRepository = new BaseRepository(modelRegistry.get('auth.user'), dbEngine);
+    const ownerRows = await authUserRepository.find({
+      scope: { systemScope: true },
+      filters: [{ field: 'email', operator: '=', value: 'member@example.test' }],
+      limit: 1,
+    });
+    const member = ownerRows[0];
+    const disabled = await authUserRepository.updateById(
+      Number(member.id),
+      { status: 'disabled' },
+      { systemScope: true, companyId: Number(member.company_id) },
+      SYSTEM_ACTOR
+    );
+    assert.ok(disabled);
+    const disabledProfile = await app.inject({
+      method: 'GET',
+      url: '/api/auth/current',
+      headers: { cookie: memberCookie },
+    });
+    assert.equal(disabledProfile.statusCode, 401);
+    const blockedDisabledLogin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/better/sign-in/email',
+      headers: { origin: 'http://localhost:3003' },
+      payload: { email: 'member@example.test', password: 'member-password-2026' },
+    });
+    assert.equal(blockedDisabledLogin.statusCode, 401, blockedDisabledLogin.body);
+    assert.equal(blockedDisabledLogin.headers['set-cookie'], undefined);
+    const reenabled = await authUserRepository.updateById(
+      Number(member.id),
+      { status: 'active' },
+      { systemScope: true, companyId: Number(member.company_id) },
+      SYSTEM_ACTOR
+    );
+    assert.ok(reenabled);
+
+    const resUserRepository = new BaseRepository(modelRegistry.get('res.users'), dbEngine);
+    const mismatchedTenant = await resUserRepository.updateById(
+      Number(member.res_user_id),
+      { company_id: Number(member.company_id) - 1 },
+      { systemScope: true, companyId: Number(member.company_id) },
+      SYSTEM_ACTOR
+    );
+    assert.ok(mismatchedTenant);
+    const mismatchedTenantProfile = await app.inject({
+      method: 'GET',
+      url: '/api/auth/current',
+      headers: { cookie: memberCookie },
+    });
+    assert.equal(mismatchedTenantProfile.statusCode, 401);
+    const restoredTenant = await resUserRepository.updateById(
+      Number(member.res_user_id),
+      { company_id: Number(member.company_id) },
+      { systemScope: true, companyId: Number(member.company_id) - 1 },
+      SYSTEM_ACTOR
+    );
+    assert.ok(restoredTenant);
+
     const revoke = await app.inject({
       method: 'POST',
       url: '/api/auth/sessions/revoke',

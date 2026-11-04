@@ -6,13 +6,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Icon,
   LinkButton,
   MotionFrame,
   SectionHeading,
+  type IconName,
 } from "@moonwitness/ui";
 import { useTranslationCatalog } from "@/lib/translation-catalog";
 import { getDestinations } from "@/lib/content-manifest";
-import { UsersRound, ShieldCheck, MessageSquare, BookOpen } from "lucide-react";
 
 interface CommunityPortalProps {
   locale?: "id" | "en";
@@ -23,11 +24,11 @@ export function CommunityPortal({ locale = "id" }: CommunityPortalProps) {
   const en = locale === "en";
   const dock = getDestinations().find((destination) => destination.id === "dock");
 
-  const participation = [
-    { icon: MessageSquare, label: en ? "Thoughtful discussion" : "Diskusi pemikiran", desc: en ? "Share interpretations and questions" : "Berbagi interpretasi dan pertanyaan" },
-    { icon: BookOpen, label: en ? "Sourced contributions" : "Kontribusi bersumber", desc: en ? "Cite references for factual claims" : "Kutip referensi untuk klaim faktual" },
-    { icon: UsersRound, label: en ? "Constructive feedback" : "Umpan balik konstruktif", desc: en ? "Help improve the collective work" : "Bantu meningkatkan karya bersama" },
-    { icon: ShieldCheck, label: en ? "Respect the guidelines" : "Hormati pedoman", desc: en ? "Privacy, no spam, separate fact from opinion" : "Privasi, tanpa spam, bedakan fakta dan opini" },
+  const participation: Array<{ icon: IconName; label: string; desc: string }> = [
+    { icon: "message-square", label: en ? "Thoughtful discussion" : "Diskusi pemikiran", desc: en ? "Share interpretations and questions" : "Berbagi interpretasi dan pertanyaan" },
+    { icon: "book-open", label: en ? "Sourced contributions" : "Kontribusi bersumber", desc: en ? "Cite references for factual claims" : "Kutip referensi untuk klaim faktual" },
+    { icon: "users-round", label: en ? "Constructive feedback" : "Umpan balik konstruktif", desc: en ? "Help improve the collective work" : "Bantu meningkatkan karya bersama" },
+    { icon: "shield-check", label: en ? "Respect the guidelines" : "Hormati pedoman", desc: en ? "Privacy, no spam, separate fact from opinion" : "Privasi, tanpa spam, bedakan fakta dan opini" },
   ];
 
   const guidelines = [
@@ -63,7 +64,7 @@ export function CommunityPortal({ locale = "id" }: CommunityPortalProps) {
               {participation.map((item) => (
                 <div className="gate-tile" key={item.label}>
                   <span className="gate-tile__mark" aria-hidden="true">
-                    <item.icon size={24} />
+                    <Icon name={item.icon} size={24} />
                   </span>
                   <p className="gate-body">{item.label}</p>
                   <p className="gate-meta">{item.desc}</p>

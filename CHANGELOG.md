@@ -9,6 +9,17 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - Better Auth for Central Identity
+
+### Added
+- ARSY-hosted Better Auth routes backed by the canonical auth and ORM models, with credential-account backfill and persistent-startup idempotence coverage.
+- `apps/id` Better Auth login and registration using HttpOnly cookies; first-owner onboarding remains one-time, and later registrations cannot assign privileged roles.
+- Browser transport coverage for cookie-authenticated SDK calls and streams, plus tests for trusted origins, session revocation, disabled identities, and tenant-link consistency.
+
+### Changed
+- Browser sign-in and registration through legacy ARSY endpoints now return `410` and direct users to Better Auth. Non-browser SDK sessions continue using secure client-side storage.
+- Production ARSY startup requires a distinct Better Auth secret, public Better Auth URL, and explicit trusted browser origins.
+
 ## 2026-11-04 - One Composition Vocabulary for the Five Web Apps
 
 ### Added

@@ -2,7 +2,7 @@ import { LinkButton, RouteShell, StatePanel } from '@moonwitness/ui';
 
 export default function NotFound() {
   return (
-    <RouteShell>
+    <RouteShell as="main">
       <StatePanel
         kind="error"
         role="status"

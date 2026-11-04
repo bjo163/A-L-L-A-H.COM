@@ -1,5 +1,4 @@
 ﻿import type { Metadata } from "next";
-import Image from "next/image";
 import {
   Badge,
   DestinationCard,
@@ -9,6 +8,7 @@ import {
   PageHero,
   RouteShell,
   SectionHeading,
+  WorldArtwork,
 } from "@moonwitness/ui";
 
 export const metadata: Metadata = {
@@ -25,7 +25,7 @@ const modules = [
 
 export default function HeadquarterHomePage() {
   return (
-    <RouteShell className="hq-home">
+    <RouteShell as="main" className="hq-home">
       <MotionFrame effect="enter">
         <PageHero
           titleId="hq-title"
@@ -38,7 +38,7 @@ export default function HeadquarterHomePage() {
               <LinkButton href="/agent" variant="outline">Open Agent Studio</LinkButton>
             </>
           }
-          media={<Image src="/artwork/nexus-paradox.png" alt="" width={1600} height={900} priority />}
+          media={<WorldArtwork skin="nexus-paradox" />}
           captionLeft="NEXUS PARADOX / INSTRUMENT PLANE"
           captionRight="01 / OPERATIONS"
         />

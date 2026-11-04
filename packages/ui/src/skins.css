@@ -20,6 +20,11 @@
   line-height: 1.5;
 }
 
+.mw-skin-root.mw-skin-scope {
+  min-height: 0;
+  flex: 1;
+}
+
 .mw-skin-root .mw-motion-root {
   position: relative;
   isolation: isolate;
@@ -78,6 +83,34 @@
     radial-gradient(ellipse at 82% 22%, rgb(113 178 136 / 0.13), transparent 36rem),
     radial-gradient(ellipse at 17% 72%, rgb(190 125 96 / 0.07), transparent 30rem);
   animation: mw-ambient-mycelium var(--mw-motion-ambient) var(--mw-motion-easing) infinite alternate;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mw-motion-root:not([data-effects-paused='true']) .mw-world-artwork__orbit {
+    transform-box: view-box;
+    transform-origin: 1070px 416px;
+    animation: mw-art-orbit 36s linear infinite;
+  }
+
+  .mw-motion-root:not([data-effects-paused='true']) .mw-world-artwork__rain {
+    animation: mw-art-rain 1.8s linear infinite;
+  }
+
+  .mw-motion-root:not([data-effects-paused='true']) .mw-world-artwork__scan {
+    transform-box: view-box;
+    transform-origin: 800px 450px;
+    animation: mw-art-scan 18s linear infinite;
+  }
+
+  .mw-motion-root:not([data-effects-paused='true']) .mw-world-artwork__growth {
+    animation: mw-art-growth 12s ease-in-out infinite alternate;
+  }
+
+  .mw-motion-root:not([data-effects-paused='true']) .mw-world-artwork__print {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: mw-art-print 820ms steps(3, end) both;
+  }
 }
 
 .mw-motion-root[data-effects-paused='true'] .mw-ambient-layer {
@@ -223,7 +256,7 @@
 .mw-skin-root .mw-button--gold {
   border-color: var(--mw-accent);
   background: var(--mw-surface);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-button--outline {
@@ -423,7 +456,7 @@
 
 .mw-skin-root .mw-badge--gold {
   border-color: var(--mw-accent);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-badge--revoked {
@@ -451,7 +484,7 @@
   border: 1px solid var(--mw-border);
   border-radius: var(--mw-control-radius);
   background: var(--mw-surface-raised);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-family: var(--mw-font-label);
   font-weight: 700;
 }
@@ -550,7 +583,7 @@
 
 .mw-skin-root .mw-effects-toggle[aria-pressed='true'] {
   border-color: var(--mw-accent);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-effects-toggle:disabled {
@@ -559,7 +592,7 @@
 
 .mw-skin-root .mw-sfx-toggle[aria-pressed='true'] {
   border-color: var(--mw-accent);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-sfx-toggle:hover {
@@ -576,7 +609,7 @@
   border: 1px solid var(--mw-border);
   border-radius: var(--mw-control-radius);
   background: var(--mw-surface-raised);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-weight: 700;
 }
 
@@ -612,12 +645,12 @@
 }
 
 .mw-skin-root .mw-navbar__link:hover {
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-navbar__link:active,
 .mw-skin-root .mw-navbar__identity-link:active {
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   transform: translateY(1px);
 }
 
@@ -680,7 +713,7 @@
   place-items: center;
   border: 1px solid var(--mw-border);
   border-radius: var(--mw-control-radius);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -730,7 +763,7 @@
   min-height: 2rem;
   align-items: center;
   gap: 0.375rem;
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   text-underline-offset: 0.2em;
   transition: color var(--mw-motion-fast) var(--mw-motion-easing);
 }
@@ -778,7 +811,7 @@
 }
 
 .mw-skin-root .mw-form-field__required {
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-form-field__hint {
@@ -1006,7 +1039,7 @@
 
 .mw-skin-root .mw-kicker {
   margin: 0;
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-family: var(--mw-font-label);
   font-size: 0.6875rem;
   letter-spacing: 0.16em;
@@ -1114,6 +1147,16 @@
   height: auto;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+}
+
+.mw-skin-root .mw-hero__art:has(.mw-world-artwork) {
+  padding: 0.375rem;
+  background: var(--mw-surface);
+}
+
+.mw-skin-root .mw-world-artwork {
+  overflow: hidden;
+  border-radius: calc(var(--mw-surface-radius) * 0.72);
 }
 
 .mw-skin-root .mw-hero__caption {
@@ -1264,7 +1307,7 @@
 }
 
 .mw-skin-root .mw-destination__index {
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-family: var(--mw-font-numeric);
   font-size: 0.6875rem;
   letter-spacing: 0.14em;
@@ -1298,7 +1341,7 @@
   position: absolute;
   inset-block-end: var(--mw-card-padding);
   inset-inline-end: var(--mw-card-padding);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-size: 1.25rem;
   line-height: 1;
 }
@@ -1340,7 +1383,7 @@
   place-items: center;
   border: var(--mw-border-width) solid currentColor;
   border-radius: 50%;
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-family: var(--mw-font-numeric);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1413,7 +1456,7 @@
   width: 1.75rem;
   height: 1.75rem;
   background-color: currentColor;
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
 }
 
 .mw-skin-root .mw-state[data-kind='empty'] .mw-state__marker {
@@ -1447,9 +1490,51 @@
   }
 }
 
+@keyframes mw-art-orbit {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes mw-art-rain {
+  to {
+    transform: translateY(6rem);
+  }
+}
+
+@keyframes mw-art-scan {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes mw-art-growth {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+@keyframes mw-art-print {
+  0% {
+    transform: translateX(-0.75rem) rotate(-1deg);
+    opacity: 0.72;
+  }
+  72% {
+    transform: translateX(0.125rem) rotate(0.2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) rotate(0);
+    opacity: 1;
+  }
+}
+
 .mw-skin-root .mw-state__label {
   margin: 0;
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-family: var(--mw-font-label);
   font-size: 0.6875rem;
   letter-spacing: 0.14em;
@@ -1554,6 +1639,19 @@
   border-block-width: 2px;
 }
 
+.mw-skin-root[data-moonframe-skin='imperium-lumen'] .mw-hero:has([data-world-artwork='imperium-lumen']) {
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(2.5rem, 7vw, 7rem);
+}
+
+.mw-skin-root[data-moonframe-skin='imperium-lumen'] .mw-hero__art:has([data-world-artwork='imperium-lumen']) {
+  border-width: 0;
+  border-inline-start: 1px solid var(--mw-accent);
+  border-radius: 0;
+  padding: 0.75rem 0 0.75rem 0.75rem;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--mw-accent) 9%, transparent), transparent 55%);
+}
+
 .mw-skin-root[data-moonframe-skin='imperium-lumen'] .mw-hero__title {
   max-width: 9ch;
   letter-spacing: -0.055em;
@@ -1594,6 +1692,15 @@
   border-radius: 1.25rem;
 }
 
+.mw-skin-root[data-moonframe-skin='lunar-chronicles'] .mw-hero:has([data-world-artwork='lunar-chronicles']) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.mw-skin-root[data-moonframe-skin='lunar-chronicles'] .mw-hero__art:has([data-world-artwork='lunar-chronicles']) {
+  border-radius: 48% 48% 1.25rem 1.25rem;
+  padding: 0.75rem;
+}
+
 .mw-skin-root[data-moonframe-skin='lunar-chronicles'] .mw-destination {
   min-height: 14rem;
 }
@@ -1624,9 +1731,33 @@
   border-radius: 0.15rem;
 }
 
+.mw-skin-root[data-moonframe-skin='rocksoul'] .mw-hero:has([data-world-artwork='rocksoul']) {
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+
+.mw-skin-root[data-moonframe-skin='rocksoul'] .mw-hero__art:has([data-world-artwork='rocksoul']) {
+  border: 0;
+  border-block: 1px solid var(--mw-border);
+  border-radius: 0;
+  padding: 0.625rem 0;
+  background: transparent;
+}
+
 .mw-skin-root[data-moonframe-skin='nexus-paradox'] .mw-card {
   border-radius: 0.15rem;
   box-shadow: inset 0 0 0 1px rgb(137 223 231 / 0.1), var(--mw-surface-shadow);
+}
+
+.mw-skin-root[data-moonframe-skin='nexus-paradox'] .mw-hero:has([data-world-artwork='nexus-paradox']) {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: stretch;
+}
+
+.mw-skin-root[data-moonframe-skin='nexus-paradox'] .mw-hero__art:has([data-world-artwork='nexus-paradox']) {
+  border-radius: 0;
+  padding: 0.5rem;
+  clip-path: polygon(0 0, calc(100% - 1.5rem) 0, 100% 1.5rem, 100% 100%, 1.5rem 100%, 0 calc(100% - 1.5rem));
 }
 
 .mw-skin-root[data-moonframe-skin='nexus-paradox'] .mw-card__title,
@@ -1683,6 +1814,19 @@
   border-block-width: 3px;
 }
 
+.mw-skin-root[data-moonframe-skin='riot-anarchy'] .mw-hero:has([data-world-artwork='riot-anarchy']) {
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+}
+
+.mw-skin-root[data-moonframe-skin='riot-anarchy'] .mw-hero__art:has([data-world-artwork='riot-anarchy']) {
+  border-width: 2px;
+  border-radius: 0;
+  padding: 0.5rem;
+  background: var(--mw-surface);
+  box-shadow: 0.5rem 0.5rem 0 var(--mw-text);
+  transform: rotate(1deg);
+}
+
 .mw-skin-root[data-moonframe-skin='riot-anarchy'] .mw-kicker {
   font-weight: 700;
 }
@@ -1710,6 +1854,15 @@
 
 .mw-skin-root[data-moonframe-skin='mycelium'] .mw-card {
   border-radius: 1.5rem 0.9rem 1.5rem 0.9rem;
+}
+
+.mw-skin-root[data-moonframe-skin='mycelium'] .mw-hero:has([data-world-artwork='mycelium']) {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+.mw-skin-root[data-moonframe-skin='mycelium'] .mw-hero__art:has([data-world-artwork='mycelium']) {
+  border-radius: 2.5rem 0.75rem 2.5rem 0.75rem;
+  padding: 0.75rem;
 }
 
 .mw-skin-root[data-moonframe-skin='mycelium'] .mw-navbar__brand-mark {
@@ -1854,7 +2007,7 @@
   border: 1px solid var(--mw-border);
   border-radius: var(--mw-control-radius);
   background: var(--mw-surface-raised);
-  color: var(--mw-accent);
+  color: var(--mw-accent-label);
   font-weight: 700;
 }
 
@@ -1961,6 +2114,15 @@
 }
 
 @media (max-width: 40rem) {
+  .mw-skin-root .mw-hero:not(.mw-hero--backdrop):has(.mw-world-artwork) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .mw-skin-root[data-moonframe-skin='riot-anarchy'] .mw-hero__art:has([data-world-artwork='riot-anarchy']) {
+    transform: rotate(0.35deg);
+  }
+
   .mw-skin-root .mw-navbar__inner {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
