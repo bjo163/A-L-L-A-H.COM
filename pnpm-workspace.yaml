@@ -1,10 +1,12 @@
 packages:
   - "apps/*"
+  - "!apps/server"
   - "packages/*"
 
 allowBuilds:
   esbuild: true
   "@vscode/vsce-sign": true
+  msw: false
 
 minimumReleaseAgeExclude:
   - "@better-auth/core@1.7.16"

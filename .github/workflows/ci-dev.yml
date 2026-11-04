@@ -10,14 +10,41 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: write
+  # Least privilege at workflow level: pull_request runs from dev-branch PRs
+  # would otherwise inherit these grants through every verify job. The only
+  # job that writes (fast-forward main, start publish-deploy) declares its own
+  # elevated permissions below.
+  contents: read
 
 concurrency:
   group: ci-dev-gate
   cancel-in-progress: false
 
 jobs:
+  verify-scaffolds:
+    name: Verify Workspace Scaffolds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Scaffold Validation
+        run: node scripts/validate-workspace-scaffolds.mjs
+
   verify-lint-arch:
     name: Verify Architectural Lint (@moonwitness/lint)
     runs-on: ubuntu-latest
@@ -309,6 +336,9 @@ jobs:
       - name: Run Design System Tests
         run: pnpm ui:test
 
+      - name: Run Skin Contrast Gate
+        run: pnpm ui:contrast
+
   verify-docs:
     name: Verify Documentation Contract & Scoring
     runs-on: ubuntu-latest
@@ -336,7 +366,10 @@ jobs:
   promote-to-main:
     name: Promote dev to main
     runs-on: ubuntu-latest
-    needs: [verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-gate, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
+    permissions:
+      contents: write
+      actions: write
+    needs: [verify-scaffolds, verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-gate, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - name: Check out dev branch

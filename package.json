@@ -5,6 +5,7 @@
   "packageManager": "pnpm@12.16.1",
   "scripts": {
     "build": "pnpm -r run build",
+    "prebuild": "node scripts/validate-workspace-scaffolds.mjs",
     "dev": "pnpm lint:arch && pnpm typecheck && concurrently --kill-others --success first \"pnpm arsy:dev\" \"pnpm dock:dev\" \"pnpm headquarter:dev\" \"pnpm id:dev\" \"pnpm jizz:dev\" \"pnpm sentinel:dev\"",
     "dock:dev": "pnpm --filter @moonwitness/dock dev",
     "dock:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/dock build",
@@ -20,7 +21,7 @@
     "extension:check": "node scripts/check-vscode-extension-runtime.mjs",
     "extension:test": "pnpm -r --filter @allah/arsy-plugin-auth... --filter @allah/arsy-plugin-llm-gateway... run build && tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts packages/vscode-extension/src/agentPolicy.test.ts packages/vscode-extension/src/localAgentCore.test.ts packages/vscode-extension/src/missionTimeline.test.ts packages/sdk/src/index.test.ts packages/arsy-orm/src/query_builder.test.ts packages/arsy-plugin-llm-gateway/test/device_control.test.ts",
     "docs:check": "tsx scripts/check-doc-contracts.ts",
-    "ui:test": "tsx --test packages/ui/test/components.test.tsx packages/ui/test/skins.test.tsx packages/ui/test/audio.test.ts",
+    "ui:test": "tsx --test packages/ui/test/components.test.tsx packages/ui/test/skins.test.tsx packages/ui/test/audio.test.ts packages/ui/test/assets.test.ts",
     "ui:contrast": "node scripts/measure-skin-contrast.mjs",
     "lint:arch": "node packages/lint/src/check-architecture.mjs",
     "lint": "eslint . --max-warnings 0",
@@ -29,14 +30,22 @@
     "arsy:build": "pnpm --filter @allah/arsy build",
     "sentinel:dev": "pnpm --filter @allah/sentinel dev",
     "sentinel:build": "pnpm --filter @allah/sentinel build",
-    "sentinel:start": "pnpm --filter @allah/sentinel start"
+    "sentinel:start": "pnpm --filter @allah/sentinel start",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@allah/arsy-orm": "workspace:*"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^22.20.5",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
     "@typescript-eslint/parser": "^8.72.1",
+    "@vitejs/plugin-react": "^6.2.1",
     "concurrently": "^10.0.6",
     "eslint": "^9.39.5",
+    "husky": "^9.1.7",
     "tsx": "^4.23.15",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.72.1",
