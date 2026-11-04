@@ -53,7 +53,7 @@ export default function AgentStudioPage() {
     setSSEEvents([]);
     setError(null);
 
-    mwClient.agent.stream(request, (event: any, data) => {
+    mwClient.agent.stream(request, (event: any, data: string) => {
       setSSEEvents(prev => [...prev, { event, data }]);
 
       // Parse and update steps based on event type
