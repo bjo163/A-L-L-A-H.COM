@@ -31,11 +31,18 @@ export function getValidationCommand(value: unknown) {
 }
 
 export function resolveWorkspaceTarget(workspacePath: string, relativePath: string): string {
-  if (!relativePath.trim() || path.isAbsolute(relativePath)) {
+  if (
+    !relativePath.trim()
+    || path.isAbsolute(relativePath)
+    || path.win32.isAbsolute(relativePath)
+    || /^[A-Za-z]:/.test(relativePath)
+  ) {
     throw new Error('Agent edits must use a non-empty workspace-relative path.');
   }
-  const targetPath = path.resolve(workspacePath, relativePath);
-  const relative = path.relative(path.resolve(workspacePath), targetPath);
+  const normalizedPath = relativePath.replace(/[\\/]/g, path.sep);
+  const resolvedWorkspacePath = path.resolve(workspacePath);
+  const targetPath = path.resolve(resolvedWorkspacePath, normalizedPath);
+  const relative = path.relative(resolvedWorkspacePath, targetPath);
   if (!relative || relative === '.' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
     throw new Error('Agent edits must target a file inside the selected workspace.');
   }

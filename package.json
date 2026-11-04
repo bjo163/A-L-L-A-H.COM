@@ -17,11 +17,11 @@
 
     "extension:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter allah-vscode-extension build",
     "extension:check": "node scripts/check-vscode-extension-runtime.mjs",
-    "extension:test": "tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts packages/vscode-extension/src/agentPolicy.test.ts packages/vscode-extension/src/localAgentCore.test.ts packages/sdk/src/index.test.ts packages/arsy-orm/src/query_builder.test.ts packages/arsy-plugin-llm-gateway/test/device_control.test.ts",
+    "extension:test": "pnpm -r --filter @allah/arsy-orm... run build && tsx --test packages/vscode-extension/src/planManager.test.ts packages/vscode-extension/src/gatewayContracts.test.ts packages/vscode-extension/src/agentPolicy.test.ts packages/vscode-extension/src/localAgentCore.test.ts packages/sdk/src/index.test.ts packages/arsy-orm/src/query_builder.test.ts packages/arsy-plugin-llm-gateway/test/device_control.test.ts",
     "docs:check": "tsx scripts/check-doc-contracts.ts",
     "lint:arch": "node packages/lint/src/check-architecture.mjs",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsx scripts/typecheck.ts",
+    "typecheck": "pnpm -r --filter @allah/arsy-core --filter @allah/arsy-orm --filter @allah/arsy-plugin-auth --filter @allah/arsy-plugin-llm-gateway --filter @allah/arsy-plugin-sdui --filter @allah/arsy-plugin-storage --filter @allah/sdk --filter @allah/sentinel-radius --filter @moonwitness/types --filter @moonwitness/ui --filter allah-vscode-extension run build && tsx scripts/typecheck.ts",
     "arsy:dev": "pnpm --filter @allah/arsy dev",
     "arsy:build": "pnpm --filter @allah/arsy build",
     "sentinel:dev": "pnpm --filter @allah/sentinel dev",

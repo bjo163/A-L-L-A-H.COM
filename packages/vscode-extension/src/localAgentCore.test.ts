@@ -14,8 +14,10 @@ import {
 test('workspace targets reject traversal and absolute paths', () => {
   const root = path.resolve('workspace');
   assert.throws(() => resolveWorkspaceTarget(root, '..\\outside.txt'), /inside the selected workspace/);
+  assert.throws(() => resolveWorkspaceTarget(root, '../outside.txt'), /inside the selected workspace/);
   assert.throws(() => resolveWorkspaceTarget(root, path.resolve('outside.txt')), /workspace-relative path/);
-  assert.equal(resolveWorkspaceTarget(root, 'src\\app.ts'), path.resolve(root, 'src\\app.ts'));
+  assert.throws(() => resolveWorkspaceTarget(root, 'C:\\outside.txt'), /workspace-relative path/);
+  assert.equal(resolveWorkspaceTarget(root, 'src\\app.ts'), path.join(root, 'src', 'app.ts'));
 });
 
 test('sensitive and ignored workspace paths are excluded', () => {

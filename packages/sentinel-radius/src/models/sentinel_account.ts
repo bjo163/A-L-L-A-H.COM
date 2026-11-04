@@ -1,5 +1,4 @@
-import { defineModel, fields } from '@allah/arsy-orm';
-import { modelRegistry } from '@allah/arsy-orm';
+import { defineModel, fields, modelRegistry } from '@allah/arsy-orm';
 
 /**
  * Sentinel Account Model
