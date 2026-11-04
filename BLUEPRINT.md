@@ -1,62 +1,66 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "BLUEPRINT"
-version: "1.0.0"
+version: "1.2.0"
 owner: "architecture"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 ---
 # BLUEPRINT.md
-## Unified Product & System Architecture
 
-This is the target architecture, not a declaration that every component already exists. Reconcile it continuously with actual code and verified runtime behavior.
+Target architecture. Not a completion claim. Reconcile continuously against source + runtime.
+Monorepo map → [AGENTS.md](AGENTS.md). Invariants → [AGENTS.md](AGENTS.md). Decisions → [DECISIONS.md](DECISIONS.md).
 
-## Product Architecture
-A-L-L-A-H.COM is the central home of the MoonWitness and Empire of the Light ecosystem. It provides coherent identity, navigation, shared platform capabilities, integration contracts, and product experiences while allowing independent deployment boundaries where justified.
+## Applications
 
-## Product Domains & Applications
-
-| Domain / Application | Directory | Port | Responsibility |
+| App | Dir | Port | Role |
 |---|---|---|---|
-| Fastify Hub & API Engine | `apps/arsy/` | 5150 | Single backend authority: PGlite ORM, AI Gateway, CAS storage, SDUI, and auth. |
-| Dock Portal | `apps/dock/` | 3001 | Public ecosystem homepage and discovery portal (Next.js 16). |
-| WORLD OBSERVATORY | `apps/jizz/` | 3004 | Public intelligence observatory powered by ROCKSOUL JIZZ (Next.js 16). |
-| Command Headquarter | `apps/headquarter/` | 3002 | Operational command center, AI Gateway control plane, and knowledge explorer (Next.js 16). |
-| MoonWitness ID | `apps/id/` | 3003 | Unified authentication, registration, and active session authority (Next.js 16). |
-| Shared UI Library | `packages/ui/` | N/A | Mandatory atomic UI system (`@moonwitness/ui`: components, blocks, primitives, tokens, and six root-scoped DNA skins). |
-| Universal Client SDK | `packages/sdk/` | N/A | Isomorphic client (`@allah/sdk`) routing all hub calls and session tokens. |
-| Shared Data Contracts | `packages/types/` | N/A | Universal shared type contracts (`@moonwitness/types`). |
-| Architectural Linter | `packages/lint/` | N/A | Monorepo invariant enforcement (`@moonwitness/lint`) executed via `pnpm lint:arch`. |
-| Embedded PGlite ORM | `packages/arsy-orm/` | N/A | In-process PostgreSQL WASM ORM with automatic schema sync and tenant isolation. |
-| AI Gateway & Smart Router | `packages/arsy-plugin-llm-gateway/` | N/A | Multi-provider routing (OpenAI, Anthropic, Gemini, Ollama), SSE streaming, virtual keys, **ReAct cognitive agent loop**, and **generative SDUI tool registry**. |
-| Qorpus Knowledge Store | `addons/mw_qorpus/` | N/A | Document chunking, vector embeddings, SHA-256 deduplication, and hybrid retrieval. |
+| Arsy Hub | `apps/arsy/` | 5150 | Backend authority: PGlite ORM · AI Gateway · CAS storage · SDUI · auth |
+| Dock | `apps/dock/` | 3001 | Public ecosystem homepage |
+| Headquarter | `apps/headquarter/` | 3002 | Command center · AI Gateway control · knowledge explorer |
+| MoonWitness ID | `apps/id/` | 3003 | Auth · registration · SSO |
+| World Observatory | `apps/jizz/` | 3004 | Public intelligence observatory, ROCKSOUL JIZZ API |
 
-## Architecture Layers
-- Experience: public and authenticated experiences, product-specific interfaces, shared navigation (`EcosystemNavbar`), responsive accessible UI.
-- **MoonFrame skins**: `@moonwitness/ui` owns typed IDs, semantic tokens, root-scoped recipes, and the SSR-stable `SkinRoot`; Dock, Headquarter, ID, and WORLD OBSERVATORY select approved DNA IDs at their roots.
-- Applications: domain-specific workflows, explicit ownership, stable API contracts, no duplicated business logic.
-- Platform services: identity and access (`apps/id`), AI routing and usage logging, Qorpus knowledge retrieval, content-addressed storage (SHA-256), audit logs, and configuration.
-- **Cognitive Agent Loop**: autonomous ReAct multi-step reasoning engine with safety guards (max_steps, loop detection, step timeouts), generative SDUI synthesis (`render_sdui` tool), zero-copy SSE streaming (`/v1/agent/stream`), and universal SDK client (`@allah/sdk`).
-- **Swarm Orchestration**: hierarchical multi-agent orchestration (Supervisor, Researcher, Builder, Verifier) via `@allah/arsy-plugin-llm-gateway` endpoints `/v1/swarm/*`, consumed by `@allah/sdk` and exposed in Headquarter `/swarm` dashboard and VS Code Agent Workbench.
-  - **Engine**: `packages/arsy-plugin-llm-gateway/src/swarm/` — `SwarmCoordinator` with 4 roles (planner, researcher, builder, verifier), typed inter-agent message envelopes, consensus verification (up to 3 rejections → human intervention), max_turns cap (default 12, max 24).
-  - **Endpoints**: `POST /v1/swarm/run` (sync), `POST /v1/swarm/stream` (aggregated SSE: `swarm_agent_step`, `swarm_message`, `swarm_verdict`, `done`).
-  - **SDK**: `mwClient.swarm.run()` / `mwClient.swarm.stream()` with `SwarmStep`, `SwarmAgentMessage`, `SwarmExecutionResult` types; dual CJS/ESM.
-  - **VS Code**: `AgentWorkbenchProvider` webview consuming Arsy SSE; role-badged live trajectory.
-  - **Headquarter**: `/swarm` page with `@moonwitness/ui` — agent role cards, live message log with latency chips, mission results. Nav link from home page.
-  - **Test**: `apps/arsy/test/swarm.test.mjs` — 5/5 passing.
-- **Windows-local VS Code agent**: local workspace tools and mode policies execute in the extension host; workspace context requires explicit session consent, and file edits are reviewable before application. Paired devices poll missions outbound; Headquarter can manage tenant-scoped devices and missions without selecting local paths or overriding extension policy. Signup assigns isolated personal tenant IDs from the negative integer namespace; positive IDs remain organization tenants, with zero reserved for unassigned users.
-- Data: single embedded database engine (PGlite WASM via `@allah/arsy-orm`), zero ORM overlap, explicit schemas and migrations, tenant isolation (`company_id`), provenance, and fail-closed retention.
-- Infrastructure: reproducible local, CI, staging, and production environments, health checks (`/health`, `/ready`), secrets, networking, and rollback.
+## Platform Packages
 
-## Monorepo Invariants
-1. All client applications in `apps/` must import interactive components from `@moonwitness/ui`.
-2. All client-to-hub communications must route through `@allah/sdk`.
-3. All shared data contracts must be imported from `@moonwitness/types`.
-4. Only embedded PGlite via `@allah/arsy-orm` is permitted for data persistence.
-5. All commits must pass pre-commit quality gates (`pnpm docs:check`, `pnpm lint:arch`, `pnpm typecheck`).
+| Package | Import | Role |
+|---|---|---|
+| `packages/arsy-orm/` | `@allah/arsy-orm` | Embedded PGlite WASM ORM · schema sync · tenant isolation |
+| `packages/arsy-plugin-llm-gateway/` | — | Multi-provider AI routing · SSE streaming · virtual keys · ReAct agent loop · SDUI tool registry |
+| `addons/mw_qorpus/` | — | Vector embeddings · SHA-256 dedup · hybrid retrieval |
 
-## Delivery and Deployment
-GitHub Actions builds and publishes dock, headquarter, and id images to GHCR on pushes to `main`. A successful publish triggers Coolify through its deployment URL and API token. Production image selection is controlled by `IMAGE_PREFIX` and `IMAGE_TAG`; Coolify must have read access to GHCR when packages are private.
+## Layer Stack
 
-## Architecture Decisions
-Before adding a service, application, database, framework, or abstraction: identify the user outcome; inspect existing capability; compare alternatives and operational cost; define ownership; record accepted decisions in `DECISIONS.md`; add work to `BACKLOG.md`.
+```
+Experience     apps/* · EcosystemNavbar · responsive · a11y
+MoonFrame      @moonwitness/ui · 6 DNA skins · SSR SkinRoot · typed tokens  → DESIGN.md
+Cognitive      ReAct agent loop · SDUI synthesis · SSE /v1/agent/stream · @allah/sdk
+Swarm          SwarmCoordinator(planner/researcher/builder/verifier) · /v1/swarm/* · consensus≤3→human
+Data           PGlite WASM · @allah/arsy-orm · company_id · fail-closed retention
+Infra          GitHub Actions · GHCR · Coolify · /health · /ready
+```
+
+## Swarm
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/v1/swarm/run` | POST | Sync execution |
+| `/v1/swarm/stream` | POST | SSE: `swarm_agent_step` · `swarm_message` · `swarm_verdict` · `done` |
+
+`max_turns` default: 12. Hard cap: 24. Consensus failures ≥3 → human intervention.
+SDK: `mwClient.swarm.run()` / `mwClient.swarm.stream()`. Types: `SwarmStep` · `SwarmAgentMessage` · `SwarmExecutionResult`.
+
+## VS Code Agent
+
+Workspace context: explicit consent required. File edits: reviewable before apply.
+Paired devices: poll missions outbound. Headquarter: manage devices/missions, no workspace path exposure.
+Tenant IDs: negative = personal, positive = org, zero = unassigned → [DECISIONS.md](DECISIONS.md) D-008.
+
+## Delivery
+
+GitHub Actions → GHCR on `main` push → Coolify webhook. `IMAGE_PREFIX` + `IMAGE_TAG` control production selection.
+
+## Decision Rule
+
+New service / DB / framework / abstraction:
+`outcome → inspect existing → compare alternatives → define ownership → DECISIONS.md + BACKLOG.md`

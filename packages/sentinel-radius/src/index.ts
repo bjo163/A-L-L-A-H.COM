@@ -1,7 +1,11 @@
 import { logger } from '@allah/arsy-core';
-import { dbEngine } from '@allah/arsy-orm';
+import { dbEngine, modelRegistry } from '@allah/arsy-orm';
 import crypto from 'crypto';
 import dgram from 'dgram';
+
+// Register Sentinel models
+import './models/sentinel_account';
+import './models/sentinel_session';
 
 /**
  * RADIUS Packet Codes (RFC 2865/2866)

@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "GOAL"
-version: "1.1.0"
+version: "1.3.0"
 owner: "leadership"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -10,22 +10,35 @@ last_verified: "2026-11-04"
 
 ## Mission
 
-Unify MoonWitness & Empire of the Light into a high-performance Fastify/Next.js platform without narrative or technical erasure. See [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md).
+Unify MoonWitness & Empire of the Light into A-L-L-A-H.COM — high-performance Fastify/Next.js platform. Zero narrative or technical erasure. → [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md)
 
 ## /goal Directive
 
 ```
-Target : https://github.com/bjo163/A-L-L-A-H.COM.git  branch: dev → main
-Contracts: AGENTS.md · AUTONOMOUS.md · DOCUMENTATION_CONTRACT.md · LEGACY_RECONCILIATION.md
+repo   : https://github.com/bjo163/A-L-L-A-H.COM.git  dev→main
+rules  : AGENTS.md · AUTONOMOUS.md · DOCUMENTATION_CONTRACT.md · LEGACY_RECONCILIATION.md
+mode   : FULL AUTONOMOUS · zero confirmations · self-evolving
 
-LOOP:
-  1. Read all contracts. Zero-confirmation mode.
-  2. Research bjo163/* repos + Odoo/OpenDAL. Pick next task from BACKLOG.md.
-  3. Security audit: streaming, parameterized SQL, SSRF guards, fail-closed retention.
-  4. Build gates (self-heal all errors, never prompt):
-       pnpm dock:build
-       pnpm headquarter:build
-       pnpm --filter @allah/arsy build
-  5. Doc sync: update only affected canonical docs per DOCUMENTATION_CONTRACT.md.
-  6. Conventional commit → push dev. CI promotes dev→main on 100% pass.
+LOOP (infinite until manually stopped):
+
+  [WORK MODE]  if BACKLOG has READY/IN_PROGRESS tasks:
+    1. pick highest-value safe task
+    2. create .plans/<timestamp>-<slug>/ before coding
+    3. security audit → AUTONOMOUS.md §3
+    4. implement → verify → self-heal all gate errors
+    5. doc sync → DOCUMENTATION_CONTRACT.md § Change Matrix
+    6. conventional commit → push dev → CI promotes dev→main on 100% pass
+    → repeat
+
+  [EVOLVE MODE]  if BACKLOG empty AND all gates pass:
+    1. scan: ROADMAP + BLUEPRINT + source gaps + bjo163/* + standards
+    2. brainstorm 3–7 ideas → score impact/effort/risk → pick top
+    3. create plan + append to BACKLOG → enter WORK MODE immediately
+    → repeat
+
+  [NEVER]:
+    - prompt user for confirmation on safe tasks
+    - invent completed status without evidence
+    - skip quality gates
+    - duplicate canonical doc content
 ```

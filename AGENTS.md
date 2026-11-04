@@ -1,92 +1,83 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.1.0"
+version: "1.3.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
 ---
 # AGENTS.md
 
-Ref: [AUTONOMOUS.md](AUTONOMOUS.md) | [DOCUMENTATION_CONTRACT.md](DOCUMENTATION_CONTRACT.md) | [GOAL.md](GOAL.md) | [QUALITY.md](QUALITY.md) | [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md)
+Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMENTATION_CONTRACT.md) · [GOAL.md](GOAL.md) · [QUALITY.md](QUALITY.md) · [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md) · [BLUEPRINT.md](BLUEPRINT.md)
 
-## Exec Rules
+## Exec
 
-| Rule | Value |
+| Key | Value |
 |---|---|
 | Mode | Autonomous. Zero micro-confirmations on safe tasks. |
-| Repo | `https://github.com/bjo163/A-L-L-A-H.COM.git` branch `dev` |
-| Loop | `DISCOVER→PLAN→AUDIT→IMPLEMENT→VERIFY→DOCUMENT→PUSH` |
-| Antislop | Load skills: `antislop`, `antislop-ui`, `antislop-human`, `antislop-code` before any edit. |
-| Legacy | A-L-L-A-H.COM = MoonWitness + Empire of the Light. See [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md). |
-
-## Plans Standard `.plans/<timestamp>-<slug>/`
-
-Required artifacts (create before coding):
-
-| File | Purpose |
-|---|---|
-| `spec.md` | Architecture, requirements, acceptance criteria. `status`: `proposed→in_progress→completed`. |
-| `task.md` | Checklist `- [ ]` → `- [/]` → `- [x]`. Update live. |
-| `design.md` | UX/UI states, API contracts |
-| `rules.md` | Invariants, security, tenant isolation, SSRF guard |
-
-Conditional artifacts:
-
-| File | When |
-|---|---|
-| `conflict.md` | Ambiguity / blocker / trade-off → human input (`- [ ] Confirmed by User`) |
-| `decision.md` | ADR: rationale, alternatives, consensus |
-| `report.md` | On `status: completed` — verified deliverables + evidence. No invented estimates. |
+| Repo | `https://github.com/bjo163/A-L-L-A-H.COM.git` · branch `dev` |
+| Loop | `DISCOVER → PLAN → AUDIT → IMPLEMENT → VERIFY → DOCUMENT → PUSH → EVOLVE` (detail: [AUTONOMOUS.md](AUTONOMOUS.md)) |
+| Antislop | Load `antislop` · `antislop-ui` · `antislop-human` · `antislop-code` before any edit |
+| Legacy | A-L-L-A-H.COM = MoonWitness + Empire of the Light → [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md) |
 
 ## Monorepo Map
 
-| Path | Stack | Port |
+| Path | Import / Stack | Port |
 |---|---|---|
-| `apps/arsy/` | Fastify 5 + PGlite (`@allah/arsy-orm`) | 5150 |
-| `apps/dock/` | Next.js 16 + React 19 + Tailwind v4 | 3001 |
-| `apps/headquarter/` | Next.js 16 + React 19 + Tailwind v4 | 3002 |
-| `apps/id/` | Next.js 16 + React 19 + Tailwind v4 (SSO) | 3003 |
-| `addons/` | `base`, `mw_storage`, `mw_llm_router`, `mw_qorpus` | — |
-| `packages/ui/` | `@moonwitness/ui` — MANDATORY for all UI controls | — |
-| `packages/sdk/` | `@allah/sdk` — MANDATORY for all client↔hub comms | — |
-| `packages/types/` | `@moonwitness/types` — MANDATORY shared contracts | — |
-| `packages/lint/` | `@moonwitness/lint` — arch invariant gate (`pnpm lint:arch`) | — |
+| `apps/arsy/` | Fastify 5 · `@allah/arsy-orm` (PGlite) | 5150 |
+| `apps/dock/` | Next.js 16 · React 19 · Tailwind v4 | 3001 |
+| `apps/headquarter/` | Next.js 16 · React 19 · Tailwind v4 | 3002 |
+| `apps/id/` | Next.js 16 · React 19 · Tailwind v4 · SSO | 3003 |
+| `apps/jizz/` | Next.js 16 · React 19 · Tailwind v4 | 3004 |
+| `addons/` | `base` · `mw_storage` · `mw_llm_router` · `mw_qorpus` | — |
+| `packages/ui/` | `@moonwitness/ui` — **MANDATORY** all UI controls | — |
+| `packages/sdk/` | `@allah/sdk` — **MANDATORY** all client↔hub comms | — |
+| `packages/types/` | `@moonwitness/types` — **MANDATORY** shared contracts | — |
+| `packages/lint/` | `@moonwitness/lint` → `pnpm lint:arch` | — |
+| `packages/arsy-orm/` | `@allah/arsy-orm` — sole ORM | — |
 
-Forbidden in `apps/`: raw `<button>`/`<input>` tags · local entity redefinition · direct DB calls outside `@allah/arsy-orm`.
+**Forbidden in `apps/`**: raw `<button>` / `<input>` · local type redefinition · direct DB calls
 
 ## Invariants
 
-- Storage: SHA-256 content-addressed, write-once (`data/storage/<digest>`)
-- DB: parameterized queries only. No raw SQL strings.
-- Tenant: `company_id` on all data.
-- ORM: embedded PGlite only. Zero ORM overlap.
-- Retention: fail-closed on `legal_hold` / `retention_until`.
-- Upstream: validate `base_url`, block SSRF.
+| Rule | Spec |
+|---|---|
+| Storage | SHA-256 content-addressed · write-once · `data/storage/<digest>` |
+| SQL | Parameterized only. No raw string queries. |
+| Tenant | `company_id` on every row |
+| ORM | Embedded PGlite via `@allah/arsy-orm` only. Zero overlap. |
+| Retention | Fail-closed: reject on `legal_hold` / `retention_until` |
+| SSRF | Validate `base_url` before every upstream request |
 
-## Quality Gates (100% required, self-heal on error)
+## Quality Gates
 
 ```
-pnpm docs:check
-pnpm lint:arch
-pnpm typecheck
+pnpm docs:check          # 100/100 required
+pnpm lint:arch           # arch invariants
+pnpm typecheck           # strict TS
 pnpm dock:build
 pnpm headquarter:build
 pnpm id:build
 pnpm --filter @allah/arsy build
 ```
 
-Pre-commit (`.husky/`): `docs:check` + `lint:arch` + `typecheck`. Pre-push: build gates.
+Pre-commit: `docs:check` + `lint:arch` + `typecheck`. Pre-push: all build gates. Self-heal all errors. Never prompt user.
 
-## Git
+## Plans Standard
 
-```
-git diff --staged   # review: no secrets, no local DBs
-git commit -m "<type>(<scope>): <description>"
-git push origin dev # CI promotes dev→main on 100% pass
-```
+Path: `.plans/<timestamp>-<slug>/`
+
+| Artifact | Required | Purpose |
+|---|---|---|
+| `spec.md` | always | Architecture · requirements · acceptance criteria · `status`: `proposed→in_progress→completed` |
+| `task.md` | always | `- [ ] → - [/] → - [x]`. Update live during execution. |
+| `design.md` | always | UX/UI states · API contracts |
+| `rules.md` | always | Invariants · security · tenant isolation · SSRF |
+| `conflict.md` | when blocked | Ambiguity / trade-off needing human input (`- [ ] Confirmed by User`) |
+| `decision.md` | when ADR needed | Rationale · alternatives · consensus |
+| `report.md` | on `completed` | Verified deliverables + evidence. No invented estimates. |
 
 <!-- antislop:start -->
 ## Antislop
-Skills: `antislop` (core) | `antislop-ui` | `antislop-human` | `antislop-code`. Verify mode before edits.
+`antislop` · `antislop-ui` · `antislop-human` · `antislop-code`. Verify mode before every edit.
 <!-- antislop:end -->

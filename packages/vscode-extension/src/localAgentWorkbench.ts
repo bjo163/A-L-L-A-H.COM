@@ -15,6 +15,12 @@ import {
   getValidationCommand,
   validationCommands,
 } from './localAgentCore';
+import {
+  appendMissionTimelineEvent,
+  createMissionTimelineEvent,
+  normalizeInterruptedMissions,
+  type MissionTimelineEvent,
+} from './missionTimeline';
 
 interface LocalAgentSession {
   id: string;
@@ -22,6 +28,7 @@ interface LocalAgentSession {
   state: 'running' | 'completed' | 'cancelled' | 'failed' | 'blocked';
   startedAt: string;
   updatedAt: string;
+  timeline?: MissionTimelineEvent[];
 }
 
 interface PreparedEdit {
@@ -227,13 +234,16 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       state: 'running',
       startedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      timeline: [],
     };
     this.activeRun = controller;
     this.post({ type: 'started', sessionId: session.id, mode });
+    this.postMissionEvent(session, 'mission.started', 'Mission started', 'Workspace mission accepted.');
 
     try {
       await this.persistSession(session);
       const workspaceContext = await this.getWorkspaceContext(folder);
+      this.postMissionEvent(session, 'context.selected', 'Workspace context selected');
       const response = await this.client.completeAgent(
         buildAgentSystemPrompt(mode),
         `${trimmedPrompt}${workspaceContext}`,
@@ -247,6 +257,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
 
       if (mode === 'ask' || mode === 'plan' || mode === 'ideate') {
         session.state = 'completed';
+        this.postMissionEvent(session, 'mission.completed', 'Mission completed');
         this.post({ type: 'result', response });
         return session.state;
       }
@@ -266,6 +277,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       }
 
       await this.previewEdits(edits);
+      this.postMissionEvent(session, 'edits.previewed', 'Edits prepared', `${edits.length} workspace file change(s) ready for review.`);
       if (getAgentToolDecision(mode, 'workspace.edit') === 'ask') {
         const approval = await vscode.window.showWarningMessage(
           `Apply ${edits.length} proposed workspace file change${edits.length === 1 ? '' : 's'}?`,
@@ -274,6 +286,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         );
         if (approval !== 'Apply changes') {
           session.state = 'blocked';
+          this.postMissionEvent(session, 'approval.rejected', 'Edit approval rejected');
           this.post({ type: 'blocked', message: 'The proposed edits were not applied.' });
           return session.state;
         }
@@ -286,6 +299,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       }
       await this.applyEdits(edits);
       session.state = 'completed';
+      this.postMissionEvent(session, 'edits.applied', 'Workspace edits applied', `${edits.length} file change(s) remain unsaved.`);
       this.post({
         type: 'result',
         response: proposal.response,
@@ -573,7 +587,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   private getSessionHistory(): LocalAgentSession[] {
     const value = this.context.globalState.get<unknown>(SESSION_HISTORY_KEY, []);
     if (!Array.isArray(value)) return [];
-    return value.filter((entry): entry is LocalAgentSession => (
+    const sessions = value.filter((entry): entry is LocalAgentSession => (
       isRecord(entry)
       && typeof entry.id === 'string'
       && typeof entry.mode === 'string'
@@ -586,6 +600,19 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       && typeof entry.startedAt === 'string'
       && typeof entry.updatedAt === 'string'
     )).slice(0, 50);
+    return normalizeInterruptedMissions(sessions);
+  }
+
+  private postMissionEvent(
+    session: LocalAgentSession,
+    type: string,
+    title: string,
+    detail?: string
+  ): void {
+    const event = createMissionTimelineEvent(session.timeline || [], type, title, detail);
+    session.timeline = appendMissionTimelineEvent(session.timeline || [], event);
+    session.updatedAt = event.createdAt;
+    this.post({ type: 'mission-event', event });
   }
 
   private post(data: Record<string, unknown>): void {
@@ -605,6 +632,20 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       const status = document.getElementById('status');
       const output = document.getElementById('output');
       const history = document.getElementById('history');
+      const timeline = document.getElementById('mission-timeline');
+
+      const renderTimelineEvent = (event) => {
+        const item = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = event.title || event.type;
+        item.appendChild(title);
+        if (event.detail) {
+          const detail = document.createElement('span');
+          detail.textContent = event.detail;
+          item.appendChild(detail);
+        }
+        timeline.appendChild(item);
+      };
 
       const renderHistory = (sessions) => {
         history.replaceChildren();
@@ -633,6 +674,9 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         const data = message.data;
         if (data.type === 'history') {
           renderHistory(data.sessions);
+        } else if (data.type === 'mission-event' && data.event) {
+          if (timeline.querySelector('[data-empty]')) timeline.replaceChildren();
+          renderTimelineEvent(data.event);
         } else if (data.type === 'started') {
           status.textContent = 'Requesting workspace-context consent';
           run.disabled = true;
@@ -640,6 +684,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
           validationCommand.disabled = true;
           stop.disabled = false;
           output.replaceChildren();
+          timeline.replaceChildren();
         } else if (data.type === 'validation-approval') {
           status.textContent = data.message;
           run.disabled = true;
@@ -727,18 +772,23 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   button:disabled { opacity: .5; cursor: default; }
   #status { margin: 10px 0; color: var(--vscode-descriptionForeground); }
   pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px; background: var(--vscode-textCodeBlock-background); }
+  .mission-list { margin: 10px 0 0; padding: 0; list-style: none; }
+  .mission-list li { position: relative; padding: 8px 0 8px 14px; border-left: 2px solid var(--vscode-focusBorder); }
+  .mission-list li strong, .mission-list li span { display: block; overflow-wrap: anywhere; }
+  .mission-list li span { margin-top: 2px; color: var(--vscode-descriptionForeground); }
+  .mission-list li:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
 </style>
 </head>
 <body>
 <h3>Workspace Agent</h3>
 <label for="mode">Mode</label>
 <select id="mode">
-  <option value="ask">Ask — read-only</option>
-  <option value="plan">Plan — read-only</option>
-  <option value="ideate">Ideate / brainstorm — read-only</option>
-  <option value="code">Code — review edits before apply</option>
-  <option value="debug">Debug — review edits before apply</option>
-  <option value="autopilot">Autopilot — scoped workspace edits</option>
+  <option value="ask">Ask, read-only</option>
+  <option value="plan">Plan, read-only</option>
+  <option value="ideate">Ideate / brainstorm, read-only</option>
+  <option value="code">Code, review edits before apply</option>
+  <option value="debug">Debug, review edits before apply</option>
+  <option value="autopilot">Autopilot, scoped workspace edits</option>
 </select>
 <label for="prompt">Task</label>
 <textarea id="prompt" placeholder="Describe the question or workspace task"></textarea>
@@ -751,6 +801,10 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
 <button id="stop" disabled>Cancel</button>
 <div id="status" role="status" aria-live="polite">Ready</div>
 <div id="output" aria-live="polite"></div>
+<section aria-labelledby="mission-heading">
+  <h4 id="mission-heading">Mission timeline</h4>
+  <ol id="mission-timeline" class="mission-list" aria-live="polite"><li data-empty>Start a mission to see progress.</li></ol>
+</section>
 <section aria-labelledby="history-heading">
   <h4 id="history-heading">Local session history</h4>
   <ol id="history" aria-live="polite"><li>Loading session history…</li></ol>

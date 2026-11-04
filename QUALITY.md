@@ -1,48 +1,63 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "QUALITY"
-version: "1.0.0"
+version: "1.2.0"
 owner: "qa"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 ---
 # QUALITY.md
-## Quality Standards & Definition of Done
 
-A task is complete only when acceptance criteria are met, relevant checks are executed, the diff is reviewed, and evidence is recorded. `IMPLEMENTED`, `VERIFIED`, and `RELEASED` are different states.
+Definition of done. Gates → [AGENTS.md](AGENTS.md) § Quality Gates. Invariants → [AGENTS.md](AGENTS.md) § Invariants.
+States: `IMPLEMENTED` ≠ `VERIFIED` ≠ `RELEASED` ≠ `DEPLOYED`. Each requires distinct evidence.
 
 ## Backend Standards
-Fastify 5.x micro-kernel framework; strict TypeScript compilation (`pnpm typecheck`); unit and integration tests; standard response envelope `{ success, data, error, meta }`; input validation; parameterized SQL queries on embedded PGlite WASM (`@allah/arsy-orm`); zero ORM overlap; tenant isolation (`company_id`); fail-closed security guards; SSRF validation on upstream URLs; secret-safe structured Pino logging.
+
+| Standard | Spec |
+|---|---|
+| Framework | Fastify 5.x |
+| Types | Strict TypeScript |
+| Response | `{ success, data, error, meta }` |
+| SQL | Parameterized · `@allah/arsy-orm` · PGlite WASM |
+| Security | Fail-closed guards · SSRF validation · secret-safe Pino logging |
+| Endpoints | `/health` · `/ready` |
 
 ## Frontend Standards
-Mandatory shared UI design system (`@moonwitness/ui`); no ad-hoc raw HTML controls (`<button>`, `<input>`); universal API client routing (`@allah/sdk`); production build validation (`dock:build`, `headquarter:build`, `id:build`); working navigation; three mandatory UI states (loading, empty, error); responsive mobile layouts; keyboard accessibility and focus indicators (WCAG AA); antislop compliance.
 
-## Monorepo & Architectural Invariants
-All code must pass the architectural invariant gate (`pnpm lint:arch` via `@moonwitness/lint`):
-1. UI Purity: Only `@moonwitness/ui` in `apps/`.
-2. Single ORM: Only embedded PGlite via `@allah/arsy-orm`.
-3. Universal SDK: All client-to-hub communications route through `@allah/sdk`.
-4. Shared Contracts: Universal data models imported from `@moonwitness/types`.
-5. Pre-commit enforcement: `.husky/pre-commit` runs documentation, architectural lint, and typechecks.
+| Standard | Spec |
+|---|---|
+| UI controls | `@moonwitness/ui` only. No raw `<button>` / `<input>`. |
+| Client comms | `@allah/sdk` only |
+| UI states | loading · empty · error — all three required |
+| A11y | WCAG AA · keyboard · focus indicators |
+| Layout | Responsive mobile |
 
-## Integrations
-Explicit versioned contracts in `@moonwitness/types`; authentication via MoonWitness ID session tokens or virtual keys; timeout/retry/idempotency; data ownership and provenance; automated integration tests; useful observability and cost metering in PGlite.
+## Integration Standards
 
-## Data and Legacy Migration
-Preserve originals; record mapping and provenance (`LEGACY_RECONCILIATION.md`); validate counts, hashes, relationships, and representative records where appropriate; document rollback and recovery; no destructive deletion without authorization.
+Versioned contracts via `@moonwitness/types` · MoonWitness ID session tokens or virtual keys · timeout/retry/idempotency · automated integration tests · observability + cost metering in PGlite.
 
-## Security and Operations
-Review secrets, least privilege, access control, injection, SSRF guards, dependency risks, abuse controls, health checks (`/health`, `/ready`), observability, deployment, and rollback as relevant.
+## Data & Legacy
 
-## Evidence
-For each verified task record exact command, test result, environment limitations, paths or commit, and manual verification. Never report skipped or unavailable checks as passing.
+Preserve originals · record mapping + provenance → [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md) · validate counts/hashes/relationships · document rollback · no destructive deletion without authorization.
 
-## Swarm Orchestration Verification (2026-11-03)
-- `pnpm typecheck`: 0 errors across all 10 packages/apps (arsy-orm, arsy-core, arsy-plugin-llm-gateway, arsy-plugin-auth, arsy-plugin-storage, arsy-plugin-sdui, types, sdk, ui, headquarter, vscode-extension, arsy).
-- `pnpm lint:arch`: 100% compliant — UI Purity, Single ORM, Universal SDK, Shared Types all pass.
-- `pnpm docs:check`: 100/100 pts (15 canonical docs + 15 plans audited).
-- `pnpm dock:build`, `pnpm headquarter:build`, `pnpm id:build`, `pnpm --filter @allah/arsy build`: all succeed.
-- `apps/arsy/test/swarm.test.mjs`: 5/5 tests pass (swarm run, 400 on missing goal, SSE stream, coordinator singleton).
-- `apps/arsy/test/ai_gateway.test.mjs`: model catalog, chat completions, virtual key auth, telemetry, usage logs all pass.
-- `apps/arsy/test/tools_mcp.test.mjs`: tools/list, pglite_query (safe + unsafe), storage_cas, web_fetch SSRF guard, qorpus_retrieve, audit log all pass.
-- `apps/arsy/test/agent_loop.test.mjs`: agent run/session, max_steps enforcement pass; agent/stream SSE event emission and empty-prompt 400 are pre-existing gaps in mock model tool-call responses (not swarm-related).
+## Security Checklist
+
+Secrets · least privilege · access control · injection · SSRF · dependency risks · abuse controls · observability · deployment · rollback.
+
+## Evidence Standard
+
+Record per verified task: exact command + output · test result · environment limits · path or commit · manual verification.
+Never report skipped checks as passing.
+
+## Verification Baseline (2026-11-04)
+
+| Check | Result |
+|---|---|
+| `pnpm typecheck` | 0 errors (all 12 packages/apps) |
+| `pnpm lint:arch` | 100% — UI Purity · Single ORM · Universal SDK · Shared Types |
+| `pnpm docs:check` | 100/100 pts |
+| `pnpm dock:build` + `pnpm headquarter:build` + `pnpm id:build` + `pnpm --filter @allah/arsy build` | pass |
+| `swarm.test.mjs` | 5/5 pass |
+| `ai_gateway.test.mjs` | model catalog · chat · virtual key · telemetry · usage — pass |
+| `tools_mcp.test.mjs` | tools/list · pglite_query · storage_cas · SSRF guard · qorpus_retrieve · audit log — pass |
+| `agent_loop.test.mjs` | run/session · max_steps — pass. SSE mock tool-call gaps: pre-existing. |
