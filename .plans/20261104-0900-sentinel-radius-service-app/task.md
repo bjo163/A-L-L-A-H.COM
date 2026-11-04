@@ -4,10 +4,10 @@ status: "proposed"
 # Actionable Tasks: Sentinel Standalone Microservice Daemon (`apps/sentinel`) & High-Performance UDP RADIUS Service
 
 ## 1. Application Scaffolding & Setup
-- [ ] Create `apps/sentinel` directory structure (`src/`, `test/`).
-- [ ] Setup `apps/sentinel/package.json` (`@allah/sentinel`) with monorepo dependencies.
-- [ ] Configure `apps/sentinel/tsconfig.json` extending root TypeScript configuration.
-- [ ] Add `pnpm sentinel:dev`, `pnpm sentinel:build`, and `pnpm sentinel:start` scripts to root `package.json`.
+- [x] Create `apps/sentinel` directory structure (`src/`, `test/`).
+- [x] Setup `apps/sentinel/package.json` (`@allah/sentinel`) with monorepo dependencies.
+- [x] Configure `apps/sentinel/tsconfig.json` extending root TypeScript configuration.
+- [x] Add `pnpm sentinel:dev`, `pnpm sentinel:build`, and `pnpm sentinel:start` scripts to root `package.json`.
 
 ## 2. Low-Level Native RADIUS Protocol Engine
 - [ ] Implement RFC 2865 binary packet parser (`parseRadiusPacket`) using native `Buffer` operations.

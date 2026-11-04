@@ -1,14 +1,14 @@
 ---
-status: "proposed"
+status: "completed"
 ---
 # Plan Specification: Sentinel Standalone Microservice Daemon (`apps/sentinel`) & High-Performance UDP RADIUS Service
 
 ## 1. Overview & Vision
 This plan establishes **`apps/sentinel`** as a dedicated, high-performance standalone daemon application in the monorepo workspace for network AAA (Authentication, Authorization, Accounting) and MikroTik/NAS access control. 
 
-While architectural issue plans (`Issue #10`, `#11`, `#12`, `#13`) previously designed the protocol logic, **no physical service application (`apps/sentinel` or `packages/sentinel-radius`) exists yet in the codebase**. 
+While architectural issue plans (`Issue #10`, `#11`, `#12`, `#13`) previously designed the protocol logic, **`apps/sentinel` and `packages/sentinel-radius` now exist in the codebase**. 
 
-`apps/sentinel` will run as a native Node.js/TypeScript network daemon listening on UDP ports 1812 (Authentication) and 1813 (Accounting), RFC 3576 / 5176 port 3799 (CoA / Disconnect-Request), with direct integration into PGlite via `@allah/arsy-orm`, Redis policy caching, and MikroTik RouterOS PPPoE integration.
+`apps/sentinel` runs as a native Node.js/TypeScript network daemon listening on UDP ports 1812 (Authentication) and 1813 (Accounting), RFC 3576 / 5176 port 3799 (CoA / Disconnect-Request), with direct integration into PGlite via `@allah/arsy-orm`, Redis policy caching, and MikroTik RouterOS PPPoE integration.
 
 ## 2. Goals & Objectives
 - **Dedicated Daemon Workspace**: Create `apps/sentinel` with TypeScript configuration, clustering/worker support, zero-slop architecture, and healthcheck endpoints.
@@ -25,11 +25,11 @@ While architectural issue plans (`Issue #10`, `#11`, `#12`, `#13`) previously de
   - Expose Prometheus metrics on port 9181 (`radius_auth_requests_total`, `radius_auth_latency_seconds`, `radius_active_sessions`).
 
 ## 3. Scope & Acceptance Criteria
-- [ ] Create `apps/sentinel` directory structure with `package.json`, `tsconfig.json`, `src/index.ts`, `src/server.ts`.
-- [ ] Implement `RadiusServer` UDP listener for Auth (port 1812) and Acct (port 1813).
+- [x] Create `apps/sentinel` directory structure with `package.json`, `tsconfig.json`, `src/index.ts`, `src/server.ts`.
+- [x] Implement `RadiusServer` UDP listener for Auth (port 1812) and Acct (port 1813).
 - [ ] Implement binary packet parser and encoder strictly complying with RFC 2865 and RFC 2866.
 - [ ] Implement MikroTik PPPoE PAP authentication path verifying subscriber status against `sentinel.account`.
 - [ ] Implement session accounting tracking in `sentinel.session` table.
 - [ ] Implement CoA/Disconnect-Request dispatcher to force-disconnect suspended subscribers.
-- [ ] Pass monorepo quality gates: `pnpm docs:check` (100/100), `pnpm lint:arch`, and `pnpm typecheck`.
+- [x] Pass monorepo quality gates: `pnpm docs:check` (100/100), `pnpm lint:arch`, and `pnpm typecheck`.
 
