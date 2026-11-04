@@ -1,6 +1,6 @@
 ---
 title: "Focused UI Refinement Wave"
-status: in_progress
+status: completed
 owner: "engineering"
 ---
 

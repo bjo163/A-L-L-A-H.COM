@@ -12,6 +12,6 @@ status: in_progress
 - [x] Refine ID authentication and account surfaces.
 - [x] Refine Headquarter overview and operational routes.
 - [x] Fix mobile, keyboard, focus, contrast, and reduced-motion defects.
-- [ ] Verify production at five required widths.
+- [x] Verify production at five required widths.
 - [x] Run focused UI tests, typecheck, and app builds.
 - [x] Publish final evidence and remaining blockers.
