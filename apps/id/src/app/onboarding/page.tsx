@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authClient } from '../../lib/auth-client';
 import { mwClient } from '@allah/sdk';
 import { Button, Card, CardContent, Form, Input, Link, PageHero, StatusMessage, sfx } from '@moonwitness/ui';
 
@@ -48,7 +49,8 @@ export default function OnboardingPage() {
     }
 
     try {
-      await mwClient.auth.signIn({ email, password, deviceName: 'Initial Setup' });
+      const { error: authError } = await authClient.signIn.email({ email, password });
+      if (authError) throw new Error(authError.message);
       sfx.success();
       router.push('/account');
     } catch {

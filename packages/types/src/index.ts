@@ -12,7 +12,7 @@ export interface UserSubject {
 
 export interface ActiveSession {
   id: number;
-  sessionToken: string;
+  sessionToken?: string;
   deviceName?: string;
   userAgent?: string;
   ipAddress?: string;

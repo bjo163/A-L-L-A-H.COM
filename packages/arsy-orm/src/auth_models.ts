@@ -51,6 +51,7 @@ export const AuthUser = defineModel({
       },
       { label: 'Status', default: 'unverified' }
     ),
+    email_verified: fields.boolean({ label: 'Email Verified', default: false }),
     email_verified_at: fields.datetime({ label: 'Email Verified At' }),
     two_factor_enabled: fields.boolean({ label: 'Two Factor Enabled', default: false }),
     avatar_url: fields.char({ label: 'Avatar URL' }),
@@ -58,6 +59,29 @@ export const AuthUser = defineModel({
   indexes: [
     { fields: ['email'], unique: true },
     { fields: ['res_user_id'], unique: true },
+  ],
+});
+
+export const AuthAccount = defineModel({
+  name: 'auth.account',
+  tableName: 'auth_account',
+  displayName: 'Authentication Account',
+  fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
+    account_id: fields.char({ label: 'Provider Account ID', required: true }),
+    provider_id: fields.char({ label: 'Provider ID', required: true }),
+    user_id: fields.many2one('auth.user', { label: 'Authentication User', required: true }),
+    access_token: fields.text({ label: 'Access Token' }),
+    refresh_token: fields.text({ label: 'Refresh Token' }),
+    id_token: fields.text({ label: 'ID Token' }),
+    access_token_expires_at: fields.datetime({ label: 'Access Token Expiry' }),
+    refresh_token_expires_at: fields.datetime({ label: 'Refresh Token Expiry' }),
+    scope: fields.text({ label: 'Provider Scope' }),
+    password: fields.char({ label: 'Password Hash' }),
+  },
+  indexes: [
+    { fields: ['provider_id', 'account_id'], unique: true },
+    { fields: ['user_id'] },
   ],
 });
 
@@ -150,6 +174,7 @@ export const AuditEvent = defineModel({
 export function registerAuthModels(): void {
   modelRegistry.register(ResUsers);
   modelRegistry.register(AuthUser);
+  modelRegistry.register(AuthAccount);
   modelRegistry.register(AuthSession);
   modelRegistry.register(AuthVerification);
   modelRegistry.register(AuthSetup);

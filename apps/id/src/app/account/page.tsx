@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authClient } from '../../lib/auth-client';
 import { mwClient } from '@allah/sdk';
 import type { ActiveSession, UserSubject } from '@moonwitness/types';
 import {
@@ -64,10 +65,9 @@ export default function AccountCenterPage() {
       sfx.revoke();
       setStatus({ tone: 'success', text: 'Session terminated on the hub.' });
       setSessions((prev) => prev.filter((session) => session.id !== sessionId));
-      const currentToken = mwClient.getSessionToken();
       const targetSession = sessions.find((session) => session.id === sessionId);
-      if (targetSession && targetSession.sessionToken === currentToken) {
-        mwClient.clearSessionToken();
+      if (targetSession?.isCurrent) {
+        await authClient.signOut();
         router.push('/login');
       }
     } catch (error) {
@@ -83,7 +83,8 @@ export default function AccountCenterPage() {
 
   const handleSignOut = async () => {
     try {
-      await mwClient.auth.signOut();
+      const { error: authError } = await authClient.signOut();
+      if (authError) throw new Error(authError.message);
       router.push('/login');
     } catch (error) {
       setStatus({

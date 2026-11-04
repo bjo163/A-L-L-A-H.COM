@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fastifyJwt from '@fastify/jwt';
+import { betterAuth } from 'better-auth';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { fail, ok, resolveLocalSecret, type Principal } from '@allah/arsy-core';
@@ -14,6 +15,12 @@ import {
   registerAuthModels,
 } from '@allah/arsy-orm';
 import { migrateAuthIdentities, provisionSystemBot } from './bootstrap';
+import {
+  arsyBetterAuthAdapter,
+  backfillCredentialAccounts,
+  ensureCredentialAccount,
+  withAuthAuditActor,
+} from './better_auth_adapter';
 
 export interface AuthPluginOptions {
   secret?: string;
@@ -28,6 +35,25 @@ export interface PrincipalGuardOptions {
 interface AuthRow {
   id: number;
   [key: string]: unknown;
+}
+
+function headersFromRequest(request: { headers: Record<string, string | string[] | undefined> }): Headers {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(request.headers)) {
+    if (typeof value === 'string') headers.set(name, value);
+    else if (Array.isArray(value)) headers.set(name, value.join(', '));
+  }
+  return headers;
+}
+
+function removeSessionSecrets(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(removeSessionSecrets);
+  if (typeof value !== 'object' || value === null) return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !['token', 'sessionToken', 'session_token'].includes(key))
+      .map(([key, child]) => [key, removeSessionSecrets(child)])
+  );
 }
 
 class InitialOnboardingCompletedError extends Error {}
@@ -142,6 +168,9 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
   await migrator.runMigration('arsy-immutable-audit-history-v1', (executor) =>
     migrator.enforceAuditConstraints(systemBotId, executor)
   );
+  await migrator.runMigration('auth-better-auth-account-v1', (executor) =>
+    backfillCredentialAccounts(executor, dbEngine)
+  );
 
   await fastify.register(fastifyJwt, { secret });
 
@@ -203,6 +232,11 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     if (!assignedResUser || !assignedAuthUser) {
       throw new Error('Unable to assign the new account personal tenant.');
     }
+    await ensureCredentialAccount(
+      executor,
+      assignedAuthUser as AuthRow & { company_id: number | string },
+      dbEngine
+    );
     return { ...assignedAuthUser, res_user_id: resUserId, company_id: companyId };
   };
 
@@ -215,6 +249,136 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     });
     return rows[0] as AuthRow | undefined;
   };
+
+  const betterAuthBasePath = `${prefix}/better`;
+  const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+  const betterAuthUrl = process.env.BETTER_AUTH_URL;
+  if (process.env.NODE_ENV === 'production') {
+    if (!betterAuthSecret || betterAuthSecret.length < 32 || betterAuthSecret === secret) {
+      throw new Error('Production requires a distinct BETTER_AUTH_SECRET of at least 32 characters.');
+    }
+    if (!betterAuthUrl) {
+      throw new Error('Production requires BETTER_AUTH_URL to be the public ARSY origin.');
+    }
+  }
+  const trustedOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const betterAuthServer = betterAuth({
+    appName: 'MoonWitness ID',
+    baseURL: betterAuthUrl,
+    basePath: betterAuthBasePath,
+    secret: betterAuthSecret || secret,
+    trustedOrigins,
+    database: arsyBetterAuthAdapter,
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: 8,
+      autoSignIn: true,
+      password: {
+        hash: (password) => bcrypt.hash(password, 10),
+        verify: ({ hash, password }) => bcrypt.compare(password, hash),
+      },
+    },
+    user: {
+      fields: {
+        emailVerified: 'email_verified',
+        image: 'avatar_url',
+        createdAt: 'create_date',
+        updatedAt: 'write_date',
+      },
+    },
+    session: {
+      fields: {
+        token: 'session_token',
+        userId: 'user_id',
+        expiresAt: 'expires_at',
+        ipAddress: 'ip_address',
+        userAgent: 'user_agent',
+        createdAt: 'create_date',
+        updatedAt: 'write_date',
+      },
+    },
+    account: {
+      fields: {
+        accountId: 'account_id',
+        providerId: 'provider_id',
+        userId: 'user_id',
+        accessToken: 'access_token',
+        refreshToken: 'refresh_token',
+        idToken: 'id_token',
+        accessTokenExpiresAt: 'access_token_expires_at',
+        refreshTokenExpiresAt: 'refresh_token_expires_at',
+        createdAt: 'create_date',
+        updatedAt: 'write_date',
+      },
+    },
+    verification: {
+      fields: {
+        value: 'token',
+        expiresAt: 'expires_at',
+        createdAt: 'create_date',
+        updatedAt: 'write_date',
+      },
+    },
+    advanced: {
+      useSecureCookies: process.env.NODE_ENV === 'production',
+      database: { generateId: 'serial' },
+      defaultCookieAttributes: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      },
+    },
+  });
+
+  fastify.route({
+    method: ['GET', 'POST'],
+    url: `${betterAuthBasePath}/*`,
+    handler: async (request, reply) => {
+      const currentPrincipal = await (fastify as any).resolvePrincipal(request);
+      const actor = currentPrincipal
+        ? { type: 'user' as const, userId: currentPrincipal.ormUserId }
+        : SYSTEM_ACTOR;
+      const host = request.headers.host;
+      if (!host) throw new Error('The Better Auth request is missing its Host header.');
+      const forwardedProtocol = request.headers['x-forwarded-proto'];
+      const protocol =
+        (typeof forwardedProtocol === 'string' ? forwardedProtocol.split(',')[0]?.trim() : undefined) ||
+        request.protocol;
+      const url = new URL(
+        request.url,
+        process.env.BETTER_AUTH_URL || `${protocol}://${host}`
+      );
+      const headers = headersFromRequest(request);
+      const body =
+        request.method === 'GET' || request.body === undefined
+          ? undefined
+          : JSON.stringify(request.body);
+      const webRequest = new Request(url, { method: request.method, headers, body });
+      const suppliedDeviceName = request.headers['x-device-name'];
+      const deviceName =
+        typeof suppliedDeviceName === 'string' ? suppliedDeviceName.trim().slice(0, 80) : undefined;
+
+      const response = await withAuthAuditActor(
+        actor,
+        () => betterAuthServer.handler(webRequest),
+        deviceName || undefined
+      );
+      for (const [name, value] of response.headers) {
+        if (name.toLowerCase() !== 'set-cookie') reply.header(name, value);
+      }
+      const setCookies = response.headers.getSetCookie();
+      if (setCookies.length > 0) reply.header('set-cookie', setCookies);
+      reply.status(response.status);
+      if (response.headers.get('content-type')?.includes('application/json')) {
+        return reply.send(removeSessionSecrets(await response.json()));
+      }
+      return reply.send(Buffer.from(await response.arrayBuffer()));
+    },
+  });
 
   fastify.get(`${prefix}/onboarding/status`, async () => {
     const setup = await getInitialSetup();
@@ -407,14 +571,25 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
       }
 
       const sessionToken = request.headers['x-session-token'] || request.cookies?.arsy_session;
-      if (typeof sessionToken !== 'string' || sessionToken.length === 0) return null;
+      if (typeof sessionToken === 'string' && sessionToken.length > 0) {
+        const sessions = await getRepo('auth.session').find({
+          scope: { systemScope: true },
+          filters: [
+            { field: 'session_token', operator: '=', value: sessionToken },
+            { field: 'revoked', operator: '=', value: false },
+          ],
+          limit: 1,
+        });
+        return buildPrincipal(sessions[0] as AuthRow | undefined, 'session');
+      }
 
+      const betterAuthSession = await betterAuthServer.api.getSession({
+        headers: headersFromRequest(request),
+      });
+      if (!betterAuthSession?.session?.id) return null;
       const sessions = await getRepo('auth.session').find({
         scope: { systemScope: true },
-        filters: [
-          { field: 'session_token', operator: '=', value: sessionToken },
-          { field: 'revoked', operator: '=', value: false },
-        ],
+        filters: [{ field: 'id', operator: '=', value: Number(betterAuthSession.session.id) }],
         limit: 1,
       });
       return buildPrincipal(sessions[0] as AuthRow | undefined, 'session');
@@ -447,6 +622,11 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
   fastify.post<{ Body: { email: string; password: string; deviceName?: string } }>(
     `${prefix}/sign-in`,
     async (request, reply) => {
+      if (typeof request.headers.origin === 'string') {
+        reply.status(410);
+        return fail('BETTER_AUTH_REQUIRED', 'Browser sign-in must use the Better Auth endpoint');
+      }
+
       const { email, password, deviceName } = request.body || {};
       if (!email || !password) {
         reply.status(400);

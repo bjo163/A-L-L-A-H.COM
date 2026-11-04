@@ -1,6 +1,17 @@
 import { ModelDefinition } from './model';
 
-const SUPPORTED_OPERATORS = new Set(['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'ILIKE', 'IN']);
+const SUPPORTED_OPERATORS = new Set([
+  '=',
+  '!=',
+  '>',
+  '>=',
+  '<',
+  '<=',
+  'LIKE',
+  'ILIKE',
+  'IN',
+  'NOT IN',
+]);
 
 const RESERVED_COLUMNS = ['id', 'active', 'create_date', 'write_date', 'create_uid', 'write_uid', 'company_id'];
 
@@ -10,8 +21,9 @@ export type TenantScope =
 
 export interface QueryFilter {
   field: string;
-  operator: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'LIKE' | 'ILIKE' | 'IN';
+  operator: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'LIKE' | 'ILIKE' | 'IN' | 'NOT IN';
   value: unknown;
+  connector?: 'AND' | 'OR';
 }
 
 export interface QueryOptions {
@@ -89,23 +101,36 @@ export class QueryBuilder {
     const whereClauses: string[] = ['"active" = true', ...this.scopeClause(options.scope, params)];
 
     if (options.filters) {
+      const filterClauses: string[] = [];
       for (const filter of options.filters) {
         const column = this.column(filter.field);
         const operator = filter.operator.toUpperCase();
         if (!SUPPORTED_OPERATORS.has(operator)) throw new UnsupportedOperatorError(filter.operator);
 
-        if (operator === 'IN') {
+        if (operator === 'IN' || operator === 'NOT IN') {
           const values = Array.isArray(filter.value) ? filter.value : [filter.value];
           if (values.length === 0) throw new Error(`'${filter.field}' IN requires at least one value.`);
           const placeholders = values.map((value) => {
             params.push(value);
             return `$${params.length}`;
           });
-          whereClauses.push(`${column} IN (${placeholders.join(', ')})`);
+          filterClauses.push(`${column} ${operator} (${placeholders.join(', ')})`);
+        } else if (filter.value === null && operator === '=') {
+          filterClauses.push(`${column} IS NULL`);
+        } else if (filter.value === null && operator === '!=') {
+          filterClauses.push(`${column} IS NOT NULL`);
         } else {
           params.push(filter.value);
-          whereClauses.push(`${column} ${operator} $${params.length}`);
+          filterClauses.push(`${column} ${operator} $${params.length}`);
         }
+      }
+      if (filterClauses.length > 0) {
+        const combined = filterClauses.reduce((sql, clause, index) => {
+          if (index === 0) return clause;
+          const connector = options.filters?.[index].connector === 'OR' ? 'OR' : 'AND';
+          return `${sql} ${connector} ${clause}`;
+        }, '');
+        whereClauses.push(`(${combined})`);
       }
     }
 
@@ -127,6 +152,14 @@ export class QueryBuilder {
     }
 
     return { sql, params };
+  }
+
+  buildCount(options: QueryOptions): { sql: string; params: unknown[] } {
+    const select = this.buildSelect({ ...options, limit: undefined, offset: undefined, orderBy: undefined });
+    return {
+      sql: select.sql.replace(/^SELECT \* /, 'SELECT COUNT(*)::integer AS count '),
+      params: select.params,
+    };
   }
 
   private assertAuditActor(actorId: number): void {
@@ -230,6 +263,61 @@ export class QueryBuilder {
       conditions.push(`${this.column(field)} = $${params.length}`);
     }
 
+    params.push(actorId);
+    assignments.push(`"write_uid" = $${params.length}`);
+
+    return {
+      sql: `UPDATE "${this.model.tableName}" SET ${assignments.join(', ')}, "write_date" = CURRENT_TIMESTAMP WHERE ${conditions.join(' AND ')} RETURNING *;`,
+      params,
+    };
+  }
+
+  buildIncrementUpdate(
+    id: string | number,
+    increments: Record<string, number>,
+    data: Record<string, unknown>,
+    scope: TenantScope,
+    actorId: number
+  ): { sql: string; params: unknown[] } {
+    this.assertAuditActor(actorId);
+    const params: unknown[] = [];
+    const assignments: string[] = [];
+
+    for (const [field, value] of Object.entries(data)) {
+      this.assertWritableField(field, isSystemScope(scope));
+      params.push(value);
+      assignments.push(`${this.column(field)} = $${params.length}`);
+    }
+
+    for (const [field, increment] of Object.entries(increments)) {
+      this.assertWritableField(field, isSystemScope(scope));
+      if (!Number.isFinite(increment)) {
+        throw new Error(`Increment for '${field}' must be a finite number.`);
+      }
+      params.push(increment);
+      const column = this.column(field);
+      assignments.push(`${column} = COALESCE(${column}, 0) + $${params.length}`);
+    }
+
+    if (assignments.length === 0) {
+      throw new Error('An increment update must include at least one field.');
+    }
+
+    const conditions = ['"active" = true'];
+    params.push(id);
+    conditions.push(`"id" = $${params.length}`);
+    const companyId = isSystemScope(scope)
+      ? scope.companyId === undefined
+        ? (() => {
+            throw new Error(`System update on '${this.model.name}' must name a companyId.`);
+          })()
+        : Number(scope.companyId)
+      : tenantCompanyId(scope);
+    if (!Number.isSafeInteger(companyId) || (!isSystemScope(scope) && companyId === 0)) {
+      throw new Error(`Invalid tenant company_id '${String(companyId)}'.`);
+    }
+    params.push(companyId);
+    conditions.push(`"company_id" = $${params.length}`);
     params.push(actorId);
     assignments.push(`"write_uid" = $${params.length}`);
 

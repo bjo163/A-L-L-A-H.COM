@@ -11,6 +11,7 @@ const model = defineModel({
   fields: {
     state: fields.char({ label: 'State', required: true }),
     label: fields.char({ label: 'Label' }),
+    attempts: fields.integer({ label: 'Attempts' }),
   },
 });
 
@@ -58,5 +59,57 @@ test('inserts set both audit UIDs from the actor and reject caller-supplied audi
   assert.throws(
     () => builder.buildInsert({ state: 'queued', create_uid: 9 }, { companyId: 12 }, 41),
     /managed by the ORM/
+  );
+});
+
+test('selects compile connector groups and null comparisons without interpolating values', () => {
+  const result = new QueryBuilder(model).buildSelect({
+    scope: { companyId: 12 },
+    filters: [
+      { field: 'state', operator: '=', value: 'ready' },
+      { field: 'label', operator: '=', value: null, connector: 'OR' },
+    ],
+  });
+  assert.match(result.sql, /"company_id" = \$1/);
+  assert.match(result.sql, /\("state" = \$2 OR "label" IS NULL\)/);
+  assert.deepEqual(result.params, [12, 'ready']);
+  assert.doesNotMatch(result.sql, /ready/);
+});
+
+test('count queries preserve filters and omit pagination and ordering', () => {
+  const result = new QueryBuilder(model).buildCount({
+    scope: { systemScope: true },
+    filters: [{ field: 'state', operator: 'NOT IN', value: ['deleted', 'archived'] }],
+    limit: 1,
+    offset: 2,
+    orderBy: 'label',
+  });
+  assert.match(result.sql, /^SELECT COUNT\(\*\)::integer AS count FROM/);
+  assert.match(result.sql, /"state" NOT IN \(\$1, \$2\)/);
+  assert.doesNotMatch(result.sql, /LIMIT|OFFSET|ORDER BY/);
+  assert.deepEqual(result.params, ['deleted', 'archived']);
+});
+
+test('increment updates perform arithmetic in the database with audited, scoped writes', () => {
+  const result = new QueryBuilder(model).buildIncrementUpdate(
+    7,
+    { attempts: 1 },
+    { label: 'retrying' },
+    { companyId: 3 },
+    41
+  );
+  assert.match(result.sql, /"label" = \$1/);
+  assert.match(result.sql, /COALESCE\("attempts", 0\) \+ \$2/);
+  assert.match(result.sql, /"company_id" = \$4/);
+  assert.match(result.sql, /"write_uid" = \$5/);
+  assert.deepEqual(result.params, ['retrying', 1, 7, 3, 41]);
+  assert.doesNotMatch(result.sql, /retrying/);
+  assert.throws(
+    () => new QueryBuilder(model).buildIncrementUpdate(7, { attempts: Number.NaN }, {}, { companyId: 3 }, 41),
+    /finite number/
+  );
+  assert.throws(
+    () => new QueryBuilder(model).buildIncrementUpdate(7, { missing: 1 }, {}, { companyId: 3 }, 41),
+    /Unknown field/
   );
 });

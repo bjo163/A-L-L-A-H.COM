@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { mwClient } from '@allah/sdk';
+import { authClient } from '../../lib/auth-client';
 import { Button, Card, CardContent, Form, Input, Link, PageHero, StatusMessage, sfx } from '@moonwitness/ui';
 
 export default function RegisterPage() {
@@ -36,8 +36,8 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await mwClient.auth.register({ name, email, password });
-      await mwClient.auth.signIn({ email, password, deviceName: 'Primary Session' });
+      const { error: authError } = await authClient.signUp.email({ name, email, password });
+      if (authError) throw new Error(authError.message);
       sfx.success();
       router.push('/account');
     } catch (requestError) {

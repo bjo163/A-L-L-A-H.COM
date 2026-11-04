@@ -1,3 +1,12 @@
 {
-  "processed": {}
+  "processed": {
+    ".plans/20261104-1048-trust-boundary-hardening": {
+      "issue": "66",
+      "at": "2026-11-04T13:09:24.479Z"
+    },
+    ".plans/20261104-1950-ui-design-consistency": {
+      "issue": "67",
+      "at": "2026-11-04T13:09:27.923Z"
+    }
+  }
 }

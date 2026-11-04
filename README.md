@@ -4,7 +4,7 @@ id: "README"
 version: "0.1.0"
 owner: "ecosystem"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 ---
 
 [![CI Status](https://github.com/bjo163/A-L-L-A-H.COM/actions/workflows/ci-dev.yml/badge.svg)](https://github.com/bjo163/A-L-L-A-H.COM/actions/workflows/ci-dev.yml)
@@ -35,6 +35,8 @@ This repository contains a Fastify/TypeScript ARSY Hub, a Sentinel RADIUS daemon
 11. [CHANGELOG.md](CHANGELOG.md) â€” actual repository changes.
 
 ARSY provisions an idempotent `res.users` system identity named `bot` for system-owned writes. First-run onboarding creates the initial superuser without a seeded password; model writes record required `create_uid` and `write_uid` ORM user IDs and append a redacted audit event in the same transaction.
+
+`apps/id` authenticates through Better Auth endpoints served by ARSY at `/api/auth/better/*`; the custom adapter stores users, credential accounts, sessions, and verification records through `@allah/arsy-orm`. Browser sessions are HttpOnly cookies, while tenant and role authorization continue to come from the linked ARSY identity. Initial onboarding remains a one-time ARSY operation, and later Better Auth registrations receive only the regular `user` role. Before production startup, configure `BETTER_AUTH_URL` (the public ARSY origin), a distinct `BETTER_AUTH_SECRET` of at least 32 characters, `NEXT_PUBLIC_AUTH_API_URL` (the browser-reachable ARSY origin), and any cross-origin web app origins in `CORS_ORIGINS`. The auth startup migration backfills credential accounts from existing password hashes; rehearse it against a restorable persistent-data copy before deploying.
 
 Superusers access other tenants only through explicit `/v1/admin/*` routes. Each cross-tenant request supplies a non-zero target `company_id` and a reason; the audit event stores the reason hash, actor, target, request ID, operation, and changed field names. Generic CRUD never exposes identity, audit, or credential-bearing models, even when they appear in `GENERIC_MODEL_ALLOWLIST`. Audit events do not retain before/after values and have no automatic purge; configure a retention policy before claiming a retention period. See [D-014](DECISIONS.md#d-014-explicit-global-admin-and-append-only-audit-history).
 

@@ -118,10 +118,10 @@ test('model writes create immutable, redacted audit events with trusted actors',
     assert.deepEqual(events.map((event) => event.operation), ['insert', 'update', 'insert', 'update', 'delete', 'delete']);
     assert.equal(Number(events[0].actor_uid), ownerId);
     assert.equal(Number(events[1].actor_uid), ownerId);
-    assert.equal(Number(events[4].actor_uid), ownerId);
+    assert.equal(Number(events[4].actor_uid), botId);
     assert.equal(Number(events[0].company_id), -1);
     assert.ok(events[0].create_date);
-    assert.equal(Number(events[5].actor_uid), botId);
+    assert.equal(Number(events[5].actor_uid), ownerId);
     assert.deepEqual(events[1].changed_fields, ['note']);
     assert.equal(events[0].reason_hash, reasonHash);
     assert.equal(events[0].request_id, 'audit-test-request');
@@ -233,7 +233,10 @@ test('legacy UID fixtures are normalized and repeated startup is idempotent', { 
         "note" TEXT
       );
       INSERT INTO "audit_test" ("company_id", "name", "create_uid", "write_uid")
-      VALUES (-1, 'valid', '1', '1'), (-1, 'corrupt', 'not-an-id', '9999');
+      VALUES
+        (-1, 'valid', '1', '1'),
+        (-1, 'empty', '', ''),
+        (-1, 'corrupt', 'not-an-id', '9999');
     `);
 
     const migrator = new SchemaMigrator(engine, registry);
@@ -247,6 +250,7 @@ test('legacy UID fixtures are normalized and repeated startup is idempotent', { 
       migrated.map((row) => [row.name, Number(row.create_uid), Number(row.write_uid)]),
       [
         ['valid', 1, 1],
+        ['empty', botId, botId],
         ['corrupt', botId, botId],
       ]
     );

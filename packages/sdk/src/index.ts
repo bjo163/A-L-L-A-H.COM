@@ -23,7 +23,6 @@ import type {
 
 export interface SdkOptions {
   baseUrl?: string;
-  storageKey?: string;
   virtualKey?: string;
   sessionStore?: SessionTokenStore;
 }
@@ -99,14 +98,12 @@ export interface SwarmExecutionResult {
 
 export class MoonWitnessClient {
   private readonly baseUrl: string;
-  private readonly storageKey: string;
   private readonly sessionStore: SessionTokenStore | undefined;
   private cachedSessionToken: string | null | undefined;
   private virtualKey: string | undefined;
 
   constructor(options: SdkOptions = {}) {
     this.baseUrl = options.baseUrl || 'http://localhost:5150';
-    this.storageKey = options.storageKey || 'mw_session_token';
     this.sessionStore = options.sessionStore;
     this.virtualKey = options.virtualKey;
   }
@@ -120,26 +117,20 @@ export class MoonWitnessClient {
     if (this.sessionStore) {
       return this.cachedSessionToken ?? null;
     }
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.storageKey);
+    return null;
   }
 
   setSessionToken(token: string): void {
-    if (this.sessionStore) {
-      throw new Error('Use setSessionTokenAsync when a session store is configured.');
+    void token;
+    if (!this.sessionStore) {
+      throw new Error('Browser sessions are HttpOnly. Use Better Auth sign-in instead of storing a token.');
     }
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(this.storageKey, token);
-    document.cookie = `arsy_session=${token}; path=/; max-age=2592000; SameSite=Lax`;
+    throw new Error('Use setSessionTokenAsync when a session store is configured.');
   }
 
   clearSessionToken(): void {
-    if (this.sessionStore) {
-      throw new Error('Use clearSessionTokenAsync when a session store is configured.');
-    }
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(this.storageKey);
-    document.cookie = 'arsy_session=; path=/; max-age=0; SameSite=Lax';
+    if (!this.sessionStore) return;
+    throw new Error('Use clearSessionTokenAsync when a session store is configured.');
   }
 
   async setSessionTokenAsync(token: string): Promise<void> {
@@ -166,7 +157,7 @@ export class MoonWitnessClient {
       this.cachedSessionToken = token;
       return token;
     }
-    return this.getSessionToken();
+    return null;
   }
 
   private async request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
@@ -185,7 +176,11 @@ export class MoonWitnessClient {
     }
 
     const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const response = await fetch(url, { ...init, headers });
+    const response = await fetch(url, {
+      ...init,
+      headers,
+      credentials: init.credentials ?? 'include',
+    });
     const json = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -210,11 +205,14 @@ export class MoonWitnessClient {
     },
 
     signIn: async (credentials: { email: string; password: string; deviceName?: string }): Promise<AuthResponse> => {
+      if (!this.sessionStore) {
+        throw new Error('Use the Better Auth client for browser sign-in; browser tokens are not exposed.');
+      }
       const data = await this.request<AuthResponse>('/api/auth/sign-in', {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
-      if (data?.sessionToken) {
+      if (this.sessionStore && data?.sessionToken) {
         await this.setSessionTokenAsync(data.sessionToken);
       }
       return data;
@@ -244,12 +242,15 @@ export class MoonWitnessClient {
     },
 
     signOut: async (): Promise<void> => {
-      try {
-        await this.request('/api/auth/sign-out', { method: 'POST' });
-      } catch {
-        // Suppress network errors on exit
+      if (this.sessionStore) {
+        try {
+          await this.request('/api/auth/sign-out', { method: 'POST' });
+        } finally {
+          await this.clearSessionTokenAsync();
+        }
+        return;
       }
-      await this.clearSessionTokenAsync();
+      await this.request('/api/auth/better/sign-out', { method: 'POST' });
     },
   };
 
@@ -647,13 +648,14 @@ export class MoonWitnessClient {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (token) headers['x-session-token'] = token;
       if (this.virtualKey) headers['x-virtual-key'] = this.virtualKey;
 
       const res = await fetch(`${this.baseUrl}/v1/swarm/stream`, {
         method: 'POST',
         headers,
         body: JSON.stringify(options),
+        credentials: 'include',
         ...(signal ? { signal } : {}),
       });
 
@@ -728,13 +730,14 @@ export class MoonWitnessClient {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (token) headers['x-session-token'] = token;
       if (this.virtualKey) headers['x-virtual-key'] = this.virtualKey;
 
       const res = await fetch(`${this.baseUrl}/v1/agent/stream`, {
         method: 'POST',
         headers,
         body: JSON.stringify(options),
+        credentials: 'include',
       });
 
       if (!res.ok) {

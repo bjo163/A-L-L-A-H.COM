@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@allah/sdk';
+import { authClient } from './auth-client';
 
 const client = createClient();
 
@@ -26,11 +27,21 @@ export interface SessionInfo {
 
 export class IdApiClient {
   static async register(data: { email: string; password: string; name: string }) {
-    return client.auth.register(data);
+    const result = await authClient.signUp.email(data);
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
   }
 
   static async signIn(data: { email: string; password: string; deviceName?: string }) {
-    return client.auth.signIn(data);
+    const result = await authClient.signIn.email(
+      {
+        email: data.email,
+        password: data.password,
+        fetchOptions: { headers: { 'x-device-name': data.deviceName || 'Browser Session' } },
+      }
+    );
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
   }
 
   static async getCurrentUser(): Promise<{ success: boolean; data?: { user: User }; message?: string }> {
@@ -61,6 +72,7 @@ export class IdApiClient {
   }
 
   static async signOut() {
-    await client.auth.signOut();
+    const result = await authClient.signOut();
+    if (result.error) throw new Error(result.error.message);
   }
 }

@@ -138,6 +138,16 @@ export class BaseRepository<T = Record<string, unknown>> {
     return rows;
   }
 
+  async count(options: QueryOptions): Promise<number> {
+    const { sql, params } = this.queryBuilder.buildCount(options);
+    const rows = await this.executor.query<{ count: number | string }>(sql, params);
+    const count = Number(rows[0]?.count);
+    if (!Number.isSafeInteger(count) || count < 0) {
+      throw new Error(`Invalid count returned for '${this.model.name}'.`);
+    }
+    return count;
+  }
+
   async findById(id: string | number, scope: TenantScope, lang?: string): Promise<T | null> {
     const options: QueryOptions = {
       scope,
@@ -169,6 +179,27 @@ export class BaseRepository<T = Record<string, unknown>> {
   ): Promise<T | null> {
     const actorId = await this.resolveActor(actor);
     const { sql, params } = this.queryBuilder.buildUpdate(id, data, scope, actorId, expected);
+    return this.withAuditContext(actor, actorId, async (executor) => {
+      const rows = await executor.query<T>(sql, params);
+      return rows[0] || null;
+    });
+  }
+
+  async incrementById(
+    id: string | number,
+    increments: Record<string, number>,
+    data: Record<string, unknown>,
+    scope: TenantScope,
+    actor: AuditActor
+  ): Promise<T | null> {
+    const actorId = await this.resolveActor(actor);
+    const { sql, params } = this.queryBuilder.buildIncrementUpdate(
+      id,
+      increments,
+      data,
+      scope,
+      actorId
+    );
     return this.withAuditContext(actor, actorId, async (executor) => {
       const rows = await executor.query<T>(sql, params);
       return rows[0] || null;
