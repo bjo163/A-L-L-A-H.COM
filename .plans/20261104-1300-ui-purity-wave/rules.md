@@ -32,7 +32,7 @@ status: "in_progress"
 - `Dialog` closes on `Escape` and returns focus to the element that opened it. Native
   `<dialog>` provides both; a hand-written overlay does not.
 - Non-text contrast for control boundaries and status markers stays at 3:1.
-- Layout direction uses logical properties so RTL reﬂows without physical `left` / `right`.
+- Layout direction uses logical properties so RTL reflows without physical `left` / `right`.
 
 ## 3. Security Constraints
 
