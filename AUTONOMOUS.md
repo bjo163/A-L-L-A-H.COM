@@ -118,9 +118,35 @@ pick top-scored idea
 → return to §1 DISCOVER (pick the new task immediately)
 ```
 
+Guard (evolve-loop-guard): a new plan is created only when the idea has a
+concrete spec. Before creating `.plans/<timestamp>-<slug>/`, write a
+`spec.md` whose `## Architecture Requirements` and `## Acceptance Criteria`
+name the specific capability, the files/subsystems it touches, and the
+measurable acceptance criteria. A plan titled "New platform capability" with
+acceptance criteria that only repeat "implement the capability" is rejected;
+rephrase the idea until the spec is specific, or drop it.
+
 ### 8.4 Evolve Constraints
 
 - Max 1 new plan created per evolve cycle (avoid runaway scope)
 - Must pass §3 Security Audit before implementing any evolved idea
 - Record brainstorm rationale in `spec.md` § Motivation
 - If all roadmap stages are `VERIFIED`: propose next platform generation in a new `conflict.md` for human steering
+
+### 8.5 Verification Guard (evolve-loop-guard)
+
+`VERIFIED` in BACKLOG.md is a hard state: it requires a `report.md` in the
+plan directory that records evidence actually produced, not a claim. Before
+setting any evolved item to `VERIFIED`, the `report.md` must name the commands
+run, the exit codes or output, and the concrete files changed. A report that
+only states "all quality gates passing" with no command list, no exit codes,
+and no changed files is treated as unverified and must not be marked
+`VERIFIED`; set the item to `DISCOVERED` or `IN_PROGRESS` instead.
+
+### 8.6 Anti-Stacking Guard (evolve-loop-guard)
+
+No new evolve plan is created while any evolve plan exists in `proposed` or
+`in_progress` state. Resolve or reject the open plan first (a plan stuck in
+`proposed` with no code or spec may be marked `REJECTED` with a one-line
+reason) before opening a new one. This prevents the pile-up of empty
+`NEW-PLATFORM-CAPABILITY-N` plans seen in capability 4 through 13.

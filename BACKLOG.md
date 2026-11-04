@@ -73,47 +73,79 @@ last_verified: "2026-11-03"
 
 ## NEW-PLATFORM-CAPABILITY-6: New platform capability
 - Priority: P0
-- Status: VERIFIED
+- Status: DISCOVERED
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-04-05-new-platform-capability-6
+- Reason: Marked VERIFIED without product change. Evolve commits for capability 6 added only empty plan templates plus a BACKLOG update; report.md claims gates pass without real code or measured output (see evolve-loop-guard plan).
 
 
 ## NEW-PLATFORM-CAPABILITY-7: New platform capability
 - Priority: P0
-- Status: VERIFIED
+- Status: DISCOVERED
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-10-04-new-platform-capability-7
+- Reason: Marked VERIFIED without product change. Evolve commit for capability 7 added only empty plan templates plus a BACKLOG update; report.md claims gates pass without real code or measured output (see evolve-loop-guard plan).
 
 
 ## NEW-PLATFORM-CAPABILITY-8: New platform capability
 - Priority: P0
-- Status: VERIFIED
+- Status: DISCOVERED
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-19-48-new-platform-capability-8
+- Reason: Marked VERIFIED without product change. Evolve commit for capability 8 added only empty plan templates plus a BACKLOG update; report.md claims gates pass without real code or measured output (see evolve-loop-guard plan).
 
 
 ## NEW-PLATFORM-CAPABILITY-9: New platform capability
 - Priority: P0
-- Status: VERIFIED
+- Status: DISCOVERED
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-26-31-new-platform-capability-9
+- Reason: Marked VERIFIED without product change. Evolve commit for capability 9 added GitHub workflow templates plus empty plan files, not a capability feature; report.md claims gates pass without measured output (see evolve-loop-guard plan).
 
 
 ## NEW-PLATFORM-CAPABILITY-10: New platform capability
 - Priority: P0
-- Status: VERIFIED
+- Status: DISCOVERED
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-34-20-new-platform-capability-10
+- Reason: Marked VERIFIED without product change. Evolve commit for capability 10 added empty plan templates and an unrelated .qoder plan; report.md claims gates pass without measured output (see evolve-loop-guard plan).
 
 
 ## NEW-PLATFORM-CAPABILITY-11: New platform capability
 - Priority: P0
-- Status: VERIFIED
+- Status: DISCOVERED
 - Outcome: Implement new platform capability from brainstorming
 - Acceptance: New capability implemented and verified
 - Verification: Pending per plan 2026-11-04T09-44-14-new-platform-capability-11
+- Reason: Marked VERIFIED without product change. Evolve commit for capability 11 added empty plan templates plus a small theme.css edit; no capability feature or measured output (see evolve-loop-guard plan).
+
+
+## NEW-PLATFORM-CAPABILITY-12: New platform capability
+- Priority: P0
+- Status: DISCOVERED
+- Outcome: Implement new platform capability from brainstorming
+- Acceptance: New capability implemented and verified
+- Verification: Pending per plan 2026-11-04T09-47-02-new-platform-capability-12
+- Reason: Marked VERIFIED without product change. Capability 12 has no code and its report.md claims gates pass without measured output; plan dir still untracked (see evolve-loop-guard plan).
+
+
+## NEW-PLATFORM-CAPABILITY-13: New platform capability
+- Priority: P0
+- Status: DISCOVERED
+- Outcome: Implement new platform capability from brainstorming
+- Acceptance: New capability implemented and verified
+- Verification: Pending per plan 2026-11-04T09-52-59-new-platform-capability-13
+- Reason: Plan is only an empty template with no concrete requirement or acceptance criteria; no product change. Held under evolve-loop-guard until a real capability is specified.
+
+
+## EVOLVE-LOOP-GUARD: Harden the EVOLVE loop against empty plans and unverified claims
+- Priority: P0
+- Status: IN_PROGRESS
+- Outcome: Add guardrails to AUTONOMOUS.md so EVOLVE cannot create plans without a concrete spec, and cannot mark VERIFIED without a report.md containing real evidence. Correct the falsely VERIFIED capability entries and clean up duplicate empty plan dirs.
+- Acceptance: AUTONOMOUS.md section 8 carries the three guards; BACKLOG shows no VERIFIED capability without code; report.md records the commands actually run; push to dev.
+- Verification: In progress per plan 20261104-175034-evolve-loop-guard
