@@ -32,5 +32,5 @@
 - [x] Run `pnpm docs:check` (100/100 pts)
 - [x] Run all 4 production builds (`dock:build`, `headquarter:build`, `id:build`, `@allah/arsy build`)
 - [x] Update canonical documentation (`CHANGELOG.md`, `BACKLOG.md`, `QUALITY.md`, `BLUEPRINT.md`)
-- [ ] Commit and push to `dev`
+- [x] Commit and push to `dev`
 
