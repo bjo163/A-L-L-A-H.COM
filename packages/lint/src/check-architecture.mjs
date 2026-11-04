@@ -617,6 +617,39 @@ function checkSkinRoot(baseline) {
   }
 }
 
+// 15. RULE: PALETTE_PURITY
+// Tailwind palette utilities colour app markup directly, which no skin can re-theme.
+function checkPalettePurity(baseline) {
+  const allowed = baseline.PALETTE_PURITY || {};
+  const paletteUtility = /(?:^|[^\w./-])(?:bg|text|border|ring|fill|stroke|shadow|from|via|to|outline|decoration|accent|caret|placeholder|selection|divide|space)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}(?:\/\d{1,3})?(?![\w-])/g;
+
+  for (const appName of listAppDirs()) {
+    const files = collectFiles(path.join(ROOT_DIR, 'apps', appName), ['.tsx', '.jsx']);
+    const findings = [];
+
+    for (const filePath of files) {
+      const lines = stripComments(fs.readFileSync(filePath, 'utf8')).split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const hits = lines[i].match(paletteUtility);
+        if (hits) {
+          findings.push({ file: filePath, line: i + 1, text: `${hits.length}x ${hits.map((h) => h.trim()).join(', ')}`.slice(0, 70) });
+        }
+      }
+    }
+
+    const limit = allowed[appName] === undefined ? 0 : allowed[appName];
+    if (findings.length > limit) {
+      const first = findings[0];
+      addViolation(
+        'PALETTE_PURITY',
+        first.file,
+        `${findings.length} lines in apps/${appName} paint markup with Tailwind palette colours, baseline allows ${limit}. A palette utility cannot be re-themed by a skin, so the world stops deciding the look (see ${first.line}: ${first.text}). Use a component variant or a block from @moonwitness/ui, then lower packages/lint/style-baseline.json.`,
+        first.line
+      );
+    }
+  }
+}
+
 // Run all rules
 console.log('============================================================');
 console.log('  @moonwitness/lint - Monorepo Architectural Invariant Gate');
@@ -638,6 +671,7 @@ checkStylePurity(styleBaseline);
 checkInlineStylePurity(styleBaseline);
 checkStateParity(styleBaseline);
 checkSkinRoot(styleBaseline);
+checkPalettePurity(styleBaseline);
 
 if (violations.length > 0) {
   console.error(`❌ ARCHITECTURAL VIOLATIONS DETECTED (${violations.length} error(s)):\n`);
@@ -663,6 +697,7 @@ if (violations.length > 0) {
   console.log('  ✓ Inline Style Purity: painted inline styles within baseline');
   console.log('  ✓ State Parity: error, loading and not-found routes present');
   console.log('  ✓ Skin Root: every app renders one valid, unclaimed world');
+  console.log('  ✓ Palette Purity: markup colours come from skins, not the Tailwind palette');
   console.log('------------------------------------------------------------\n');
   process.exit(0);
 }

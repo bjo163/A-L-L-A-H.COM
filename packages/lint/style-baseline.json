@@ -10,6 +10,10 @@
     "gate": 78,
     "headquarter": 1
   },
+  "PALETTE_PURITY": {
+    "headquarter": 99,
+    "id": 44
+  },
   "SKIN_ROOT_DUPLICATES": [
     "imperium-lumen"
   ]
