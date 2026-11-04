@@ -393,7 +393,7 @@ async function handleAccountingRequest(
           });
           if (existing && existing.length > 0) {
             await sessionRepo.updateById(
-              (existing[0] as any).id,
+              (existing[0] as any).id as string | number,
               {
                 input_octets: inputOctets || 0,
                 output_octets: outputOctets || 0,
@@ -418,7 +418,7 @@ async function handleAccountingRequest(
           });
           if (existing && existing.length > 0) {
             await sessionRepo.updateById(
-              (existing[0] as any).id,
+              (existing[0] as any).id as string | number,
               {
                 stop_time: new Date().toISOString(),
                 input_octets: inputOctets || 0,
