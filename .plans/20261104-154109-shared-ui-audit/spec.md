@@ -1,6 +1,6 @@
 ---
 title: "Shared UI Package and App Adoption"
-status: "proposed"
+status: "in_progress"
 timestamp: "2026-11-04T15:41:09+07:00"
 author: "Copilot"
 target_branch: "dev"
@@ -34,7 +34,7 @@ This is an implementation plan, not an implementation. No UI source was changed 
 - `pnpm lint:arch` passed during this audit and reported all architectural invariants at 100%, including strict `@moonwitness/ui` enforcement.
 - A JSX scan across the five React apps found no raw `button`, `input`, `select`, `textarea`, `a`, `form`, `label`, or `table` tags.
 - A separate scan found 24 hand-written internal `mw-*` classes in 8 app files. The existing architecture check misses these names and does not scan app CSS, so its pass is not proof of full UI purity; see UI-08.
-- Shared UI tests passed: 11/11 (`packages/ui/test/skins.test.tsx`, `packages/ui/test/audio.test.ts`). The tests include skin-token contrast checks and reduced-motion/style-scope checks, but do not cover the findings below.
+- Initial shared UI tests passed: 11/11 before adding regression coverage. The updated component suite is recorded in the implementation report after final validation.
 - Static source inspection did not establish browser/axe, keyboard, 200%-zoom, or per-route visual results in this audit. Those remain explicit implementation verification gates.
 
 ### App inventory
@@ -42,9 +42,9 @@ This is an implementation plan, not an implementation. No UI source was changed 
 | App | UI scope | Audit result |
 |---|---|---|
 | Dock | React/Next.js app using shared navbar, links, motion, and skin APIs | No raw JSX controls found; app-specific CSS remains |
-| Gate | React/Next.js app consuming shared UI blocks and components | No raw JSX controls; 15 internal `mw-*` class uses across 6 files |
-| Headquarter | React/Next.js app using shared controls and Skin Laboratory | No raw JSX controls; 4 internal `mw-*` CSS selectors; dialog gap at `/skin-lab` |
-| ID | React/Next.js app using shared form controls | No raw JSX controls; 5 internal `mw-*` CSS selectors |
+| Gate | React/Next.js app consuming shared UI blocks and components | No raw JSX controls; migrated the identified internal classes |
+| Headquarter | React/Next.js app using shared controls and Skin Laboratory | No raw JSX controls; migrated CSS selectors to public slots |
+| ID | React/Next.js app using shared form controls | No raw JSX controls; migrated CSS selectors to public slots |
 | Jizz | React/Next.js app using shared navbar, cards, and motion | No raw JSX controls found |
 
 `apps/arsy/` and `apps/sentinel/` are service packages rather than React apps; `apps/server/` has no app package manifest. They are not UI adoption targets in this plan.
@@ -53,14 +53,14 @@ This is an implementation plan, not an implementation. No UI source was changed 
 
 | ID | Priority | Finding and evidence | Status |
 |---|---|---|---|
-| UI-08 | P1 | The UI gate misses app-level private-class bypasses. Its TSX scan only checks `mw-button--`, `mw-input-field__`, `mw-card__`, and `mw-badge--`; it does not scan CSS. Actual hits: Gate uses `mw-card`, `mw-link`, `mw-raw-stack`, `mw-raw-grid`, and `mw-skeleton` in six files (`discover-filters.tsx`, `journey-next.tsx`, `transmissions-feed.tsx`, `universe-map.tsx`, `closing-horizon.tsx`, `app/loading.tsx`); Headquarter and ID use private `.mw-card`/`.mw-button`/`.mw-input` selectors in their global CSS. This contradicts the `AGENTS.md` ban on hand-written `mw-*` component classes while `pnpm lint:arch` still reports a pass. Evidence: `packages/lint/src/check-architecture.mjs` lines 72-129 and the listed app files. | Verified app rule violations and gate coverage gap |
-| UI-01 | P1 | `FormField` creates hint/error IDs and renders their text, but `Input`, `Textarea`, and `Select` do not consume `field.hintId` or `field.errorId` in `aria-describedby`. Their own `hint` prop is passed as a string to `aria-describedby`, without rendering an element with that ID. A consumer using the advertised shared field API can therefore have hints/errors that are not programmatically associated with the control. Evidence: `packages/ui/src/components/form.tsx` lines 44-75; `packages/ui/src/components/input.tsx` lines 16-42; corresponding `textarea.tsx` and `select.tsx` lines 16-43. | Verified in code; no current app uses `FormField` directly |
-| UI-02 | P1 | `SkinLaboratory` implements its demo modal as a `div[role=dialog][aria-modal=true]`; no focus placement/trap, Escape handling, or focus restoration appears in the block. The shared native `Dialog` primitive already exists. Evidence: `packages/ui/src/blocks/skin-laboratory.tsx` lines 282-301. | Verified in code; exposed by Headquarter `/skin-lab` |
-| UI-03 | P2 | `Link` announces “Opens in a new tab” whenever `external` is true but renders `target={target}` rather than forcing `_blank`; `external` without `target` therefore keeps the current tab while announcing otherwise. `LinkButton` already applies `_blank` for the same flag. Evidence: `packages/ui/src/components/link.tsx` lines 17-47 and 69-91. | Verified in code; no current app use of `external` found |
-| UI-04 | P2 | `Button asChild` replaces the child's `onClick` with its own handler when cloning, so a child action handler can be lost. Evidence: `packages/ui/src/components/button.tsx` lines 52-61. | Verified in code; no current app use of `asChild` found |
-| UI-05 | P2 | The UI package exposes two token representations: `tokens/index.ts` has a single static palette (including `background: '#09090b'`), while `skins/registry.ts` defines six per-world token sets. No in-repository consumer of the static `tokens` object was found. This makes the canonical design-token API unclear; consolidate or document the distinct purpose before adding more consumers. | Verified duplication; impact is architectural, not a confirmed runtime defect |
-| UI-06 | P3 | The specifically tagged root `shadcn/tailwind.css` has identical content to copies under Dock, Headquarter, and ID, while app CSS uses the bare package import `shadcn/tailwind.css`. The `shadcn` package export maps that subpath to `dist/tailwind.css`; the root file has no direct import reference. `packages/ui/src/globals.css` also imports that package path but is not exported by the package manifest. Resolve which files are intentionally retained and remove dead snapshots only after confirming the bundler resolution. | Verified duplication and package export; cleanup safety needs build confirmation |
-| UI-07 | P3 | `apps/gate/` is an active Next.js UI app and is included in the architecture gate, but is missing from the app inventory in `AGENTS.md`. | Verified documentation gap |
+| UI-08 | P1 | The UI gate missed app-level private-class bypasses because its TSX scan checked only selected class prefixes and did not scan CSS. Gate used `mw-card`, `mw-link`, `mw-raw-stack`, and `mw-skeleton` in six files; Headquarter and ID used private selectors in global CSS. | Resolved: gate scans app JSX/CSS and all identified uses now use public components or data slots |
+| UI-01 | P1 | `FormField` generated and rendered hint/error IDs, but controls did not consume those IDs. Direct `hint` props were passed to `aria-describedby` as text without a corresponding description node. | Resolved: controls now reference field/direct description nodes and propagate required state; component tests cover all three controls |
+| UI-02 | P1 | `SkinLaboratory` implemented its demo modal as a `div[role=dialog][aria-modal=true]` without native focus management or Escape behavior, despite a shared native `Dialog` being available. | Resolved in code: block now uses shared native `Dialog`; browser keyboard/focus verification remains pending |
+| UI-03 | P2 | `Link` announced a new tab for `external` but did not set `_blank`, unlike `LinkButton`. | Resolved: both components apply consistent target, safe rel, and accessible announcement behavior; tests cover both |
+| UI-04 | P2 | `Button asChild` replaced the child's `onClick` handler when cloning. | Resolved: composed handlers and child refs are preserved; tests cover handler and disabled activation behavior |
+| UI-05 | P2 | `tokens/index.ts` exposed a static palette alongside six runtime skin token sets without clarifying which is canonical. No app consumes the static palette. | Resolved without a breaking API removal: deprecated static palette points consumers to the selected skin tokens |
+| UI-06 | P3 | The tagged root `shadcn/tailwind.css` duplicated app-local snapshots. Apps resolve the bare CSS import through the `shadcn` package export; the UI global stylesheet was not exported or imported. | Resolved: removed the five unreferenced snapshots; app package CSS imports remain |
+| UI-07 | P3 | `apps/gate/` is an active Next.js UI app and was missing from the app inventory in `AGENTS.md`. | Resolved: Gate is now listed in the app map |
 
 ## 5. Requirements
 

@@ -1,0 +1,98 @@
+name: CI Failure -> Auto Issue
+
+on:
+  workflow_run:
+    workflows:
+      - "CI"
+      - "Build"
+      - "TypeCheck"
+      - "Quality Gates"
+    types:
+      - completed
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  auto-issue:
+    name: Auto-create Issue on Failure
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Extract failure info
+        id: info
+        run: |
+          echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+          echo "run_url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
+          echo "workflow=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
+          echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "commit_url=https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "started=${{ github.event.workflow_run.run_started_at }}" >> $GITHUB_OUTPUT
+          echo "finished=${{ github.event.workflow_run.updated_at }}" >> $GITHUB_OUTPUT
+
+      - name: Get failed job logs
+        id: logs
+        run: |
+          # Get failed jobs and their failed steps
+          JOBS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ steps.info.outputs.run_id }}/jobs")
+          
+          # Extract failure details
+          ERROR_DETAILS=$(echo "$JOBS" | jq -r '
+            .jobs[] 
+            | select(.conclusion == "failure") 
+            | "## Job: \(.name)\n\(.steps[] | select(.conclusion == "failure") | "### Step: \(.name)\nStatus: \(.conclusion)\n")"
+          ' 2>/dev/null | head -c 2000)
+          
+          # Escape for issue body
+          if [ -z "$ERROR_DETAILS" ] || [ "$ERROR_DETAILS" = "null" ]; then
+            ERROR_DETAILS="Could not fetch detailed logs. Check the workflow run directly."
+          fi
+          
+          echo "details<<EOF" >> $GITHUB_OUTPUT
+          echo "$ERROR_DETAILS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create or update issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "[CI Failure] ${{ steps.info.outputs.workflow }} failed on ${{ steps.info.outputs.branch }}"
+          content-filepath: .github/issue-templates/ci-failure.md
+          labels: |
+            ci-failure
+            auto-created
+            branch:${{ steps.info.outputs.branch }}
+          assignees: |
+        env:
+          WORKFLOW_NAME: ${{ steps.info.outputs.workflow }}
+          RUN_URL: ${{ steps.info.outputs.run_url }}
+          BRANCH: ${{ steps.info.outputs.branch }}
+          COMMIT_SHA: ${{ steps.info.outputs.sha }}
+          COMMIT_URL: ${{ steps.info.outputs.commit_url }}
+          RUN_STARTED: ${{ steps.info.outputs.started }}
+          RUN_FINISHED: ${{ steps.info.outputs.finished }}
+          ERROR_SUMMARY: ${{ steps.logs.outputs.details }}
+
+      - name: Close issue on success
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        run: |
+          # Find and close related open issues
+          ISSUES=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues?state=open&labels=ci-failure,auto-created,branch:${{ steps.info.outputs.branch }}")
+          
+          echo "$ISSUES" | jq -r '.[] | .number' | while read -r ISSUE_NUM; do
+            if [ -n "$ISSUE_NUM" ]; then
+              curl -X PATCH -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUM" \
+                -d '{"state": "closed", "state_reason": "completed"}'
+              echo "Closed issue #$ISSUE_NUM"
+            fi
+          done
