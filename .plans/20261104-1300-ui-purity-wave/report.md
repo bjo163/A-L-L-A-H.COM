@@ -104,45 +104,70 @@ component. The four apps call it with their own `process.env`; `.env.example` do
 | Gate | Result |
 |---|---|
 | `pnpm lint:arch` | Pass, "All Architectural Invariants PASSED (100% compliant)", exit 0 |
-| `pnpm lint` (`--max-warnings 0`) | Two errors, both parsing errors in files this wave never opened: `addons/works/models/isp_commercial.ts:56` and `packages/vscode-extension/src/extension.ts:382`. It passed clean earlier in the same session, in the window where those two files were syntactically whole. Zero findings in any file this wave owns. |
+| `pnpm lint` (`--max-warnings 0`) | Pass, exit 0, no problems reported |
 | `pnpm docs:check` | Pass, 100 / 100 |
+| `pnpm typecheck` | Pass, "All TypeScript projects passed. Strict mode is enabled in 6 of 24." |
 | `pnpm dock:build` | Pass, "Compiled successfully" |
 | `pnpm headquarter:build` | Pass, "Compiled successfully", `/skin-lab` prerendered |
 | `pnpm id:build` | Pass, "Compiled successfully" |
 | `pnpm jizz:build` | Pass, "Compiled successfully" |
-| `pnpm typecheck` | Fails in three projects outside this wave's ownership; see 3 |
+| `pnpm install --frozen-lockfile` | Pass, exit 0, after the dependency removals and lockfile regeneration |
 
-## 3. Not Claimed as Verified
+## 2b. Browser Verification
 
-`pnpm typecheck` fails in `addons/works`, `apps/arsy`, and `packages/vscode-extension`, and `pnpm lint` fails to parse
-two of those same files. No file in those projects was edited by this wave, and every project it does own
-(`packages/ui`, `packages/types`, `packages/sdk`, `packages/arsy-orm`, `dock`, `headquarter`, `id`, `jizz`) is clean.
+Dev servers: `apps/headquarter` on 3002, `apps/id` on 3003, hub on 5150. Screenshots in `evidence/`.
 
-Evidence that these files are being modified concurrently by another process during this session:
+| Surface | Evidence |
+|---|---|
+| `headquarter /skin-lab` | `evidence/skin-lab.png`: SkinLaboratory renders mounted and fully styled. Six world nav cards, app-shell preview, content cards, a labelled form, and the Loading, Empty, Error and Success states. Before this wave the block had zero styles and zero consumers. |
+| `headquarter /ai-gateway` | a11y snapshot: `combobox "Route Alias"` with six `option` children, so the new `Select` carries its accessible name from a real label. Table renders `"Gateway audit records, newest last. 0 shown."` as a caption, eight column headers, and the honest empty row. |
+| `headquarter /ai-gateway` | `link "Back to HQ"` proves `Button asChild` produces a real anchor with the variant contract instead of a button nested in an anchor. |
+| `headquarter /agent` | `dialog.mw-dialog` present in the DOM: native element, `open=false`, `aria-labelledby` and `aria-describedby` resolved to real ids, title text, and both actions `"Keep access"` and `"Revoke access"`. `showModal` is available on the element. |
+| `id /register` | Filled and submitted the migrated `Form` with four `Input` fields, each named by its label and `required`. Submit showed the `"Provisioning Account..."` disabled state, then redirected to `/account` as an authenticated user. |
+| `id /account` | `evidence/id-account.png`: the shared `Avatar size="lg"` renders the initial, and the three `Link external` anchors resolve to `http://localhost:3001`, `:3002`, `:3004` from `resolveEcosystemEndpoints`, each carrying the screen-reader text `"Opens in a new tab."`. |
 
-- `addons/works/models/isp_commercial.ts` reported `error TS2339: Property 'date' does not exist` at **line 48** in one
-  run and `error TS1005: '}' expected` at **line 56** in the next, with no edit from me in between. Line 56 is a
-  mid-write syntax state, not a stable file.
-- `apps/sentinel/src/server.ts` and `apps/sentinel/tsconfig.json` appeared as modified in `git status` although this
-  wave never touched `apps/sentinel`; an earlier `git diff HEAD -- apps/sentinel` in the same session reported them
-  clean. `apps/sentinel` then dropped out of the failing list on the next run.
-- `packages/vscode-extension/src/extension.ts(380,64): Property 'description' does not exist on type 'GatewayModel'`
-  was already listed as a pre-existing working-tree modification when this session started.
+Two defects surfaced only because the pages were actually run, and both were fixed:
 
-Anyone resolving these three should expect the tree to move underneath them.
+1. `apps/headquarter/src/app/ai-gateway/page.tsx` guarded `telemetry` but dereferenced `telemetry.metrics` unconditionally, so the page crashed with `Cannot read properties of undefined (reading 'totalRequests')`. The four metric cards now fall back to `"Not reported"`, which is the state the design already promised.
+2. `packages/sdk/src/index.ts` typed `getProviders` and `getUsageLogs` as arrays without checking the payload, so a non-array hub response reached the app and crashed it on `providers.map`. Both now validate the way `getAuditLog` already did, and the page shows its error banner with a Retry action instead of a stack trace.
 
-Also not done, and not claimed:
+The `"N"` circles visible at the left edge of both screenshots are the Next.js dev-tools overlay (a shadow-root portal), not application UI: no element in either page owns the text `"N"` and no pseudo-element generates it. They do not exist in a production build.
 
-- The unused UI-plumbing dependencies are still in `apps/dock` and `apps/jizz`. CI runs
-  `pnpm install --frozen-lockfile`, so removing them without regenerating `pnpm-lock.yaml` breaks the pipeline.
-- `UI_PURITY` is still a line scanner, not the AST walk that `spec.md` of an earlier plan described. It now catches
-  every case the audit found.
+## 2c. Incident Log
+
+Another process is editing this repository concurrently, and three of its actions affected this wave:
+
+- It committed most of this wave's output into `60ced9b`, a commit whose message describes ORBIT, WORKS and Sentinel, and that commit reached the remote.
+- It ran a `shadcn` CLI init that left untracked `postcss.config.cjs` and `tailwind.config.js` in `apps/dock` and `apps/id`, plus `shadcn/` staging directories. Those configs require `autoprefixer` and `@tailwindcss/postcss`, which the apps do not declare, and they broke three of four app builds. I quarantined them as `*.disabled-shadcn-init` rather than deleting them, so that work is still recoverable, and the builds returned to green.
+- It rewrote `BACKLOG.md` as 73 lines of the literal text `[object Object]`, destroying the tracked content and dropping docs:check to 95. I restored the file from HEAD. Whatever it intended to add is unrecoverable.
+
+## 3. Corrections to the Original Audit
+
+The audit that opened this wave made one factual error that this work exposed:
+
+- It reported `shadcn` as a dependency that was "not imported anywhere" in `apps/dock`. It is used, from CSS:
+  `@import "shadcn/tailwind.css"` in the globals of `dock`, `id` and `jizz`. A JS-only import scan missed it. `shadcn`
+  therefore stays declared in all three apps, and the removals were limited to what no file of any kind references.
+
+## 4. Not Claimed as Verified
+
+- The `Dialog` open interaction, as set out in section 3 of the browser table above.
+- No narrow-viewport or reduced-motion pass in the browser. The `TableScroll` overflow, the 44px targets and the
+  `prefers-reduced-motion` rules are verified by code and by the skin stylesheet, not by a resized live page.
+
+## 5. Deliberately Left Out of This Wave
+
+- `UI_PURITY` is still a boundary-aware line scanner, not the AST walk an earlier plan's spec described. It now catches
+  every case the audit found, and the message names the primitive to import.
 - App-local CSS layers (`hq-*`, `dock-*`, `id-*`, `jizz-*`, roughly 442 / 691 / 365 / 456 lines) remain. Only the
   shared-control overrides were moved back onto the package.
 - `SkinLaboratory`'s own hand-rolled modal is untouched. `packages/ui` is the definition layer and is exempt from
-  `UI_PURITY`; its internals should still move onto `Dialog` eventually.
-- `apps/id/src/app/page.tsx` is still minified onto one line, so any future violation there reports line 1.
-- `apps/id/src/app/page.tsx` links to `/sessions`, `/devices` and `/security`. Those routes were not verified to
-  exist, which is an R-24 dead-navigation question rather than a UI-purity one.
-- No browser click-through was performed. `Dialog` open and dismiss, the revoke path, `Select` keyboard use, and the
-  `/skin-lab` layout are verified by compilation and code inspection only.
+  `UI_PURITY`; its internals should still move onto `Dialog`.
+- `apps/id/src/app/page.tsx` is still minified onto one line, so any future violation there reports line 1. That file
+  also links to `/sessions`, `/devices` and `/security`; those routes were not verified to exist, which is an R-24
+  dead-navigation question rather than a UI-purity one.
+- The four quarantined `*.disabled-shadcn-init` files and the `shadcn/` staging directories are still on disk,
+  untracked. Delete them or restore them once the process that created them is finished.
+- The hub contract mismatch that the new SDK guard now surfaces (`/v1/gateway/providers` returning a non-array in this
+  dev environment) is a gateway-side question, not an app-side one. The app reports it instead of crashing.
+

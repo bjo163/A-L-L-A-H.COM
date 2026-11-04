@@ -322,7 +322,11 @@ export class MoonWitnessClient {
     },
 
     getProviders: async (): Promise<GatewayProviderInfo[]> => {
-      return this.request<GatewayProviderInfo[]>('/v1/gateway/providers');
+      const res = await this.request<unknown>('/v1/gateway/providers');
+      if (!Array.isArray(res)) {
+        throw new Error('Gateway providers endpoint returned an invalid response.');
+      }
+      return res as GatewayProviderInfo[];
     },
 
     getUsage: async (): Promise<GatewayUsageLog[]> => {
@@ -330,7 +334,11 @@ export class MoonWitnessClient {
     },
 
     getUsageLogs: async (): Promise<GatewayUsageLog[]> => {
-      return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
+      const res = await this.request<unknown>('/v1/gateway/usage');
+      if (!Array.isArray(res)) {
+        throw new Error('Gateway usage endpoint returned an invalid response.');
+      }
+      return res as GatewayUsageLog[];
     },
   };
 

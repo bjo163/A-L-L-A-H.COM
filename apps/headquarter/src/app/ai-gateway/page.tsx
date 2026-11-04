@@ -133,7 +133,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Total Routed Requests</CardDescription>
               <CardTitle className="text-2xl font-mono text-zinc-100">
-                {loading ? 'Loading...' : telemetry ? telemetry.metrics.totalRequests.toLocaleString() : 'Not reported'}
+                {loading ? 'Loading...' : (telemetry?.metrics?.totalRequests?.toLocaleString() ?? 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -145,7 +145,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Total Tokens Processed</CardDescription>
               <CardTitle className="text-2xl font-mono text-amber-400">
-                {loading ? 'Loading...' : telemetry ? telemetry.metrics.totalTokens.toLocaleString() : 'Not reported'}
+                {loading ? 'Loading...' : (telemetry?.metrics?.totalTokens?.toLocaleString() ?? 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -157,7 +157,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Accrued Cost (USD)</CardDescription>
               <CardTitle className="text-2xl font-mono text-emerald-400">
-                {loading ? 'Loading...' : telemetry ? `$${telemetry.metrics.totalCostUsd.toFixed(4)}` : 'Not reported'}
+                {loading ? 'Loading...' : (telemetry?.metrics?.totalCostUsd != null ? `$${telemetry.metrics.totalCostUsd.toFixed(4)}` : 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -169,7 +169,7 @@ export default function AiGatewayPage() {
             <CardHeader className="pb-2">
               <CardDescription>Avg Response Latency</CardDescription>
               <CardTitle className="text-2xl font-mono text-zinc-100">
-                {loading ? 'Loading...' : telemetry ? `${telemetry.metrics.avgLatencyMs}ms` : 'Not reported'}
+                {loading ? 'Loading...' : (telemetry?.metrics?.avgLatencyMs != null ? `${telemetry.metrics.avgLatencyMs}ms` : 'Not reported')}
               </CardTitle>
             </CardHeader>
             <CardContent>
