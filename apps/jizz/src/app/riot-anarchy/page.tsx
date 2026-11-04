@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
 
 export const metadata = {
   title: "RIOT ANARCHY | Controlled Disruption",
@@ -23,12 +23,8 @@ export default function RiotAnarchyPage() {
               <span>Graphic collision without losing semantic structure.</span>
             </div>
             <div className="jizz-hero__actions">
-              <Button type="button" disabled>
-                Open issue
-              </Button>
-              <Button type="button" variant="outline" disabled>
-                View poster index
-              </Button>
+              <span className="jizz-hero__status">Issue / 00</span>
+              <span className="jizz-hero__status jizz-hero__status--outline">Poster index pending</span>
             </div>
           </div>
           <figure className="jizz-hero__art">

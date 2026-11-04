@@ -9,6 +9,18 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - VS Code Extension Deep Runtime Hardening
+
+### Added
+- Activation failure logging through the `A-L-L-A-H.COM Extension` VS Code output channel.
+- Manifest, source registration, activation coverage, standalone bundle, and runtime dependency checks.
+- Local VSIX packaging support with runtime parity validation before installation.
+
+### Changed
+- Rebuilt and installed the VS Code extension standalone bundle.
+- Verified workspace, VSIX, and installed `extension.js` SHA-256 parity.
+- Verified Arsy `/health`, `/ready`, and `/v1/models` responses during extension gateway smoke checks.
+
 ## 2026-11-04 - Windows VS Code Agent and Remote Operations
 
 ### Added

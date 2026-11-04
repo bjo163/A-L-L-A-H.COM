@@ -32,3 +32,4 @@ While architectural issue plans (`Issue #10`, `#11`, `#12`, `#13`) previously de
 - [ ] Implement session accounting tracking in `sentinel.session` table.
 - [ ] Implement CoA/Disconnect-Request dispatcher to force-disconnect suspended subscribers.
 - [ ] Pass monorepo quality gates: `pnpm docs:check` (100/100), `pnpm lint:arch`, and `pnpm typecheck`.
+

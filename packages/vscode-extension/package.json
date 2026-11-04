@@ -211,7 +211,9 @@
   "scripts": {
     "build": "tsup --config tsup.config.ts",
     "watch": "tsup --config tsup.config.ts --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package --no-dependencies",
+    "check-runtime": "node ../../scripts/check-vscode-extension-runtime.mjs"
   },
   "dependencies": {
     "@allah/sdk": "workspace:*",
@@ -220,6 +222,7 @@
   "devDependencies": {
     "@types/node": "^22.10.1",
     "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^4.1.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   }

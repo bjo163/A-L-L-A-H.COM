@@ -35,4 +35,3 @@ Raise the visual quality and resilience of Dock, Headquarter, ID, and WORLD OBSE
 - Keyboard menu and form behavior pass where applicable.
 - Focused UI tests, typecheck, and affected app builds pass.
 - Remaining repository baseline failures are reported separately.
-

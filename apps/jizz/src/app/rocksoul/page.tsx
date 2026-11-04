@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
 
 export const metadata = {
   title: "ROCKSOUL | Narrative Space",
@@ -23,12 +23,8 @@ export default function RocksoulPage() {
               <span>Film stills over dashboards. Silence over noise.</span>
             </div>
             <div className="jizz-hero__actions">
-              <Button type="button" disabled>
-                Open first chapter
-              </Button>
-              <Button type="button" variant="outline" disabled>
-                View chapter index
-              </Button>
+              <span className="jizz-hero__status">Chapter / 00</span>
+              <span className="jizz-hero__status jizz-hero__status--outline">Index pending</span>
             </div>
           </div>
           <figure className="jizz-hero__art">

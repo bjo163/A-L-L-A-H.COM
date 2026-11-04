@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from '@moonwitness/ui';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from '@moonwitness/ui';
 
 export default function WorldObservatoryHome() {
   return (
@@ -18,12 +18,8 @@ export default function WorldObservatoryHome() {
               <span>No unverified sample records are shown.</span>
             </div>
             <div className="jizz-hero__actions">
-              <Button type="button" disabled>
-                Await source connection
-              </Button>
-              <Button type="button" variant="outline" disabled>
-                No feed attached
-              </Button>
+              <span className="jizz-hero__status">Await source connection</span>
+              <span className="jizz-hero__status jizz-hero__status--outline">No feed attached</span>
             </div>
           </div>
           <figure className="jizz-hero__art">

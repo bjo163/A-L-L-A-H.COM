@@ -41,7 +41,7 @@ export function EcosystemNavbar({
 
       event.preventDefault();
       setIsMenuOpen(false);
-      menuButtonRef.current?.focus();
+      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
     };
 
     document.addEventListener('keydown', handleEscape);

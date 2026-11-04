@@ -177,6 +177,10 @@ async function updateStatusBar(
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const activationLog = vscode.window.createOutputChannel('A-L-L-A-H.COM Extension');
+  context.subscriptions.push(activationLog);
+  activationLog.appendLine(`[${new Date().toISOString()}] Activation started.`);
+  try {
   const client = new MoonWitnessClient(context);
   try {
     await client.migrateLegacyApiKey();
@@ -399,6 +403,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     })
   );
+    activationLog.appendLine(`[${new Date().toISOString()}] Activation completed.`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    activationLog.appendLine(`[${new Date().toISOString()}] Activation failed: ${message}`);
+    activationLog.appendLine(error instanceof Error ? (error.stack || '') : '');
+    vscode.window.showErrorMessage(`A-L-L-A-H.COM extension activation failed: ${message}`);
+    throw error;
+  }
 }
 
 function setTaskStatus(value: unknown, status: TaskStatus, planProvider: PlanTreeDataProvider): void {

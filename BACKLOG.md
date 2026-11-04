@@ -9,6 +9,13 @@ last_verified: "2026-11-03"
 
 # BACKLOG.md
 
+## VSCODE-DEEP-RUNTIME-HARDENING: VS Code extension activation and packaging
+- Priority: P0
+- Status: IMPLEMENTED; INTERACTIVE COMMAND PALETTE CHECK PENDING
+- Outcome: Added activation failure logging, manifest/source/runtime parity validation, local VSIX packaging, standalone SDK bundling verification, gateway smoke evidence, and exact workspace/VSIX/installed bundle hash parity.
+- Acceptance: Every command has source and activation coverage; runtime packaging contains one standalone extension entrypoint; workspace, VSIX, and installed bundle hashes match; gateway health, readiness, and model catalog return HTTP 200.
+- Verification: Focused extension tests pass 28/28; extension typecheck passes; extension runtime parity passes; VSIX installed into VS Code 1.144.1; three bundle hashes match. Final repository lint/typecheck remain blocked by unrelated Sentinel baseline violations; interactive Command Palette execution remains pending.
+
 ## WINDOWS-VSCODE-LOCAL-AGENT: Windows-local VS Code agent and remote operations
 - Priority: P0
 - Status: IMPLEMENTED; INTERACTIVE VERIFICATION PENDING
