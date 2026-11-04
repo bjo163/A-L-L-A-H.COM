@@ -33,7 +33,6 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: '12'
           run_install: false
 
       - name: Enable pnpm caching
@@ -103,7 +102,6 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: '12'
           run_install: false
 
       - run: pnpm install --frozen-lockfile
