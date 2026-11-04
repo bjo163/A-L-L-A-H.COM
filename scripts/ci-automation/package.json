@@ -1,0 +1,17 @@
+{
+  "name": "ci-automation",
+  "version": "1.0.0",
+  "description": "CI Monitor & Auto-Fix Automation for A-L-L-A-H.COM",
+  "main": "monitor.js",
+  "type": "module",
+  "scripts": {
+    "monitor": "node monitor.js",
+    "monitor:daemon": "node monitor.js --daemon",
+    "monitor:check": "node monitor.js --check",
+    "test": "node monitor.js --check"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=20"
+  }
+}
