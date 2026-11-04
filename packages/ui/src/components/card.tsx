@@ -2,9 +2,14 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 import { RawStack } from '../raw';
 
-export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export interface CardProps extends React.HTMLAttributes<HTMLElement> {
+  /** Surface element to render. "article" keeps a standalone block semantic. */
+  as?: 'div' | 'article' | 'section' | 'aside';
+}
+
+export function Card({ className, as: Tag = 'div', ...props }: CardProps) {
   return (
-    <div
+    <Tag
       className={cn(
         'mw-card',
         className
@@ -18,9 +23,14 @@ export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDiv
   return <RawStack gap="tight" className={cn('mw-card__header', className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /** Heading level to render. Keep it aligned with the page outline; skipping levels breaks screen-reader navigation. */
+  as?: 'h2' | 'h3' | 'h4';
+}
+
+export function CardTitle({ className, as: Tag = 'h3', ...props }: CardTitleProps) {
   return (
-    <h3
+    <Tag
       className={cn('mw-card__title', className)}
       {...props}
     />

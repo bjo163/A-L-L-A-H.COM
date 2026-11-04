@@ -9,7 +9,8 @@ import { SoundToggle } from './sound-toggle';
 import { VisualEffectsToggle } from './visual-effects-toggle';
 
 export interface EcosystemNavbarProps {
-  currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz';
+  /** App id shown in the badge. Any workspace name is accepted so a new app can reuse the shared navbar. */
+  currentApp?: string;
   userName?: string;
   userEmail?: string;
   onSignOut?: () => void;

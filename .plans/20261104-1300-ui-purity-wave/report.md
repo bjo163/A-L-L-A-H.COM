@@ -135,7 +135,35 @@ Two defects surfaced only because the pages were actually run, and both were fix
 
 The `"N"` circles visible at the left edge of the screenshots are the Next.js dev-tools overlay (a shadow-root portal), not application UI: no element in any page owns the text `"N"` and no pseudo-element generates it. They do not exist in a production build.
 
-## 2c. Incident Log
+## 2d. Fifth workspace (`apps/gate`)
+
+A fifth Next app appeared in the tree while this wave was in flight. The user's standing rule is that every frontend app must consume the shared design system, so it was brought in line rather than exempted.
+
+Package gaps that app exposed, and the fixes:
+
+| Gap | Fix |
+|---|---|
+| `EcosystemNavbar` typed `currentApp` to the original four apps, so the new workspace could not adopt the mandatory shared navbar | `currentApp?: string`, with the badge label falling back to the uppercased id |
+| No button-styled link existed. `Button asChild` around the package `Link` stacks `mw-link` chrome onto `mw-button` chrome | `LinkButton` exported from `components/link.tsx`: native anchor, `buttonVariants`, click sound, `external` handling with `noopener noreferrer` and the screen-reader note |
+| `Card` rendered only a `div` and `CardTitle` only an `h3`, so migrating hand-written `mw-card` markup would drop `article` semantics or break heading order | `Card` gained `as` (`div` / `article` / `section` / `aside`); `CardTitle` gained `as` (`h2` / `h3` / `h4`) |
+
+Migration result: `apps/gate` went from 54 `UI_PURITY` findings to 0 across `closing-horizon`, `community-portal`, `discover-filters`, `explore-index`, `info-page-shell`, `journey-next` and `transmissions-feed`. The filter groups in `discover-filters` also lost a dangling-label defect: three `<label>` elements named nothing (no `for`, no control), now `role="group"` with `aria-labelledby` pointing at a real id.
+
+The hardened gate earned its keep here: it caught every one of those 54 the moment the files landed, which is exactly the failure mode it had before this wave.
+
+`apps/gate` is still untracked in git, so its migrated files are working-tree changes for the process that owns that app; this wave committed only the shared-package API additions.
+
+## 2e. Final gate state
+
+| Gate | Result |
+|---|---|
+| `pnpm lint:arch` | Pass, "All Architectural Invariants PASSED (100% compliant)", 0 findings across `apps/` and `packages/` |
+| `pnpm lint` | Pass, no problems reported |
+| `pnpm docs:check` | Pass, 100 / 100 |
+| `pnpm typecheck` | Pass, "All TypeScript projects passed. Strict mode is enabled in 7 of 25." |
+| `dock:build`, `headquarter:build`, `id:build`, `jizz:build` | All "Compiled successfully" |
+
+## 2f. Incident Log
 
 Another process is editing this repository concurrently, and three of its actions affected this wave:
 

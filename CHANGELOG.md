@@ -30,10 +30,14 @@ last_verified: "2026-11-04"
 - `resolveEcosystemEndpoints()` for cross-app navigation, driven by `NEXT_PUBLIC_ECOSYSTEM_ORIGIN` and per-app `NEXT_PUBLIC_*_URL` instead of embedded `localhost` literals.
 - `SkinLaboratory` styles in `skins.css` and a Headquarter route at `/skin-lab` that mounts the showcase.
 - `ToolExecutionRecord` in `@moonwitness/types` as the shared MCP audit contract used by the SDK and Headquarter.
+- `LinkButton`, a link that carries the button variant contract, so a call site no longer has to stack `Button asChild` over a link component and inherit both chrome layers.
+- `as` on `Card` (`div`, `article`, `section`, `aside`) and on `CardTitle` (`h2`, `h3`, `h4`), so migrating hand-written `mw-card__*` markup keeps element semantics and heading order.
+- `EcosystemNavbar` accepts any workspace id for `currentApp`, which lets a fifth app adopt the mandatory shared navbar instead of forking it.
 
 ### Changed
 - `UI_PURITY` now matches a tag at end of line, blocks `button`, `input`, `select`, `textarea`, `a`, `form`, `label`, `table`, scans `packages/` as well as `apps/`, and flags hand-written `mw-*` class names. `collectFiles` no longer skips every `lib` directory.
 - Migrated every raw control out of `apps/headquarter`, `apps/id`, and `apps/dock`, including the device-revoke flow from `window.confirm` to `Dialog`.
+- Brought the fifth workspace `apps/gate` onto the shared package: 54 `UI_PURITY` findings to zero across seven components, and three dangling `<label>` filter groups replaced with `role="group"` plus `aria-labelledby`.
 - Enabled TypeScript `strict` for `packages/ui`, `dock`, `headquarter`, `id`, and `jizz`, and made the type-check gate report its real strict coverage instead of claiming it for the whole monorepo.
 - Scoped ESLint `no-restricted-imports` to `apps/**` so UI primitives cannot be assembled straight from `@base-ui/react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `cn`, or `shadcn`.
 - Parameterized the `company_id` filter in the ORM translation query instead of interpolating it into SQL.

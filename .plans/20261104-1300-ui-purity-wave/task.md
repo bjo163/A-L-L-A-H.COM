@@ -32,6 +32,13 @@
 - [x] REQ-4.3 ESLint `no-restricted-imports` for `apps/**`
 - [x] REQ-4.4 `strict` enabled for `packages/ui`, `dock`, `headquarter`, `id`, `jizz`; the type-check gate now prints its real strict coverage
 
+## Fifth workspace (`apps/gate`)
+- [x] `EcosystemNavbar` widened to `currentApp?: string`, so a new workspace adopts the shared navbar instead of forking it
+- [x] `LinkButton` added to `@moonwitness/ui`: a link that carries the button variant contract, because `Button asChild` around a link component stacks `mw-link` chrome onto `mw-button` chrome
+- [x] `Card` gained `as` (`div` / `article` / `section` / `aside`) and `CardTitle` gained `as` (`h2` / `h3` / `h4`), so migrating hand-written `mw-card__*` markup does not drop element semantics or break heading order
+- [x] Migrated `closing-horizon`, `community-portal`, `discover-filters`, `explore-index`, `info-page-shell`, `journey-next` and `transmissions-feed` onto the package API: 54 `UI_PURITY` findings down to 0
+- [x] Consolidated the duplicated `@moonwitness/ui` import statements that `no-duplicate-imports` flagged
+
 ## Verification
 - [x] `pnpm lint:arch` passes on migrated tree
 - [x] Gate evidence: it reported 24 `UI_PURITY` violations before migration and 0 after, where the old code reported 0 with those same 24 present
