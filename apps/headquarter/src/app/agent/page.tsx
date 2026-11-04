@@ -18,13 +18,13 @@ import type {
   AgentToolCallEvent,
   AgentToolResultEvent,
   AgentStreamEvent,
-  AgentRunRequest,
+  AgentRunInput,
   AgentRunResponse,
   SDUINode,
 } from '@moonwitness/types';
 
 export default function AgentStudioPage() {
-  const [request, setRequest] = useState<AgentRunRequest | null>(null);
+  const [request, setRequest] = useState<AgentRunInput | null>(null);
   const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
   interface AgentStepUI {
     step: number;
@@ -182,10 +182,10 @@ export default function AgentStudioPage() {
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 Agent Studio
               </h1>
-              <p className="text-zinc-400 mt-1">
+              <p className="text-muted-foreground mt-1">
                 Autonomous cognitive agent loop with generative SDUI synthesis
               </p>
             </div>
@@ -201,7 +201,7 @@ export default function AgentStudioPage() {
                 onChange={handleChange}
                 className="w-24"
               />
-              <span className="pt-7 text-xs text-zinc-500">1-20</span>
+              <span className="pt-7 text-xs text-muted-foreground">1-20</span>
             </div>
           </div>
         </section>
@@ -237,14 +237,14 @@ export default function AgentStudioPage() {
 
         {/* Status */}
         {status === 'running' && (
-          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+          <div className="p-4 rounded-lg bg-card border border-border">
             <div className="flex items-center gap-2">
-              <Badge variant="active" dot className="text-emerald-400">
+              <Badge variant="active" dot className="text-success">
                 RUNNING
               </Badge>
-              <span className="text-sm text-zinc-400">Reasoning...</span>
+              <span className="text-sm text-muted-foreground">Reasoning...</span>
             </div>
-            <div className="mt-2 text-xs text-zinc-500">
+            <div className="mt-2 text-xs text-muted-foreground">
               Max steps: {request?.max_steps ?? 8}
             </div>
           </div>
@@ -252,11 +252,11 @@ export default function AgentStudioPage() {
 
         {/* Live Reasoning Timeline */}
         <section className="mb-6">
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3">
             Reasoning Timeline
           </h2>
           {status === 'idle' && steps.length === 0 && (
-            <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/60 text-zinc-500 text-center">
+            <div className="p-4 rounded-lg bg-card border border-border text-muted-foreground text-center">
               No steps yet. Enter a mission goal and click "Run Agent".
             </div>
           )}
@@ -266,11 +266,11 @@ export default function AgentStudioPage() {
                 <div
                   key={i}
                   className={`p-3 rounded-lg transition-colors ${
-                    i <= currentStep ? 'bg-zinc-800' : 'bg-zinc-700/50'
+                    i <= currentStep ? 'bg-card' : 'bg-secondary'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-zinc-300">
+                    <span className="text-sm font-medium text-foreground">
                       Step {step.step}
                     </span>
                     {step.finish_reason && (
@@ -284,10 +284,10 @@ export default function AgentStudioPage() {
                   </div>
 
                   {step.thought && (
-                    <div className="text-[10px] text-zinc-500 mb-1">
+                    <div className="text-[10px] text-muted-foreground mb-1">
                       <Badge
                         variant="active"
-                        className="inline-block px-2 py-0.5 text-[10px] rounded bg-emerald-500/10 text-emerald-400 animate-pulse"
+                        className="inline-block px-2 py-0.5 text-[10px] rounded bg-success text-success animate-pulse"
                       >
                         Thinking
                       </Badge>
@@ -296,12 +296,12 @@ export default function AgentStudioPage() {
                   )}
 
                   {step.tool_calls && step.tool_calls.length > 0 && (
-                    <div className="text-[10px] text-zinc-400 mb-1">
+                    <div className="text-[10px] text-muted-foreground mb-1">
                       <span className="font-medium">Tools:</span>
                       {step.tool_calls.map((tc, j) => (
                         <span
                           key={j}
-                          className="mr-1 text-[10px] bg-zinc-700/50 border border-zinc-700/60 rounded px-1.5 py-0.5"
+                          className="mr-1 text-[10px] bg-secondary border border-border rounded px-1.5 py-0.5"
                         >
                           {tc.tool}
                         </span>
@@ -310,12 +310,12 @@ export default function AgentStudioPage() {
                   )}
 
                   {step.tool_results && step.tool_results.length > 0 && (
-                    <div className="text-[10px] text-zinc-400 mb-1">
+                    <div className="text-[10px] text-muted-foreground mb-1">
                       <span className="font-medium">Results:</span>
                       {step.tool_results.map((tr, j) => (
                         <span
                           key={j}
-                          className="mr-1 text-[10px] bg-zinc-900/50 rounded px-1 py-0.5"
+                          className="mr-1 text-[10px] bg-card rounded px-1 py-0.5"
                         >
                           {tr.success ? 'OK' : 'ERR'}
                         </span>
@@ -324,12 +324,12 @@ export default function AgentStudioPage() {
                   )}
 
                   {step.sdui && step.sdui.length > 0 && (
-                    <div className="text-[10px] text-zinc-400 mb-1">
+                    <div className="text-[10px] text-muted-foreground mb-1">
                       <span className="font-medium">SDUI:</span>
                       {step.sdui.map((s, j) => (
                         <span
                           key={j}
-                          className="mr-1 text-[10px] bg-zinc-900/50 rounded px-1 py-0.5"
+                          className="mr-1 text-[10px] bg-card rounded px-1 py-0.5"
                         >
                           {s.type}
                         </span>
@@ -338,7 +338,7 @@ export default function AgentStudioPage() {
                   )}
 
                   {step.response && (
-                    <div className="mt-2 text-[10px] text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                    <div className="mt-2 text-[10px] text-foreground whitespace-pre-wrap leading-relaxed">
                       {step.response}
                     </div>
                   )}
@@ -350,7 +350,7 @@ export default function AgentStudioPage() {
 
         {/* SDUI Preview */}
         <section>
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-100 mb-3">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3">
             SDUI Preview
           </h2>
           {steps.some(s => s.sdui && s.sdui.length > 0) && (
@@ -358,8 +358,8 @@ export default function AgentStudioPage() {
               <CardHeader>
                 <CardTitle>Generated View</CardTitle>
               </CardHeader>
-              <CardContent className="h-[200px] overflow-auto bg-zinc-800/50 border border-zinc-700/60">
-                <pre className="text-[10px] text-zinc-400 whitespace-pre-wrap leading-relaxed">
+              <CardContent className="h-[200px] overflow-auto bg-card border border-border">
+                <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
 {/* SDUI schema would be rendered here */}
 SDUI view rendering - preview not yet connected to backend
 </pre>
@@ -367,7 +367,7 @@ SDUI view rendering - preview not yet connected to backend
             </Card>
           )}
           {!(steps.some(s => s.sdui && s.sdui.length > 0)) && (
-            <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/60 text-zinc-500 text-center">
+            <div className="p-4 rounded-lg bg-card border border-border text-muted-foreground text-center">
               No SDUI views yet. Run an agent to generate dynamic views.
             </div>
           )}
