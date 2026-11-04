@@ -13,7 +13,7 @@ target_repo: "https://github.com/bjo163/A-L-L-A-H.COM.git"
 
 Keep all five React apps on the `@moonwitness/ui` contract and close proven accessibility/API gaps in the shared components before expanding app-specific UI work. Preserve each product DNA; unify behavior, semantics, and accessibility rather than forcing identical visual composition.
 
-This is an implementation plan, not an implementation. No UI source was changed during this audit.
+This plan has been implemented across the shared UI package and the five React apps. Final status remains in progress until the remaining browser-only checks are resolved or explicitly waived.
 
 ## 2. Scope
 
@@ -81,12 +81,12 @@ This is an implementation plan, not an implementation. No UI source was changed 
 - The five app trees contain no hand-written internal component classes: migrate the 15 Gate JSX occurrences and 9 Headquarter/ID CSS selectors to public component APIs or app-owned classes.
 - Link tests verify `external` opens a new tab with safe `rel`, does not misannounce same-tab navigation, and behaves identically in child composition.
 - Button composition tests prove child and wrapper click handlers each run once and disabled controls cannot activate.
-- Dialog tests verify Escape closes, focus enters and returns to the trigger, and the dialog is modal using native/shared semantics.
+- Browser verification on Headquarter `/skin-lab` confirms native modal semantics, focus entry, Escape dismissal, and focus restoration to the trigger. Automated component tests verify the named native dialog markup. Backdrop-click behavior remains unverified in the integrated browser.
 - Token ownership and every retained `shadcn/tailwind.css` entry point are documented; deleting any CSS copy is followed by all affected app builds.
 - `AGENTS.md` lists all five React apps and the architecture gate still passes.
 - `pnpm lint:arch`, `pnpm docs:check`, `pnpm lint`, `pnpm typecheck`, and builds for Dock, Gate, Headquarter, ID, and Jizz pass.
-- Browser verification covers keyboard-only operation, focus visibility, 320px layout, 200% zoom, reduced motion, and axe checks on representative routes for each app. Results distinguish automated checks from manual checks.
+- Browser checks at a 320px viewport found no horizontal overflow on representative routes in all five apps. Headquarter `/skin-lab` also remained within a 640px viewport with reduced motion enabled; its route animation resolved to `none`. True 200% browser zoom and axe checks were not available in this browser session and remain unverified.
 
 ## 7. Readiness
 
-**Classification: CONDITIONALLY READY.** The app scope, current invariant baseline, and source-level defects are concrete. The CSS cleanup decision and actual browser accessibility results are prerequisites for declaring the work complete; neither blocks starting the isolated component fixes.
+**Classification: IMPLEMENTED, VERIFICATION INCOMPLETE.** The source changes, app builds, architecture gate, shared UI tests, typecheck, lint, and documentation checks have passed. Keep the plan in progress until backdrop-click behavior, true 200% browser zoom, and axe checks are verified or explicitly waived. The existing Headquarter Tailwind config format warning and local auth 401 responses are recorded as unrelated environment observations.

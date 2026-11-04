@@ -28,7 +28,8 @@ Implementation is underway. Keep the per-app visual identities intact.
 ## Phase 2 - Align shared dialog behavior
 
 - [x] Replace the Skin Laboratory hand-built overlay with the shared native `Dialog` primitive.
-- [ ] Verify focus placement, Escape dismissal, backdrop dismissal policy, and focus restoration in the browser.
+- [x] Verify focus entry, Escape dismissal, and focus restoration on Headquarter `/skin-lab`.
+- [ ] Verify backdrop-click dismissal policy in a browser; the integrated browser did not expose a reliable outside-click event.
 - [x] Add dialog markup regression coverage and preserve its skin styling.
 
 ## Phase 3 - Establish one token/CSS source of truth
@@ -42,8 +43,9 @@ Implementation is underway. Keep the per-app visual identities intact.
 
 - [x] Add `apps/gate/` to `AGENTS.md` and document the public `data-slot` CSS hooks.
 - [x] Re-run the architecture gate; all five React apps contain zero raw controls or private UI classes.
-- [ ] Run `pnpm docs:check`, `pnpm lint`, `pnpm typecheck`, and builds for Dock, Gate, Headquarter, ID, and Jizz.
-- [ ] Run browser accessibility checks on representative routes: keyboard/focus, Escape, reduced motion, 320px viewport, 200% zoom, and axe.
+- [x] Run `pnpm docs:check`, `pnpm lint`, `pnpm typecheck`, and builds for Dock, Gate, Headquarter, ID, and Jizz.
+- [x] Check representative routes in all five apps at 320px; no horizontal overflow was measured. Check Headquarter at 640px with reduced motion enabled; its route animation is disabled.
+- [ ] Verify true 200% browser zoom and run axe checks on representative routes.
 - [ ] Record only observed test and browser results in the implementation report after all phases complete.
 
 ## Dependencies
