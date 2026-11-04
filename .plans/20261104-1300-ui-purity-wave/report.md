@@ -124,14 +124,16 @@ Dev servers: `apps/headquarter` on 3002, `apps/id` on 3003, hub on 5150. Screens
 | `headquarter /ai-gateway` | `link "Back to HQ"` proves `Button asChild` produces a real anchor with the variant contract instead of a button nested in an anchor. |
 | `headquarter /agent` | `dialog.mw-dialog` present in the DOM: native element, `open=false`, `aria-labelledby` and `aria-describedby` resolved to real ids, title text, and both actions `"Keep access"` and `"Revoke access"`. `showModal` is available on the element. |
 | `id /register` | Filled and submitted the migrated `Form` with four `Input` fields, each named by its label and `required`. Submit showed the `"Provisioning Account..."` disabled state, then redirected to `/account` as an authenticated user. |
-| `id /account` | `evidence/id-account.png`: the shared `Avatar size="lg"` renders the initial, and the three `Link external` anchors resolve to `http://localhost:3001`, `:3002`, `:3004` from `resolveEcosystemEndpoints`, each carrying the screen-reader text `"Opens in a new tab."`. |
+| `id /account` | `evidence/id-account.png`: the shared `Avatar size="lg"` renders the initial, and the three `Link external` anchors resolve to `http://localhost:3001`, `:3002`, `:3004` from `resolveEcosystemEndpoints`, each carrying the screen-reader text `"Opens in a new tab."` |
+| `dock /` | `evidence/dock-home.png` and its a11y snapshot: the hero jump is a real anchor to `#dock-index-title`, a destination that exists on the page, and the three destination cards are links with complete accessible names (`"01 OPERATIONS Headquarter Inspect the gateway..."`) pointing at 3002, 3003/account and 3004. The app's own `dock-destination` styling still governs the card surface, which is what the single-class `.mw-link` selector was chosen for. |
+| `dock /`, `id /`, `headquarter /` | No application console error was observed on these pages. The only runtime notice is the hub's `"Missing or invalid authentication credentials"` session status, which the pages render as a designed status line with a Retry path rather than a crash. |
 
 Two defects surfaced only because the pages were actually run, and both were fixed:
 
 1. `apps/headquarter/src/app/ai-gateway/page.tsx` guarded `telemetry` but dereferenced `telemetry.metrics` unconditionally, so the page crashed with `Cannot read properties of undefined (reading 'totalRequests')`. The four metric cards now fall back to `"Not reported"`, which is the state the design already promised.
 2. `packages/sdk/src/index.ts` typed `getProviders` and `getUsageLogs` as arrays without checking the payload, so a non-array hub response reached the app and crashed it on `providers.map`. Both now validate the way `getAuditLog` already did, and the page shows its error banner with a Retry action instead of a stack trace.
 
-The `"N"` circles visible at the left edge of both screenshots are the Next.js dev-tools overlay (a shadow-root portal), not application UI: no element in either page owns the text `"N"` and no pseudo-element generates it. They do not exist in a production build.
+The `"N"` circles visible at the left edge of the screenshots are the Next.js dev-tools overlay (a shadow-root portal), not application UI: no element in any page owns the text `"N"` and no pseudo-element generates it. They do not exist in a production build.
 
 ## 2c. Incident Log
 
