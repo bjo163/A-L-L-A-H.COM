@@ -24,3 +24,4 @@ parent_issue: 33
 ## 3. Storage & Bandwidth Constraints
 - Cached terms in `localStorage` must include dictionary versioning to auto-invalidate stale entries upon server release.
 - Memory consumption of the in-memory dictionary must not exceed $5\text{MB}$ per tab.
+

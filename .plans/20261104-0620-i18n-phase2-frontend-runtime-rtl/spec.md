@@ -74,3 +74,4 @@ flowchart TD
 2. Saat bahasa Arab (`ar_SA`) dipilih, orientasi layout otomatis berbalik (*Right-to-Left*) secara sempurna.
 3. Angka dan mata uang diformat sesuai standar lokal masing-masing negara.
 4. Monorepo quality gates (`pnpm docs:check`, `pnpm lint:arch`, `pnpm typecheck`) pass 100%.
+

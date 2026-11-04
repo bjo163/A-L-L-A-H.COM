@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { EcosystemNavbar } from '@moonwitness/ui';
+import { EcosystemNavbar, MotionFrame } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 
 const destinations = [
@@ -69,34 +69,35 @@ export default function DockHomePage() {
           </p>
         )}
 
-        <section className="dock-hero" aria-labelledby="dock-title">
-          <div className="dock-hero__copy">
-            <p className="dock-kicker">A-L-L-A-H.COM / ENTRY</p>
-            <h1 id="dock-title">A platform with room to explore.</h1>
-            <p className="dock-hero__summary">
-              Enter the MoonWitness ecosystem through a clear map of its
-              discovery, identity, operations, and observatory spaces.
-            </p>
-            <a className="dock-hero__link" href="#dock-index-title">
-              View destinations <span aria-hidden="true">↓</span>
-            </a>
-          </div>
-
-          <figure className="dock-hero__art">
-            <Image
-              src="/artwork/imperium-lumen.png"
-              alt=""
-              width={1600}
-              height={900}
-              priority
-              className="dock-hero__image"
-            />
-            <figcaption className="dock-hero__caption">
-              <span>IMPERIUM LUMEN</span>
-              <span>01 / THE THRESHOLD</span>
-            </figcaption>
-          </figure>
-        </section>
+        <MotionFrame effect="enter">
+          <section className="dock-hero" aria-labelledby="dock-title">
+            <div className="dock-hero__copy">
+              <p className="dock-kicker">A-L-L-A-H.COM / ENTRY / IMPERIUM LUMEN</p>
+              <h1 id="dock-title">A platform with room to explore.</h1>
+              <p className="dock-hero__summary">
+                Enter the MoonWitness ecosystem through a clear map of its discovery, identity, operations,
+                and observatory spaces.
+              </p>
+              <a className="dock-hero__link" href="#dock-index-title">
+                Explore destinations
+              </a>
+            </div>
+            <figure className="dock-hero__art">
+              <Image
+                src="/artwork/imperium-lumen.png"
+                alt=""
+                width={1600}
+                height={900}
+                priority
+                className="dock-hero__image"
+              />
+              <figcaption className="dock-hero__caption">
+                <span>IMPERIUM LUMEN / THRESHOLD</span>
+                <span>01 / ENTRANCE</span>
+              </figcaption>
+            </figure>
+          </section>
+        </MotionFrame>
 
         <section className="dock-index" aria-labelledby="dock-index-title">
           <div className="dock-index__heading">

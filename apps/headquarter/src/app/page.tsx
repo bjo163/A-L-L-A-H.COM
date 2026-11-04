@@ -1,94 +1,64 @@
-import Image from 'next/image';
-import type { Metadata } from 'next';
+﻿import Image from "next/image";
+import type { Metadata } from "next";
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
 
 export const metadata: Metadata = {
-  title: 'Overview | Headquarter',
+  title: "Overview | Headquarter",
 };
 
 const modules = [
-  {
-    index: '01',
-    name: 'AI Gateway',
-    note: 'Provider routing, telemetry, and a live request console.',
-    href: '/ai-gateway',
-  },
-  {
-    index: '02',
-    name: 'Agent Studio',
-    note: 'Submit a run and inspect its streamed steps.',
-    href: '/agent',
-  },
-  {
-    index: '03',
-    name: 'Swarm Operations',
-    note: 'Coordinate a bounded multi-agent run.',
-    href: '/swarm',
-  },
-  {
-    index: '04',
-    name: 'Tool Registry',
-    note: 'Inspect available tools and their audit records.',
-    href: '/tools',
-  },
-  {
-    index: '05',
-    name: 'Knowledge Explorer',
-    note: 'Search the connected Qorpus knowledge base.',
-    href: '/knowledge',
-  },
+  { index: "01", name: "AI Gateway", href: "/ai-gateway", description: "Route requests, monitor providers, and inspect usage." },
+  { index: "02", name: "Agent Studio", href: "/agent", description: "Run agents with tools and review execution." },
+  { index: "03", name: "Swarm Ops", href: "/swarm", description: "Coordinate multi-agent tasks and inspect results." },
+  { index: "04", name: "Tool Registry", href: "/tools", description: "Browse registered MCP tools and capabilities." },
+  { index: "05", name: "Knowledge", href: "/knowledge", description: "Search Qorpus with grounded results." },
 ];
 
 export default function HeadquarterHomePage() {
   return (
-    <main className="hq-home">
-      <header className="hq-home__heading">
-        <p className="hq-kicker">NEXUS PARADOX / COMMAND SPACE</p>
-        <h1>Headquarter</h1>
-        <p>Choose an operational workspace. Runtime status appears only where it is returned by the connected service.</p>
-      </header>
-
-      <section className="hq-home__hero" aria-labelledby="hq-hero-title">
-        <div className="hq-home__hero-copy">
-          <span className="hq-home__coordinates">CONTROL SURFACE / 01</span>
-          <h2 id="hq-hero-title">A clear view of the systems you can operate.</h2>
-          <p>
-            Move directly to the gateway, agent, swarm, tool, or knowledge
-            workspace. Each module reports its own connection and execution state.
-          </p>
-          <a className="hq-home__link" href="/ai-gateway">
-            Open AI Gateway <span aria-hidden="true">↗</span>
-          </a>
-        </div>
-        <Image
-          src="/artwork/nexus-paradox.png"
-          alt=""
-          width={1600}
-          height={900}
-          priority
-          className="hq-home__art"
-        />
-        <span className="hq-home__frame-label" aria-hidden="true">N / 04 / SYSTEM MAP</span>
-      </section>
-
-      <section className="hq-modules" aria-labelledby="hq-modules-title">
-        <div className="hq-modules__heading">
+    <div className="hq-home">
+      <MotionFrame effect="enter">
+        <section className="hq-hero" aria-labelledby="hq-title">
+          <div className="hq-hero__copy">
+            <p className="hq-kicker">NEXUS PARADOX / OPERATIONS / COMMAND CENTER</p>
+            <h1 id="hq-title">Control plane for the MoonWitness ecosystem</h1>
+            <p className="hq-hero__summary">Dense, instrument-grade views for gateway routing, agent work, swarm coordination, tools, and knowledge.</p>
+            <div className="hq-hero__actions">
+              <Button><a href="/ai-gateway">Open AI Gateway</a></Button>
+              <Button variant="outline"><a href="/agent">Open Agent Studio</a></Button>
+            </div>
+          </div>
+          <figure className="hq-hero__art">
+            <Image src="/artwork/nexus-paradox.png" alt="" width={1600} height={900} priority className="hq-hero__image" />
+            <figcaption className="hq-hero__caption"><span>NEXUS PARADOX / INSTRUMENT PLANE</span><span>01 / OPERATIONS</span></figcaption>
+          </figure>
+        </section>
+      </MotionFrame>
+      <section className="hq-grid" aria-labelledby="hq-modules-title">
+        <div className="hq-grid__header">
           <div>
-            <p className="hq-kicker">DESTINATIONS / 01-05</p>
+            <p className="hq-kicker">MODULE INDEX / 05</p>
             <h2 id="hq-modules-title">Operational modules</h2>
           </div>
-          <p>Open a workspace to inspect its real data or run an action.</p>
+          <Badge variant="gold">All routes preserved</Badge>
         </div>
-        <nav className="hq-module-grid" aria-label="Operational modules">
+        <div className="hq-grid__cards">
           {modules.map((module) => (
-            <a className="hq-module" href={module.href} key={module.index}>
-              <span className="hq-module__index">{module.index}</span>
-              <h3>{module.name}</h3>
-              <p>{module.note}</p>
-              <span className="hq-module__arrow" aria-hidden="true">↗</span>
-            </a>
+            <Card key={module.href}>
+              <CardHeader>
+                <div className="hq-card__top">
+                  <span className="hq-card__index">{module.index}</span>
+                  <CardTitle>{module.name}</CardTitle>
+                </div>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" size="sm"><a href={module.href}>Open module</a></Button>
+              </CardContent>
+            </Card>
           ))}
-        </nav>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }
