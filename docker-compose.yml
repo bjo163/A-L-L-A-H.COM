@@ -1,6 +1,8 @@
 services:
   arsy:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-arsy:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/arsy/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -13,7 +15,9 @@ services:
       - arsy_data:/app/data
 
   gate:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-gate:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/gate/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -26,7 +30,9 @@ services:
       - arsy
 
   dock:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-dock:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/dock/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -39,7 +45,9 @@ services:
       - arsy
 
   headquarter:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-headquarter:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/headquarter/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -52,7 +60,9 @@ services:
       - arsy
 
   id:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-id:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/id/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -65,7 +75,9 @@ services:
       - arsy
 
   jizz:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-jizz:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/jizz/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -78,7 +90,9 @@ services:
       - arsy
 
   sentinel:
-    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-sentinel:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/sentinel/Dockerfile
     pull_policy: always
     restart: unless-stopped
     ports:
