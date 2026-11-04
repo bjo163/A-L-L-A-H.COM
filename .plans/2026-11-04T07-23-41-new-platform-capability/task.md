@@ -1,0 +1,5 @@
+- [ ] Define requirements
+- [ ] Implement feature
+- [x] Run quality gates
+- [x] Document changes
+- [x] Commit and push

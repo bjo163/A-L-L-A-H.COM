@@ -1,0 +1,184 @@
+{
+  "schema": "allah.gate.content-manifest/1",
+  "documentStatus": "draft_design_not_deployed",
+  "site": {
+    "name": "A-L-L-A-H.COM",
+    "descriptor": "Empire of the Light",
+    "productAcronym": "Accountable Life, Learning & Action Hub",
+    "universe": "MOONWITNESS XV",
+    "headline": "WHEN THE MOON RISES, WE SHARE MESSAGES.",
+    "tagline": "Different peoples. Same moon. Bigger humanity.",
+    "footerQuote": "A brighter humanity is a story we build together.",
+    "slogan": "Only You. Your Deeds. And ALLAH.",
+    "fictionDisclosure": true,
+    "productionPublished": false,
+    "noIndexRequired": true,
+    "localeDefault": "id",
+    "locales": ["id", "en"]
+  },
+  "navigation": [
+    { "id": "home", "labelEN": "HOME", "labelID": "BERANDA", "href": "/" },
+    { "id": "universe", "labelEN": "UNIVERSE", "labelID": "SEMESTA", "href": "/universe" },
+    { "id": "transmissions", "labelEN": "TRANSMISSIONS", "labelID": "TRANSMISI", "href": "/transmissions" },
+    { "id": "explore", "labelEN": "EXPLORE", "labelID": "JELAJAHI", "href": "/explore" },
+    { "id": "discover", "labelEN": "DISCOVER", "labelID": "TEMUKAN", "href": "/discover" },
+    { "id": "community", "labelEN": "COMMUNITY", "labelID": "KOMUNITAS", "href": "/community" },
+    { "id": "journey", "labelEN": "YOUR JOURNEY", "labelID": "PERJALANAN ANDA", "href": "/journey" },
+    { "id": "about", "labelEN": "ABOUT", "labelID": "TENTANG", "href": "/about" },
+    { "id": "sources", "labelEN": "SOURCES", "labelID": "SUMBER", "href": "/sources" },
+    { "id": "privacy", "labelEN": "PRIVACY", "labelID": "PRIVASI", "href": "/privacy" }
+  ],
+  "header": {
+    "searchIcon": "search",
+    "searchMustFunctionOrHide": true,
+    "cta": "A BRIGHTER HUMANITY AWAITS",
+    "ctaRoute": "/journey"
+  },
+  "footer": {
+    "estYear": null,
+    "socialLinksApproved": false,
+    "rightQuote": "A brighter humanity is a story we build together."
+  },
+  "worlds": [
+    {
+      "id": "manusia-pulpen",
+      "index": 1,
+      "title": "MANUSIA PULPEN",
+      "category": "origin",
+      "worldLabel": "ORIGIN STORY",
+      "taglineEN": "WRITING A BRIGHTER HUMANITY.",
+      "taglineID": "MENULIS UNTUK KEMANUSIAAN YANG LEBIH BAIK.",
+      "bodyEN": "Stories, ideas, and actions from ordinary humans for an extraordinary tomorrow.",
+      "bodyID": "Seorang manusia pendiam mencoba belajar menulis, membangun karya teknologi, dan membuktikan niat baik melalui tindakan kecil yang bertanggung jawab.",
+      "mockStatus": "Completed",
+      "publicationState": "draft",
+      "published": false,
+      "imageApproved": false,
+      "proposedRoute": "/explore/manusia-pulpen",
+      "imageKey": "story-manusia-pulpen",
+      "visual": "Back-view writer and moonlit city with floating pages"
+    },
+    {
+      "id": "angelwithshotgun",
+      "index": 2,
+      "title": "ANGELWITHSHOTGUN",
+      "category": "guardian",
+      "worldLabel": "GUARDIAN STORY",
+      "taglineEN": "PROTECT WHAT STILL MATTERS.",
+      "taglineID": "LINDUNGI YANG MASIH BERHARGA.",
+      "bodyEN": "A guardian's path through darkness, resistance, and the fight for a more humane world.",
+      "bodyID": "Ketika dunia terasa semakin gaduh, seorang penjaga sunyi belajar bahwa keberanian yang paling berarti adalah menjaga iman, belas kasih, dan keselamatan manusia.",
+      "mockStatus": "Ongoing",
+      "publicationState": "draft",
+      "published": false,
+      "imageApproved": false,
+      "proposedRoute": "/explore/angelwithshotgun",
+      "imageKey": "story-angelwithshotgun",
+      "visual": "Original rose-black wing-like guardian from behind under red moon"
+    },
+    {
+      "id": "ggs-full-moon-school",
+      "index": 3,
+      "title": "GGS FULL MOON SCHOOL",
+      "category": "learning",
+      "worldLabel": "LEARNING STORY",
+      "taglineEN": "LEARN. REFLECT. BUILD. TOGETHER.",
+      "taglineID": "BELAJAR. RENUNGKAN. BANGUN. BERSAMA.",
+      "bodyEN": "A school for curious minds, compassionate hearts, and brave actions.",
+      "bodyID": "Di sekolah purnama fiksi dalam kisah MYLUFT, ROCKSOUL mempelajari bahwa rasa syukur tetap diperlukan setelah kesusahan berlalu.",
+      "mockStatus": "Ongoing",
+      "publicationState": "draft",
+      "published": false,
+      "imageApproved": false,
+      "proposedRoute": "/explore/ggs",
+      "imageKey": "story-ggs",
+      "visual": "Fictional lantern-lit gothic lunar academy; back view learners"
+    },
+    {
+      "id": "empire-of-the-light",
+      "index": 4,
+      "title": "EMPIRE OF THE LIGHT",
+      "category": "universe",
+      "worldLabel": "UNIVERSE STORY",
+      "taglineEN": "A LARGER VISION FOR HUMANITY.",
+      "taglineID": "VISI YANG LEBIH BESAR UNTUK MANUSIA.",
+      "bodyEN": "Civilizations, systems, and alliances towards a more just, conscious, and harmonious world.",
+      "bodyID": "Gagasan tentang semesta karya dan tindakan yang mengutamakan kejujuran, pembelajaran, kasih sayang, dan manfaat bagi manusia.",
+      "mockStatus": "In Development",
+      "publicationState": "proposed",
+      "published": false,
+      "imageApproved": false,
+      "proposedRoute": "/explore/empire-of-the-light",
+      "imageKey": "story-empire",
+      "visual": "Lunar orbital metropolis, golden roundtable, silver moon"
+    }
+  ],
+  "transmissions": [
+    {
+      "id": "tx-001",
+      "title": "THE BOMBS ARE GETTING CLOSER EVERY DAY",
+      "series": "AngelWithShotgun",
+      "chapter": "01",
+      "excerptEN": "In a world where the bombs are getting closer every day, a lone guardian walks through the ruins, not to seek war, but to protect what still matters.",
+      "excerptID": "Di dunia di mana ledakan semakin mendekat setiap hari, seorang penjaga sunyi berjalan di tengah reruntuhan, bukan untuk mencari perang, melainkan untuk melindungi yang masih berharga.",
+      "provenance": {
+        "sourceType": "personal",
+        "reference": "AngelWithShotgun Chapter 1",
+        "author": "ROCKSOUL",
+        "date": "2026-10-29",
+        "rendering": "excerpt",
+        "status": "verified"
+      },
+      "status": "published",
+      "proposedRoute": "/transmissions/tx-001",
+      "imageKey": "tx-angelwithshotgun-ch01"
+    }
+  ],
+  "destinations": [
+    {
+      "id": "moonwitness",
+      "name": "MoonWitness",
+      "role": "Stories & Archive",
+      "description": "Explore transmissions, story worlds, characters, knowledge, and the living timeline of the MOONWITNESS XV universe.",
+      "href": "/explore",
+      "status": "available",
+      "icon": "book-open"
+    },
+    {
+      "id": "dock",
+      "name": "Dock",
+      "role": "Community Harbor",
+      "description": "Join discussions, share contributions, and participate in the community. Requires MoonWitness ID.",
+      "href": "https://dock.a-l-l-a-h.com/account",
+      "status": "available",
+      "icon": "users-round"
+    },
+    {
+      "id": "cockpit",
+      "name": "Cockpit",
+      "role": "Personal Workspace",
+      "description": "Your personal tools, AI interaction, saved work, and preferences. Not yet implemented.",
+      "href": "/cockpit",
+      "status": "unavailable",
+      "icon": "layout-dashboard"
+    },
+    {
+      "id": "headquarter",
+      "name": "Headquarter",
+      "role": "Spatial Command Center",
+      "description": "Authorized ecosystem coordination and operations. Restricted access.",
+      "href": "/command-center",
+      "status": "restricted",
+      "icon": "command"
+    },
+    {
+      "id": "observatory",
+      "name": "World Observatory",
+      "role": "Research & Intelligence",
+      "description": "Source-grounded intelligence workspace. ROCKSOUL JIZZ API.",
+      "href": "https://observatory.a-l-l-a-h.com",
+      "status": "available",
+      "icon": "globe"
+    }
+  ]
+}

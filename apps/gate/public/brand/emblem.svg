@@ -1,0 +1,8 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Gate arch -->
+  <path d="M24 104 L24 48 C24 30 38 18 56 18 C74 18 88 30 88 48 L88 104" stroke="#D3B77B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Crescent moon -->
+  <path d="M96 32 A16 16 0 0 1 96 64 A12 12 0 0 0 96 32 Z" fill="#D3B77B"/>
+  <!-- Central line -->
+  <line x1="64" y1="48" x2="64" y2="88" stroke="#D3B77B" stroke-width="3" stroke-linecap="round"/>
+</svg>

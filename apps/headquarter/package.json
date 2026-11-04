@@ -10,18 +10,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@allah/sdk": "workspace:*",
+    "@moonwitness/types": "workspace:*",
     "@moonwitness/ui": "workspace:*",
     "next": "16.4.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "@allah/sdk": "workspace:*",
-    "@moonwitness/types": "workspace:*"
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

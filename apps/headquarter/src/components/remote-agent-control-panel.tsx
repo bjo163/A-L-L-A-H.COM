@@ -44,9 +44,9 @@ export function RemoteAgentControlPanel() {
       setDevices(nextDevices);
       setMissions(nextMissions);
       setSelectedDeviceId((current) => (
-        nextDevices.some((device) => device.id === current)
+        nextDevices.some((device: any) => device.id === current)
           ? current
-          : nextDevices.find((device) => device.status !== 'revoked')?.id ?? ''
+          : nextDevices.find((device: any) => device.status !== 'revoked')?.id ?? ''
       ));
       setError(null);
     } catch (requestError) {

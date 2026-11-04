@@ -59,7 +59,14 @@ last_verified: "2026-11-03"
 - Verification: pnpm typecheck (all packages), pnpm lint:arch (100%), pnpm docs:check (100/100), pnpm arsy:build, pnpm headquarter:build, pnpm dock:build, pnpm id:build all succeed.
 ## EVOLVE-PLATFORM-FOUNDATIONS
 - Priority: P1
-- Status: READY
+- Status: VERIFIED
 - Outcome: Advance platform foundations with concrete verification evidence.
 - Acceptance: Extension parity and observatory verification complete with evidence.
 - Verification: Pending per plan 20261104-131923-evolve-platform-foundations
+
+## NEW-PLATFORM-CAPABILITY-4: Simulated new platform capability
+- Priority: P0
+- Status: READY
+- Outcome: Implement new platform capability from brainstorming
+- Acceptance: New capability implemented and verified
+- Verification: Pending per plan 2026-11-04T08-13-57-new-platform-capability-4

@@ -3,16 +3,18 @@ export interface EcosystemAppEndpoints {
   headquarter: string;
   id: string;
   jizz: string;
+  gate: string;
   accountPath: string;
   signInPath: string;
   registerPath: string;
 }
 
-const DEV_PORTS: Record<'dock' | 'headquarter' | 'id' | 'jizz', number> = {
+const DEV_PORTS: Record<'dock' | 'headquarter' | 'id' | 'jizz' | 'gate', number> = {
   dock: 3001,
   headquarter: 3002,
   id: 3003,
   jizz: 3004,
+  gate: 3000,
 };
 
 type EnvRecord = Record<string, string | undefined>;
@@ -50,6 +52,7 @@ export function resolveEcosystemEndpoints(env: EnvRecord = {}): EcosystemAppEndp
     headquarter: appUrl(env, 'headquarter', host, protocol),
     id: appUrl(env, 'id', host, protocol),
     jizz: appUrl(env, 'jizz', host, protocol),
+    gate: appUrl(env, 'gate', host, protocol),
     accountPath: '/account',
     signInPath: '/login',
     registerPath: '/register',

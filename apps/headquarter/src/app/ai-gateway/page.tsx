@@ -79,7 +79,7 @@ export default function AiGatewayPage() {
           model: testModel,
           messages: [{ role: 'user', content: testPrompt }],
         },
-        (chunk) => {
+        (chunk: any) => {
           const delta = chunk.choices?.[0]?.delta?.content;
           if (delta) {
             setTestOutput((prev) => prev + delta);

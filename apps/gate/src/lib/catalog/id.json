@@ -1,0 +1,134 @@
+{
+  "common": {
+    "skipToContent": "Lewati ke konten",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "retry": "Coba lagi",
+    "statusAvailable": "Tersedia",
+    "statusUnavailable": "Belum tersedia",
+    "statusRestricted": "Terbatas",
+    "statusPlanned": "Direncanakan",
+    "statusDraft": "Draf"
+  },
+  "nav": {
+    "home": "Beranda",
+    "universe": "Semesta",
+    "transmissions": "Transmisi",
+    "explore": "Jelajahi",
+    "discover": "Temukan",
+    "community": "Komunitas",
+    "journey": "Perjalanan Anda",
+    "about": "Tentang",
+    "sources": "Sumber",
+    "privacy": "Privasi",
+    "gate": "Gerbang",
+    "moonwitness": "MoonWitness",
+    "dock": "Dermaga",
+    "cockpit": "Kokpit",
+    "headquarter": "Markas",
+    "observatory": "Observatorium"
+  },
+  "hero": {
+    "headline": "KETIKA BULAN TERBIT, KITA BERBAGI PESAN.",
+    "ctaPrimary": "Masuk ke Semesta",
+    "ctaSecondary": "Pelajari Visinya"
+  },
+  "universe": {
+    "title": "Peta Semesta",
+    "description": "Lima destinasi, masing-masing dengan tujuan sendiri. Pilih gerbang Anda.",
+    "gate": "Gerbang",
+    "moonwitness": "MoonWitness",
+    "dock": "Dermaga",
+    "cockpit": "Kokpit",
+    "headquarter": "Markas",
+    "observatory": "Observatorium"
+  },
+  "explore": {
+    "title": "Jelajahi",
+    "description": "Dunia cerita, transmisi, pengetahuan, dan linimasa yang menunggu ditemukan.",
+    "featuredWorld": "Dunia Unggulan",
+    "storyWorlds": "Dunia Cerita",
+    "transmissions": "Transmisi Terbaru",
+    "knowledge": "Pengetahuan",
+    "creative": "Koleksi Kreatif"
+  },
+  "transmissions": {
+    "title": "Transmisi",
+    "featured": "Transmisi Unggulan",
+    "recent": "Transmisi Terbaru",
+    "provenance": "Provenansi",
+    "readMore": "Baca Selengkapnya",
+    "emptyState": "Belum ada transmisi yang dipublikasikan. Arsip akan berkembang seiring verifikasi transmisi baru.",
+    "sourceType": {
+      "personal": "Refleksi Pribadi",
+      "historical": "Sumber Historis",
+      "quran": "Al-Qur'an",
+      "hadith": "Hadits",
+      "fictional": "Fiksi"
+    }
+  },
+  "discover": {
+    "title": "Temukan",
+    "description": "Saring berdasarkan tema, format, waktu, atau jenis sumber.",
+    "theme": "Tema",
+    "format": "Format",
+    "time": "Waktu",
+    "source": "Sumber",
+    "noResults": "Tidak ada item yang cocok. Jelajahi indeks lengkap di Halaman Jelajahi."
+  },
+  "community": {
+    "title": "Komunitas",
+    "description": "Dermaga adalah pelabuhan komunitas untuk ekosistem A-L-L-A-H.COM. Di sini, anggota berdiskusi, berbagi penelitian, berkontribusi karya kreatif, dan membangun bersama.",
+    "participation": "Partisipasi yang bermakna: diskusi pemikiran, kontribusi bersumber, umpan balik konstruktif, menghormati pedoman komunitas.",
+    "guidelines": "Pedoman Komunitas",
+    "guideline1": "Hormati privasi anggota lain.",
+    "guideline2": "Tidak spam atau pelecehan.",
+    "guideline3": "Kutip sumber untuk klaim faktual.",
+    "guideline4": "Bedaakan pendapat pribadi dari fakta.",
+    "guideline5": "Komunikasi berbahasa Indonesia sebagai prioritas.",
+    "safety": "Keamanan",
+    "safetyText": "Moderasi ditinjau oleh manusia. Laporan ditangani secara pribadi. Proses banding tersedia.",
+    "enterDock": "Masuk ke Dermaga"
+  },
+  "journey": {
+    "title": "Perjalanan Anda",
+    "anonymous": {
+      "title": "Lanjutkan Perjalanan",
+      "explore": "Jelajahi cerita dan transmisi publik",
+      "participate": "Pelajari cara berpartisipasi di komunitas",
+      "signIn": "Masuk saat butuh alat pribadi"
+    },
+    "signedIn": {
+      "title": "Ruang Kerja Anda",
+      "cockpit": "Buka Kokpit",
+      "saved": "Transmisi Tersimpan",
+      "account": "Pengaturan Akun"
+    }
+  },
+  "info": {
+    "about": {
+      "title": "Tentang A-L-L-A-H.COM",
+      "mission": "A-L-L-A-H.COM adalah gerbang publik ke Empire of the Light: sebuah dunia digital koheren di mana pengunjung dapat memahami tujuan proyek, menemui cerita dan transmisi, menemukan ruang yang terhubung, dan memilih langkah bermakna berikutnya.",
+      "acronym": "A-L-L-A-H adalah akronim proyek: Accountable Life, Learning & Action Hub.",
+      "universe": "MOONWITNESS XV adalah platform cerita, saksi, pengetahuan, dan radio/penemuan dalam Empire.",
+      "products": "Produk ekosistem: MoonWitness (cerita & arsip), Dock (komunitas), Cockpit (ruang kerja pribadi), Headquarter (koordinasi ekosistem), Moon UI (bahasa desain bersama)."
+    },
+    "sources": {
+      "title": "Sumber & Provenansi",
+      "methodology": "Setiap konten membawa provenance yang terlihat: tipe sumber, referensi pasti, edisi/penerjemah (jika teks suci/sejarah), penulis, tanggal, status rendering, dan status verifikasi.",
+      "scripture": "Teks Al-Qur'an: surah:ayat pasti, edisi (contoh: King Fahd Complex 1420H), nama penerjemah, status rendering (penuh/kutipan/parafrase).",
+      "hadith": "Hadits: kitab, nomor, grading/kualifikasi, konteks.",
+      "historical": "Data sejarah/ilmiah: sumber bernama, pengamatan/model, timestamp, satuan, ketidakpastian.",
+      "fiction": "Karya fiksi/creative: dilabelkan sebagai fiksi/dunia cerita; tidak diklaim sebagai bukti eksternal.",
+      "rights": "Hak cipta dan lisensi: aset asli atau dilisensikan dengan benar; tidak mereproduksi karya berhak cipta melebihi izin."
+    },
+    "privacy": {
+      "title": "Privasi",
+      "data": "Data yang dikumpulkan: sesi autentikasi (token, expiry), preferensi pengguna (tema, bahasa, suara/gerakan), log akses hosting (retensi belum diverifikasi).",
+      "noTracking": "Tidak ada analitik, pelacakan, atau pencatatan perilaku pengguna di sisi klien.",
+      "thirdParty": "Tidak ada layanan pihak ketiga yang mengumpulkan data pribadi.",
+      "rights": "Hak Anda: akses, koreksi, penghapusan data pribadi; penarikan persetujuan; keluhan ke otoritas pengawas.",
+      "contact": "Kontak: melalui halaman About atau email resmi proyek (jika tersedia)."
+    }
+  }
+}

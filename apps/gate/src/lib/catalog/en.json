@@ -1,0 +1,134 @@
+{
+  "common": {
+    "skipToContent": "Skip to content",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try again",
+    "statusAvailable": "Available",
+    "statusUnavailable": "Unavailable",
+    "statusRestricted": "Restricted",
+    "statusPlanned": "Planned",
+    "statusDraft": "Draft"
+  },
+  "nav": {
+    "home": "Home",
+    "universe": "Universe",
+    "transmissions": "Transmissions",
+    "explore": "Explore",
+    "discover": "Discover",
+    "community": "Community",
+    "journey": "Your Journey",
+    "about": "About",
+    "sources": "Sources",
+    "privacy": "Privacy",
+    "gate": "Gate",
+    "moonwitness": "MoonWitness",
+    "dock": "Dock",
+    "cockpit": "Cockpit",
+    "headquarter": "Headquarter",
+    "observatory": "Observatory"
+  },
+  "hero": {
+    "headline": "WHEN THE MOON RISES, WE SHARE MESSAGES.",
+    "ctaPrimary": "Enter the Universe",
+    "ctaSecondary": "Learn the Vision"
+  },
+  "universe": {
+    "title": "Universe Map",
+    "description": "Five destinations, each with its own purpose. Choose your gate.",
+    "gate": "Gate",
+    "moonwitness": "MoonWitness",
+    "dock": "Dock",
+    "cockpit": "Cockpit",
+    "headquarter": "Headquarter",
+    "observatory": "Observatory"
+  },
+  "explore": {
+    "title": "Explore",
+    "description": "Story worlds, transmissions, knowledge, and a living timeline waiting to be discovered.",
+    "featuredWorld": "Featured World",
+    "storyWorlds": "Story Worlds",
+    "transmissions": "Recent Transmissions",
+    "knowledge": "Knowledge",
+    "creative": "Creative Collections"
+  },
+  "transmissions": {
+    "title": "Transmissions",
+    "featured": "Featured Transmission",
+    "recent": "Recent Transmissions",
+    "provenance": "Provenance",
+    "readMore": "Read Full Transmission",
+    "emptyState": "No published transmissions yet. The archive grows as new transmissions are verified.",
+    "sourceType": {
+      "personal": "Personal Reflection",
+      "historical": "Historical Source",
+      "quran": "Qur'an",
+      "hadith": "Hadith",
+      "fictional": "Fiction"
+    }
+  },
+  "discover": {
+    "title": "Discover",
+    "description": "Filter by theme, format, time, or source type.",
+    "theme": "Theme",
+    "format": "Format",
+    "time": "Time",
+    "source": "Source",
+    "noResults": "No items match. Browse the full index at Explore."
+  },
+  "community": {
+    "title": "Community",
+    "description": "Dock is the community harbor for the A-L-L-A-H.COM ecosystem. Here, members discuss transmissions, share research, contribute creative work, and build together.",
+    "participation": "Meaningful participation: thoughtful discussion, sourced contributions, constructive feedback, respect for community guidelines.",
+    "guidelines": "Community Guidelines",
+    "guideline1": "Respect member privacy.",
+    "guideline2": "No spam or harassment.",
+    "guideline3": "Cite sources for factual claims.",
+    "guideline4": "Distinguish personal opinion from fact.",
+    "guideline5": "Indonesian-first communication.",
+    "safety": "Safety",
+    "safetyText": "Moderation is human-reviewed. Reports handled privately. Appeals process exists.",
+    "enterDock": "Enter Dock"
+  },
+  "journey": {
+    "title": "Your Journey",
+    "anonymous": {
+      "title": "Continue Your Journey",
+      "explore": "Explore public stories and transmissions",
+      "participate": "Learn how to participate in the community",
+      "signIn": "Sign in when you need personal tools"
+    },
+    "signedIn": {
+      "title": "Your Workspace",
+      "cockpit": "Open Cockpit",
+      "saved": "Saved Transmissions",
+      "account": "Account Settings"
+    }
+  },
+  "info": {
+    "about": {
+      "title": "About A-L-L-A-H.COM",
+      "mission": "A-L-L-A-H.COM is the public gate to the Empire of the Light: a coherent digital world where visitors can understand the project's purpose, encounter its stories and transmissions, discover connected spaces, and choose a meaningful next step.",
+      "acronym": "A-L-L-A-H is the project acronym: Accountable Life, Learning & Action Hub.",
+      "universe": "MOONWITNESS XV is the story, witness, knowledge, and radio/discovery product within the Empire.",
+      "products": "Ecosystem products: MoonWitness (stories & archive), Dock (community), Cockpit (personal workspace), Headquarter (ecosystem coordination), Moon UI (shared design language)."
+    },
+    "sources": {
+      "title": "Sources & Provenance",
+      "methodology": "Every content item carries visible provenance: source type, exact reference, edition/translator (if scripture/historical), author, date, rendering status, and verification status.",
+      "scripture": "Qur'an text: exact surah:ayah, edition (e.g., King Fahd Complex 1420H), translator name, rendering status (full/excerpt/paraphrase).",
+      "hadith": "Hadith: book, number, grading/qualification, context.",
+      "historical": "Historical/scientific data: named source, observation/model distinction, timestamp, units, uncertainty.",
+      "fiction": "Fictional/creative works: labeled as fiction/story universe; not claimed as external proof.",
+      "rights": "Copyright and licensing: original or properly licensed assets; no reproduction of copyrighted works beyond permitted limits."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "data": "Data collected: authentication session (token, expiry), user preferences (theme, language, sound/motion), hosting access logs (retention unverified).",
+      "noTracking": "No analytics, tracking, or client-side behavioral logging.",
+      "thirdParty": "No third-party services collecting personal data.",
+      "rights": "Your rights: access, correction, deletion of personal data; withdrawal of consent; complaint to supervisory authority.",
+      "contact": "Contact: via About page or official project email (if available)."
+    }
+  }
+}

@@ -10,7 +10,7 @@ import { VisualEffectsToggle } from './visual-effects-toggle';
 
 export interface EcosystemNavbarProps {
   /** App id shown in the badge. Any workspace name is accepted so a new app can reuse the shared navbar. */
-  currentApp?: string;
+  currentApp?: 'dock' | 'headquarter' | 'id' | 'jizz' | 'gate';
   userName?: string;
   userEmail?: string;
   onSignOut?: () => void;
@@ -36,6 +36,7 @@ export function EcosystemNavbar({
   const appLabel =
     currentApp === 'headquarter' ? 'HQ' :
     currentApp === 'jizz' ? 'OBSERVATORY' :
+    currentApp === 'gate' ? 'GATE' :
     currentApp.toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const menuButtonRef = React.useRef<HTMLButtonElement>(null);
@@ -98,6 +99,14 @@ export function EcosystemNavbar({
             onClick={() => setIsMenuOpen(false)}
           >
             Dock (Discovery)
+          </a>
+          <a
+            href={endpoints.gate}
+            className="mw-navbar__link"
+            aria-current={currentApp === 'gate' ? 'page' : undefined}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Gate (Entrance)
           </a>
           <a
             href={endpoints.headquarter}
