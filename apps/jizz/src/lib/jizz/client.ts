@@ -1,5 +1,4 @@
-import { type PhenomenonRecord, type PerspectiveRecord, type SignalRecord, type ProvenanceRecord, type UpstreamEndpoint } from '@moonwitness/types';
-import { type AgentRunResponse } from '@moonwitness/types';
+import { type PhenomenonRecord, type PerspectiveRecord, type SignalRecord, type ProvenanceRecord, type UpstreamEndpoint, type AgentRunResponse } from '@moonwitness/types';
 
 /**
  * SSRF guard: validate upstream endpoint against allowlist before any request.
