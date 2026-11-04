@@ -132,5 +132,5 @@ Text pairs clear 4.5:1 in all six worlds. Non-text pairs clear 3:1. The tightest
 
 - Tabs and progress remain specification in DNA/07; no shared block exists yet.
 - `PALETTE_PURITY` does not see raw hex in `.tsx` data structures. Headquarter's swarm role colours were only found because they were painted inline.
-- Four throwaway migration helpers were committed by the concurrent process (`scripts/tmp-skip-targets.mjs`, `scripts/tmp-rename-target.mjs`, `scripts/tmp-gate-shell.mjs`, `scripts/tmp-hq-palette-map.mjs`). They are one-off and should be deleted; the `DeleteFile` tool fails on this workspace root, so they were left in place rather than removed through the shell.
+- Four throwaway migration helpers were committed by the concurrent process (`scripts/tmp-skip-targets.mjs`, `scripts/tmp-rename-target.mjs`, `scripts/tmp-gate-shell.mjs`, `scripts/tmp-hq-palette-map.mjs`). They were single-use, so they are deleted in this same step: a repo that keeps CSS-patching scripts around reads as work left half done.
 - `packages/lint/src/check-architecture.mjs` still carries an uncommitted hunk from the other process (a `PARAMETERIZED_QUERIES` false-positive fix). It is not part of this wave and was left untouched.
