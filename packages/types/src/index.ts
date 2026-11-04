@@ -525,3 +525,71 @@ export interface AgentRunResponse {
     estimated_cost_usd?: number;
   };
 }
+
+/**
+ * ROCKSOUL JIZZ — World Observatory Data Contracts
+ */
+export interface PhenomenonRecord {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  observed_at: string;
+  tags: string[];
+  geographic_scope?: 'global' | 'regional' | 'local';
+  source_url?: string;
+  provenance: {
+    captured_at: string;
+    captured_by: string;
+    verification_status: 'verified' | 'preliminary' | 'unverified';
+  };
+}
+
+export interface PerspectiveRecord {
+  id: string;
+  phenomenon_id: string;
+  actor_name: string;
+  actor_type: 'expert' | 'institution' | 'journalist' | 'citizen' | 'ai';
+  framing: string;
+  stance: 'supporting' | 'opposing' | 'neutral' | 'critical';
+  key_quotes: string[];
+  confidence: number;
+  published_at: string;
+  source_url?: string;
+  provenance: {
+    captured_at: string;
+    captured_by: string;
+    verification_status: 'verified' | 'preliminary' | 'unverified';
+  };
+}
+
+export interface SignalRecord {
+  id: string;
+  phenomenon_id: string;
+  signal_type: 'volume' | 'sentiment' | 'emergence' | 'anomaly' | 'trend';
+  magnitude: number;
+  detected_at: string;
+  metadata: Record<string, unknown>;
+  provenance: {
+    captured_at: string;
+    captured_by: string;
+    verification_status: 'verified' | 'preliminary' | 'unverified';
+  };
+}
+
+export interface ProvenanceRecord {
+  captured_at: string;
+  captured_by: string;
+  verification_status: 'verified' | 'preliminary' | 'unverified';
+  source_url?: string;
+}
+
+/**
+ * SSRF Protection Types
+ */
+export interface UpstreamEndpoint {
+  base_url: string;
+  api_key?: string;
+  timeout_ms?: number;
+  retry_count?: number;
+}

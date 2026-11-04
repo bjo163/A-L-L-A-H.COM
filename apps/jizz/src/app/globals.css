@@ -19,3 +19,133 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   gap: var(--mw-card-padding);
 }
+
+/* Phenomena catalogue */
+.jizz-search-bar {
+  margin-bottom: var(--mw-card-padding);
+}
+
+.jizz-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--mw-card-padding);
+}
+
+.jizz-phenomenon-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jizz-phenomenon-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.jizz-phenomenon-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Phenomenon detail */
+.jizz-phenomenon-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mw-card-padding);
+}
+
+.jizz-phenomenon-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.jizz-phenomenon-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.jizz-phenomenon-summary {
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.jizz-phenomenon-source {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.jizz-phenomenon-source a {
+  color: var(--mw-text-primary);
+  text-decoration: underline;
+}
+
+/* Perspectives matrix */
+.jizz-perspectives-matrix,
+.jizz-signals-timeline {
+  margin-top: var(--mw-card-padding);
+}
+
+/* Signals timeline */
+.jizz-signals-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: var(--mw-card-padding);
+}
+
+.jizz-signal-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.jizz-signal-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jizz-signal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.jizz-signal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.jizz-signal-metadata__pre {
+  background: var(--mw-bg-secondary);
+  padding: 0.75rem;
+  border-radius: var(--mw-radius-sm);
+  font-size: 0.875rem;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.jizz-phenomenon-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: var(--mw-card-padding);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .jizz-records__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .jizz-signals-controls {
+    gap: 0.75rem;
+  }
+
+  .jizz-phenomenon-header {
+    gap: 0.75rem;
+  }
+}

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel, skinRegistry } from "@moonwitness/ui";
 
 export const metadata = {
   title: "RIOT ANARCHY | Controlled Disruption",
@@ -21,7 +21,7 @@ export default function RiotAnarchyPage() {
               <Badge variant="default">Poster index pending</Badge>
             </>
           }
-          media={<Image src="/artwork/riot-anarchy.png" alt="" width={1600} height={900} priority />}
+          media={<Image src={skinRegistry["riot-anarchy"].identity.hero} alt="" width={1600} height={900} priority />}
           captionLeft="RIOT ANARCHY / PRINT COLLISION"
           captionRight="ISSUE / 00"
         />

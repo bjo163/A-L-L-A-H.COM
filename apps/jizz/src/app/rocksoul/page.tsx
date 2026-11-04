@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel } from "@moonwitness/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, PageHero, SectionHeading, StatePanel, skinRegistry } from "@moonwitness/ui";
 
 export const metadata = {
   title: "ROCKSOUL | Narrative Space",
@@ -21,7 +21,7 @@ export default function RocksoulPage() {
               <Badge variant="default">Index pending</Badge>
             </>
           }
-          media={<Image src="/artwork/rocksoul.png" alt="" width={1600} height={900} priority />}
+          media={<Image src={skinRegistry.rocksoul.identity.hero} alt="" width={1600} height={900} priority />}
           captionLeft="ROCKSOUL / WET STREET"
           captionRight="CHAPTER / 00"
         />
