@@ -9,6 +9,12 @@ import { Input } from '../src/components/input';
 import { Link, LinkButton } from '../src/components/link';
 import { Select } from '../src/components/select';
 import { Textarea } from '../src/components/textarea';
+import { DestinationCard } from '../src/blocks/destination-card';
+import { PageHero } from '../src/blocks/page-hero';
+import { RouteShell } from '../src/blocks/route-shell';
+import { SectionHeading } from '../src/blocks/section-heading';
+import { StatePanel, type StatePanelKind } from '../src/blocks/state-panel';
+import { StatusMessage, type StatusTone } from '../src/blocks/status-message';
 
 const controls = [
   ['Input', (props: { required?: boolean }) => <Input {...props} />],
@@ -123,4 +129,109 @@ test('Dialog renders native modal semantics and a named title', () => {
   assert.match(markup, /^<dialog[^>]+data-slot="dialog"/);
   assert.match(markup, /aria-labelledby="[^"]+"/);
   assert.match(markup, /<h2[^>]+>Confirm action<\/h2>/);
+});
+
+test('PageHero wires its title to the section name and skips empty slots', () => {
+  const plain = renderToStaticMarkup(<PageHero title="Threshold" kicker="entry" summary="Cross over." />);
+  const full = renderToStaticMarkup(
+    <PageHero
+      titleId="hero"
+      title="Threshold"
+      summary="Cross over."
+      actions={<LinkButton href="/account">Account</LinkButton>}
+      media={<img src="art.png" alt="" />}
+      captionLeft="IMPERIUM LUMEN"
+      captionRight="01"
+    />
+  );
+
+  assert.match(plain, /<h1 class="mw-hero__title">Threshold<\/h1>/);
+  assert.match(plain, /<p class="mw-kicker mw-hero__kicker" data-slot="kicker">entry<\/p>/);
+  assert.doesNotMatch(plain, /aria-labelledby/);
+  assert.doesNotMatch(plain, /<figcaption/);
+  assert.match(full, /<section class="mw-hero" data-slot="hero" aria-labelledby="hero">/);
+  assert.match(
+    full,
+    /<figure class="mw-hero__art"><img src="art\.png" alt=""\/><figcaption class="mw-hero__caption"><span>IMPERIUM LUMEN<\/span><span>01<\/span><\/figcaption><\/figure>/
+  );
+  assert.match(full, /<div class="mw-hero__actions"><a class="mw-button/);
+});
+
+test('RouteShell renders one landmark and no header when the route supplies its own title', () => {
+  const bare = renderToStaticMarkup(<RouteShell><p>body</p></RouteShell>);
+  const titled = renderToStaticMarkup(
+    <RouteShell as="main" kicker="operations" title="Sessions" description="Active sessions." titleId="t">
+      <p>body</p>
+    </RouteShell>
+  );
+
+  assert.equal(bare, '<div class="mw-route" data-slot="route"><p>body</p></div>');
+  assert.match(titled, /^<main class="mw-route" data-slot="route"><header class="mw-route__header">/);
+  assert.match(titled, /<p class="mw-kicker mw-route__kicker" data-slot="kicker">operations<\/p>/);
+  assert.match(titled, /<h1 class="mw-route__title" id="t">Sessions<\/h1>/);
+});
+
+test('SectionHeading keeps the outline level chosen by the page', () => {
+  const markup = renderToStaticMarkup(
+    <SectionHeading title="Destinations" description="One per world." as="h3" trailing={<Button>Refresh</Button>} />
+  );
+
+  assert.match(markup, /<h3 class="mw-section-heading__title">Destinations<\/h3>/);
+  assert.match(markup, /<div class="mw-section-heading__trailing"><button[^>]+class="mw-button/);
+});
+
+const tones: StatusTone[] = ['info', 'success', 'warning', 'danger'];
+
+for (const tone of tones) {
+  test(`StatusMessage announces ${tone} by role and by glyph`, () => {
+    const markup = renderToStaticMarkup(
+      <StatusMessage tone={tone} title="Session" action={<Button>Retry</Button>}>
+        The hub did not answer.
+      </StatusMessage>
+    );
+    const expectedRole = tone === 'danger' ? 'alert' : 'status';
+
+    assert.match(markup, new RegExp(`role="${expectedRole}"`));
+    assert.match(markup, new RegExp(`data-tone="${tone}"`));
+    assert.match(markup, /<span class="mw-status__marker" aria-hidden="true">[^<]+<\/span>/);
+    assert.match(markup, /The hub did not answer\./);
+  });
+}
+
+const kinds: StatePanelKind[] = ['empty', 'loading', 'error', 'offline', 'permission'];
+
+for (const kind of kinds) {
+  test(`StatePanel ${kind} names a cause, a next step, and the right live region`, () => {
+    const markup = renderToStaticMarkup(
+      <StatePanel kind={kind} cause="No record matches this filter." nextAction="Clear the filter to see all records." />
+    );
+    const expectedRole = kind === 'error' || kind === 'offline' ? 'alert' : 'status';
+
+    assert.match(markup, new RegExp(`role="${expectedRole}"`));
+    assert.match(markup, new RegExp(`data-kind="${kind}"`));
+    assert.match(markup, /class="mw-state__label">[^<]+<\/p>/);
+    assert.match(markup, /class="mw-state__cause">No record matches this filter\.<\/p>/);
+    assert.match(markup, /class="mw-state__next">Clear the filter to see all records\.<\/p>/);
+  });
+}
+
+test('StatePanel marks loading busy and keeps the heading out of the alert path', () => {
+  const markup = renderToStaticMarkup(<StatePanel kind="loading" cause="Fetching sessions." />);
+
+  assert.match(markup, /aria-busy="true"/);
+  assert.match(markup, /<h2 class="mw-state__title">Loading<\/h2>/);
+});
+
+test('DestinationCard routes through Link and keeps its label out of the ARIA role', () => {
+  const card = renderToStaticMarkup(
+    <DestinationCard index="02" role="observatory" title="World Observatory" description="Six worlds." href="/obs" />
+  );
+  const external = renderToStaticMarkup(<DestinationCard title="Archive" href="https://example.com" external />);
+
+  assert.match(card, /^<a class="mw-link mw-destination" data-slot="destination" href="\/obs">/);
+  assert.doesNotMatch(card, /role="/);
+  assert.match(card, /<span class="mw-destination__role">observatory<\/span>/);
+  assert.match(card, /<h3 class="mw-destination__title">World Observatory<\/h3>/);
+  assert.match(external, /rel="noopener noreferrer"/);
+  assert.match(external, /Opens in a new tab\./);
 });
