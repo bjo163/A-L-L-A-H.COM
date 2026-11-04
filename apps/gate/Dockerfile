@@ -1,0 +1,39 @@
+# Multi-stage Dockerfile for MoonWitness Gate
+FROM node:22-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+FROM base AS builder
+WORKDIR /app
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY tsconfig.base.json ./
+COPY apps/gate/package.json ./apps/gate/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/types/package.json ./packages/types/
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/gate ./apps/gate
+COPY packages/ui ./packages/ui
+COPY packages/sdk ./packages/sdk
+COPY packages/types ./packages/types
+RUN pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/gate build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/gate ./apps/gate
+
+WORKDIR /app/apps/gate
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
