@@ -51,6 +51,13 @@ export function EcosystemNavbar({
   return (
     <header
       className={cn('mw-navbar', className)}
+      onKeyDown={(event) => {
+        if (!isMenuOpen || event.key !== 'Escape') return;
+
+        event.preventDefault();
+        setIsMenuOpen(false);
+        window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+      }}
     >
       <div className="mw-navbar__inner">
         {/* Brand & Badge */}

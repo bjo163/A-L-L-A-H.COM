@@ -13,9 +13,7 @@
   "dependencies": {
     "@allah/arsy-core": "workspace:*",
     "@allah/arsy-orm": "workspace:*",
-    "@allah/sdk": "workspace:*",
-    "@moonwitness/ui": "workspace:*",
-    "dgram": "^1.0.0"
+    "@allah/sentinel-radius": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

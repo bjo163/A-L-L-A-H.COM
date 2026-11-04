@@ -1,32 +1,31 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "GOAL"
-version: "1.0.0"
+version: "1.1.0"
 owner: "leadership"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-04"
 ---
 # GOAL.md
 
-Autonomous Engineering Directive for A-L-L-A-H.COM.
-
 ## Mission
-Unify MoonWitness & Empire of the Light ecosystem into high-performance Fastify/Next.js platform without narrative or technical erasure (`LEGACY_RECONCILIATION.md`).
 
-## Prompt Directive
-```markdown
-/goal
-Execute autonomous evolution loop on A-L-L-A-H.COM (target: https://github.com/bjo163/A-L-L-A-H.COM.git, development branch: dev, production branch: main).
+Unify MoonWitness & Empire of the Light into a high-performance Fastify/Next.js platform without narrative or technical erasure. See [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md).
 
-MANDATORY RULES:
-1. CONTRACT: Read and follow AGENTS.md, AUTONOMOUS.md, DOCUMENTATION_CONTRACT.md, and LEGACY_RECONCILIATION.md. Zero-confirmation loop.
-2. RESEARCH: Harvest bjo163/* repositories & Odoo/OpenDAL standards. Pick next task from BACKLOG.md.
-3. SECURITY AUDIT: Verify zero-copy streaming, parameterized SQL, SSRF guards, and fail-closed retention.
-4. GATES: Must pass 100%:
-   - pnpm dock:build
-   - pnpm headquarter:build
-   - pnpm --filter @allah/arsy build
-   Self-heal all errors autonomously.
-5. DOC SYNC: Update only affected canonical documents as defined by DOCUMENTATION_CONTRACT.md.
-6. GIT: Review the scoped diff, use a conventional commit, and push changes to dev. CI promotes dev to main only after all required checks pass.
+## /goal Directive
+
+```
+Target : https://github.com/bjo163/A-L-L-A-H.COM.git  branch: dev → main
+Contracts: AGENTS.md · AUTONOMOUS.md · DOCUMENTATION_CONTRACT.md · LEGACY_RECONCILIATION.md
+
+LOOP:
+  1. Read all contracts. Zero-confirmation mode.
+  2. Research bjo163/* repos + Odoo/OpenDAL. Pick next task from BACKLOG.md.
+  3. Security audit: streaming, parameterized SQL, SSRF guards, fail-closed retention.
+  4. Build gates (self-heal all errors, never prompt):
+       pnpm dock:build
+       pnpm headquarter:build
+       pnpm --filter @allah/arsy build
+  5. Doc sync: update only affected canonical docs per DOCUMENTATION_CONTRACT.md.
+  6. Conventional commit → push dev. CI promotes dev→main on 100% pass.
 ```
