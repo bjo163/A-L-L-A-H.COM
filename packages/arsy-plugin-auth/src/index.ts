@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import { betterAuth } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { fail, ok, resolveLocalSecret, type Principal } from '@allah/arsy-core';
@@ -25,6 +26,7 @@ import {
 export interface AuthPluginOptions {
   secret?: string;
   prefix?: string;
+  trustedOrigins?: string[];
 }
 
 export interface PrincipalGuardOptions {
@@ -34,6 +36,16 @@ export interface PrincipalGuardOptions {
 
 interface AuthRow {
   id: number;
+  company_id: number;
+  res_user_id: number;
+  email: string;
+  password_hash: string;
+  name: string;
+  status: 'active' | 'unverified' | 'suspended' | 'disabled';
+  email_verified: boolean;
+  email_verified_at: string | null;
+  two_factor_enabled: boolean;
+  avatar_url: string | null;
   [key: string]: unknown;
 }
 
@@ -237,7 +249,13 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
       assignedAuthUser as AuthRow & { company_id: number | string },
       dbEngine
     );
-    return { ...assignedAuthUser, res_user_id: resUserId, company_id: companyId };
+    return {
+      ...(assignedAuthUser as AuthRow),
+      name: String((assignedAuthUser as AuthRow).name ?? account.name),
+      email: String((assignedAuthUser as AuthRow).email ?? account.email),
+      res_user_id: resUserId,
+      company_id: companyId,
+    };
   };
 
   const getInitialSetup = async (executor: QueryExecutor = dbEngine) => {
@@ -253,6 +271,10 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
   const betterAuthBasePath = `${prefix}/better`;
   const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
   const betterAuthUrl = process.env.BETTER_AUTH_URL;
+  const trustedOrigins = options.trustedOrigins ?? (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   if (process.env.NODE_ENV === 'production') {
     if (!betterAuthSecret || betterAuthSecret.length < 32 || betterAuthSecret === secret) {
       throw new Error('Production requires a distinct BETTER_AUTH_SECRET of at least 32 characters.');
@@ -260,11 +282,10 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     if (!betterAuthUrl) {
       throw new Error('Production requires BETTER_AUTH_URL to be the public ARSY origin.');
     }
+    if (trustedOrigins.length === 0) {
+      throw new Error('Production requires explicit trusted browser origins in CORS_ORIGINS.');
+    }
   }
-  const trustedOrigins = (process.env.CORS_ORIGINS || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
   const betterAuthServer = betterAuth({
     appName: 'MoonWitness ID',
     baseURL: betterAuthUrl,
@@ -272,6 +293,34 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     secret: betterAuthSecret || secret,
     trustedOrigins,
     database: arsyBetterAuthAdapter,
+    hooks: {
+      before: createAuthMiddleware(async (context) => {
+        const body = context.body;
+        if (
+          context.path !== '/sign-in/email' ||
+          typeof body !== 'object' ||
+          body === null ||
+          !('email' in body) ||
+          typeof body.email !== 'string'
+        ) {
+          return;
+        }
+        const users = await getRepo('auth.user').find({
+          scope: { systemScope: true },
+          filters: [
+            {
+              field: 'email',
+              operator: '=',
+              value: body.email.trim().toLowerCase(),
+            },
+          ],
+          limit: 1,
+        });
+        if (users[0] && users[0].status !== 'active') {
+          throw new APIError('UNAUTHORIZED', { message: 'Invalid email or password.' });
+        }
+      }),
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
@@ -539,8 +588,13 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
     const ormUserId = Number((user as { res_user_id?: unknown }).res_user_id);
     if (!Number.isSafeInteger(ormUserId) || ormUserId < 1) return null;
     const ormUser = await getRepo('res.users').findById(ormUserId, { systemScope: true });
-    const role = (ormUser as { role?: unknown } | null)?.role;
-    if (!ormUser || (role !== 'user' && role !== 'superuser')) return null;
+    if (!ormUser) return null;
+    const ormCompanyId = Number((ormUser as { company_id?: unknown }).company_id);
+    const authEmail = String((user as { email?: unknown }).email ?? '').trim().toLowerCase();
+    const ormEmail = String((ormUser as { email?: unknown }).email ?? '').trim().toLowerCase();
+    if (ormCompanyId !== companyId || !authEmail || ormEmail !== authEmail) return null;
+    const role = (ormUser as { role?: unknown }).role;
+    if (role !== 'user' && role !== 'superuser') return null;
 
     return {
       userId: Number(user.id),
@@ -693,6 +747,11 @@ const authPluginAsync: FastifyPluginAsync<AuthPluginOptions> = async (fastify: F
   fastify.post<{ Body: { name: string; email: string; password: string } }>(
     `${prefix}/register`,
     async (request, reply) => {
+      if (typeof request.headers.origin === 'string') {
+        reply.status(410);
+        return fail('BETTER_AUTH_REQUIRED', 'Browser registration must use the Better Auth endpoint');
+      }
+
       const { name, email, password } = request.body || {};
       if (
         typeof name !== 'string' ||
