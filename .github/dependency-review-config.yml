@@ -1,0 +1,13 @@
+# Dependency Review Configuration
+# https://github.com/actions/dependency-review-action
+
+# Severity levels: critical, high, medium, low
+fail-on-severity: high
+
+# Allow specific GHSA IDs (empty = deny all)
+allow-ghsas: []
+
+# Configuration for specific ecosystems
+# npm:
+#   allow-ghsas: []
+#   fail-on-severity: high

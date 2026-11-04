@@ -1,0 +1,71 @@
+name: PR Size Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+            
+            let label = '';
+            let maxSize = 0;
+            
+            if (total <= 50) {
+              label = 'size:xs';
+              maxSize = 50;
+            } else if (total <= 200) {
+              label = 'size:s';
+              maxSize = 200;
+            } else if (total <= 500) {
+              label = 'size:m';
+              maxSize = 500;
+            } else if (total <= 1000) {
+              label = 'size:l';
+              maxSize = 1000;
+            } else {
+              label = 'size:xl';
+              maxSize = Infinity;
+            }
+            
+            // Add size label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [label]
+            });
+            
+            // Warn if too large
+            if (total > 1000) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: `⚠️ **Large PR Warning**
+
+This PR has **${total} lines changed** (${additions} additions, ${deletions} deletions).
+
+Consider breaking this into smaller PRs for easier review.
+
+Current size label: ${label}`
+              });
+            }

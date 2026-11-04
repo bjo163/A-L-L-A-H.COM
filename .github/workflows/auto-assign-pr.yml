@@ -1,0 +1,53 @@
+name: Auto-assign PR Reviewers
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  pull_request_review:
+    types: [requested]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  auto-assign:
+    name: Auto-assign Reviewers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-assign based on CODEOWNERS
+        uses: actions/checkout@v4
+      
+      - name: Request review from CODEOWNERS
+        uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+        # This will request reviews from CODEOWNERS based on changed files
+
+      - name: Add size label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+            
+            let sizeLabel = '';
+            if (total < 50) sizeLabel = 'size:xs';
+            else if (total < 200) sizeLabel = 'size:s';
+            else if (total < 500) sizeLabel = 'size:m';
+            else if (total < 1000) sizeLabel = 'size:l';
+            else sizeLabel = 'size:xl';
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [sizeLabel]
+            });

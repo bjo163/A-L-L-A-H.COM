@@ -1,0 +1,57 @@
+# CODEOWNERS - Auto-assign reviewers based on file paths
+# Format: pattern @username @team
+
+# Global - all changes need review from core team
+* @bjo163
+
+# Core infrastructure
+/.github/ @bjo163
+/docker-compose*.yml @bjo163
+/Dockerfile* @bjo163
+/pnpm-workspace.yaml @bjo163
+/package.json @bjo163
+/pnpm-lock.yaml @bjo163
+/tsconfig.base.json @bjo163
+/eslint.config.mjs @bjo163
+
+# Documentation
+/docs/ @bjo163
+/README.md @bjo163
+/CHANGELOG.md @bjo163
+/ROADMAP.md @bjo163
+
+# Shared packages - core team review
+/packages/ui/ @bjo163
+/packages/sdk/ @bjo163
+/packages/types/ @bjo163
+/packages/lint/ @bjo163
+/packages/arsy-orm/ @bjo163
+/packages/arsy-core/ @bjo163
+/packages/arsy-plugin-* @bjo163
+/packages/sentinel-radius/ @bjo163
+/packages/vscode-extension/ @bjo163
+
+# Apps - each app has specific owners
+/apps/gate/ @bjo163
+/apps/dock/ @bjo163
+/apps/headquarter/ @bjo163
+/apps/id/ @bjo163
+/apps/jizz/ @bjo163
+/apps/arsy/ @bjo163
+/apps/sentinel/ @bjo163
+
+# Scripts and tooling
+/scripts/ @bjo163
+/.husky/ @bjo163
+
+# CI/CD
+/.github/workflows/ @bjo163
+/.github/dependabot.yml @bjo163
+
+# Plans
+/.plans/ @bjo163
+
+# Configuration
+/tailwind.config.* @bjo163
+/postcss.config.* @bjo163
+/eslint.config.* @bjo163

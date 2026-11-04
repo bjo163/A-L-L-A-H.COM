@@ -28,6 +28,15 @@ export function Dialog({
   const dialogRef = React.useRef<HTMLDialogElement>(null);
   const titleId = React.useId();
   const descriptionId = description ? `${titleId}-description` : undefined;
+  const handleEscape = (event: React.KeyboardEvent<HTMLDialogElement>) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    onOpenChange(false);
+  };
+  const handleCancel = (event: React.SyntheticEvent<HTMLDialogElement>) => {
+    event.preventDefault();
+    onOpenChange(false);
+  };
 
   React.useEffect(() => {
     const dialog = dialogRef.current;
@@ -65,6 +74,8 @@ export function Dialog({
       data-slot="dialog"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
+      onKeyDown={handleEscape}
+      onCancel={handleCancel}
     >
       <div className="mw-dialog__panel">
         <header className="mw-dialog__header">

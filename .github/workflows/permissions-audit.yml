@@ -1,0 +1,34 @@
+name: Workflow Permissions Audit
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly Monday
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Check Workflow Permissions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for overly permissive workflows
+        run: |
+          echo "Checking workflow permissions..."
+          find .github/workflows -name "*.yml" -o -name "*.yaml" | while read file; do
+            echo "Checking $file..."
+            # Check for permissions: write-all or contents: write without restriction
+            if grep -q "contents: write" "$file" && ! grep -q "permissions:" "$file"; then
+              echo "⚠️  $file has 'contents: write' without explicit permissions block"
+            fi
+            if grep -q "permissions: write-all" "$file"; then
+              echo "⚠️  $file has 'permissions: write-all' - consider least privilege"
+            fi
+          done
+      
+      - name: Report
+        run: |
+          echo "Permission audit complete. Check logs for warnings."
