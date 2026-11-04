@@ -225,6 +225,26 @@ Add a communication overview/integration surface only:
 
 Headquarter must not duplicate message composition, inbox, pairing, operator assignment, or full channel configuration.
 
+
+### 9.4 Explicit UI ownership and integration contract (locked)
+
+The Console and Headquarter are two coordinated surfaces over one MOONSKY service, not two competing implementations.
+
+**MOONSKY Console is the full operator workspace and remains independently usable.** It owns the complete communication interaction loop: inbox, conversation detail, message composition/reply, assignment, channel onboarding and QR/pairing, session repair, channel configuration, templates, routing, automation, webhook operations, delivery diagnostics, and communication-specific settings. These workflows must be backed by MOONSKY APIs and authorization.
+
+**HEADQUARTER is the ecosystem command surface, not the communication operator application.** It owns cross-product situational awareness: aggregate channel/provider health, connection state, queue and delivery summaries, failed webhook/message counts, operational alerts, recent activity summaries, and navigation/deep-links into the relevant MOONSKY Console context.
+
+Integration behavior:
+- Headquarter may show compact, read-only communication summaries and health indicators.
+- Headquarter may expose a narrowly scoped quick action only when it is safe, genuinely useful, authorized by MOONSKY, and does not recreate a full operator workflow.
+- Headquarter may host a lightweight embedded/summary view only when it reuses the MOONSKY-owned UI/API contract; it must not fork inbox state, message composition logic, pairing flows, or operator permissions.
+- Deep-links must preserve the intended tenant and resource context without trusting client-provided tenant identifiers. MOONSKY must re-authorize every destination and action.
+- Use the ecosystem's shared identity/session and navigation conventions where supported, so the transition feels native rather than like an unrelated external product. Independent runtime does not require a separate user identity provider or a disconnected visual system.
+- The Console must remain reachable and operable independently of Headquarter availability. Headquarter must degrade gracefully if MOONSKY is unavailable.
+- Do not duplicate MOONSKY business logic, data stores, or authorization decisions in Headquarter.
+
+**Architecture shorthand:** independent service + native Console + integrated Headquarter command surface. Standalone describes service/runtime and operator-workspace capability; it does not mean disconnected branding, identity, navigation, or ecosystem integration.
+
 ### 9.3 Shared UI
 
 - Use `@moonwitness/ui` as the shared functional UI engine.
