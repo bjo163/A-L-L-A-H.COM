@@ -9,6 +9,19 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - VS Code Mission Timeline
+
+### Added
+- Typed mission timeline events for local and remote-backed workspace sessions, including context, edit review, validation, repair, interruption, and completion.
+- Persistent, redacted mission history that restores interrupted sessions as blocked without restarting work.
+- Replay protection keyed by remote mission ID so a completed or interrupted mission does not repeat local edits.
+- A single bounded validation repair proposal that reuses context consent and edit review.
+- Unit tests covering event ordering, replay de-duplication, restart recovery, failure signatures, and repair limits.
+
+### Changed
+- Workspace Agent now shows the active and restored mission timeline and can request a repair proposal after a failed validation.
+- Repair failure keys persist only hashes and attempt counts; validation output remains in memory.
+
 ## 2026-11-04 - UI Purity Wave: Shared Primitives and a Gate That Actually Gates
 
 ### Added

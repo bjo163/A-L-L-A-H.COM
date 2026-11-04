@@ -1,9 +1,9 @@
-﻿# task.md
+# task.md
 
 ## Phase 1: Discover & Audit
-- [ ] Review BACKLOG verification gaps
-- [ ] Check ROADMAP/BLUEPRINT alignment
-- [ ] Security audit per AUTONOMOUS §3
+- [x] Review BACKLOG verification gaps
+- [x] Check ROADMAP/BLUEPRINT alignment
+- [x] Security audit per AUTONOMOUS §3
 
 ## Phase 2: Plan & Design
 - [x] Create plan artifacts
@@ -11,16 +11,16 @@
 - [ ] Document constraints
 
 ## Phase 3: Implement
-- [ ] Address gaps found
-- [ ] Add evidence capture
+- [x] Address gaps found (fixed isp_commercial.ts and extension.ts type errors)
+- [x] Add evidence capture (quality gate results above)
 
 ## Phase 4: Verify
-- [ ] Run pnpm lint:arch
-- [ ] Run pnpm docs:check
-- [ ] Run pnpm typecheck
-- [ ] Run pnpm --filter @allah/arsy build
-- [ ] Run other builds
+- [x] Run pnpm lint:arch
+- [x] Run pnpm docs:check
+- [x] Run pnpm typecheck
+- [x] Run pnpm --filter @allah/arsy build
+- [x] Run other builds
 
 ## Phase 5: Document & Push
-- [ ] Update canonical docs if needed
+- [x] Update canonical docs if needed
 - [ ] Commit and push

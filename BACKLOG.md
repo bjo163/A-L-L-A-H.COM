@@ -9,6 +9,13 @@ last_verified: "2026-11-03"
 
 # BACKLOG.md
 
+## VSCODE-MISSION-TIMELINE: Observable and replay-safe workspace agent missions
+- Priority: P0
+- Status: IMPLEMENTED; INTERACTIVE SMOKE PENDING
+- Outcome: Added typed, redacted timeline persistence, interrupted-session recovery, remote replay protection, validation events, and one approval-gated repair proposal.
+- Acceptance: Local and remote-backed mission state is inspectable; interrupted or replayed missions do not silently repeat execution; repair uses the existing context and edit approval policy.
+- Verification: 33 focused tests pass; extension typecheck, build, runtime parity, lint, and documentation checks pass; packaged and installed VSIX bundle hashes match. Interactive extension-host verification remains pending. Workspace-aware mission templates remain a follow-up milestone; see `.plans/20261104-1344-vscode-mission-timeline/`.
+
 ## VSCODE-DEEP-RUNTIME-HARDENING: VS Code extension activation and packaging
 - Priority: P0
 - Status: IMPLEMENTED; INTERACTIVE COMMAND PALETTE CHECK PENDING

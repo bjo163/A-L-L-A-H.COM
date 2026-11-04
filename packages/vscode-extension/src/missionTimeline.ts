@@ -1,3 +1,7 @@
+import { createHash, randomUUID } from 'crypto';
+
+export type MissionState = 'running' | 'completed' | 'cancelled' | 'failed' | 'blocked';
+
 export interface MissionTimelineEvent {
   id: string;
   sequence: number;
@@ -12,24 +16,49 @@ export interface RepairFailure {
   attempts: number;
 }
 
+export function getRemoteMissionReplayState(
+  sessions: Array<{ remoteMissionId?: string; state: MissionState }>,
+  missionId: string
+): MissionState | undefined {
+  const session = sessions.find((entry) => entry.remoteMissionId === missionId);
+  if (!session) return undefined;
+  return session.state === 'running' ? 'blocked' : session.state;
+}
+
+export function isMissionTimelineEvent(value: unknown): value is MissionTimelineEvent {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
+    && 'id' in value
+    && typeof value.id === 'string'
+    && 'sequence' in value
+    && typeof value.sequence === 'number'
+    && Number.isInteger(value.sequence)
+    && value.sequence > 0
+    && 'type' in value
+    && typeof value.type === 'string'
+    && 'title' in value
+    && typeof value.title === 'string'
+    && (!('detail' in value) || typeof value.detail === 'string' || value.detail === undefined)
+    && 'createdAt' in value
+    && typeof value.createdAt === 'string';
+}
+
 export function createMissionTimelineEvent(
   events: MissionTimelineEvent[],
   type: string,
   title: string,
   detail?: string
 ): MissionTimelineEvent {
+  const sequence = events.reduce((max, event) => Math.max(max, event.sequence), 0) + 1;
   return {
-    id: `${events.length + 1}-${type}-${createdAt(events)}`,
-    sequence: events.length + 1,
+    id: randomUUID(),
+    sequence,
     type,
     title,
     detail,
     createdAt: new Date().toISOString(),
   };
-}
-
-function createdAt(events: MissionTimelineEvent[]): string {
-  return String(Date.now()) + (events.length === 0 ? '' : '-last');
 }
 
 export function appendMissionTimelineEvent(
@@ -60,7 +89,7 @@ export function classifyFailureSignature(output: string): string {
     .replace(/\blines? \d+(?:,\d+)*\b/gi, '<lines>')
     .replace(/\s+/g, ' ')
     .trim();
-  return normalized.slice(0, 500) || 'validation-failed-without-output';
+  return createHash('sha256').update(normalized).digest('hex');
 }
 
 export function canAttemptRepair(
@@ -71,4 +100,3 @@ export function canAttemptRepair(
   const attempts = failures.find((failure) => failure.signature === signature)?.attempts ?? 0;
   return { allowed: attempts < limit, attempts };
 }
-

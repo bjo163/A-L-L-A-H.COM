@@ -1,4 +1,4 @@
-﻿# spec.md
+# spec.md
 
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "evolve-platform-foundations"
