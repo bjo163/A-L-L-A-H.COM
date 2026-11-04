@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AgentMode, AgentSessionEvent, PairedAgentDevice, RemoteAgentMission } from '@moonwitness/types';
 import { mwClient } from '@allah/sdk';
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Dialog, Input, Textarea } from '@moonwitness/ui';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Dialog, Input, StatePanel, StatusMessage, Textarea } from '@moonwitness/ui';
 
 const modes: AgentMode[] = ['ask', 'plan', 'code', 'debug', 'ideate', 'autopilot'];
 const cancellableStates = new Set(['queued', 'running', 'awaiting_approval']);
@@ -188,14 +188,19 @@ export function RemoteAgentControlPanel() {
       </header>
 
       {error && (
-        <div className="remote-agent-control__message remote-agent-control__message--error" role="alert">
-          <p>{error}</p>
-          <Button type="button" variant="outline" onClick={() => void refresh(true)} disabled={loading || busy}>
-            Retry
-          </Button>
-        </div>
+        <StatusMessage
+          tone="danger"
+          title="Device operation failed"
+          action={
+            <Button type="button" variant="outline" onClick={() => void refresh(true)} disabled={loading || busy}>
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </StatusMessage>
       )}
-      {notice && <p className="remote-agent-control__message" role="status">{notice}</p>}
+      {notice && <StatusMessage tone="success">{notice}</StatusMessage>}
 
       <div className="remote-agent-control__grid">
         <Card>
@@ -232,9 +237,15 @@ export function RemoteAgentControlPanel() {
           </CardHeader>
           <CardContent className="remote-agent-control__stack">
             {loading ? (
-              <p role="status">Loading paired devices…</p>
+              <StatePanel as="h3" kind="loading" title="Loading devices" cause="Reading paired Windows extensions from the hub." />
             ) : devices.length === 0 ? (
-              <p>No Windows devices are paired yet. Create a pairing code to connect an extension.</p>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No paired devices"
+                cause="No Windows extension is paired with this account."
+                nextAction="Create a pairing code, then enter it in the extension before it expires."
+              />
             ) : (
               <ul className="remote-agent-control__device-list">
                 {devices.map((device) => (
@@ -323,9 +334,15 @@ export function RemoteAgentControlPanel() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p role="status">Loading remote missions…</p>
+              <StatePanel as="h3" kind="loading" title="Loading missions" cause="Reading mission state from the hub." />
             ) : missions.length === 0 ? (
-              <p>No remote missions yet. Select a paired device and send a goal to begin.</p>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No remote missions"
+                cause="This account has not sent a workspace mission yet."
+                nextAction="Select a paired device and send a goal to begin."
+              />
             ) : (
               <ul className="remote-agent-control__mission-list">
                 {missions.map((mission) => {
@@ -371,11 +388,23 @@ export function RemoteAgentControlPanel() {
           </CardHeader>
           <CardContent>
             {!selectedMission ? (
-              <p>No mission selected.</p>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No mission selected"
+                cause="Event history is scoped to one mission at a time."
+                nextAction="Choose a mission from the history list to inspect its events."
+              />
             ) : eventsLoading ? (
-              <p role="status">Loading mission events…</p>
+              <StatePanel as="h3" kind="loading" title="Loading events" cause="Reading the event history for this mission." />
             ) : events.length === 0 ? (
-              <p role="status">No events reported yet. The extension may be offline or waiting for local approval.</p>
+              <StatePanel
+                as="h3"
+                kind="offline"
+                title="No events reported"
+                cause="The paired extension has not sent an event for this mission."
+                nextAction="Check that the extension is online and waiting for local approval."
+              />
             ) : (
               <ol className="remote-agent-control__events" aria-live="polite">
                 {events.map((event) => (

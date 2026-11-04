@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { EcosystemNavbar, Link, MotionFrame, resolveEcosystemEndpoints } from '@moonwitness/ui';
+import { EcosystemNavbar, Link, MotionFrame, StatusMessage, resolveEcosystemEndpoints } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 
 const destinations = [
@@ -63,11 +63,11 @@ export default function DockHomePage() {
         onSignOut={handleSignOut}
       />
 
-      <main className="dock-page">
+      <main id="main-content" tabIndex={-1} className="dock-page">
         {authNotice && (
-          <p className="dock-auth-notice" role="status">
-            Session status: {authNotice}
-          </p>
+          <StatusMessage tone="warning" title="Session status">
+            {authNotice}
+          </StatusMessage>
         )}
 
         <MotionFrame effect="enter">

@@ -89,7 +89,7 @@ export default function KnowledgePage() {
   }, []);
 
   return (
-    <main className="hq-route hq-knowledge p-6 max-w-6xl mx-auto">
+    <main id="main-content" tabIndex={-1} className="hq-route hq-knowledge p-6 max-w-6xl mx-auto">
       <header className="mb-6">
         <p className="hq-kicker">QORPUS / KNOWLEDGE INDEX</p>
         <h1 className="text-2xl font-bold mb-2">Knowledge Explorer</h1>

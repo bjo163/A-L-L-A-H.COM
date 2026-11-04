@@ -1,19 +1,32 @@
 'use client';
 
-import { Button } from "@moonwitness/ui";
+import { Button, LinkButton, RouteShell, StatePanel } from '@moonwitness/ui';
+import { useEffect } from 'react';
 
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    console.error('GATE error boundary:', error);
+  }, [error]);
+
   return (
-    <div className="gate-page flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <h1 className="mb-4 text-2xl font-semibold" style={{ fontFamily: 'var(--mw-font-display)' }}>
-        Terjadi Kesalahan
-      </h1>
-      <p className="mb-6 max-w-md text-muted" style={{ fontFamily: 'var(--mw-font-body)' }}>
-        Maaf, terjadi kesalahan saat memuat halaman. Silakan coba lagi.
-      </p>
-      <Button onClick={reset} variant="gold">
-        Coba Lagi
-      </Button>
-    </div>
+    <RouteShell as="main">
+      <StatePanel
+        kind="error"
+        cause={
+          error.digest
+            ? `This page of the Gate stopped rendering. Support reference: ${error.digest}.`
+            : 'This page of the Gate stopped rendering.'
+        }
+        nextAction="Try the page again. If it keeps failing, return to the entrance."
+        action={
+          <>
+            <Button variant="outline" onClick={reset}>
+              Try again
+            </Button>
+            <LinkButton href="/">Back to entrance</LinkButton>
+          </>
+        }
+      />
+    </RouteShell>
   );
 }

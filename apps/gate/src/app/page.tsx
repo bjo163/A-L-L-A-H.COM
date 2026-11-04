@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { GateNavbar } from "@/components/gate-navbar";
 import { HeroArrival } from "@/components/hero-arrival";
 import { ClosingHorizon } from "@/components/closing-horizon";
@@ -12,11 +11,8 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <Link href="#main-content" className="skip-link">
-        Lewati ke konten utama
-      </Link>
       <GateNavbar />
-      <main id="main-content" className="gate-page">
+      <main id="main-content" tabIndex={-1} className="gate-page">
         <HeroArrival locale="id" />
         <ClosingHorizon locale="id" />
       </main>

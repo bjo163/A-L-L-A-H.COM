@@ -9,6 +9,7 @@ export * from './kicker';
 export * from './page-hero';
 export * from './route-shell';
 export * from './section-heading';
+export * from './skip-link';
 export * from './state-panel';
 export * from './status-message';
 

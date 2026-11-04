@@ -1,23 +1,23 @@
-import Link from "next/link";
-import { Button } from "@moonwitness/ui";
+import { LinkButton, RouteShell, StatePanel } from '@moonwitness/ui';
 
 export default function NotFound() {
   return (
-    <div className="gate-page flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <h1 className="mb-4 text-3xl font-semibold" style={{ fontFamily: 'var(--mw-font-display)' }}>
-        404
-      </h1>
-      <p className="mb-6 max-w-md text-muted" style={{ fontFamily: 'var(--mw-font-body)' }}>
-        Halaman yang Anda cari tidak ditemukan. Mungkin halaman tersebut tidak pernah ada atau sudah dipindahkan.
-      </p>
-      <div className="flex gap-4">
-        <Button asChild variant="gold">
-          <Link href="/">Kembali ke Beranda</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/explore">Jelajahi Semesta</Link>
-        </Button>
-      </div>
-    </div>
+    <RouteShell as="main">
+      <StatePanel
+        kind="error"
+        role="status"
+        title="Page not found"
+        cause="No Gate page is registered at this address. It may never have existed, or it has moved."
+        nextAction="Return to the entrance, or browse the universe map for a live destination."
+        action={
+          <>
+            <LinkButton href="/">Back to entrance</LinkButton>
+            <LinkButton href="/universe" variant="outline">
+              Open the universe map
+            </LinkButton>
+          </>
+        }
+      />
+    </RouteShell>
   );
 }

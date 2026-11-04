@@ -12,7 +12,7 @@ export default function SourcesPage() {
   return (
     <>
       <GateNavbar />
-      <main className="gate-page">
+      <main id="main-content" tabIndex={-1} className="gate-page">
         <InfoPageShell
           title="Sumber & Provenansi"
           titleEn="Sources & Provenance"

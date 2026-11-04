@@ -12,7 +12,7 @@ export default function AboutPage() {
   return (
     <>
       <GateNavbar />
-      <main className="gate-page">
+      <main id="main-content" tabIndex={-1} className="gate-page">
         <InfoPageShell
           title="Tentang A-L-L-A-H.COM"
           titleEn="About A-L-L-A-H.COM"

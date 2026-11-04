@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { SkinRoot } from "@moonwitness/ui";
+import { SkipLink, SkinRoot } from "@moonwitness/ui";
 import { HeadquarterShell } from "../components/headquarter-shell";
 import "./globals.css";
 
@@ -14,6 +14,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <SkinRoot skin="nexus-paradox">
+          <SkipLink />
           <HeadquarterShell>{children}</HeadquarterShell>
         </SkinRoot>
       </body>

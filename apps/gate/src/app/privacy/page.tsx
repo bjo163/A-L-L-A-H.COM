@@ -12,7 +12,7 @@ export default function PrivacyPage() {
   return (
     <>
       <GateNavbar />
-      <main className="gate-page">
+      <main id="main-content" tabIndex={-1} className="gate-page">
         <InfoPageShell
           title="Privasi"
           titleEn="Privacy"

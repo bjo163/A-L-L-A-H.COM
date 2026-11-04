@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from '@moonwitness/ui';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame, StatePanel } from '@moonwitness/ui';
 
 export default function WorldObservatoryHome() {
   return (
@@ -55,24 +55,13 @@ export default function WorldObservatoryHome() {
               <CardDescription>Read-only list gated by a real source.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="jizz-empty" role="status">
-                <span className="jizz-empty__glyph" aria-hidden="true">
-                  <svg viewBox="0 0 96 96" fill="none">
-                    <circle cx="48" cy="48" r="31" />
-                    <circle cx="48" cy="48" r="18" />
-                    <path d="M48 5v18m0 50v18M5 48h18m50 0h18M18 18l13 13m34 34 13 13m0-60L65 31m-34 34L18 78" />
-                    <circle cx="48" cy="48" r="4" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="jizz-empty__state">No source connection</p>
-                  <h3>No observations are available yet.</h3>
-                  <p>
-                    This workspace is not connected to an observation feed. The list will remain empty until a
-                    real source integration is available.
-                  </p>
-                </div>
-              </div>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No observations are available yet"
+                cause="This workspace is not connected to an observation feed."
+                nextAction="The list fills as soon as a real source integration is available."
+              />
             </CardContent>
           </Card>
           <Card>
@@ -81,13 +70,13 @@ export default function WorldObservatoryHome() {
               <CardDescription>Perspectives attach only to existing records.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="jizz-empty" role="status">
-                <span className="jizz-empty__glyph" aria-hidden="true" />
-                <div>
-                  <p className="jizz-empty__state">Unavailable</p>
-                  <p>Perspective threads require at least one sourced observation record.</p>
-                </div>
-              </div>
+              <StatePanel
+                as="h3"
+                kind="empty"
+                title="No perspectives yet"
+                cause="Perspective threads require at least one sourced observation record."
+                nextAction="Connect a source, then perspectives attach to the records it produces."
+              />
             </CardContent>
           </Card>
         </div>

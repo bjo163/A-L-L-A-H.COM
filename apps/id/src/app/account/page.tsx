@@ -75,7 +75,7 @@ export default function AccountCenterPage() {
 
   if (isLoading) {
     return (
-      <main className="id-loading">
+      <main id="main-content" tabIndex={-1} className="id-loading">
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-xl font-semibold text-zinc-100">Account</h1>
           <div className="flex flex-col items-center gap-3" role="status">
@@ -89,7 +89,7 @@ export default function AccountCenterPage() {
 
   if (loadError) {
     return (
-      <main className="id-loading">
+      <main id="main-content" tabIndex={-1} className="id-loading">
         <div className="w-full max-w-md space-y-4 rounded-2xl border border-red-500/30 bg-zinc-900/80 p-6">
           <h1 className="text-xl font-semibold text-zinc-100">Account data unavailable</h1>
           <p className="text-sm text-red-300" role="alert">{loadError}</p>
@@ -105,7 +105,7 @@ export default function AccountCenterPage() {
   }
 
   return (
-    <main className="id-account-page">
+    <main id="main-content" tabIndex={-1} className="id-account-page">
       <div className="id-account-content">
         {message && (
           <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-center gap-2">

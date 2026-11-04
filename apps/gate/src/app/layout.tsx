@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SkinRoot } from "@moonwitness/ui";
+import { SkipLink, SkinRoot } from "@moonwitness/ui";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -72,7 +72,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/brand/emblem.svg" />
       </head>
       <body className="min-h-full flex flex-col">
-        <SkinRoot skin="imperium-lumen">{children}</SkinRoot>
+        <SkinRoot skin="imperium-lumen">
+          <SkipLink />
+          {children}
+        </SkinRoot>
       </body>
     </html>
   );

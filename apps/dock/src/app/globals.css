@@ -9,14 +9,6 @@
   padding-block: clamp(2rem, 5vw, 5rem) 4rem;
 }
 
-.dock-auth-notice {
-  margin: 0 0 1rem;
-  border: 1px solid rgb(216 176 104 / 0.35);
-  padding: 0.75rem 1rem;
-  color: #ead9b5;
-  font-size: 0.875rem;
-}
-
 .dock-hero {
   display: grid;
   grid-template-columns: minmax(0, 0.82fr) minmax(20rem, 1.18fr);

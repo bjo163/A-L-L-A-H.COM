@@ -37,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="id-auth-page">
+    <main id="main-content" tabIndex={-1} className="id-auth-page">
       <div className="id-auth-layout">
         <aside className="id-auth-aside">
           <Image

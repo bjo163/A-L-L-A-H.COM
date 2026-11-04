@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
-import { EcosystemNavbar, Link as MwLink, resolveEcosystemEndpoints } from '@moonwitness/ui';
+import { EcosystemNavbar, Link as MwLink, StatusMessage, resolveEcosystemEndpoints } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 
 const workspaces = [
@@ -58,9 +58,9 @@ export function HeadquarterShell({ children }: { children: ReactNode }) {
         onSignOut={handleSignOut}
       />
       {authNotice && (
-        <p className="hq-shell__notice" role="status">
-          Session status: {authNotice}
-        </p>
+        <StatusMessage tone="warning" title="Session status">
+          {authNotice}
+        </StatusMessage>
       )}
       <div className="hq-shell__layout">
         <aside className="hq-rail" aria-label="Headquarter workspace">

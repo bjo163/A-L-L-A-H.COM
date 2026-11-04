@@ -983,6 +983,27 @@
 
 /* Composition blocks: the shared vocabulary that five apps used to redefine locally.
    Every colour, radius, gap, and shadow below comes from a skin token. */
+.mw-skin-root .mw-skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 20;
+  border-radius: var(--mw-control-radius);
+  padding: 0.75rem 1rem;
+  background-color: var(--mw-accent);
+  color: var(--mw-accent-text);
+  font-family: var(--mw-font-label);
+  font-weight: 600;
+  text-decoration: none;
+  transition: top var(--mw-motion-fast) var(--mw-motion-easing);
+}
+
+/* `:focus`, not `:focus-visible`: a skip link that only appears for one focus heuristic
+   is invisible to some assistive-technology focus events. */
+.mw-skin-root .mw-skip-link:focus {
+  top: 1rem;
+}
+
 .mw-skin-root .mw-kicker {
   margin: 0;
   color: var(--mw-accent);
@@ -1300,6 +1321,7 @@
   width: min(100%, 34rem);
   justify-items: center;
   gap: 0.5rem;
+  margin-inline: auto;
   border: var(--mw-border-width) solid color-mix(in oklab, var(--mw-border) 34%, transparent);
   border-radius: var(--mw-surface-radius);
   padding: clamp(1.5rem, 5vw, 2.5rem);

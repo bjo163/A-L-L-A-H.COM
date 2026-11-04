@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { JizzNavbar } from '@/components/navbar';
-import { SkinRoot } from '@moonwitness/ui';
+import { SkipLink, SkinRoot } from '@moonwitness/ui';
 import type { ReactNode } from 'react';
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -16,10 +16,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-100 selection:bg-amber-500/20 selection:text-amber-200">
+      <body className="min-h-full flex flex-col">
         <SkinRoot skin="mycelium">
+          <SkipLink />
           <JizzNavbar />
-          <main className="jizz-page">
+          <main id="main-content" tabIndex={-1} className="jizz-page">
             {children}
           </main>
         </SkinRoot>

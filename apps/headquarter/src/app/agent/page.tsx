@@ -177,7 +177,7 @@ export default function AgentStudioPage() {
 
   return (
     <div className="hq-route hq-agent">
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
         {/* Agent Controls */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">

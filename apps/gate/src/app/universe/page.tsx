@@ -11,7 +11,7 @@ export default function UniversePage() {
   return (
     <>
       <GateNavbar />
-      <main className="gate-page">
+      <main id="main-content" tabIndex={-1} className="gate-page">
         <UniverseMap />
       </main>
     </>

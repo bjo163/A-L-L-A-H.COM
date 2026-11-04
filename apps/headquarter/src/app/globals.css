@@ -7,14 +7,6 @@
   flex: 1;
 }
 
-.hq-shell__notice {
-  margin: 0;
-  border-block-end: 1px solid rgb(101 207 219 / 0.35);
-  padding: 0.75rem 1.25rem;
-  color: #b7eef0;
-  font-size: 0.875rem;
-}
-
 .hq-shell__layout {
   display: grid;
   width: min(100% - 2rem, 100rem);
@@ -376,27 +368,6 @@
   display: grid;
   align-content: start;
   gap: 0.875rem;
-}
-
-.remote-agent-control__message {
-  margin: 0;
-  border: 1px solid rgb(105 211 229 / 0.38);
-  padding: 0.75rem 1rem;
-  color: #d7eff0;
-  overflow-wrap: anywhere;
-}
-
-.remote-agent-control__message--error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-color: #df8d82;
-  color: #ffd5ce;
-}
-
-.remote-agent-control__message--error p {
-  margin: 0;
 }
 
 .remote-agent-control__pairing {

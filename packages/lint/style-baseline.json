@@ -1,20 +1,16 @@
 {
-  "_readme": "Ratchet baselines for the style consistency rules in check-architecture.mjs. Every number here is a ceiling: it may be lowered as an app is cleaned up, and must never be raised to silence a finding. STATE_PARITY lists the route state files an app is still allowed to be missing. SKIN_ROOT_DUPLICATES lists worlds that more than one app may claim until the DNA assignment is settled.",
   "STYLE_PURITY": {
-    "dock": 13,
+    "dock": 12,
     "gate": 6,
-    "headquarter": 22,
+    "headquarter": 20,
     "id": 10,
-    "jizz": 12
+    "jizz": 5
   },
   "INLINE_STYLE_PURITY": {
-    "gate": 82,
+    "gate": 78,
     "headquarter": 1
   },
-  "STATE_PARITY": {
-    "dock": ["error.tsx", "loading.tsx", "not-found.tsx"],
-    "headquarter": ["error.tsx", "loading.tsx", "not-found.tsx"],
-    "id": ["error.tsx", "loading.tsx", "not-found.tsx"]
-  },
-  "SKIN_ROOT_DUPLICATES": ["imperium-lumen"]
+  "SKIN_ROOT_DUPLICATES": [
+    "imperium-lumen"
+  ]
 }

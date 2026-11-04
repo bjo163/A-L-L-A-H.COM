@@ -166,7 +166,10 @@ test('RouteShell renders one landmark and no header when the route supplies its 
   );
 
   assert.equal(bare, '<div class="mw-route" data-slot="route"><p>body</p></div>');
-  assert.match(titled, /^<main class="mw-route" data-slot="route"><header class="mw-route__header">/);
+  assert.match(
+    titled,
+    /^<main id="main-content" tabindex="-1" class="mw-route" data-slot="route"><header class="mw-route__header">/
+  );
   assert.match(titled, /<p class="mw-kicker mw-route__kicker" data-slot="kicker">operations<\/p>/);
   assert.match(titled, /<h1 class="mw-route__title" id="t">Sessions<\/h1>/);
 });

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
+import { mainLandmarkId } from './skip-link';
 import { Kicker } from './kicker';
 
 export interface RouteShellProps {
@@ -11,6 +12,8 @@ export interface RouteShellProps {
   titleId?: string;
   /** "main" only when the route owns the landmark; app layouts usually already have one. */
   as?: 'div' | 'main';
+  /** Skip-link target. A `main` route takes the shared id when none is given. */
+  id?: string;
   className?: string;
   children?: React.ReactNode;
 }
@@ -26,13 +29,15 @@ export function RouteShell({
   actions,
   titleId,
   as: Tag = 'div',
+  id,
   className,
   children,
 }: RouteShellProps) {
   const hasHeader = kicker !== undefined || title !== undefined || description !== undefined || actions !== undefined;
+  const landmarkId = id ?? (Tag === 'main' ? mainLandmarkId : undefined);
 
   return (
-    <Tag className={cn('mw-route', className)} data-slot="route">
+    <Tag id={landmarkId} tabIndex={landmarkId ? -1 : undefined} className={cn('mw-route', className)} data-slot="route">
       {hasHeader && (
         <header className="mw-route__header">
           {kicker && <Kicker className="mw-route__kicker">{kicker}</Kicker>}

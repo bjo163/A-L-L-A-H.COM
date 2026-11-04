@@ -98,7 +98,7 @@ export default function AiGatewayPage() {
 
   return (
     <div className="hq-route hq-ai-gateway">
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
           <div>
             <div className="flex items-center gap-2">
