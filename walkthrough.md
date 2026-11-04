@@ -7,6 +7,9 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 - **ARSY Hub** (`apps/arsy`) — Fastify Hub with embedded PGlite ORM, technical plugins, and declarative business addons
 - **Dock** (`apps/dock`) — Next.js 16 public homepage (port 3001)
 - **Headquarter** (`apps/headquarter`) — Next.js 16 command center (port 3002)
+- **MoonWitness ID** (`apps/id`) — Next.js account and SSO center (port 3003)
+- **WORLD OBSERVATORY** (`apps/jizz`) — Next.js public observatory (port 3004)
+- **Sentinel** (`apps/sentinel`) — RADIUS daemon (UDP 1812/1813, HTTP health 9181)
 - **Shared UI** (`packages/ui`) — shadcn/ui component library (`@moonwitness/ui`)
 - **VS Code Extension** (`packages/vscode-extension`) — `.plans` workflow, MoonWitness LLM gateway, Arsy Fastify API views
 - **Docker** — containerization with Coolify deployment support
@@ -30,7 +33,7 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 - ✅ VS Code extension build: `pnpm extension:build` passes
 
 ## Production Delivery
-- Build and publish the Arsy, Dock, Headquarter, and ID Docker images to GHCR.
+- Build and publish the six active service Docker images to GHCR: Arsy, Dock, Headquarter, ID, Jizz, and Sentinel.
 - Let Coolify deploy from its GitHub webhook; production images are built and published separately by GitHub Actions.
 - Create the versioned GitHub release after every production image publishes successfully.
 

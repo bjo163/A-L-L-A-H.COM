@@ -1,19 +1,9 @@
 import { logger } from '@allah/arsy-core';
 import { dbEngine } from '@allah/arsy-orm';
+import type { ToolExecutionRecord } from '@moonwitness/types';
 import type { Tool, ToolContext, ToolResult, RegisteredTool } from './base';
 
-export interface ToolExecutionRecord {
-  id: string;
-  tool: string;
-  actor?: string | null;
-  virtualKeyId?: number | null;
-  args?: Record<string, unknown>;
-  output?: any;
-  error?: string | null;
-  latencyMs: number;
-  status: 'ok' | 'error';
-  timestamp: string;
-}
+export type { ToolExecutionRecord };
 
 export class ToolRegistry {
   private tools = new Map<string, Tool>();

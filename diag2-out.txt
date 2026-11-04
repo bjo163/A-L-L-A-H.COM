@@ -1,0 +1,16 @@
+﻿PID=61540 NAME=docker.exe CWD=Z:\project\rockcode\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe info --format "{{.ServerVersion}} {{.Oper
+PID=101568 NAME=docker.exe CWD=Z:\project\rocksoul-dx\apps\server\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe build -t dx_server .
+PID=61280 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=18712 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=103816 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=96872 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=80092 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe version --format {{.Server.Version}}
+PID=105908 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=105440 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=105072 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe images
+PID=14888 NAME=docker.exe CWD=Z:\project\rocksoul-dx\ CMD="Z:\Docker\DockerDesktop\resources\bin\docker.exe" images dx_server
+PID=146452 GONE
+PID=102732 NAME=docker-buildx.exe CWD=Z:\project\rocksoul-dx\apps\server\ CMD="C:\Program Files\Docker\cli-plugins\docker-buildx.exe" buildx build -t dx_server .
+PID=102504 NAME=tail.exe CWD=Z:\project\rocksoul-dx\apps\server\ CMD="C:\Program Files\Git\usr\bin\tail.exe" -100
+PID=95884 NAME=sh.exe CWD=Z:\project\rocksoul-dx\apps\server\ CMD="C:\Program Files\Git\usr\bin\sh.exe" /z/Docker/DockerDesktop/resources/bin/docker build -
+PID=100372 NAME=sh.exe CWD=Z:\project\rocksoul-dx\apps\server\ CMD="C:\Program Files\Git\usr\bin\sh.exe" /z/Docker/DockerDesktop/resources/bin/docker build -

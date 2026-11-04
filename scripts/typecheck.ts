@@ -36,9 +36,9 @@ function main() {
     .sort();
 
   console.log(`============================================================`);
-  console.log(`  TypeScript Strict Type-Check Gate`);
+  console.log(`  TypeScript Type-Check Gate`);
   console.log(`============================================================\n`);
-  console.log(`Found ${tsconfigs} tsconfig project(s) to check.\n`);
+  console.log(`Found ${tsconfigs.length} tsconfig project(s) to check.\n`);
 
   let failed = false;
 
@@ -68,7 +68,9 @@ function main() {
     console.error('❌ TypeScript type-check FAILED. One or more projects have errors.');
     process.exit(1);
   } else {
-    console.log('✅ All TypeScript projects PASSED strict type-check (100% compliant).');
+    // Report the real strict coverage instead of claiming it for the whole monorepo.
+    const strictCount = tsconfigs.filter(p => fs.readFileSync(p, 'utf8').includes('"strict": true')).length;
+    console.log(`✅ All TypeScript projects passed. Strict mode is enabled in ${strictCount} of ${tsconfigs.length}.`);
     process.exit(0);
   }
 }

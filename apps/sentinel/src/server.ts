@@ -10,6 +10,7 @@ import 'dotenv/config';
 import { logger } from '@allah/arsy-core';
 import { dbEngine, modelRegistry, BaseRepository } from '@allah/arsy-orm';
 import { RadiusServer, RadiusCodec, RadiusCode, RadiusAttributeType, RadiusPacket, RadiusAttribute } from '@allah/sentinel-radius';
+import { registerNexusAddon } from '../../../addons/nexus/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
 
@@ -458,7 +459,7 @@ async function startSentinel() {
   logger.info(`CoA Port: ${config.coaPort}`);
   logger.info(`HTTP Port: ${config.httpPort}`);
 
-  // Connect to database
+  registerNexusAddon();
   await dbEngine.connect();
   logger.info('Database connected');
 

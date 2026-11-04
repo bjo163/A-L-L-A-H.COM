@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { mwClient } from '@allah/sdk';
 import type { GatewayTelemetry } from '@moonwitness/types';
-import { Button, Input, Card } from '@moonwitness/ui';
+import { Button, Form, Input, Card } from '@moonwitness/ui';
 
 interface KnowledgeChunk {
   id: number | string;
@@ -97,8 +97,8 @@ export default function KnowledgePage() {
       </header>
 
       <Card className="p-4 mb-6">
-        <form
-          className="flex gap-2"
+        <Form
+          layout="grid"
           onSubmit={(event) => {
             event.preventDefault();
             void search();
@@ -119,7 +119,7 @@ export default function KnowledgePage() {
           <Button type="submit" disabled={loading || !query.trim()}>
             {loading ? 'Searching...' : 'Search'}
           </Button>
-        </form>
+        </Form>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

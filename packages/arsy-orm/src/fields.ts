@@ -53,7 +53,7 @@ export const fields = {
     opts: Omit<FieldDefinition<string>, 'type' | 'selection'> = {}
   ): FieldDefinition<string> => {
     if ('choices' in selection && Array.isArray((selection as any).choices)) {
-      return { type: 'selection', ...selection } as FieldDefinition<string>;
+      return { ...selection, type: 'selection' } as FieldDefinition<string>;
     }
     return { type: 'selection', selection: selection as Record<string, string>, ...opts } as FieldDefinition<string>;
   },
@@ -87,7 +87,7 @@ export const fieldDecorators = {
     opts: Omit<FieldDefinition<string>, 'type' | 'selection'> = {}
   ): PropertyDecorator => {
     if ('choices' in selection && Array.isArray((selection as any).choices)) {
-      return makeDecorator({ type: 'selection', ...selection });
+      return makeDecorator({ ...selection, type: 'selection' });
     }
     return makeDecorator({ type: 'selection', selection: selection as Record<string, string>, ...opts });
   },

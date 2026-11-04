@@ -5,7 +5,7 @@
   "packageManager": "pnpm@12.16.1",
   "scripts": {
     "build": "pnpm -r run build",
-    "dev": "pnpm lint:arch && pnpm typecheck && concurrently --kill-others --success first \"pnpm arsy:dev\" \"pnpm dock:dev\" \"pnpm headquarter:dev\" \"pnpm id:dev\" \"pnpm jizz:dev\"",
+    "dev": "pnpm lint:arch && pnpm typecheck && concurrently --kill-others --success first \"pnpm arsy:dev\" \"pnpm dock:dev\" \"pnpm headquarter:dev\" \"pnpm id:dev\" \"pnpm jizz:dev\" \"pnpm sentinel:dev\"",
     "dock:dev": "pnpm --filter @moonwitness/dock dev",
     "dock:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/dock build",
     "headquarter:dev": "pnpm --filter @moonwitness/headquarter dev",

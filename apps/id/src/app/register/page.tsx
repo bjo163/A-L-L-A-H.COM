@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { mwClient } from '@allah/sdk';
-import { Button, Input, Card, sfx } from '@moonwitness/ui';
+import { Button, Form, Input, Card, sfx } from '@moonwitness/ui';
 import { UserPlus, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -90,7 +90,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <Form onSubmit={handleSubmit}>
             <Input
               label="Full Name"
               type="text"
@@ -144,7 +144,7 @@ export default function RegisterPage() {
                 </>
               )}
             </Button>
-          </form>
+          </Form>
 
           <div className="mt-6 pt-6 border-t border-zinc-800/80 text-center">
             <p className="text-xs text-zinc-400">

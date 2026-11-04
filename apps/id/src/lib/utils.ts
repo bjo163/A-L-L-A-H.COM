@@ -1,7 +1,2 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
+// Single source of truth for class merging stays in the design system.
+export { cn } from '@moonwitness/ui';

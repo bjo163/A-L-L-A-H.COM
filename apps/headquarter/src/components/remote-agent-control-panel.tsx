@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AgentMode, AgentSessionEvent, PairedAgentDevice, RemoteAgentMission } from '@moonwitness/types';
 import { mwClient } from '@allah/sdk';
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Textarea } from '@moonwitness/ui';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Dialog, Input, Textarea } from '@moonwitness/ui';
 
 const modes: AgentMode[] = ['ask', 'plan', 'code', 'debug', 'ideate', 'autopilot'];
 const cancellableStates = new Set(['queued', 'running', 'awaiting_approval']);
@@ -32,6 +32,7 @@ export function RemoteAgentControlPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<PairedAgentDevice | null>(null);
 
   const refresh = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -110,8 +111,16 @@ export function RemoteAgentControlPanel() {
     }
   };
 
-  const revokeDevice = async (device: PairedAgentDevice) => {
-    if (!window.confirm(`Revoke access for ${device.name}? The extension will no longer receive missions.`)) return;
+  const requestRevoke = (device: PairedAgentDevice) => {
+    setError(null);
+    setNotice(null);
+    setRevokeTarget(device);
+  };
+
+  const confirmRevoke = async () => {
+    const device = revokeTarget;
+    if (!device) return;
+    setRevokeTarget(null);
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -246,7 +255,7 @@ export function RemoteAgentControlPanel() {
                         <Button
                           type="button"
                           variant="destructive"
-                          onClick={() => void revokeDevice(device)}
+                          onClick={() => requestRevoke(device)}
                           disabled={busy}
                           aria-label={`Revoke ${device.name}`}
                         >
@@ -380,6 +389,25 @@ export function RemoteAgentControlPanel() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog
+        open={revokeTarget !== null}
+        onOpenChange={(next) => {
+          if (!next) setRevokeTarget(null);
+        }}
+        title={`Revoke access for ${revokeTarget?.name ?? 'this device'}?`}
+        description="The extension stops receiving missions on this pairing. Create a new pairing code to reconnect it."
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setRevokeTarget(null)}>
+              Keep access
+            </Button>
+            <Button type="button" variant="destructive" onClick={() => void confirmRevoke()} disabled={busy}>
+              Revoke access
+            </Button>
+          </>
+        }
+      />
     </section>
   );
 }

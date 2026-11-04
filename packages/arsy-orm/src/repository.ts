@@ -62,7 +62,7 @@ export class BaseRepository<T = Record<string, unknown>> {
 
     // Apply transparent field translation if context.lang is provided
     if (options.lang && rows.length > 0) {
-      return this._applyTranslations(rows, options.lang, options.companyId);
+      return this._applyTranslations(rows, options.lang, options.companyId ?? null);
     }
 
     return rows;
@@ -119,14 +119,14 @@ export class BaseRepository<T = Record<string, unknown>> {
     const translationQuery = `
       SELECT res_id, name, value
       FROM ir_translation
-      WHERE company_id IN (0, ${companyId || 0})
+      WHERE (company_id = 0 OR company_id = ?)
         AND lang = ?
         AND type = 'model'
         AND res_id IN (${recordIds.map(() => '?').join(',')})
         AND name IN (${translatableFields.map(() => '?').join(',')})
     `;
 
-    const translationParams = [lang, ...recordIds, ...translatableFields];
+    const translationParams = [companyId || 0, lang, ...recordIds, ...translatableFields];
     const translations = await this.engine.query<{
       res_id: number;
       name: string;
@@ -145,7 +145,7 @@ export class BaseRepository<T = Record<string, unknown>> {
     // Apply translations to rows
     const result: T[] = [];
     for (const row of rows) {
-      const rowClone = { ...row };
+      const rowClone: Record<string, unknown> = { ...(row as Record<string, unknown>) };
       const recordId = (row as any).id;
       const transMap = translationMap.get(recordId);
 
@@ -153,12 +153,12 @@ export class BaseRepository<T = Record<string, unknown>> {
         for (const fieldName of translatableFields) {
           const translated = transMap.get(fieldName);
           if (translated !== undefined) {
-            rowClone[fieldName] = translated as any;
+            rowClone[fieldName] = translated;
           }
         }
       }
 
-      result.push(rowClone);
+      result.push(rowClone as T);
     }
 
     return result;

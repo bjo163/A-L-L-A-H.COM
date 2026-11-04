@@ -48,5 +48,44 @@ services:
     depends_on:
       - arsy
 
+  jizz:
+    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-jizz:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - NEXT_PUBLIC_ARSY_API_URL=http://localhost:5150
+    depends_on:
+      - arsy
+
+  sentinel:
+    image: ${IMAGE_PREFIX:-ghcr.io/bjo163/a-l-l-a-h.com}-sentinel:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+      - "9181:9181"
+    environment:
+      - NODE_ENV=production
+      - SENTINEL_AUTH_PORT=1812
+      - SENTINEL_ACCT_PORT=1813
+      - SENTINEL_HTTP_PORT=9181
+      - PG_DATA_DIR=/app/data
+    volumes:
+      - sentinel_data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:9181/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
 volumes:
   arsy_data:
+  sentinel_data:

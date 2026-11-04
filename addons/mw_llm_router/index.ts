@@ -36,6 +36,8 @@ export const AiModel = defineModel({
     context_window: fields.integer({ label: 'Context Window (Tokens)', default: 8192 }),
     input_cost_per_m: fields.float({ label: 'Input Cost per 1M Tokens', default: 0 }),
     output_cost_per_m: fields.float({ label: 'Output Cost per 1M Tokens', default: 0 }),
+    supports_vision: fields.boolean({ label: 'Supports Vision', default: false }),
+    capabilities: fields.json({ label: 'Capabilities JSON', default: {} }),
   },
 });
 

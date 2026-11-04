@@ -85,9 +85,36 @@ export class OpenAiAdapter implements ProviderAdapter {
       throw new Error(`Upstream URL '${this.baseUrl}' rejected by SSRF guard`);
     }
 
+    // Transform messages: convert image content parts to OpenAI vision format
+    const transformedMessages = req.messages.map((msg) => {
+      if (msg.content && typeof msg.content !== 'string') {
+        // Vision message: content is array of parts
+        const parts = msg.content.map((part) => {
+          if (part.type === 'image_url') {
+            return {
+              type: 'image_url',
+              image_url: {
+                url: part.image_url.url,
+              },
+            };
+          }
+          if (part.type === 'text') {
+            return { type: 'text', text: part.text };
+          }
+          return part;
+        });
+        return {
+          role: msg.role,
+          content: parts,
+        };
+      }
+      // Standard string content - pass through
+      return msg;
+    });
+
     const payload: Record<string, unknown> = {
       model: upstreamModel,
-      messages: req.messages,
+      messages: transformedMessages,
       temperature: req.temperature ?? 0.7,
       max_tokens: req.max_tokens,
       stream: false,

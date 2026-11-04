@@ -32,10 +32,11 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   enableSfx?: boolean;
+  asChild?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, enableSfx = true, onClick, ...props }, ref) => {
+  ({ className, variant, size, enableSfx = true, asChild = false, onClick, children, ...props }, ref) => {
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (enableSfx) {
         if (variant === 'destructive') sfx.revoke();
@@ -44,13 +45,29 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       onClick?.(e);
     };
 
+    // asChild moves the variant contract onto a caller element (next/link, an anchor)
+    // instead of nesting a button inside it.
+    if (asChild) {
+      const child = React.Children.only(children) as React.ReactElement<
+        Record<string, unknown> & { className?: string }
+      >;
+      return React.cloneElement(child, {
+        ...props,
+        ref,
+        className: cn(buttonVariants({ variant, size }), child.props.className, className),
+        onClick: handleClick,
+      });
+    }
+
     return (
       <button
         ref={ref}
         className={cn(buttonVariants({ variant, size, className }))}
         onClick={handleClick}
         {...props}
-      />
+      >
+        {children}
+      </button>
     );
   }
 );

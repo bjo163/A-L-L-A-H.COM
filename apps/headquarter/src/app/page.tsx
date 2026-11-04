@@ -1,6 +1,7 @@
 ﻿import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, MotionFrame } from "@moonwitness/ui";
 
 export const metadata: Metadata = {
   title: "Overview | Headquarter",
@@ -24,8 +25,12 @@ export default function HeadquarterHomePage() {
             <h1 id="hq-title">Control plane for the MoonWitness ecosystem</h1>
             <p className="hq-hero__summary">Dense, instrument-grade views for gateway routing, agent work, swarm coordination, tools, and knowledge.</p>
             <div className="hq-hero__actions">
-              <a className="mw-button mw-button--default" href="/ai-gateway">Open AI Gateway</a>
-              <a className="mw-button mw-button--outline" href="/agent">Open Agent Studio</a>
+              <Button asChild>
+                <Link href="/ai-gateway">Open AI Gateway</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/agent">Open Agent Studio</Link>
+              </Button>
             </div>
           </div>
           <figure className="hq-hero__art">
@@ -53,7 +58,9 @@ export default function HeadquarterHomePage() {
                 <CardDescription>{module.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <a className="mw-button mw-button--outline mw-button--size-sm" href={module.href}>Open module</a>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={module.href}>Open module</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

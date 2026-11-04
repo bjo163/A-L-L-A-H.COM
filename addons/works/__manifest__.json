@@ -1,10 +1,1 @@
-{
-  "name": "works",
-  "version": "0.1.0",
-  "description": "ISP Commercial Foundation & Billing Lifecycle",
-  "author": "MoonWitness Engineering",
-  "category": "commercial",
-  "depends": ["base"],
-  "models": ["isp.plan", "isp.subscription", "isp.invoice"],
-  "data": []
-}
+{"name":"works","version":"0.1.0","description":"WORKS ISP Commercial Foundation & Billing Lifecycle","category":"commerce","dependencies":["base"],"models":["isp.plan","isp.subscription","isp.invoice"]}

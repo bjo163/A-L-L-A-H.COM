@@ -1,7 +1,5 @@
 import { modelRegistry } from '@allah/arsy-orm';
-import { IspPlan } from './models/isp_plan';
-import { IspSubscription } from './models/isp_subscription';
-import { IspInvoice } from './models/isp_invoice';
+import { IspPlan, IspSubscription, IspInvoice } from './models/isp_commercial';
 
 export function registerWorksAddon(): void {
   modelRegistry.register(IspPlan);
@@ -9,6 +7,4 @@ export function registerWorksAddon(): void {
   modelRegistry.register(IspInvoice);
 }
 
-export * from './models/isp_plan';
-export * from './models/isp_subscription';
-export * from './models/isp_invoice';
+export * from './models/isp_commercial';

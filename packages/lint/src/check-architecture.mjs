@@ -23,7 +23,6 @@ function collectFiles(dir, extensions, excludeDirs = []) {
         entry.name === 'dist' ||
         entry.name === 'build' ||
         entry.name === 'out' ||
-        entry.name === 'lib' ||
         entry.name === 'coverage' ||
         entry.name === '.git'
       ) {
@@ -59,27 +58,38 @@ function stripComments(content) {
     .replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
-// Check if a line contains a raw lowercase HTML element (not a React component)
+// Check if a line opens a raw lowercase HTML element (not a React component).
+// The tag name may be the last thing on the line: JSX formatters move attributes
+// onto the following lines, so end-of-line is a real boundary.
 function hasRawHTMLElement(line, element) {
-  // Match <button, <input, etc. but not <Button, <Input (capitalized = React component)
-  const regex = new RegExp(`<${element}(\\s|>|/)`, 'i');
-  if (!regex.test(line)) return false;
-  // Make sure it's actually lowercase (raw HTML), not capitalized component
-  return line.includes(`<${element}`);
+  const regex = new RegExp(`<${element}(\\s|>|/|$)`);
+  return regex.test(line);
 }
 
 // 1. RULE: UI_PURITY
-// Scans apps/** for raw un-themed HTML interactive elements.
-// Skips packages/vscode-extension (VS Code webviews use raw HTML by design).
+// Raw interactive or structural controls may only exist inside the design system itself.
+// packages/ui defines the controls; packages/vscode-extension webviews use raw HTML by design.
 function checkUiPurity() {
-  const scanDirs = [path.join(ROOT_DIR, 'apps')];
-  const rawElements = ['button', 'input', 'select', 'textarea'];
+  const scanDirs = [path.join(ROOT_DIR, 'apps'), path.join(ROOT_DIR, 'packages')];
+  const exemptPrefixes = ['packages/ui/', 'packages/vscode-extension/'];
+  const rawElements = {
+    button: 'Use <Button>.',
+    input: 'Use <Input>.',
+    select: 'Use <Select>.',
+    textarea: 'Use <Textarea>.',
+    a: 'Use <Link> or <Button asChild>.',
+    form: 'Use <Form> with <FormField>.',
+    label: 'Use <FormField label="..."> or the control label prop.',
+    table: 'Use the <Table> family.',
+  };
 
   for (const scanDir of scanDirs) {
     const files = collectFiles(scanDir, ['.tsx', '.jsx']);
 
     for (const filePath of files) {
       const relativePath = path.relative(ROOT_DIR, filePath).replace(/\\/g, '/');
+      if (exemptPrefixes.some((prefix) => relativePath.startsWith(prefix))) continue;
+
       const content = fs.readFileSync(filePath, 'utf8');
       const lines = content.split(/\r?\n/);
 
@@ -88,17 +98,34 @@ function checkUiPurity() {
         const trimmed = line.trim();
 
         // Skip comments
-        if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue;
+        if (
+          trimmed.startsWith('//') ||
+          trimmed.startsWith('*') ||
+          trimmed.startsWith('/*') ||
+          trimmed.startsWith('{/*')
+        ) {
+          continue;
+        }
 
-        for (const element of rawElements) {
+        for (const [element, remedy] of Object.entries(rawElements)) {
           if (hasRawHTMLElement(line, element)) {
             addViolation(
               'UI_PURITY',
               filePath,
-              `Raw <${element}> element detected. All interactive controls must be imported from '@moonwitness/ui'.`,
+              `Raw <${element}> element detected. All controls must come from '@moonwitness/ui'. ${remedy}`,
               i + 1
             );
           }
+        }
+
+        // Hand-written internal classes bypass the component API and its side effects.
+        if (/mw-button--|mw-input-field__|mw-card__|mw-badge--/.test(trimmed)) {
+          addViolation(
+            'UI_PURITY',
+            filePath,
+            `Internal '@moonwitness/ui' class names used directly. Consume the component API instead of the class output.`,
+            i + 1
+          );
         }
       }
     }
@@ -176,7 +203,7 @@ function checkSharedDataContracts() {
     'SDUINode', 'SDUIRoot',
     'StorageItem',
     'ToolParameter', 'ToolFunction', 'ToolDefinition', 'ToolCallFunction', 'ToolCall', 'ToolChoice', 'ToolResult',
-    'JsonRpcRequest', 'JsonRpcResponse', 'McpTool', 'McpToolsListResult', 'McpToolCallResult',
+    'JsonRpcRequest', 'JsonRpcResponse', 'McpTool', 'McpToolsListResult', 'McpToolCallResult', 'ToolExecutionRecord',
     'IspPlanRecord', 'IspSubscriptionRecord',
     'NexusNasRecord', 'NexusIpPoolRecord',
     'SentinelAccountRecord', 'SentinelAccessDecision', 'SentinelSessionRecord',

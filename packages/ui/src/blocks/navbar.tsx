@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Button, buttonVariants } from '../components/button';
 import { Badge } from '../components/badge';
 import { cn } from '../lib/utils';
+import { resolveEcosystemEndpoints, type EcosystemAppEndpoints } from './endpoints';
 import { SoundToggle } from './sound-toggle';
 import { VisualEffectsToggle } from './visual-effects-toggle';
 
@@ -13,6 +14,7 @@ export interface EcosystemNavbarProps {
   userEmail?: string;
   onSignOut?: () => void;
   showAuthActions?: boolean;
+  apps?: Partial<EcosystemAppEndpoints>;
   className?: string;
 }
 
@@ -22,8 +24,13 @@ export function EcosystemNavbar({
   userEmail,
   onSignOut,
   showAuthActions = true,
+  apps,
   className,
 }: EcosystemNavbarProps) {
+  const endpoints = React.useMemo<EcosystemAppEndpoints>(
+    () => ({ ...resolveEcosystemEndpoints(), ...apps }),
+    [apps]
+  );
   const isSignedIn = Boolean(userEmail);
   const appLabel =
     currentApp === 'headquarter' ? 'HQ' :
@@ -84,7 +91,7 @@ export function EcosystemNavbar({
           aria-label="Ecosystem navigation and controls"
         >
           <a
-            href="http://localhost:3001"
+            href={endpoints.dock}
             className="mw-navbar__link"
             aria-current={currentApp === 'dock' ? 'page' : undefined}
             onClick={() => setIsMenuOpen(false)}
@@ -92,7 +99,7 @@ export function EcosystemNavbar({
             Dock (Discovery)
           </a>
           <a
-            href="http://localhost:3002"
+            href={endpoints.headquarter}
             className="mw-navbar__link"
             aria-current={currentApp === 'headquarter' ? 'page' : undefined}
             onClick={() => setIsMenuOpen(false)}
@@ -100,7 +107,7 @@ export function EcosystemNavbar({
             Headquarter (Ops)
           </a>
           <a
-            href="http://localhost:3003/account"
+            href={`${endpoints.id}${endpoints.accountPath}`}
             className="mw-navbar__link"
             aria-current={currentApp === 'id' ? 'page' : undefined}
             onClick={() => setIsMenuOpen(false)}
@@ -108,7 +115,7 @@ export function EcosystemNavbar({
             MoonWitness ID
           </a>
           <a
-            href="http://localhost:3004"
+            href={endpoints.jizz}
             className="mw-navbar__link"
             aria-current={currentApp === 'jizz' ? 'page' : undefined}
             onClick={() => setIsMenuOpen(false)}
@@ -121,7 +128,7 @@ export function EcosystemNavbar({
             {showAuthActions && isSignedIn ? (
               <div className="mw-navbar__action-group">
                 <a
-                  href="http://localhost:3003/account"
+                  href={`${endpoints.id}${endpoints.accountPath}`}
                   className="mw-navbar__identity-link"
                 >
                   <span>{userName || userEmail}</span>
@@ -135,13 +142,13 @@ export function EcosystemNavbar({
             ) : showAuthActions ? (
               <div className="mw-navbar__action-group">
                 <a
-                  href="http://localhost:3003/login"
+                  href={`${endpoints.id}${endpoints.signInPath}`}
                   className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                 >
                   Sign In
                 </a>
                 <a
-                  href="http://localhost:3003/register"
+                  href={`${endpoints.id}${endpoints.registerPath}`}
                   className={cn(buttonVariants({ variant: 'default', size: 'sm' }))}
                 >
                   Get ID

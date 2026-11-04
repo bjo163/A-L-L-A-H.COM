@@ -1,0 +1,1 @@
+{"name":"orbit","version":"0.1.0","description":"ORBIT Cloud Compute & Hosting Customer Experience","category":"cloud","dependencies":["base"],"models":["orbit.instance","orbit.template","orbit.volume"]}

@@ -20,6 +20,7 @@ import type {
   AgentStreamEvent,
   AgentRunRequest,
   AgentRunResponse,
+  SDUINode,
 } from '@moonwitness/types';
 
 export default function AgentStudioPage() {
@@ -30,7 +31,7 @@ export default function AgentStudioPage() {
     thought?: string;
     tool_calls?: AgentToolCallEvent[];
     tool_results?: AgentToolResultEvent[];
-    sdui?: any[];
+    sdui?: SDUINode[];
     response?: string;
     finish_reason?: string;
   }
@@ -330,7 +331,7 @@ export default function AgentStudioPage() {
                           key={j}
                           className="mr-1 text-[10px] bg-zinc-900/50 rounded px-1 py-0.5"
                         >
-                          {s.title || 'view'}
+                          {s.type}
                         </span>
                       ))}
                     </div>

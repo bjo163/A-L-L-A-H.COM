@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Button,
   Card,
@@ -10,6 +11,15 @@ import {
   CardContent,
   Badge,
   Input,
+  Select,
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableScroll,
+  TableRow,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type {
@@ -101,9 +111,9 @@ export default function AiGatewayPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/">
-              <Button variant="outline" size="sm">Back to HQ</Button>
-            </a>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/">Back to HQ</Link>
+            </Button>
             <Button variant="default" size="sm" onClick={fetchData} disabled={loading}>
               {loading ? 'Refreshing...' : 'Refresh Telemetry'}
             </Button>
@@ -230,13 +240,11 @@ export default function AiGatewayPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="model-select" className="text-xs text-zinc-400">Route Alias:</label>
-              <select
-                id="model-select"
-                aria-label="Route Alias"
+              <Select
+                label="Route Alias"
                 value={testModel}
                 onChange={(e) => setTestModel(e.target.value)}
-                className="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500"
+                className="text-xs"
               >
                 <option value="dx-default">dx-default (Fallback sequence)</option>
                 <option value="dx-fast">dx-fast (Lowest latency/cost)</option>
@@ -244,7 +252,7 @@ export default function AiGatewayPage() {
                 <option value="gpt-4o">gpt-4o (Direct upstream)</option>
                 <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet (Anthropic)</option>
                 <option value="gemini-2.5-flash">gemini-2.5-flash (Google)</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -297,66 +305,69 @@ export default function AiGatewayPage() {
           </div>
 
           <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800">
-                  <tr>
-                    <th className="py-2.5 px-4">Log ID</th>
-                    <th className="py-2.5 px-4">Model / Provider</th>
-                    <th className="py-2.5 px-4">Key Prefix</th>
-                    <th className="py-2.5 px-4">Tokens</th>
-                    <th className="py-2.5 px-4">Latency</th>
-                    <th className="py-2.5 px-4">Cost (USD)</th>
-                    <th className="py-2.5 px-4">Cache</th>
-                    <th className="py-2.5 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+            <TableScroll>
+              <Table>
+                <TableCaption>
+                  {`Gateway audit records, newest last. ${usageLogs.length} shown.`}
+                </TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Log ID</TableHead>
+                    <TableHead>Model / Provider</TableHead>
+                    <TableHead>Key Prefix</TableHead>
+                    <TableHead>Tokens</TableHead>
+                    <TableHead>Latency</TableHead>
+                    <TableHead>Cost (USD)</TableHead>
+                    <TableHead>Cache</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {usageLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-zinc-500">
-                        No requests logged yet. Issue a chat completion to generate audit logs.
-                      </td>
-                    </tr>
+                    <TableRow>
+                      <TableCell colSpan={8}>
+                        No requests logged yet. Issue a chat completion above to generate audit logs.
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     usageLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-zinc-900/40 transition-colors">
-                        <td className="py-2.5 px-4 text-zinc-500">#{log.id}</td>
-                        <td className="py-2.5 px-4">
-                          <span className="text-zinc-100 font-semibold">{log.model_name || 'Not reported'}</span>
+                      <TableRow key={log.id}>
+                        <TableCell>#{log.id}</TableCell>
+                        <TableCell>
+                          <span>{log.model_name || 'Not reported'}</span>
                           {log.provider_name && (
-                            <span className="text-zinc-500 block text-[10px]">{log.provider_name}</span>
+                            <span className="block">{log.provider_name}</span>
                           )}
-                        </td>
-                        <td className="py-2.5 px-4 text-zinc-400">{log.key_name || 'Not reported'}</td>
-                        <td className="py-2.5 px-4">
+                        </TableCell>
+                        <TableCell>{log.key_name || 'Not reported'}</TableCell>
+                        <TableCell>
                           <span>{log.total_tokens}</span>
-                          <span className="text-[10px] text-zinc-500 block">
+                          <span className="block">
                             {log.prompt_tokens} in / {log.completion_tokens} out
                           </span>
-                        </td>
-                        <td className="py-2.5 px-4 text-zinc-400">{log.latency_ms}ms</td>
-                        <td className="py-2.5 px-4 text-emerald-400 font-medium">
+                        </TableCell>
+                        <TableCell>{log.latency_ms}ms</TableCell>
+                        <TableCell>
                           ${Number(log.cost_usd || 0).toFixed(5)}
-                        </td>
-                        <td className="py-2.5 px-4">
+                        </TableCell>
+                        <TableCell>
                           {log.is_cached ? (
                             <Badge variant="gold">CACHE HIT</Badge>
                           ) : (
-                            <span className="text-zinc-600">PASS</span>
+                            <span>PASS</span>
                           )}
-                        </td>
-                        <td className="py-2.5 px-4">
+                        </TableCell>
+                        <TableCell>
                           <Badge variant={log.status_code === 200 ? 'active' : 'revoked'}>
                             {log.status_code}
                           </Badge>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableScroll>
           </Card>
         </section>
       </main>

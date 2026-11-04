@@ -3,6 +3,7 @@ import type { PlanMarkdownBodies } from './planManager';
 export interface GatewayModel {
   id: string;
   owned_by?: string;
+  supportsVision?: boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

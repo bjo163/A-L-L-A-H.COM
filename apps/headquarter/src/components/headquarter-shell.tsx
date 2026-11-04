@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
-import { EcosystemNavbar } from '@moonwitness/ui';
+import { EcosystemNavbar, Link as MwLink, resolveEcosystemEndpoints } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 
 const workspaces = [
@@ -50,6 +51,7 @@ export function HeadquarterShell({ children }: { children: ReactNode }) {
   return (
     <div className="hq-shell">
       <EcosystemNavbar
+        apps={resolveEcosystemEndpoints(process.env)}
         currentApp="headquarter"
         userName={user?.name}
         userEmail={user?.email}
@@ -71,19 +73,16 @@ export function HeadquarterShell({ children }: { children: ReactNode }) {
               const isCurrent = pathname === workspace.href;
 
               return (
-                <a
-                  className="hq-rail__link"
-                  href={workspace.href}
-                  aria-current={isCurrent ? 'page' : undefined}
-                  key={workspace.href}
-                >
-                  <span className="hq-rail__link-index">0{index + 1}</span>
-                  <span className="hq-rail__link-copy">
-                    <span>{workspace.label}</span>
-                    <small>{workspace.note}</small>
-                  </span>
-                  <span className="hq-rail__indicator" aria-hidden="true" />
-                </a>
+                <MwLink asChild current={isCurrent} className="hq-rail__link" key={workspace.href}>
+                  <NextLink href={workspace.href}>
+                    <span className="hq-rail__link-index">0{index + 1}</span>
+                    <span className="hq-rail__link-copy">
+                      <span>{workspace.label}</span>
+                      <small>{workspace.note}</small>
+                    </span>
+                    <span className="hq-rail__indicator" aria-hidden="true" />
+                  </NextLink>
+                </MwLink>
               );
             })}
           </nav>

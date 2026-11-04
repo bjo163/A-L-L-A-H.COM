@@ -41,6 +41,10 @@ jobs:
             dockerfile: apps/headquarter/Dockerfile
           - component: id
             dockerfile: apps/id/Dockerfile
+          - component: jizz
+            dockerfile: apps/jizz/Dockerfile
+          - component: sentinel
+            dockerfile: apps/sentinel/Dockerfile
     steps:
       - name: Check out source
         uses: actions/checkout@v7

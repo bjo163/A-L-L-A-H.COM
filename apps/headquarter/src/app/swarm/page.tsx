@@ -168,7 +168,6 @@ export default function SwarmOperationsPage() {
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   placeholder="Describe the task for the swarm"
-                  className="bg-zinc-950 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 focus:border-amber-500"
                   disabled={isRunning}
                 />
               </div>
@@ -180,14 +179,12 @@ export default function SwarmOperationsPage() {
                   max={24}
                   value={maxTurns}
                   onChange={(e) => setMaxTurns(parseInt(e.target.value) || 8)}
-                  className="bg-zinc-950 border-zinc-700 text-zinc-100 text-center"
                   disabled={isRunning}
                 />
               </div>
               <Button
                 onClick={handleRun}
                 disabled={isRunning || !goal.trim()}
-                className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-medium px-6 whitespace-nowrap"
               >
                 {isRunning ? 'Running Swarm...' : 'Run Swarm'}
               </Button>

@@ -16,7 +16,8 @@ import { registerMlLlmRouterAddon } from '../../../addons/mw_llm_router/index';
 import { registerMwStorageAddon } from '../../../addons/mw_storage/index';
 import { registerMwQorpusAddon } from '../../../addons/mw_qorpus/index';
 import { registerNexusAddon } from '../../../addons/nexus/index';
-import { computeSha256, chunkText } from '../../../addons/mw_qorpus/src/chunker';
+import { registerOrbitAddon } from '../../../addons/orbit/index';
+import { registerWorksAddon } from '../../../addons/works/index';import { computeSha256, chunkText } from '../../../addons/mw_qorpus/src/chunker';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;
@@ -61,6 +62,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   registerMwStorageAddon();
   registerMwQorpusAddon();
   registerNexusAddon();
+registerOrbitAddon();
+registerWorksAddon();
 
   // Run schema auto-sync across all registered models
   const migrator = new SchemaMigrator(dbEngine);
@@ -418,6 +421,115 @@ const repo = new BaseRepository(model);
       reply.status(500);
       return fail('IP_POOL_ERROR', err.message);
     }
+  });
+
+  // ORBIT Compute Endpoints
+  app.get<{ Querystring: { company_id?: string } }>('/v1/orbit/instances', async (request, reply) => {
+    try {
+      const companyId = (request.query?.company_id as string) || '';
+      const model = modelRegistry.get('orbit.instance');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'orbit.instance not registered'); }
+      const repo = new BaseRepository(model);
+      const filters: any[] = [];
+      if (companyId) filters.push({ field: 'company_id', operator: '=', value: Number(companyId) });
+      const instances = await repo.find({ filters, limit: 100 });
+      return ok(instances, { totalItems: instances.length });
+    } catch (err: any) { reply.status(500); return fail('ORBIT_LIST_ERROR', err.message); }
+  });
+
+  app.post('/v1/orbit/instances', async (request, reply) => {
+    try {
+      const body = request.body as any;
+      const model = modelRegistry.get('orbit.instance');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'orbit.instance not registered'); }
+      const repo = new BaseRepository(model);
+      const instance = await repo.create({
+        company_id: body.company_id,
+        name: body.name,
+        cpu_cores: body.cpu_cores ?? 1,
+        ram_mb: body.ram_mb ?? 1024,
+        disk_gb: body.disk_gb ?? 20,
+        status: 'provisioning',
+        ip_address: body.ip_address || null,
+        partner_id: body.partner_id || null,
+        template_id: body.template_id || null,
+      });
+      reply.status(201);
+      return ok(instance);
+    } catch (err: any) { reply.status(500); return fail('ORBIT_CREATE_ERROR', err.message); }
+  });
+
+  // WORKS Commercial Endpoints
+  app.get('/v1/works/plans', async (_req, reply) => {
+    try {
+      const model = modelRegistry.get('isp.plan');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.plan not registered'); }
+      const repo = new BaseRepository(model);
+      const plans = await repo.find({ limit: 100 });
+      return ok(plans, { totalItems: plans.length });
+    } catch (err: any) { reply.status(500); return fail('WORKS_PLANS_ERROR', err.message); }
+  });
+
+  app.post('/v1/works/plans', async (request, reply) => {
+    try {
+      const body = request.body as any;
+      const model = modelRegistry.get('isp.plan');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.plan not registered'); }
+      const repo = new BaseRepository(model);
+      const plan = await repo.create({ company_id: body.company_id, name: body.name, download_mbps: body.download_mbps ?? 10, upload_mbps: body.upload_mbps ?? 5, price: body.price ?? 0, currency: body.currency ?? 'IDR' });
+      reply.status(201); return ok(plan);
+    } catch (err: any) { reply.status(500); return fail('WORKS_PLAN_CREATE_ERROR', err.message); }
+  });
+
+  app.get('/v1/works/subscriptions', async (_req, reply) => {
+    try {
+      const model = modelRegistry.get('isp.subscription');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
+      const repo = new BaseRepository(model);
+      const subs = await repo.find({ limit: 100 });
+      return ok(subs, { totalItems: subs.length });
+    } catch (err: any) { reply.status(500); return fail('WORKS_SUBS_ERROR', err.message); }
+  });
+
+  app.post('/v1/works/subscriptions', async (request, reply) => {
+    try {
+      const body = request.body as any;
+      const model = modelRegistry.get('isp.subscription');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
+      const repo = new BaseRepository(model);
+      const sub = await repo.create({ company_id: body.company_id, customer_id: body.customer_id, plan_id: body.plan_id, state: 'draft' });
+      reply.status(201); return ok(sub);
+    } catch (err: any) { reply.status(500); return fail('WORKS_SUB_CREATE_ERROR', err.message); }
+  });
+
+  app.post<{ Params: { id: string } }>('/v1/works/subscriptions/:id/activate', async (request, reply) => {
+    try {
+      const model = modelRegistry.get('isp.subscription');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
+      const repo = new BaseRepository(model);
+      await repo.updateById(parseInt(request.params.id), { state: 'active', started_at: new Date().toISOString() });
+      return ok({ id: request.params.id, state: 'active' });
+    } catch (err: any) { reply.status(500); return fail('WORKS_ACTIVATE_ERROR', err.message); }
+  });
+
+  app.post<{ Params: { id: string } }>('/v1/works/subscriptions/:id/suspend', async (request, reply) => {
+    try {
+      const model = modelRegistry.get('isp.subscription');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.subscription not registered'); }
+      const repo = new BaseRepository(model);
+      await repo.updateById(parseInt(request.params.id), { state: 'suspended', suspended_at: new Date().toISOString() });
+      return ok({ id: request.params.id, state: 'suspended' });
+    } catch (err: any) { reply.status(500); return fail('WORKS_SUSPEND_ERROR', err.message); }
+  });
+
+  app.get('/v1/works/invoices', async (_req, reply) => {
+    try {
+      const model = modelRegistry.get('isp.invoice');
+      if (!model) { reply.status(500); return fail('MODEL_NOT_FOUND', 'isp.invoice not registered'); }
+      const repo = new BaseRepository(model);
+      const inv = await repo.find({ limit: 100 });
+      return ok(inv, { totalItems: inv.length });
+    } catch (err: any) { reply.status(500); return fail('WORKS_INVOICES_ERROR', err.message); }
   });
 
   // i18n Endpoints

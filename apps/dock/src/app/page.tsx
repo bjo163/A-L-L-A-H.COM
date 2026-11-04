@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { EcosystemNavbar, MotionFrame } from '@moonwitness/ui';
+import { EcosystemNavbar, Link, MotionFrame, resolveEcosystemEndpoints } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 
 const destinations = [
@@ -56,6 +56,7 @@ export default function DockHomePage() {
   return (
     <>
       <EcosystemNavbar
+        apps={resolveEcosystemEndpoints(process.env)}
         currentApp="dock"
         userName={user?.name}
         userEmail={user?.email}
@@ -78,9 +79,9 @@ export default function DockHomePage() {
                 Enter the MoonWitness ecosystem through a clear map of its discovery, identity, operations,
                 and observatory spaces.
               </p>
-              <a className="dock-hero__link" href="#dock-index-title">
+              <Link className="dock-hero__link" href="#dock-index-title">
                 Explore destinations
-              </a>
+              </Link>
             </div>
             <figure className="dock-hero__art">
               <Image
@@ -110,13 +111,13 @@ export default function DockHomePage() {
 
           <nav className="dock-destinations" aria-label="Platform destinations">
             {destinations.map((destination) => (
-              <a className="dock-destination" href={destination.href} key={destination.number}>
+              <Link className="dock-destination" href={destination.href} key={destination.number}>
                 <span className="dock-destination__number">{destination.number}</span>
                 <span className="dock-destination__role">{destination.role}</span>
                 <h3>{destination.name}</h3>
                 <p>{destination.description}</p>
                 <span className="dock-destination__arrow" aria-hidden="true">↗</span>
-              </a>
+              </Link>
             ))}
           </nav>
         </section>

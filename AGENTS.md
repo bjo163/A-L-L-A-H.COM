@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.3.0"
+version: "1.4.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -29,6 +29,7 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | `apps/headquarter/` | Next.js 16 · React 19 · Tailwind v4 | 3002 |
 | `apps/id/` | Next.js 16 · React 19 · Tailwind v4 · SSO | 3003 |
 | `apps/jizz/` | Next.js 16 · React 19 · Tailwind v4 | 3004 |
+| `apps/sentinel/` | Sentinel RADIUS daemon · UDP auth/accounting + HTTP health | 1812/1813/9181 |
 | `addons/` | `base` · `mw_storage` · `mw_llm_router` · `mw_qorpus` | — |
 | `packages/ui/` | `@moonwitness/ui` — **MANDATORY** all UI controls | — |
 | `packages/sdk/` | `@allah/sdk` — **MANDATORY** all client↔hub comms | — |
@@ -36,7 +37,7 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 | `packages/lint/` | `@moonwitness/lint` → `pnpm lint:arch` | — |
 | `packages/arsy-orm/` | `@allah/arsy-orm` — sole ORM | — |
 
-**Forbidden in `apps/`**: raw `<button>` / `<input>` · local type redefinition · direct DB calls
+**Forbidden in `apps/`**: raw `<button>` / `<input>` / `<select>` / `<textarea>` / `<a>` / `<form>` / `<label>` / `<table>` · hand-written `mw-*` component class names · local type redefinition · direct DB calls. The design system is the only place a native control may appear; `@moonwitness/ui` owns `Select`, `Table`, `Dialog`, `Form`/`FormField`, and `Link`, and `Button asChild` turns any router link into a button.
 
 ## Invariants
 
@@ -54,7 +55,7 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 ```
 pnpm docs:check          # 100/100 required
 pnpm lint:arch           # arch invariants
-pnpm typecheck           # strict TS
+pnpm typecheck           # TS strict in packages/ui, dock, headquarter, id, jizz
 pnpm dock:build
 pnpm headquarter:build
 pnpm id:build

@@ -83,7 +83,9 @@ export interface AgentSessionEvent {
  */
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
+  content:
+    | string
+    | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
   name?: string;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
@@ -277,6 +279,19 @@ export interface McpToolCallResult {
   content: Array<{ type: string; text?: string }>;
   isError?: boolean;
   structuredContent?: Record<string, unknown>;
+}
+
+export interface ToolExecutionRecord {
+  id: string;
+  tool: string;
+  actor?: string | null;
+  virtualKeyId?: number | null;
+  args?: Record<string, unknown>;
+  output?: unknown;
+  error?: string | null;
+  latencyMs: number;
+  status: 'ok' | 'error';
+  timestamp: string;
 }
 
 export const MCP_PROTOCOL_VERSION = '2025-06-12';

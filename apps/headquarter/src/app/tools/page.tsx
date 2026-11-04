@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Button,
   Card,
@@ -10,10 +11,19 @@ import {
   CardContent,
   Badge,
   Input,
+  Select,
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableScroll,
+  TableRow,
   Textarea,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
-import type { McpTool, McpToolCallResult } from '@moonwitness/types';
+import type { McpTool, McpToolCallResult, ToolExecutionRecord } from '@moonwitness/types';
 
 export default function ToolsPage() {
   const [tools, setTools] = useState<McpTool[]>([]);
@@ -29,7 +39,7 @@ export default function ToolsPage() {
   const [isCalling, setIsCalling] = useState(false);
 
   // Audit log state
-  const [auditLog, setAuditLog] = useState<any[]>([]);
+  const [auditLog, setAuditLog] = useState<ToolExecutionRecord[]>([]);
   const [auditError, setAuditError] = useState<string | null>(null);
 
   const fetchTools = async () => {
@@ -103,8 +113,8 @@ export default function ToolsPage() {
       if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
         throw new Error('Arguments must be a JSON object');
       }
-    } catch (err: any) {
-      setCallError(`Invalid JSON arguments: ${err.message}`);
+    } catch (err) {
+      setCallError(`Invalid JSON arguments: ${err instanceof Error ? err.message : 'Values must be valid JSON.'}`);
       setIsCalling(false);
       return;
     }
@@ -112,8 +122,9 @@ export default function ToolsPage() {
     try {
       const result = await mwClient.mcp.callTool(selectedTool, parsed);
       setCallResult(result);
-    } catch (err: any) {
-      setCallError(err.message || 'Tool call failed');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      setCallError(message || 'Tool call failed');
     } finally {
       setIsCalling(false);
       await fetchAudit();
@@ -138,9 +149,9 @@ export default function ToolsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/">
-              <Button variant="outline" size="sm">Back to HQ</Button>
-            </a>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/">Back to HQ</Link>
+            </Button>
             <Button variant="outline" size="sm" onClick={fetchTools} disabled={loading}>
               {loading ? 'Refreshing...' : 'Refresh Tools'}
             </Button>
@@ -243,15 +254,14 @@ export default function ToolsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="tools-selected-tool" className="text-xs font-medium text-zinc-300 uppercase tracking-wider">Tool</label>
-              <select
-                id="tools-selected-tool"
+              <Select
+                label="Tool"
                 value={selectedTool}
                 onChange={(e) => {
                   const t = tools.find((tool) => tool.name === e.target.value);
                   if (t) handleSelectTool(t);
                 }}
-                className="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500 w-full"
+                className="w-full text-xs"
               >
                 <option value="">Select a tool...</option>
                 {tools.map((tool) => (
@@ -259,7 +269,7 @@ export default function ToolsPage() {
                     {tool.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="flex items-end gap-2">
@@ -316,46 +326,49 @@ export default function ToolsPage() {
           )}
 
           <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800">
-                  <tr>
-                    <th className="py-2.5 px-4">Time</th>
-                    <th className="py-2.5 px-4">Tool</th>
-                    <th className="py-2.5 px-4">Actor</th>
-                    <th className="py-2.5 px-4">Latency</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4">Error</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+            <TableScroll>
+              <Table>
+                <TableCaption>
+                  {`Tool executions recorded this session. ${auditLog.length} shown.`}
+                </TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Tool</TableHead>
+                    <TableHead>Actor</TableHead>
+                    <TableHead>Latency</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Error</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {auditLog.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-zinc-500">
+                    <TableRow>
+                      <TableCell colSpan={6}>
                         No tool executions recorded yet. Use the sandbox above to execute a tool.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     auditLog.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-zinc-900/40 transition-colors">
-                        <td className="py-2.5 px-4 text-zinc-500">{new Date(entry.timestamp).toLocaleTimeString()}</td>
-                        <td className="py-2.5 px-4 text-zinc-100 font-semibold">{entry.tool}</td>
-                        <td className="py-2.5 px-4 text-zinc-500">{entry.actor || 'Not reported'}</td>
-                        <td className="py-2.5 px-4 text-zinc-400">{entry.latencyMs}ms</td>
-                        <td className="py-2.5 px-4">
+                      <TableRow key={entry.id}>
+                        <TableCell>{new Date(entry.timestamp).toLocaleTimeString()}</TableCell>
+                        <TableCell>{entry.tool}</TableCell>
+                        <TableCell>{entry.actor || 'Not reported'}</TableCell>
+                        <TableCell>{entry.latencyMs}ms</TableCell>
+                        <TableCell>
                           <Badge variant={entry.status === 'ok' ? 'active' : 'revoked'}>
                             {entry.status === 'ok' ? 'OK' : 'ERROR'}
                           </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-zinc-500 truncate max-w-[200px]">
+                        </TableCell>
+                        <TableCell>
                           {entry.error || 'No error'}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableScroll>
           </Card>
         </section>
       </main>

@@ -253,9 +253,15 @@ export class SwarmCoordinator {
     step.latency_ms = Date.now() - startTime;
     const content = response.choices?.[0]?.message?.content || '';
     step.output = content;
-    this.emit('swarm_agent_step', { ...step });
+    step.output = this.extractText(content);
 
-    return content;
+    return this.extractText(content);
+  }
+
+
+  private extractText(content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>): string {
+    if (typeof content === 'string') return content;
+    return content.filter(c => c.type === 'text').map(c => c.text).join(' ');
   }
 
   private extractToolCalls(response: any): Array<{ name: string; arguments: Record<string, unknown> }> {

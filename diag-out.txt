@@ -1,0 +1,84 @@
+﻿TARGET=Z:\project\rocksoul-dx\apps\server
+TARGET_EXISTS=True
+TARGET_CHILDREN=0
+PROCESSES_SCANNED=592  CWD_UNREADABLE=118
+PS_BITS=True
+---- SUSPECTS ----
+PID=95884 PPID=100372 NAME=sh.exe WHY=CWD-IS-TARGET
+    CWD=Z:\project\rocksoul-dx\apps\server\
+    TREE=sh.exe(95884) <- sh.exe(100372)
+    CMD="C:\Program Files\Git\usr\bin\sh.exe" /z/Docker/DockerDesktop/resources/bin/docker build -t dx_server .
+PID=100372 PPID=78804 NAME=sh.exe WHY=CWD-IS-TARGET
+    CWD=Z:\project\rocksoul-dx\apps\server\
+    TREE=sh.exe(100372)
+    CMD="C:\Program Files\Git\usr\bin\sh.exe" /z/Docker/DockerDesktop/resources/bin/docker build -t dx_server .
+PID=101568 PPID=95884 NAME=docker.exe WHY=CWD-IS-TARGET
+    CWD=Z:\project\rocksoul-dx\apps\server\
+    TREE=docker.exe(101568) <- sh.exe(95884) <- sh.exe(100372)
+    CMD=Z:\Docker\DockerDesktop\resources\bin\docker.exe build -t dx_server .
+PID=102504 PPID=29584 NAME=tail.exe WHY=CWD-IS-TARGET
+    CWD=Z:\project\rocksoul-dx\apps\server\
+    TREE=tail.exe(102504)
+    CMD="C:\Program Files\Git\usr\bin\tail.exe" -100
+PID=102732 PPID=101568 NAME=docker-buildx.exe WHY=CWD-IS-TARGET
+    CWD=Z:\project\rocksoul-dx\apps\server\
+    TREE=docker-buildx.exe(102732) <- docker.exe(101568) <- sh.exe(95884) <- sh.exe(100372)
+    CMD="C:\Program Files\Docker\cli-plugins\docker-buildx.exe" buildx build -t dx_server .
+---- SHELL/TERMINAL HOSTS (all conhost + powershell + wt + node) ----
+PID=27920 NAME=cmd.exe CWD=Z:\project\wtagent\apps\web\
+PID=81700 NAME=cmd.exe CWD=Z:\project\moonstranaut\
+PID=112572 NAME=cmd.exe CWD=C:\Users\bjo16\.codex\plugins\cache\openai-bundled\chrome\latest\extension-host\windows\x64\
+PID=115900 NAME=cmd.exe CWD=Z:\project\rocksoul-dx\apps\arsy\
+PID=118040 NAME=cmd.exe CWD=Z:\project\wtagent\
+PID=118576 NAME=cmd.exe CWD=Z:\project\wtagent\apps\api\
+PID=130352 NAME=cmd.exe CWD=Z:\project\wtagent\
+PID=141868 NAME=cmd.exe CWD=Z:\Qoder IDE\
+PID=142252 NAME=cmd.exe CWD=Z:\project\wtagent\
+PID=143460 NAME=cmd.exe CWD=Z:\Qoder IDE\
+PID=149012 NAME=cmd.exe CWD=Z:\project\rocksoul-dx\
+PID=8612 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=17460 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=18708 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=28816 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=35392 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=37288 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=44772 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=56676 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=58244 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=59712 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=72776 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=73396 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=92568 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=105436 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=106552 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=106808 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=112488 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=115836 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=117992 NAME=conhost.exe CWD=Z:\Qoder IDE\
+PID=118696 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=123332 NAME=conhost.exe CWD=C:\Users\bjo16\AppData\Local\Programs\Antigravity IDE\
+PID=132360 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=134016 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=144592 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=145384 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=146532 NAME=conhost.exe CWD=C:\WINDOWS\
+PID=102440 NAME=node.exe CWD=Z:\Qoder IDE\
+PID=133768 NAME=node.exe CWD=Z:\project\wtagent\
+PID=135708 NAME=node.exe CWD=Z:\project\rocksoul-dx\apps\arsy\
+PID=138452 NAME=node.exe CWD=Z:\project\rocksoul-dx\apps\arsy\
+PID=140664 NAME=node.exe CWD=Z:\project\wtagent\apps\api\
+PID=141072 NAME=node.exe CWD=Z:\project\wtagent\apps\web\
+PID=143264 NAME=node.exe CWD=Z:\Qoder IDE\
+PID=144576 NAME=node.exe CWD=Z:\project\wtagent\apps\api\
+PID=145072 NAME=node.exe CWD=Z:\project\wtagent\apps\web\
+PID=145560 NAME=node.exe CWD=Z:\Qoder IDE\
+PID=59496 NAME=powershell.exe CWD=Z:\project\
+PID=94036 NAME=powershell.exe CWD=Z:\project\rocksoul-dx\
+PID=103532 NAME=powershell.exe CWD=Z:\project\rocksoul-dx\
+PID=107904 NAME=powershell.exe CWD=z:\project\wtagent\
+PID=110364 NAME=powershell.exe CWD=Z:\project\rocksoul-dx\
+PID=121188 NAME=powershell.exe CWD=z:\project\rocksoul-dx\
+PID=125204 NAME=powershell.exe CWD=Z:\project\rocksoul-dx\
+PID=125364 NAME=powershell.exe CWD=Z:\project\rocksoul-dx\
+PID=142560 NAME=powershell.exe CWD=Z:\project\wtagent\
+PID=44916 NAME=WindowsTerminal.exe CWD=C:\WINDOWS\system32\

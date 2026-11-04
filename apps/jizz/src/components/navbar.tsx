@@ -1,10 +1,11 @@
 'use client';
 
-import { EcosystemNavbar } from '@moonwitness/ui';
+import { EcosystemNavbar, resolveEcosystemEndpoints } from '@moonwitness/ui';
 
 export function JizzNavbar() {
   return (
     <EcosystemNavbar
+      apps={resolveEcosystemEndpoints(process.env)}
       currentApp="jizz"
     />
   );

@@ -1,7 +1,7 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "CHANGELOG"
-version: "1.0.0"
+version: "1.1.0"
 owner: "engineering"
 status: "implemented"
 last_verified: "2026-11-04"
@@ -9,13 +9,29 @@ last_verified: "2026-11-04"
 
 # CHANGELOG.md
 
+## 2026-11-04 - UI Purity Wave: Shared Primitives and a Gate That Actually Gates
+
+### Added
+- `Select`, `Table` family (`Table`, `TableScroll`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableCaption`), `Dialog` on native `<dialog>`, `Form` + `FormField`, and `Link` in `@moonwitness/ui`, each skinned through the existing `--mw-*` tokens and differentiated per DNA world.
+- `Button asChild` and `Link asChild`, so a router link can carry the variant contract without hand-writing class names.
+- `resolveEcosystemEndpoints()` for cross-app navigation, driven by `NEXT_PUBLIC_ECOSYSTEM_ORIGIN` and per-app `NEXT_PUBLIC_*_URL` instead of embedded `localhost` literals.
+- `SkinLaboratory` styles in `skins.css` and a Headquarter route at `/skin-lab` that mounts the showcase.
+- `ToolExecutionRecord` in `@moonwitness/types` as the shared MCP audit contract used by the SDK and Headquarter.
+
+### Changed
+- `UI_PURITY` now matches a tag at end of line, blocks `button`, `input`, `select`, `textarea`, `a`, `form`, `label`, `table`, scans `packages/` as well as `apps/`, and flags hand-written `mw-*` class names. `collectFiles` no longer skips every `lib` directory.
+- Migrated every raw control out of `apps/headquarter`, `apps/id`, and `apps/dock`, including the device-revoke flow from `window.confirm` to `Dialog`.
+- Enabled TypeScript `strict` for `packages/ui`, `dock`, `headquarter`, `id`, and `jizz`, and made the type-check gate report its real strict coverage instead of claiming it for the whole monorepo.
+- Scoped ESLint `no-restricted-imports` to `apps/**` so UI primitives cannot be assembled straight from `@base-ui/react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `cn`, or `shadcn`.
+- Parameterized the `company_id` filter in the ORM translation query instead of interpolating it into SQL.
+
 ## 2026-11-04 - Production Docker Gate and Release Automation
 
 ### Changed
 - Retired the unused Rust/Loco server from the active tree; Arsy Fastify remains the canonical backend.
 - Included the shared TypeScript config in Arsy, Dock, Headquarter, and ID container builds.
 - Included the Arsy addon sources in its container build context.
-- Added Arsy and ID to the GHCR production matrix; Coolify receives its GitHub webhook independently of image publishing.
+- Added Jizz and Sentinel so all six active services are built and published to GHCR; Coolify receives its GitHub webhook independently of image publishing.
 - Dispatch image publishing after successful dev-to-main promotion and create the versioned GitHub release only after all images publish.
 
 ## 2026-11-04 - VS Code Extension Deep Runtime Hardening

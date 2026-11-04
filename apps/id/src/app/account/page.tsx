@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { mwClient } from '@allah/sdk';
 import type { UserSubject, ActiveSession } from '@moonwitness/types';
-import { SessionCard, Button, Badge, Card, CardHeader, CardTitle, CardDescription, CardContent, sfx } from '@moonwitness/ui';
+import { Avatar, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Link as MwLink, SessionCard, resolveEcosystemEndpoints, sfx } from '@moonwitness/ui';
 import { ShieldCheck, CheckCircle2, Layers, ExternalLink, Loader2 } from 'lucide-react';
 
 export default function AccountCenterPage() {
   const router = useRouter();
+  const endpoints = resolveEcosystemEndpoints(process.env);
   const [user, setUser] = useState<UserSubject | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,9 +95,9 @@ export default function AccountCenterPage() {
           <p className="text-sm text-red-300" role="alert">{loadError}</p>
           <div className="flex flex-wrap gap-3">
             <Button onClick={loadData} disabled={isLoading}>Try Again</Button>
-            <a className="inline-flex min-h-11 items-center px-3 text-sm text-zinc-300 underline underline-offset-4" href="/login">
-              Go to Sign In
-            </a>
+            <Button asChild variant="outline">
+              <Link href="/login">Go to Sign In</Link>
+            </Button>
           </div>
         </div>
       </main>
@@ -114,9 +116,7 @@ export default function AccountCenterPage() {
 
         <section className="id-account-profile p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-amber-400/5 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-2xl shadow-inner">
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </div>
+            <Avatar size="lg" name={user?.name} />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-zinc-100">{user?.name || 'Account overview'}</h1>
@@ -204,10 +204,10 @@ export default function AccountCenterPage() {
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-zinc-400 font-medium">Open workspace</span>
-                    <a href="http://localhost:3001" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-amber-400 flex items-center gap-1">
+                    <MwLink href={endpoints.dock} external>
                       <span>Launch</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                    </MwLink>
                   </div>
                 </CardContent>
               </Card>
@@ -223,10 +223,10 @@ export default function AccountCenterPage() {
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-zinc-400 font-medium">Open workspace</span>
-                    <a href="http://localhost:3002" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-amber-400 flex items-center gap-1">
+                    <MwLink href={endpoints.headquarter} external>
                       <span>Launch</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                    </MwLink>
                   </div>
                 </CardContent>
               </Card>
@@ -241,10 +241,10 @@ export default function AccountCenterPage() {
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-zinc-400 font-medium">Open workspace</span>
-                    <a href="http://localhost:3004" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-amber-400 flex items-center gap-1">
+                    <MwLink href={endpoints.jizz} external>
                       <span>Launch</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                    </MwLink>
                   </div>
                 </CardContent>
               </Card>

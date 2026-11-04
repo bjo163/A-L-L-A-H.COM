@@ -483,6 +483,9 @@ importers:
       '@allah/sentinel-radius':
         specifier: workspace:*
         version: link:../../packages/sentinel-radius
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
     devDependencies:
       '@types/node':
         specifier: ^22.20.5

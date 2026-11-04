@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { EcosystemNavbar, SkinRoot } from '@moonwitness/ui';
+import { EcosystemNavbar, SkinRoot, resolveEcosystemEndpoints } from '@moonwitness/ui';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-amber-500/20 selection:text-amber-200">
         <SkinRoot skin="lunar-chronicles">
-          <EcosystemNavbar currentApp="id" showAuthActions={false} />
+          <EcosystemNavbar apps={resolveEcosystemEndpoints(process.env)} currentApp="id" showAuthActions={false} />
           {children}
         </SkinRoot>
       </body>

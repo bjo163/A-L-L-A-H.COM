@@ -13,7 +13,7 @@ export class GatewayCache {
   generateKey(model: string, messages: ChatMessage[], temperature?: number): string {
     const serialized = JSON.stringify({
       model,
-      messages: messages.map((m) => ({ role: m.role, content: m.content.trim() })),
+       messages: messages.map(m => ({ role: m.role, content: Array.isArray(m.content) ? m.content.filter(c => c.type === 'text').map(c => c.text.trim()).join(' ') : m.content.trim() })),
       temperature: temperature ?? 0.7,
     });
     return crypto.createHash('sha256').update(serialized).digest('hex');
@@ -105,4 +105,3 @@ export class GatewayCache {
     this.inMemoryCache.clear();
   }
 }
-

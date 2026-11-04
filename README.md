@@ -13,7 +13,7 @@ A-L-L-A-H.COM is the central home for the continued evolution of the MoonWitness
 
 Its mission is to preserve the legacy, reconcile generations, connect products and applications, consolidate useful technology, and provide one coherent platform without erasing the identity or history of earlier work.
 
-This repository contains a Fastify/TypeScript ARSY Hub backend and four Next.js web applications (Dock, Headquarters, MoonWitness ID, and WORLD OBSERVATORY). Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
+This repository contains a Fastify/TypeScript ARSY Hub, a Sentinel RADIUS daemon, and four Next.js web applications (Dock, Headquarters, MoonWitness ID, and WORLD OBSERVATORY). Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
 
 ## Start here
 1. [GOAL.md](GOAL.md) â€” master mission and local AI entrypoint.
@@ -46,17 +46,19 @@ Discover and reconcile MoonWitness historical generations, Reborn, XV, narrative
 
 Always inspect the current tree and manifests before relying on this summary.
 
+Active services also include WORLD OBSERVATORY at `apps/jizz/` (port 3004) and the Sentinel RADIUS daemon at `apps/sentinel/` (UDP 1812/1813; health on 9181).
+
 ## Development
 Inspect `package.json`, `pnpm-workspace.yaml`, and each app's `package.json` for exact commands and versions. Use the workspace package manager and app-specific instructions. Do not assume a command exists.
 
-Run `pnpm dev` to start Arsy and all three Next.js apps concurrently: Arsy on port `5150`, Dock on `http://127.0.0.1:3001/`, Headquarters on `http://127.0.0.1:3002/`, and MoonWitness ID on `http://127.0.0.1:3003/`. To run one app, use its script: `pnpm arsy:dev`, `pnpm dock:dev`, `pnpm headquarter:dev`, or `pnpm id:dev`.
+Run `pnpm dev` to start Arsy, Sentinel, and all four Next.js apps concurrently: Arsy on port `5150`, Dock on `http://127.0.0.1:3001/`, Headquarters on `http://127.0.0.1:3002/`, MoonWitness ID on `http://127.0.0.1:3003/`, and WORLD OBSERVATORY on `http://127.0.0.1:3004/`. Sentinel serves health and metrics on port `9181` and RADIUS over UDP ports `1812` and `1813`. To run one app, use its script: `pnpm arsy:dev`, `pnpm sentinel:dev`, `pnpm dock:dev`, `pnpm headquarter:dev`, `pnpm id:dev`, or `pnpm jizz:dev`.
 
 `.husky/pre-commit` runs `pnpm docs:check`; `.husky/pre-push` runs the Dock, Headquarter, ID, and Arsy builds.
 
 Never commit secrets, `.env` files, local databases, generated build output, or unrelated user changes.
 
 ## Production deployment
-The root `docker-compose.yml` pulls the `arsy`, `dock`, `headquarter`, and `id` images from GHCR. The `Publish production images` GitHub Actions workflow validates the Compose configuration and builds and publishes every service image. Coolify receives its own GitHub webhook and pulls these images rather than rebuilding them. CI promotion explicitly dispatches the image workflow because it uses `GITHUB_TOKEN`; a versioned GitHub release is created after all images publish successfully. Coolify's GitHub webhook and image publishing can run concurrently, so Coolify may try to deploy before the new image tags are available.
+The root `docker-compose.yml` pulls six images from GHCR: `arsy`, `dock`, `headquarter`, `id`, `jizz`, and `sentinel`. The `Publish production images` GitHub Actions workflow validates the Compose configuration and builds and publishes every service image. Coolify receives its own GitHub webhook and pulls these images rather than rebuilding them. CI promotion explicitly dispatches the image workflow because it uses `GITHUB_TOKEN`; a versioned GitHub release is created after all six images publish successfully. Coolify's GitHub webhook and image publishing can run concurrently, so Coolify may try to deploy before the new image tags are available.
 
 Before the first deployment, set the GHCR packages to public in GitHub's package settings or configure GHCR read credentials in Coolify. Public packages can be pulled without registry credentials, so Docker Hub is not required. Set `IMAGE_PREFIX` to `ghcr.io/<owner>/<repository>` only if the image namespace differs from the default, `ghcr.io/bjo163/a-l-l-a-h.com`; set `IMAGE_TAG` to `latest` or a published `sha-<short-commit>` tag for a pinned rollback.
 
@@ -74,5 +76,5 @@ The extension in `packages/vscode-extension` integrates the `.plans` workflow, t
 
 ## Branch Strategy & CI/CD Release Gate
 - `dev`: Primary development branch. All commits and features are pushed here.
-- CI Gate (`.github/workflows/ci-dev.yml`): Validates Dock, Headquarter, and VS Code extension, plus the documentation contract, before promotion.
+- CI Gate (`.github/workflows/ci-dev.yml`): Validates all six active service builds, VS Code extension, and documentation contract before promotion.
 - `main`: Production release branch. Auto-promoted from `dev` only when all CI checks pass. Promotion dispatches the Docker-gated GHCR publish and Coolify workflow; the workflow creates the root package's versioned GitHub release after the webhook succeeds.

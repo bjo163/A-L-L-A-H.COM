@@ -10,6 +10,31 @@ export default [
     },
   },
   {
+    // The shared design system is the only path to UI primitives in an application.
+    files: ['apps/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@base-ui/react',
+                '@base-ui/react/*',
+                'class-variance-authority',
+                'clsx',
+                'tailwind-merge',
+                'cn',
+                'shadcn',
+              ],
+              message: 'Build UI through "@moonwitness/ui"; primitive plumbing belongs to the design system.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     ignores: [
       'node_modules/**',
       'dist/**',

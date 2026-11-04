@@ -1,3 +1,4 @@
+
 import crypto from 'crypto';
 import { request as undiciRequest } from 'undici';
 import { logger } from '@allah/arsy-core';
@@ -28,6 +29,12 @@ export class AnthropicAdapter implements ProviderAdapter {
     return Boolean(this.apiKey);
   }
 
+
+  private extractText(content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>): string {
+    if (typeof content === 'string') return content;
+    return content.filter(c => c.type === 'text').map(c => c.text).join(' ');
+  }
+
   private transformMessages(messages: ChatCompletionRequest['messages']): {
     system?: string;
     anthropicMessages: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -37,11 +44,13 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     for (const msg of messages) {
       if (msg.role === 'system') {
-        systemPrompt = systemPrompt ? `${systemPrompt}\n\n${msg.content}` : msg.content;
+         systemPrompt = systemPrompt ? `${systemPrompt}
+
+${this.extractText(msg.content)}` : this.extractText(msg.content);
       } else if (msg.role === 'user' || msg.role === 'assistant') {
         anthropicMessages.push({
           role: msg.role,
-          content: msg.content,
+           content: this.extractText(msg.content),
         });
       }
     }
@@ -288,4 +297,3 @@ export class AnthropicAdapter implements ProviderAdapter {
     };
   }
 }
-

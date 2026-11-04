@@ -28,6 +28,12 @@ export class GeminiAdapter implements ProviderAdapter {
     this.apiKey = apiKey;
   }
 
+
+  private extractText(content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>): string {
+    if (typeof content === 'string') return content;
+    return content.filter(c => c.type === 'text').map(c => c.text).join(' ');
+  }
+
   isConfigured(): boolean {
     return Boolean(this.apiKey);
   }
@@ -94,11 +100,11 @@ export class GeminiAdapter implements ProviderAdapter {
 
     for (const msg of messages) {
       if (msg.role === 'system') {
-        systemText = systemText ? `${systemText}\n\n${msg.content}` : msg.content;
+        systemText = systemText ? `${systemText}\n\n${this.extractText(msg.content)}` : this.extractText(msg.content);
       } else {
         contents.push({
           role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }],
+           parts: [{ text: this.extractText(msg.content) }],
         });
       }
     }
@@ -360,4 +366,3 @@ export class GeminiAdapter implements ProviderAdapter {
     };
   }
 }
-

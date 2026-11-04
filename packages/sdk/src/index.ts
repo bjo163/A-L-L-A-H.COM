@@ -13,6 +13,7 @@ import type {
   JsonRpcResponse,
   McpTool,
   McpToolCallResult,
+  ToolExecutionRecord,
   AgentMode,
   AgentSessionEvent,
   PairedAgentDevice,
@@ -576,12 +577,13 @@ export class MoonWitnessClient {
       return ((res as any)?.result ?? { content: [], isError: true }) as McpToolCallResult;
     },
 
-    getAuditLog: async (): Promise<any[]> => {
+    getAuditLog: async (): Promise<ToolExecutionRecord[]> => {
       const res = await this.request<{ audit: unknown; total: number }>('/v1/mcp/audit');
       if (!Array.isArray(res.audit)) {
         throw new Error('MCP audit endpoint returned an invalid response.');
       }
-      return res.audit;
+      // The hub owns the record shape; only its array-ness is checkable here.
+      return res.audit as ToolExecutionRecord[];
     },
   };
 
