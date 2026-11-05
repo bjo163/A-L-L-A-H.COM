@@ -101,6 +101,46 @@ jobs:
         env:
           GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
         run: node scripts/run-gate.mjs 'Verify moonsky' pnpm moonsky:build
+      - name: Build arsy
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build arsy' pnpm --filter @allah/arsy build
+      - name: Build dock
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build dock' pnpm dock:build
+      - name: Build e-isp
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build e-isp' pnpm esp:build
+      - name: Build gate
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build gate' pnpm gate:build
+      - name: Build harbor
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build harbor' pnpm harbor:build
+      - name: Build headquarter
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build headquarter' pnpm headquarter:build
+      - name: Build id
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build id' pnpm id:build
+      - name: Build jizz
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build jizz' pnpm jizz:build
+      - name: Build moonsky
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build moonsky' pnpm moonsky:build
+      - name: Build sentinel
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Build sentinel' pnpm sentinel:build
       - name: Design system tests
         env:
           GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
