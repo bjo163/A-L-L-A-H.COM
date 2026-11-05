@@ -12,8 +12,12 @@ const output = execFileSync(vsce, ['ls', '--no-dependencies'], {
   shell: process.platform === 'win32',
 });
 const files = output.split(/\r?\n/).map((file) => file.trim()).filter(Boolean);
-const required = ['package.json', 'README.md', 'dist/extension.js'];
+const required = ['package.json', 'README.md', 'LICENSE', 'CONTRACT.md', 'dist/extension.js'];
 const failures = required.filter((file) => !files.includes(file));
+const developmentFiles = files.filter((file) =>
+  ['.gitignore', '.vscodeignore'].includes(file) || file.startsWith('test/') || file.startsWith('.vscode-test/')
+);
+failures.push(...developmentFiles.map((file) => `development-only file packaged: ${file}`));
 
 const bundle = await readFile(path.join(extensionRoot, 'dist', 'extension.js'), 'utf8');
 if (/require\(["'][^"']*(?:@moonwitness|@allah)\//.test(bundle)

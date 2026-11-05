@@ -63,7 +63,17 @@ The `allah.gatewayUrl` and `allah.arsyUrl` settings default to `http://127.0.0.1
 - Ask, Plan, Code, Debug, Ideate, and Autopilot modes use extension-side tool policies. Workspace edits are previewed before application; validation runs use a fixed, approval-gated command list.
 - Workspace context is selected and sent only after explicit session consent.
 - The local agent cannot access paths outside the selected workspace or silently commit, push, or deploy.
+- Workspace Trust is required before workspace indexing, agent sessions, plan creation, Git operations, or validation.
+- Provider keys are saved through `MoonWitness: Set API Key` in VS Code `SecretStorage`; do not put credentials in workspace settings.
 - Remote mission pairing and cloud synchronization are not part of the standalone product.
+
+## Troubleshooting
+
+- **Ollama is unavailable:** confirm Ollama is running, `allah.ollamaUrl` points to its HTTP endpoint, and `GET /api/tags` lists at least one model. Choose that installed model in `allah.agentModel`.
+- **Model is not installed:** install the model with the Ollama CLI, or select a model returned by its tags endpoint. The extension does not switch to Gateway automatically.
+- **Gateway setup fails:** check `allah.gatewayUrl`, use `MoonWitness: Test Gateway Connection`, and set a key with `MoonWitness: Set API Key` only when the endpoint requires one.
+- **Workspace actions are unavailable:** trust the workspace in VS Code, then rerun the command.
+- **Need diagnostics:** inspect the `A-L-L-A-H.COM Extension` Output channel for activation messages.
 
 ## Verification
 
@@ -75,6 +85,16 @@ pnpm --filter allah-vscode-extension typecheck
 pnpm extension:build
 pnpm --filter allah-vscode-extension check-standalone
 ```
+
+Run the VS Code extension-host suite with an installed VS Code executable:
+
+```powershell
+$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'
+pnpm --filter allah-vscode-extension test:integration
+```
+
+Without `VSCODE_EXECUTABLE_PATH`, the test runner downloads the stable VS Code
+build. The host suite creates and removes temporary workspace and profile data.
 
 
 ## Product roadmap and execution plan

@@ -15,9 +15,29 @@
 | `pnpm --filter allah-vscode-extension check-manifest` | Passed: 27 commands and 8 views |
 | `pnpm extension:test` | Passed: 26 tests |
 | `pnpm --filter allah-vscode-extension check-standalone` | Passed |
-| `pnpm --filter allah-vscode-extension check-package` | Passed: package list and bundled runtime markers checked |
+| `pnpm --filter allah-vscode-extension check-package` | Passed: 6 extension files and bundled runtime markers checked; test harness excluded |
 | `pnpm --filter allah-vscode-extension build` | Passed |
 | `git diff --check` | Passed |
+
+## Extension-host acceptance
+
+- Added `@vscode/test-electron` and Mocha as development-only dependencies.
+- Added isolated extension-host runs for no workspace, a single-folder workspace, and a two-root `.code-workspace`.
+- Exercised extension activation and primary command registration in each host.
+- Exercised plan refresh, opening `spec.md` and `task.md`, and marking a task complete.
+- Exercised Ollama `/api/tags` model discovery against a loopback mock, then verified an unavailable Ollama endpoint did not contact the configured Gateway.
+- Confirmed VSIX packaging excludes `test/`, `.vscode-test/`, and `.gitignore`; includes the extension MIT license.
+- Installed the packaged VSIX into unique temporary VS Code user-data and extension directories. `--list-extensions --show-versions` returned `a-l-l-a-h.allah-vscode-extension@0.3.0`.
+
+| Command | Result |
+|---|---|
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: 3 host launches, 8 tests, VS Code 1.144.1 |
+| `pnpm extension:test` | Passed: 45 tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 27 commands and 8 views |
+
+Live Ollama model execution, extension webview click-through, and persisted timeline recovery are not covered by these host tests.
+When using the already-running VS Code executable, the host runner logs a shared-storage mutex warning and falls back to in-memory storage; all extension-host suites still exit successfully.
 
 ## Limitations
 
