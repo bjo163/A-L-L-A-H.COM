@@ -273,6 +273,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -319,6 +322,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -380,6 +386,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -420,6 +429,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -481,6 +493,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -527,6 +542,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -582,6 +600,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -664,6 +685,9 @@ importers:
       '@allah/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@moonwitness/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@moonwitness/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -882,6 +906,8 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+
+  packages/assets: {}
 
   packages/lint: {}
 
