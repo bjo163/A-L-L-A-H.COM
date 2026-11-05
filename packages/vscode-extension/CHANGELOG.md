@@ -11,6 +11,7 @@
 - Provider timeouts cover response-body reads, caller cancellation remains active through parsing, and Ollama discovery is bounded.
 - The optional Ollama adapter reads advertised model capabilities and context length; missing metadata stays unknown.
 - Multi-step coding requests require approval of a generated plan before an edit proposal is requested.
+- AI plans now provide validated task dependencies, acceptance criteria, and verification checks before approval.
 - Explicit workspace notes can be saved, cleared, and selectively included as redacted context with a 30-day retention limit.
 - Setup, security, and troubleshooting guidance for local Ollama and optional Gateway use.
 - MIT license and repository metadata in the extension package.

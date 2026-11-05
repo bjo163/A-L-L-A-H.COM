@@ -29,6 +29,7 @@ import {
 import { RepositoryContextService } from './repositoryContext';
 import { decomposeTask } from './taskDecomposer';
 import { ContextMemory } from './contextMemory';
+import { formatAiTaskPlan, parseAiTaskPlan } from './aiTaskPlan';
 
 interface LocalAgentSession {
   id: string;
@@ -392,11 +393,13 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         : [];
       let approvedPlan: string | undefined;
       if (plan.length > 1) {
-        approvedPlan = await this.client.completeAgent(
+        const rawPlan = await this.client.completeAgent(
           buildAgentSystemPrompt('plan'),
           [
-            'Create a concise implementation plan with one numbered item per supplied task.',
-            'Do not propose edits or commands. Include observable verification steps.',
+            'Return only a JSON object with "tasks" and "verification" arrays.',
+            'Each task must have id "task-1", "task-2", and so on, a concise title, one to five acceptanceCriteria strings, and dependsOn ids from earlier tasks only.',
+            'Return at least one task for every supplied task and no more than eight tasks. Verification must contain one to five observable checks.',
+            'Do not propose edits, commands, or explanatory prose.',
             `User task: ${trimmedPrompt}`,
             `Detected tasks:\n${plan.map((task, index) => `${index + 1}. ${task.title}`).join('\n')}`,
             workspaceContext,
@@ -409,9 +412,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
           this.post({ type: 'cancelled' });
           return session.state;
         }
-        if (!approvedPlan.trim()) {
-          throw new Error('The model returned an empty implementation plan.');
-        }
+        approvedPlan = formatAiTaskPlan(parseAiTaskPlan(rawPlan, plan.length));
         if (approvedPlan.length > 4_000) {
           throw new Error('The implementation plan exceeds the 4,000-character review limit.');
         }

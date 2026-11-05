@@ -19,6 +19,26 @@ function createLocalAgentProvider(client) {
   return new Provider({ globalState: state, workspaceState: state }, client);
 }
 
+function createAiTaskPlan() {
+  return JSON.stringify({
+    tasks: [
+      {
+        id: 'task-1',
+        title: 'Update the implementation',
+        acceptanceCriteria: ['The requested behavior is present.'],
+        dependsOn: [],
+      },
+      {
+        id: 'task-2',
+        title: 'Verify the change',
+        acceptanceCriteria: ['Focused tests pass.'],
+        dependsOn: ['task-1'],
+      },
+    ],
+    verification: ['Run the focused test suite.'],
+  });
+}
+
 suite('A-L-L-A-H.COM extension host', () => {
   test('starts with the expected workspace state', () => {
     const expectedRootCount = Number(process.env.ALLAH_EXPECTED_WORKSPACE_ROOTS);
@@ -488,7 +508,7 @@ suite('A-L-L-A-H.COM extension host', () => {
         },
         async completeAgent(system, prompt) {
           modelCalls.push({ system, prompt });
-          return '1. Update the implementation.\n2. Add a focused test.\nVerify both with the test suite.';
+          return createAiTaskPlan();
         },
       };
 
@@ -517,14 +537,23 @@ suite('A-L-L-A-H.COM extension host', () => {
       const originalQuickPick = vscode.window.showQuickPick;
       const originalWarning = vscode.window.showWarningMessage;
       const modelCalls = [];
-      const plan = '1. Change the status value.\n2. Verify the resulting code.';
+      const plan = [
+        'Implementation plan',
+        '1. Update the implementation',
+        '   Acceptance: The requested behavior is present.',
+        '2. Verify the change',
+        '   Acceptance: Focused tests pass.',
+        '   Depends on: task-1',
+        'Verification',
+        '- Run the focused test suite.',
+      ].join('\n');
       const client = {
         async checkAgentProvider() {
           return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
         },
         async completeAgent(system, prompt) {
           modelCalls.push({ system, prompt });
-          if (system.includes('Do not propose file edits.')) return plan;
+          if (system.includes('Do not propose file edits.')) return createAiTaskPlan();
           return JSON.stringify({
             response: 'Updated the status.',
             edits: [{
@@ -575,7 +604,7 @@ suite('A-L-L-A-H.COM extension host', () => {
         },
         async completeAgent(system, prompt) {
           modelCalls.push({ system, prompt });
-          return '1. Update the implementation.\n2. Verify the change.';
+          return createAiTaskPlan();
         },
       };
 

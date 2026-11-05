@@ -48,8 +48,9 @@ service to activate or manage local projects.
 - Code and Debug sessions open proposed diffs before applying edits. Files are
   checked again before apply so external changes cannot be overwritten.
 - Multi-step Code, Debug, and Autopilot requests show an implementation plan
-  for approval before requesting an edit proposal. Code and Debug edits still
-  require their normal separate approval.
+  with acceptance criteria, task dependencies, and verification checks for
+  approval before requesting an edit proposal. Malformed plans are rejected.
+  Code and Debug edits still require their normal separate approval.
 - Manage saved workspace notes with `Workspace Agent: Manage Saved Notes`.
   Notes are stored in the VS Code profile for 30 days and are sent only when
   selected as context for a session. Credential-like text is redacted before

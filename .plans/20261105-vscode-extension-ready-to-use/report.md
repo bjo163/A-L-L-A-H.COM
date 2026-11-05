@@ -109,11 +109,11 @@ The extension host ran a Code-mode edit through the real `MoonWitnessClient` aga
 
 ## Plan-first execution for multi-step edits
 
-Code, Debug, and Autopilot requests are split into bounded actions. When multiple actions are detected, the selected provider must return an implementation plan first. The plan is shown in a native VS Code modal and must be approved before the agent requests an edit proposal. Cancellation during review prevents the follow-up provider request. Approved edits continue through the existing diff and edit-approval checks. This checkpoint does not replace the required user approval for normal Code or Debug edits.
+Code, Debug, and Autopilot requests are split into bounded actions. When multiple actions are detected, the selected provider must return a structured task plan with acceptance criteria, dependencies, and verification checks. The plan is validated and shown in a native VS Code modal; user approval is required before the agent requests an edit proposal. Cancellation during review prevents the follow-up provider request. Approved edits continue through the existing diff and edit-approval checks. This checkpoint does not replace the required user approval for normal Code or Debug edits.
 
 | Command | Result |
 |---|---|
-| `pnpm extension:test` | Passed: 53 tests, including action decomposition coverage |
+| `pnpm extension:test` | Passed: 59 tests, including action decomposition and structured AI task-plan validation |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, twenty-four host tests |
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
@@ -121,13 +121,15 @@ Code, Debug, and Autopilot requests are split into bounded actions. When multipl
 
 The host tests exercise plan rejection, approval, prompt handoff, and cancellation. The native modal is tested through VS Code's extension host; a manual UI click-through was not performed.
 
+The AI plan parser limits plans to eight ordered tasks, five criteria per task, and five verification checks. Dependencies may only refer to earlier tasks, so circular and forward references are rejected before user approval.
+
 ## Explicit workspace memory
 
 The `Workspace Agent: Manage Saved Notes` command supports saving and clearing workspace-scoped notes with a confirmation step. Notes expire after 30 days, are stored in extension global state, and are redacted before storage and before use. The session context picker offers saved notes only when present and only includes them after the user selects that option. Host tests verify same-workspace isolation, opt-in context inclusion, consent, and clear behavior; unit tests verify persistence, defensive snapshots, and expiry.
 
 | Command | Result |
 |---|---|
-| `pnpm extension:test` | Passed: 55 tests |
+| `pnpm extension:test` | Passed: 59 tests |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, twenty-six host tests |
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
@@ -187,7 +189,7 @@ Host tests hydrate a persisted running session as blocked with a `mission.interr
 
 ## Roadmap claim audit
 
-The P1/P2 checklist now distinguishes tested utilities from shipped workflows. VSC-058, 059, 061, 063-067, and 069-074 remain pending because their helpers are not consumed by a user-facing or runtime workflow. Their unit tests remain useful, but they are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.
+The P1/P2 checklist distinguishes tested utilities from shipped workflows. VSC-058 and VSC-059 now have user-facing flows with extension-host and parser coverage. VSC-061, VSC-063-067, and VSC-069-074 remain pending where helpers are not yet consumed by a user-facing or runtime workflow. Their unit tests are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.
 
 ## Limitations
 
@@ -233,6 +235,18 @@ or marketplace publication until those external environments are exercised.
 | `pnpm extension:test` | Passed: 45 tests |
 | `pnpm --filter allah-vscode-extension build` | Passed |
 | `git diff --check -- packages/vscode-extension package.json .plans/20261105-vscode-extension-ready-to-use` | Passed |
+
+## Structured AI plans
+
+Multi-step Code, Debug, and Autopilot sessions now require a JSON task plan with acceptance criteria, dependencies on earlier tasks, and observable verification checks. The parser bounds task and response sizes and rejects malformed fields, missing criteria, and forward or unknown dependencies before the plan reaches the approval dialog. The approved, normalized plan is then included in the edit-proposal request.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 59 tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, 26 host tests |
 
 ## Recent pushed commits
 
