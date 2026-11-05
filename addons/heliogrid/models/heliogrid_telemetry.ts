@@ -1,21 +1,21 @@
-import { ModelDefinition } from '@allah/arsy-orm/model';
+import { defineModel } from '@allah/arsy-orm';
 
-export const HeLiGridTelemetry: ModelDefinition = {
+export const HeLiGridTelemetry = defineModel({
   name: 'heliogrid.telemetry',
   tableName: 'heliogrid_telemetry',
+  displayName: 'Heliogrid Telemetry',
   fields: {
-    id: { type: 'serial', required: true, unique: true },
-    site_id: { type: 'integer', required: true },
-    solar_generation_kw: { type: 'decimal', required: true, precision: 10, scale: 2 },
-    battery_discharge_kw: { type: 'decimal', required: true, precision: 10, scale: 2 },
-    grid_import_kw: { type: 'decimal', required: true, precision: 10, scale: 2 },
-    site_consumption_kw: { type: 'decimal', required: true, precision: 10, scale: 2 },
-    recorded_at: { type: 'timestamp', required: true, default: 'now' },
-    company_id: { type: 'varchar', required: true, length: 255 }
+    site_id: { type: 'integer' as const, required: true },
+    solar_generation_kw: { type: 'decimal' as const, required: true },
+    battery_discharge_kw: { type: 'decimal' as const, required: true },
+    grid_import_kw: { type: 'decimal' as const, required: true },
+    site_consumption_kw: { type: 'decimal' as const, required: true },
+    recorded_at: { type: 'timestamp' as const, required: true, default: 'now' },
+    company_id: { type: 'char' as const, required: true, size: 255 }
   },
   indexes: [
     { fields: ['company_id'] },
     { fields: ['site_id'] },
     { fields: ['recorded_at'] },
   ]
-};
+});

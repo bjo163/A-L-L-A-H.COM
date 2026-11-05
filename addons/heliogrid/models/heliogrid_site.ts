@@ -1,23 +1,23 @@
-import { ModelDefinition } from '@allah/arsy-orm/model';
+import { defineModel } from '@allah/arsy-orm';
 
-export const HeLiGridSite: ModelDefinition = {
+export const HeLiGridSite = defineModel({
   name: 'heliogrid.site',
   tableName: 'heliogrid_site',
+  displayName: 'Heliogrid Site',
   fields: {
-    id: { type: 'serial', required: true, unique: true },
-    site_name: { type: 'varchar', required: true, length: 255 },
-    nexus_site_id: { type: 'integer', required: true, unique: true },
-    company_id: { type: 'varchar', required: true, length: 255 },
-    address: { type: 'text', required: false },
-    city: { type: 'varchar', required: false, length: 255 },
-    state: { type: 'varchar', required: false, length: 100 },
-    country: { type: 'varchar', required: false, length: 100 },
-    postal_code: { type: 'varchar', required: false, length: 20 },
-    created_at: { type: 'timestamp', required: true, default: 'now' },
-    updated_at: { type: 'timestamp', required: true, default: 'now' }
+    site_name: { type: 'char' as const, required: true, size: 255 },
+    nexus_site_id: { type: 'integer' as const, required: true, unique: true },
+    company_id: { type: 'char' as const, required: true, size: 255 },
+    address: { type: 'text' as const },
+    city: { type: 'char' as const, size: 255 },
+    state: { type: 'char' as const, size: 100 },
+    country: { type: 'char' as const, size: 100 },
+    postal_code: { type: 'char' as const, size: 20 },
+    created_at: { type: 'timestamp' as const, required: true, default: 'now' },
+    updated_at: { type: 'timestamp' as const, required: true, default: 'now' }
   },
   indexes: [
     { fields: ['company_id'] },
     { fields: ['nexus_site_id'], unique: true },
   ]
-};
+});

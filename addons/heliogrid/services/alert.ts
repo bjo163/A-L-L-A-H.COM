@@ -36,16 +36,7 @@ export interface AlertEvaluationResult {
  * events if thresholds are breached. Returns evaluation result with conditions.
  */
 export async function evaluateTelemetryAlert(
-  telemetry: {
-    id: number;
-    site_id: number;
-    solar_generation_kw: number;
-    battery_discharge_kw: number;
-    grid_import_kw: number;
-    site_consumption_kw: number;
-    recorded_at: string;
-    company_id: string;
-  },
+  telemetry: Record<string, any>,
   actor: AuditActor = SYSTEM_ACTOR
 ): Promise<AlertEvaluationResult> {
   const companyId = Number(telemetry.company_id);
