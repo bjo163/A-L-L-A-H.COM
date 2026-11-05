@@ -34,4 +34,16 @@ export const DEFAULT_NOTIFY_TEMPLATES: Array<{
     subject: 'LLM gateway spend threshold crossed',
     body: 'LLM gateway spend for the day reached {{cost_usd}} USD, above the configured threshold.',
   },
+  {
+    code: 'heliogrid.low_battery',
+    channel_type: 'email',
+    subject: 'Heliogrid low battery alert',
+    body: 'Battery charge at site {{site_id}} is below {{threshold}}% for {{day}}.',
+  },
+  {
+    code: 'heliogrid.grid_failure',
+    channel_type: 'email',
+    subject: 'Heliogrid grid failure alert',
+    body: 'Grid import dropped while site {{site_id}} continued consuming power on {{day}}.',
+  },
 ];

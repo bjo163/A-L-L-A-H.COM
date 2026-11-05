@@ -18,6 +18,7 @@ import {
   type QueryExecutor,
   type TenantScope,
 } from '@allah/arsy-orm';
+import { evaluateTelemetryAlert } from '../../../addons/heliogrid/services/alert';
 
 import { authPlugin, createPrincipalGuard } from '@allah/arsy-plugin-auth';
 import { sduiPlugin } from '@allah/arsy-plugin-sdui';
@@ -64,6 +65,8 @@ const PUBLIC_ROUTES: PublicRouteRule[] = [
   // Exact paths; both return only `is_public` rows projected to safe fields.
   { method: 'GET', path: '/v1/public/isp/plans' },
   { method: 'GET', path: '/v1/public/isp/coverage' },
+  // HelioGrid telemetry ingestion endpoint.
+  { method: 'POST', path: '/v1/heliogrid/telemetry' },
 ];
 if (!isProduction) PUBLIC_ROUTES.push({ method: 'GET', pattern: /^\/docs(\/.*)?$/ });
 
@@ -881,6 +884,52 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         description: area.description ?? '',
       }));
     return ok(projected, { totalItems: projected.length });
+  });
+
+  // HelioGrid telemetry ingestion endpoint.
+  app.post('/v1/heliogrid/telemetry', async (request) => {
+    const body = bodyOf(request);
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+
+    // Validate required fields
+    const siteId = Number(body.site_id);
+    if (!Number.isSafeInteger(siteId) || siteId < 1) {
+      throw new AppError('site_id must be a positive integer', 400, 'VALIDATION_ERROR');
+    }
+
+    const solarGenerationKw = Number(body.solar_generation_kw);
+    const batteryDischargeKw = Number(body.battery_discharge_kw);
+    const gridImportKw = Number(body.grid_import_kw);
+    const siteConsumptionKw = Number(body.site_consumption_kw);
+
+    if (Number.isNaN(solarGenerationKw) || solarGenerationKw < 0) {
+      throw new AppError('solar_generation_kw must be a non-negative number', 400, 'VALIDATION_ERROR');
+    }
+    if (Number.isNaN(batteryDischargeKw) || batteryDischargeKw < 0) {
+      throw new AppError('battery_discharge_kw must be a non-negative number', 400, 'VALIDATION_ERROR');
+    }
+    if (Number.isNaN(gridImportKw) || gridImportKw < 0) {
+      throw new AppError('grid_import_kw must be a non-negative number', 400, 'VALIDATION_ERROR');
+    }
+    if (Number.isNaN(siteConsumptionKw) || siteConsumptionKw < 0) {
+      throw new AppError('site_consumption_kw must be a non-negative number', 400, 'VALIDATION_ERROR');
+    }
+
+    // Create telemetry record with tenant scoping
+    const telemetry = await repository('heliogrid.telemetry').create({
+      site_id: siteId,
+      solar_generation_kw: solarGenerationKw,
+      battery_discharge_kw: batteryDischargeKw,
+      grid_import_kw: gridImportKw,
+      site_consumption_kw: siteConsumptionKw,
+      recorded_at: body.recorded_at || new Date().toISOString(),
+    }, scope, actor);
+
+    // Evaluate alert conditions (WATCHTOWER integration)
+    await evaluateTelemetryAlert(telemetry, actor);
+
+    return ok({ success: true, recorded_at: telemetry.recorded_at }, { totalItems: 1 });
   });
 
   // Platform catalogs are shared rows owned by company_id 0. Reading them needs the public

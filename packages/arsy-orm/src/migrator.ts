@@ -3,7 +3,7 @@ import { ModelRegistry, modelRegistry } from './registry';
 import { FieldDefinition } from './fields';
 import { ModelDefinition } from './model';
 import { AuditEvent } from './auth_models';
-import { RESERVED_COLUMN_SET, AUDIT_EXCLUDED_COLUMNS, sqlQuotedColumnList, sha256Hex } from './constants';
+import { RESERVED_COLUMN_SET, AUDIT_EXCLUDED_COLUMNS, sqlQuotedColumnList, sha256Hex, isSafeIdentifier } from './constants';
 import { logger } from '@allah/arsy-core';
 
 /**
@@ -40,6 +40,12 @@ export class SchemaMigrator {
 
   private defaultValueFor(field: FieldDefinition): string {
     if (field.default !== undefined && typeof field.default !== 'function') {
+      if ((field.type === 'datetime' || field.type === 'timestamp') && String(field.default).toLowerCase() === 'now') {
+        return 'CURRENT_TIMESTAMP';
+      }
+      if (field.type === 'json' && (typeof field.default === 'object' || Array.isArray(field.default))) {
+        return this.sqlLiteral(JSON.stringify(field.default));
+      }
       return this.sqlLiteral(field.default);
     }
     switch (field.type) {
@@ -51,6 +57,9 @@ export class SchemaMigrator {
         return '0';
       case 'json':
         return `'{}'::jsonb`;
+      case 'datetime':
+      case 'timestamp':
+        return 'CURRENT_TIMESTAMP';
       default:
         return `''`;
     }
@@ -67,9 +76,15 @@ export class SchemaMigrator {
         return 'INTEGER';
       case 'float':
         return 'DOUBLE PRECISION';
+      case 'decimal': {
+        const precision = Number((field as { precision?: number }).precision ?? 10);
+        const scale = Number((field as { scale?: number }).scale ?? 2);
+        return `DECIMAL(${precision}, ${scale})`;
+      }
       case 'boolean':
         return 'BOOLEAN';
       case 'datetime':
+      case 'timestamp':
         return 'TIMESTAMPTZ';
       case 'selection':
         return 'VARCHAR(100)';
@@ -150,11 +165,22 @@ export class SchemaMigrator {
 
         // Multi-tenant company_id index + custom model indexes + unique field
         // indexes. `IF NOT EXISTS` makes these cheap no-ops on an unchanged schema.
+        if (!isSafeIdentifier(model.tableName)) {
+          throw new Error(`Model '${model.name}' uses unsafe table name '${model.tableName}'.`);
+        }
         await tx.exec(
           `CREATE INDEX IF NOT EXISTS idx_${model.tableName}_company_id ON "${model.tableName}" (company_id);`
         );
         for (const idx of model.indexes) {
           const idxName = idx.name || `idx_${model.tableName}_${idx.fields.join('_')}`;
+          if (!isSafeIdentifier(idxName)) {
+            throw new Error(`Model '${model.name}' index uses unsafe name '${idxName}'.`);
+          }
+          for (const field of idx.fields) {
+            if (!isSafeIdentifier(field)) {
+              throw new Error(`Model '${model.name}' index references unsafe field name '${field}'.`);
+            }
+          }
           const unique = idx.unique ? 'UNIQUE' : '';
           const fieldsSql = idx.fields.map((f) => `"${f}"`).join(', ');
           await tx.exec(`CREATE ${unique} INDEX IF NOT EXISTS ${idxName} ON "${model.tableName}" (${fieldsSql});`);
@@ -164,8 +190,15 @@ export class SchemaMigrator {
             fieldDef.unique &&
             !model.indexes.some((index) => index.unique && index.fields.length === 1 && index.fields[0] === fieldName)
           ) {
+            if (!isSafeIdentifier(fieldName)) {
+              throw new Error(`Model '${model.name}' unique field uses unsafe name '${fieldName}'.`);
+            }
+            const scope = fieldDef.uniqueScope === 'company' ? 'company_id, ' : '';
+            const indexName = fieldDef.uniqueScope === 'company'
+              ? `uq_${model.tableName}_company_${fieldName}`
+              : `uq_${model.tableName}_${fieldName}`;
             await tx.exec(
-              `CREATE UNIQUE INDEX IF NOT EXISTS uq_${model.tableName}_${fieldName} ON "${model.tableName}" ("${fieldName}");`
+              `CREATE UNIQUE INDEX IF NOT EXISTS ${indexName} ON "${model.tableName}" (${scope}"${fieldName}");`
             );
           }
         }
@@ -174,6 +207,7 @@ export class SchemaMigrator {
       // many2many join tables are virtual on the model but physical here; created
       // after the per-model tables so their FK columns reference existing relations.
       await this.syncRelationTables(models, tx);
+      await this.syncForeignKeys(models, tx);
     });
 
     // Provisioning and audit enforcement run OUTSIDE the schema DDL transaction.
@@ -219,23 +253,29 @@ export class SchemaMigrator {
   private columnDefinitionSql(fieldName: string, fieldDef: FieldDefinition): string {
     const sqlType = this.mapFieldToSqlType(fieldDef);
     const nullable = fieldDef.required ? 'NOT NULL' : '';
-    const unique = fieldDef.unique ? 'UNIQUE' : '';
-    return `${fieldName} ${sqlType} ${nullable} ${unique}`.trim();
+    const defaultSql = fieldDef.default !== undefined && typeof fieldDef.default !== 'function'
+      ? `DEFAULT ${this.defaultValueFor(fieldDef)}`
+      : '';
+    const unique = fieldDef.unique && fieldDef.uniqueScope !== 'company' ? 'UNIQUE' : '';
+    const check = fieldDef.type === 'selection' && fieldDef.selection
+      ? `CHECK ("${fieldName}" IN (${Object.keys(fieldDef.selection).map((k) => `'${k}'`).join(', ')}))`
+      : '';
+    return [fieldName, sqlType, nullable, defaultSql, unique, check].filter(Boolean).join(' ').trim();
   }
 
   private alterAddColumnSql(tableName: string, fieldName: string, fieldDef: FieldDefinition): string {
     const sqlType = this.mapFieldToSqlType(fieldDef);
     let clause = `ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${fieldName}" ${sqlType}`;
-    if (fieldDef.required) clause += ` NOT NULL DEFAULT ${this.defaultValueFor(fieldDef)}`;
-    if (fieldDef.unique) clause += ' UNIQUE';
+    if (fieldDef.default !== undefined && typeof fieldDef.default !== 'function') {
+      clause += ` DEFAULT ${this.defaultValueFor(fieldDef)}`;
+    }
+    if (fieldDef.required) clause += ' NOT NULL';
+    if (fieldDef.unique && fieldDef.uniqueScope !== 'company') clause += ' UNIQUE';
+    if (fieldDef.type === 'selection' && fieldDef.selection) {
+      const allowed = Object.keys(fieldDef.selection).map((k) => `'${k}'`).join(', ');
+      clause += ` CHECK ("${fieldName}" IN (${allowed}))`;
+    }
     return `${clause};`;
-  }
-
-  // Identifier guard for join-table DDL: table/column names are interpolated
-  // directly (they cannot be parameterized in DDL), so restrict them to a
-  // conservative safe set before emitting any CREATE statement.
-  private isSafeIdentifier(name: string): boolean {
-    return /^[a-z][a-z0-9_]{0,62}$/.test(name);
   }
 
   private async syncRelationTables(models: ModelDefinition[], executor: QueryExecutor = this.engine): Promise<void> {
@@ -251,7 +291,7 @@ export class SchemaMigrator {
             `many2many field '${model.name}.${fieldName}' requires relation_table, column1 and column2.`
           );
         }
-        if (![table, column1, column2].every((name) => this.isSafeIdentifier(name))) {
+        if (![table, column1, column2].every((name) => isSafeIdentifier(name))) {
           throw new Error(
             `many2many join table '${table}' uses an unsafe identifier (${model.name}.${fieldName}).`
           );
@@ -270,6 +310,39 @@ export class SchemaMigrator {
           CREATE INDEX IF NOT EXISTS idx_${table}_pair
           ON "${table}" ("${column1}", "${column2}");
         `);
+      }
+    }
+  }
+
+  private async syncForeignKeys(models: ModelDefinition[], executor: QueryExecutor = this.engine): Promise<void> {
+    const modelMap = new Map(models.map((m) => [m.name, m]));
+    for (const model of models) {
+      for (const [fieldName, fieldDef] of Object.entries(model.fields)) {
+        if (fieldDef.type !== 'many2one' || !fieldDef.relation) continue;
+        const targetModel = modelMap.get(fieldDef.relation);
+        if (!targetModel) continue;
+        if (!isSafeIdentifier(fieldName)) {
+          throw new Error(`Model '${model.name}' many2one field uses unsafe name '${fieldName}'.`);
+        }
+        const ondelete = fieldDef.ondelete ?? (fieldDef.required ? 'restrict' : 'set null');
+        const ondeleteSql = ondelete === 'cascade' ? 'CASCADE' : ondelete === 'restrict' ? 'RESTRICT' : 'SET NULL';
+        const constraintName = `fk_${model.tableName}_${fieldName}`;
+
+        // Check if constraint already exists before attempting to add it
+        const existing = await executor.query<{ constraint_name: string }>(
+          `SELECT constraint_name FROM information_schema.table_constraints
+           WHERE table_name = $1 AND constraint_name = $2`,
+          [model.tableName, constraintName]
+        );
+
+        if (existing.length === 0) {
+          await executor.exec(`
+            ALTER TABLE "${model.tableName}"
+            ADD CONSTRAINT "${constraintName}"
+            FOREIGN KEY ("${fieldName}") REFERENCES "${targetModel.tableName}" ("id")
+            ON DELETE ${ondeleteSql};
+          `);
+        }
       }
     }
   }

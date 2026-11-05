@@ -3,8 +3,10 @@ export type FieldType =
   | 'text'
   | 'integer'
   | 'float'
+  | 'decimal'
   | 'boolean'
   | 'datetime'
+  | 'timestamp'
   | 'selection'
   | 'many2one'
   | 'one2many'
@@ -18,6 +20,7 @@ export interface FieldDefinition<T = unknown> {
   required?: boolean;
   readonly?: boolean;
   unique?: boolean;
+  uniqueScope?: 'global' | 'company';
   default?: T | (() => T);
   relation?: string;
   selection?: Record<string, string>;
@@ -34,6 +37,10 @@ export interface FieldDefinition<T = unknown> {
   compute?: string;
   related?: string;
   store?: boolean;
+  // many2one FK behavior: ondelete controls what happens when the referenced
+  // record is deleted. Defaults to 'set null' for optional fields, 'restrict'
+  // for required fields.
+  ondelete?: 'cascade' | 'set null' | 'restrict';
 }
 
 export const fields = {

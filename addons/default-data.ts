@@ -19,6 +19,7 @@ import { loadDefaultData as mwStorageDefaultData } from './mw_storage/data/index
 import { loadDefaultData as nexusDefaultData } from './nexus/data/index';
 import { loadDefaultData as orbitDefaultData } from './orbit/data/index';
 import { loadDefaultData as mwNotifyDefaultData } from './mw_notify/data/index';
+import { loadDefaultData as heliogridDefaultData } from './heliogrid/data/index';
 
 /**
  * addon name -> its default-data loader. All nine addons ship a loader; four
@@ -36,6 +37,7 @@ export const DEFAULT_DATA_REGISTRY: Record<string, (ctx: SeedContext) => Promise
   mw_storage: mwStorageDefaultData,
   nexus: nexusDefaultData,
   orbit: orbitDefaultData,
+  heliogrid: heliogridDefaultData,
 };
 
 /**

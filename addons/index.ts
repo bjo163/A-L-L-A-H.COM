@@ -16,6 +16,7 @@ import { registerOrbitAddon } from './orbit/index';
 import { registerWorksAddon } from './works/index';
 import { registerProjectAddon } from './project/index';
 import { registerMwNotifyAddon } from './mw_notify/index';
+import { registerHeliogridAddon } from './heliogrid/index';
 
 import baseManifest from './base/__manifest__.json';
 import mwStorageManifest from './mw_storage/__manifest__.json';
@@ -26,6 +27,7 @@ import orbitManifest from './orbit/__manifest__.json';
 import worksManifest from './works/__manifest__.json';
 import projectManifest from './project/__manifest__.json';
 import mwNotifyManifest from './mw_notify/__manifest__.json';
+import heliogridManifest from './heliogrid/__manifest__.json';
 
 export interface AddonManifest {
   name: string;
@@ -69,6 +71,7 @@ const ADDON_CATALOG: Record<string, CatalogEntry> = {
   [worksManifest.name]: { manifest: worksManifest as AddonManifest, register: registerWorksAddon },
   [projectManifest.name]: { manifest: projectManifest as AddonManifest, register: registerProjectAddon },
   [mwNotifyManifest.name]: { manifest: mwNotifyManifest as AddonManifest, register: registerMwNotifyAddon },
+  [heliogridManifest.name]: { manifest: heliogridManifest as AddonManifest, register: registerHeliogridAddon },
 };
 
 // Every addon the loader knows about, used as the default root set for the hub.

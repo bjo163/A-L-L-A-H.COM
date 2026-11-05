@@ -470,6 +470,34 @@ export class MoonWitnessClient {
     },
   };
 
+  // HelioGrid Energy Operations
+  readonly heliogrid = {
+    ingestTelemetry: async (payload: {
+      site_id: number;
+      solar_generation_kw: number;
+      battery_discharge_kw: number;
+      grid_import_kw: number;
+      site_consumption_kw: number;
+    }): Promise<{ success: boolean; recorded_at: string }> => {
+      return this.request<{ success: boolean; recorded_at: string }>('/v1/heliogrid/telemetry', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    getSite: async (siteId: number): Promise<{ success: boolean; data: any }> => {
+      return this.request<{ success: boolean; data: any }>(`/v1/heliogrid/site/${siteId}`, {
+        method: 'GET',
+      });
+    },
+
+    listSites: async (companyId?: string): Promise<{ success: boolean; data: any[] }> => {
+      return this.request<{ success: boolean; data: any[] }>(`/v1/heliogrid/sites?company_id=${companyId || ''}`, {
+        method: 'GET',
+      });
+    },
+  };
+
   // Works Commercial Operations
   readonly works = {
     listPlans: async () => {

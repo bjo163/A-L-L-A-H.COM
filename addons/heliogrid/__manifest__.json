@@ -1,0 +1,12 @@
+{
+  "name": "heliogrid",
+  "version": "0.1.0",
+  "category": "Energy",
+  "summary": "Solar/Power Inverters, Battery Energy Storage Systems, and Physical Utility Infrastructure",
+  "depends": ["nexus"],
+  "models": ["heliogrid.site", "heliogrid.inverter", "heliogrid.battery", "heliogrid.telemetry"],
+  "views": [],
+  "data": ["data/index.ts"],
+  "installable": true,
+  "application": true
+}
