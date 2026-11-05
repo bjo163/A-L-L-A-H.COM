@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'Account | MoonWitness ID',
+  robots: { index: false, follow: false },
 };
 
 export default function AccountLayout({ children }: { children: ReactNode }) {

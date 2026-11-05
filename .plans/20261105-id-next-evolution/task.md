@@ -11,7 +11,7 @@ last_verified: "2026-11-05"
 
 Legend: `[ ]` pending · `[/]` in progress · `[x]` completed with evidence. Execute sequentially by dependency; small tasks are deliberately narrow.
 
-Execution update: Wave 0 is recorded in [capability-matrix.md](./capability-matrix.md) and [report.md](./report.md). ID-001–008 and ID-010 are complete; ID-009 remains in progress pending production-origin evidence. Later feature work remains pending until ARSY contracts and product decisions exist.
+Execution update: Wave 0 is recorded in [capability-matrix.md](./capability-matrix.md) and [report.md](./report.md). ID-001–008, ID-010, ID-017, and ID-071 are complete; ID-009 remains in progress pending production-origin evidence. ID-020 and later feature work remain pending until their accessibility gates, ARSY contracts, and product decisions are verified.
 
 ## Wave 0 — Baseline and contract discovery (P0)
 - [x] ID-001 Inventory every current `apps/id/src/app/**` route and record route purpose/access.
@@ -32,7 +32,7 @@ Execution update: Wave 0 is recorded in [capability-matrix.md](./capability-matr
 - [ ] ID-014 Add SDK method for security summary with typed success/error outcomes.
 - [ ] ID-015 Add focused tests for missing principal, expired session, unavailable authority, and tenant isolation.
 - [ ] ID-016 Build ID trust-center route using shared UI components and truthful empty/unavailable states.
-- [ ] ID-017 Add explicit confirmation dialog for sensitive session actions; retain server confirmation as source of truth.
+- [x] ID-017 Add explicit confirmation dialog for sensitive session actions; retain server confirmation as source of truth.
 - [ ] ID-018 Add security event timeline only after event schema, redaction, and retention are approved.
 - [ ] ID-019 Add event pagination and stable ordering with bounded page size.
 - [ ] ID-020 Add security-center keyboard, screen-reader, responsive, and reduced-motion checks.
@@ -98,7 +98,7 @@ Execution update: Wave 0 is recorded in [capability-matrix.md](./capability-matr
 - [ ] ID-068 Verify reduced-motion and sound preference behavior; no required action depends on sound.
 - [ ] ID-069 Verify localization, long strings, date/time zones, and RTL readiness without claiming full RTL until tested.
 - [ ] ID-070 Add route-level browser smoke tests for guest, authenticated, expired, and unavailable states.
-- [ ] ID-071 Audit metadata, icons, page titles, robots policy, and accidental indexing of private routes.
+- [x] ID-071 Audit metadata, icons, page titles, robots policy, and accidental indexing of private routes.
 - [ ] ID-072 Capture visual regression baselines and document intentional differences.
 
 ## Wave 8 — Developer & integration center (ID-N08, P2)

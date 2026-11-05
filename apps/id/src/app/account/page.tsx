@@ -12,6 +12,7 @@ import {
   Card,
   DestinationCard,
   DestinationGrid,
+  Dialog,
   LinkButton,
   RouteShell,
   SectionHeading,
@@ -68,6 +69,7 @@ export default function AccountCenterPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<number | null>(null);
+  const [sessionToRevokeId, setSessionToRevokeId] = useState<number | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [status, setStatus] = useState<{ tone: StatusTone; text: string; showLogin?: boolean } | null>(null);
   const sessionActionInFlight = useRef(false);
@@ -109,6 +111,7 @@ export default function AccountCenterPage() {
         targetSession?.isCurrent === true
       );
       setSessions((previous) => previous.filter((session) => session.id !== sessionId));
+      setSessionToRevokeId(null);
 
       if (outcome === 'current-session-revoked') {
         router.replace('/login');
@@ -123,11 +126,14 @@ export default function AccountCenterPage() {
       }
     } catch {
       setStatus({ tone: 'danger', text: getUserFacingAuthError('revoke') });
+      setSessionToRevokeId(null);
     } finally {
       sessionActionInFlight.current = false;
       setRevokingId(null);
     }
   };
+
+  const sessionToRevoke = sessions.find((session) => session.id === sessionToRevokeId) ?? null;
 
   const handleSignOut = async () => {
     if (!canStartSessionAction(signOutInFlight.current, sessionActionInFlight.current)) return;
@@ -204,6 +210,39 @@ export default function AccountCenterPage() {
         </StatusMessage>
       )}
 
+      <Dialog
+        open={sessionToRevoke !== null}
+        onOpenChange={(open) => {
+          if (!open && revokingId === null) setSessionToRevokeId(null);
+        }}
+        title={sessionToRevoke?.isCurrent ? 'End this session?' : 'Revoke this session?'}
+        description={
+          sessionToRevoke?.isCurrent
+            ? 'You will be signed out of this browser after the identity service confirms revocation.'
+            : `The ${sessionToRevoke?.deviceName?.trim() || 'unnamed device'} session will remain listed until the identity service confirms revocation.`
+        }
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              disabled={revokingId !== null}
+              onClick={() => setSessionToRevokeId(null)}
+            >
+              Keep session
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={revokingId !== null || sessionToRevoke === null}
+              onClick={() => {
+                if (sessionToRevoke) void handleRevoke(sessionToRevoke.id);
+              }}
+            >
+              {revokingId !== null ? 'Revoking...' : 'Revoke session'}
+            </Button>
+          </>
+        }
+      />
+
       <Card as="section" className="id-account-profile">
         <div className="id-account-profile__identity">
           <Avatar size="lg" name={user?.name} />
@@ -248,7 +287,11 @@ export default function AccountCenterPage() {
                   expiresAt={session.expiresAt}
                   isCurrent={session.isCurrent}
                   isLoading={revokingId === session.id}
-                  onRevoke={revokingId === null && !isSigningOut ? handleRevoke : undefined}
+                  onRevoke={
+                    revokingId === null && !isSigningOut
+                      ? (sessionId) => setSessionToRevokeId(sessionId)
+                      : undefined
+                  }
                 />
               ))}
             </div>

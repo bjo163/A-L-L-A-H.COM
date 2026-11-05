@@ -33,3 +33,19 @@ No browser, production-origin, visual-regression, or accessibility automation wa
 ## Delivery boundary
 
 This is a verified baseline, not completion of the full product roadmap. New routes are blocked where ARSY does not provide an accepted contract and runtime evidence. Keep unsupported features out of the active navigation.
+
+## Subsequent verified slices
+
+- ID-017 adds a shared `Dialog` confirmation before session revocation. A synthetic authenticated browser session verified that cancel keeps the session listed and confirmed revocation redirects the current session to sign-in only after ARSY responds.
+- ID-071 adds `noindex, nofollow` metadata to account, login, registration, and initial-setup routes, with metadata tests covering titles and robots policy.
+- Responsive browser checks at 360, 768, and 1440 CSS pixels found no horizontal overflow; the confirmation dialog remained within the viewport. The browser check used an in-memory local ARSY instance and synthetic credentials only, not production origins or accounts.
+- ID-020 remains pending: the full keyboard, screen-reader, and reduced-motion audit has not been completed.
+
+| Command | Result |
+|---|---|
+| `pnpm --filter @moonwitness/id test` | 9 passed, 0 failed |
+| `pnpm --filter @moonwitness/id typecheck` | Passed |
+| `pnpm --filter @moonwitness/id build` | Passed |
+| `pnpm lint:arch` | Passed |
+| `pnpm docs:check` | Passed, 100/100 |
+| `git diff --check` | Passed |
