@@ -234,3 +234,194 @@ A passing UI test does not imply every app builds. Report each gate separately, 
 - [Architecture decisions](../../DECISIONS.md)
 - [Engineering invariants](../../AGENTS.md)
 - [Repository quality contract](../../QUALITY.md)
+
+
+---
+
+# 12. Moon UI Creative Engine — Complete Capability Map
+
+Moon UI is not only a component library. It is the ecosystem's **Creative Interface Engine**: a governed system for producing, composing, rendering, and verifying interface identity and media across six worlds.
+
+The complete capability contract is defined in [BLUEPRINT.md](./BLUEPRINT.md). The following catalog establishes the intended breadth. Items not present in source remain **proposed**, not implemented.
+
+## 12.1 The complete production domains
+
+| Domain | What Moon UI owns | Signature output |
+|---|---|---|
+| **Atoms** | Smallest semantic visual units | text roles, labels, marks, status dots, values, metadata |
+| **Raw layout** | Structure without brand opinion | stack, cluster, grid, container, section, flow |
+| **Primitives** | Reusable interaction mechanics | focus, portal, overlay, selection, roving focus, motion |
+| **Components** | Accessible controls and visual objects | buttons, fields, menus, tabs, switches, tables, dialogs |
+| **Blocks** | Task-level compositions | hero, route shell, state panel, navigation, timeline |
+| **World compositions** | Signature layouts for each DNA | gate, orbit, filmstrip, instrument bay, poster wall, living graph |
+| **Skins** | Six complete visual grammars | tokens, shapes, materials, typography, density, motion, sound |
+| **Effects** | Governed visual effects | atmosphere, depth, light, grain, halftone, parallax |
+| **Lines & geometry** | A proprietary visual line language | orbital arcs, architectural axes, signal paths, print rules, organic branches |
+| **Iconography** | Semantic and expressive symbols | action glyphs, status glyphs, world sigils, custom vector marks |
+| **Brand system** | Logo and identity construction | emblem, wordmark, lockup, favicon, app icon, social avatar |
+| **Avatar Studio** | MoonWitness identity/avatar generation | identity portraits, non-human symbols, role badges, profile frames |
+| **Artwork Studio** | Art-directed scene and cover production | hero, world plate, chapter cover, episode, transmission, archive plate |
+| **Asset system** | Discovery, metadata, delivery and provenance | manifest, variants, crops, fallbacks, licensing, integrity checks |
+| **Motion Studio** | Motion grammar and reusable sequences | transitions, reveals, focus shifts, scene choreography |
+| **SFX Studio** | Original interface sound language | selection, confirm, cancel, arrival, notification, ambient beds |
+| **Loading & waiting** | Distinctive honest waiting experiences | world entry, skeleton, progress, spinner, streaming, offline |
+| **Skin Laboratory** | Compare and certify all worlds | side-by-side identity, states, controls, responsive proofs |
+| **Generators** | Repeatable creation workflows | avatar, icon, logo, cover, artwork, palette, motion and sound briefs |
+
+## 12.2 Atomic visual vocabulary
+
+The atom layer must include a consistent family of:
+- display, heading, body, label, caption, mono and numeric text roles;
+- eyebrow, kicker, overline, metadata, timestamp and source attribution;
+- status mark, signal dot, index, counter, marker and rank;
+- divider, hairline, frame, corner, bracket, notch, rail and rule;
+- icon frame, emblem stamp, avatar frame and image placeholder;
+- focus ring, selection mark, active indicator and progress segment;
+- empty-space, safe-area and crop-anchor primitives.
+
+Atoms must remain composable and semantically named. A decorative atom may not impersonate a live status or meaningful metric.
+
+## 12.3 Component universe
+
+The full target component catalog is grouped by task rather than by trend:
+
+- **Actions:** Button, IconButton, Link, ButtonGroup, SplitButton, ToggleButton.
+- **Inputs:** Input, Textarea, Select, Combobox, SearchField, Checkbox, RadioGroup, Switch, Slider, NumberField, DatePicker, TimePicker, FileUpload, PinInput.
+- **Navigation:** Tabs, Breadcrumb, Pagination, Menu, DropdownMenu, ContextMenu, NavigationRail, CommandPalette.
+- **Disclosure:** Accordion, Collapsible, Popover, Tooltip, HoverCard, Sheet, Drawer, Dialog, AlertDialog.
+- **Feedback:** Badge, Status, Progress, Meter, Spinner, Skeleton, Toast, NotificationCenter, EmptyState, ErrorState, OfflineState.
+- **Data:** Table, DataList, KeyValue, Stat, Timeline, Tree, Listbox, VirtualList, CodeBlock, LogStream.
+- **Media & identity:** Avatar, AvatarGroup, Image, Artwork, Emblem, Logo, Icon, Cover, MediaFrame.
+- **Spatial:** WorldMap, NodeGraph, OrbitMap, Pathway, SceneMarker, Viewport, FocusReticle.
+- **Utility:** Separator, ScrollArea, Portal, VisuallyHidden, AspectFrame, Resizer, CopyButton.
+
+This is a governed target catalog, not permission to build every item immediately. Each component requires a real consuming workflow, accessibility model, responsive behavior, test coverage, and a reason not to use native HTML.
+
+## 12.4 Block and world composition universe
+
+Shared blocks include:
+- WorldEntrance, CinematicHero, WorldSwitcher, DestinationField, NavigationConstellation;
+- PageFrame, RouteShell, SectionHeading, ContentRail, EditorialSpread;
+- SearchCommandSurface, FilterWorkbench, DetailInspector, ActivityTimeline;
+- EmptyStateScene, ErrorScene, OfflineScene, PermissionScene, SuccessScene;
+- LoadingWorld, TransitionCurtain, SceneBoundary, MediaStage;
+- ChapterRail, TransmissionWall, ArchiveShelf, ObservatoryTimeline;
+- InstrumentBay, SystemTopology, SignalConsole;
+- PosterWall, ComicSpread, StickerBoard;
+- LivingNetwork, GrowthPath, RelationshipMap.
+
+Each block must declare whether it is shared semantic structure or a DNA-specific composition. Do not make one universal block with six superficial variants.
+
+## 12.5 The MoonWitness Avatar Studio
+
+The Avatar Studio is a first-class Moon UI capability, not a generic initials circle.
+
+It should support:
+- generated original illustrated portraits and non-human identity marks;
+- configurable silhouette, crop, expression, clothing, palette, background, frame and material;
+- profile avatar, small navigation avatar, group avatar, role emblem and anonymous identity;
+- consistent identity across avatar sizes and future generations;
+- a user-approved source image workflow where editing is requested;
+- provenance, consent, visibility and regeneration metadata;
+- deterministic fallback (initials or emblem) when no approved avatar exists;
+- safe negative constraints: never generate an avatar that purports to depict ALLAH, a prophet, or a sacred entity; never imply a generated avatar is a real person's verified identity.
+
+Avatar generation is an optional production workflow. Runtime rendering must use an approved stored asset; do not call a generative model every time a profile renders.
+
+## 12.6 Logo, icon and vector foundry
+
+The Foundry must provide:
+- six independent DNA emblem families;
+- parent brand and app-level lockups;
+- wordmark, horizontal lockup, stacked lockup, compact mark and monogram;
+- monochrome, inverse, small-size and high-contrast variants;
+- semantic action icons and bespoke world sigils;
+- SVG source, optimized SVG delivery, PNG export, favicon and maskable icon output;
+- clear-space, minimum-size, alignment and safe-background rules;
+- duplicate detection, SVG sanitization, viewBox checks and render snapshots.
+
+An icon is not a logo. A logo is not an illustration. A world sigil is not a replacement for an accessible action icon.
+
+## 12.7 Artwork and cover foundry
+
+Standard asset families:
+- Empire/world hero and gateway scene;
+- MoonWitness universe atlas, observatory and lunar archive plates;
+- ROCKSOUL chapter, episode, filmstrip and transmission covers;
+- Nexus instrument bay and topology scene plates;
+- Riot issue cover, poster wall, comic spread and xerox archive;
+- Mycelium organism, node network and growth-path artwork;
+- user profile and community identity artwork;
+- loading/arrival/transition scene plates;
+- Open Graph/social share, favicon and application icon variants.
+
+Each family must have an art brief, DNA, composition, aspect ratio, source dimensions, focal point, text-safe area, delivery variants, license/provenance, alt/decorative metadata and fallback.
+
+## 12.8 Lines, frames and geometry
+
+Moon UI requires its own recognizable graphic grammar:
+- **Imperium:** monumental axes, threshold lines, architectural seams, measured concentric geometry.
+- **Lunar:** orbital arcs, phase rings, ephemeris ticks, celestial connectors.
+- **ROCKSOUL:** film perforations, edit marks, chapter rules, frame cuts.
+- **Nexus:** instrument rails, calibration ticks, signal traces, scope boundaries.
+- **Riot:** cut edges, registration offsets, xerox borders, panel gutters.
+- **Mycelium:** organic branches, root paths, membrane contours, connection filaments.
+
+These are reusable vector primitives with consistent stroke scale, caps, joins, animation rules and reduced-motion behavior. Lines must communicate hierarchy, connection, framing or direction—not fill empty space.
+
+## 12.9 Effects, motion and loading
+
+The effects engine should expose named, composable, device-aware effects:
+- Atmosphere, DepthField, ParallaxField, LightSweep, VolumetricBackdrop;
+- Grain, Halftone, ChromaticOffset, ScanTrace, Reflection, EdgeLight;
+- RevealMask, FocusShift, SceneTransition, PortalOpen, OrbitTravel;
+- ParticleField only when sparse, meaningful, pausable and performance-safe.
+
+Loading family:
+- WorldArrival (scene-level entry);
+- PassageLoader (navigation transition);
+- OrbitLoader (Lunar);
+- FilmAdvanceLoader (ROCKSOUL);
+- CalibrationLoader (Nexus);
+- PrintRevealLoader (Riot);
+- GrowthLoader (Mycelium);
+- Spinner (small indeterminate task);
+- Skeleton (known content shape);
+- Progress (measurable determinate work);
+- Streaming indicator (incremental content);
+- Offline/retry state (network unavailable).
+
+Never use a spinner for a known percentage, a fake progress bar for an unknown duration, or a skeleton for a long-running operation that needs an explicit status message.
+
+## 12.10 Sound identity
+
+SFX should be original, minimal and optional:
+- focus / hover (only if useful);
+- select / confirm / cancel;
+- open / close / enter / exit;
+- success / warning / error;
+- incoming transmission / archive unlock / world arrival;
+- soft ambient loops where explicitly enabled.
+
+Every sound has a purpose, short duration, volume ceiling, mute behavior, reduced-sensory consideration and licensing/provenance. No copyrighted music or recognizable game sound imitation. Sound is off by default and never carries information unavailable visually.
+
+## 12.11 Skin contract
+
+A skin is a full world definition, not a color theme. It includes:
+- identity metadata and brand marks;
+- semantic palette and contrast pairs;
+- display/body/label/mono typography;
+- shape language, corner logic, border and line grammar;
+- surface/material recipes and shadow model;
+- density, spacing, sizing and responsive behavior;
+- component recipes and world compositions;
+- motion profile, easing and effect permissions;
+- SFX profile and sensory policy;
+- hero/artwork/cover references;
+- exclusions and anti-patterns.
+
+All six worlds must implement the same semantic state contract while expressing different visual identities. See the full matrix in BLUEPRINT.md.
+
+## 12.12 Delivery principle
+
+The intended end state is a complete, documented, testable design-and-media system. Build it in coherent releases: foundations → identity → atoms → controls → compositions → asset foundries → motion/effects → sound → generators → certification. A catalog entry is not complete until it is implemented, tested, integrated, and visually verified.
