@@ -75,27 +75,27 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 ## P1 — 0.5.0
 - [x] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture. The context index now derives bounded metadata without sending source contents.
 - [x] VSC-057 Dependency and documentation knowledge map. Repository DNA now indexes dependency names and bounded documentation paths from workspace metadata.
-- [x] VSC-058 Context memory with explicit scope, retention and controls. Added bounded workspace/session memory with expiry, clear, forget, and workspace isolation.
-- [x] VSC-059 AI task decomposer with small tasks and acceptance criteria. Added bounded deterministic decomposition with dependency links and criteria.
+- [ ] VSC-058 Context memory with explicit scope, retention and controls. Unit-tested helper exists, but Workspace Agent does not yet expose or consume it.
+- [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria. Deterministic helper exists, but no plan/session workflow invokes it and it is not AI decomposition.
 - [x] VSC-060 Workspace-aware mission templates. The picker filters by indexed metadata, gathers variable values, and loads or queues the resulting prompt in Workspace Agent for review before sending.
-- [x] VSC-061 Dependency-aware scheduling and progress synchronization. Added a typed task graph readiness and progress utility.
+- [ ] VSC-061 Dependency-aware scheduling and progress synchronization. Typed task-graph helper exists, but it is not connected to `.plans` tasks or mission scheduling.
 - [x] VSC-062 Documentation drift detection and proposed updates. Repository indexing now includes bounded metadata-only findings and exposes actionable suggestions to the agent context.
 
 ## P1 — 0.6.0
-- [x] VSC-063 Define agent roles, tools, inputs, outputs and capabilities. Added typed supervisor, researcher, builder, and reviewer definitions with approval requirements.
-- [x] VSC-064 Add supervisor and bounded delegation. Added coordinator enforcing concurrency, depth, message, and review boundaries.
-- [x] VSC-065 Add researcher, builder and reviewer roles. Role definitions and coordinator routing use explicit role contracts.
-- [x] VSC-066 Add inter-agent message schema and trace correlation. Messages require IDs, source/target roles, bounded payloads, and correlation IDs.
-- [x] VSC-067 Add concurrency/resource limits and failure isolation. Added bounded concurrency, depth, and message limits as delegation policy contracts.
+- [ ] VSC-063 Define agent roles, tools, inputs, outputs and capabilities. Role definitions exist, but runtime dispatch does not consume them.
+- [ ] VSC-064 Add supervisor and bounded delegation. Coordinator helper is tested, but no Workspace Agent workflow invokes it.
+- [ ] VSC-065 Add researcher, builder and reviewer roles. Role definitions exist, but these roles do not run as separate agents.
+- [ ] VSC-066 Add inter-agent message schema and trace correlation. Message helper creates correlated envelopes, but runtime agent communication does not use it.
+- [ ] VSC-067 Add concurrency/resource limits and failure isolation. Limits exist as helper policy; runtime delegation does not enforce them.
 - [x] VSC-068 Add review checkpoint before consequential actions. Consequential actions require an explicit approved checkpoint.
 
 ## P2 — 1.0.0
-- [x] VSC-069 Model comparison/evaluation workflow. Added explicit expected-signal evaluation cases.
-- [x] VSC-070 Prompt laboratory and versioned prompt tests. Added bounded, timestamped prompt versions.
-- [x] VSC-071 Token, latency, reliability and budget observability. Added deterministic metric aggregation.
-- [x] VSC-072 Opt-in mission scheduling. Scheduler only selects enabled missions whose due time has passed.
-- [x] VSC-073 Extension capability/plugin contribution contract. Added validated contribution identity, semver, commands, and capabilities.
-- [x] VSC-074 Stable distribution, upgrade and support policy. Added explicit stable channel and support metadata.
+- [ ] VSC-069 Model comparison/evaluation workflow. Expected-signal evaluator exists, but no model comparison workflow invokes it.
+- [ ] VSC-070 Prompt laboratory and versioned prompt tests. Prompt version helper exists, but there is no user-facing lab or persisted prompt test workflow.
+- [ ] VSC-071 Token, latency, reliability and budget observability. Metric aggregation helper exists, but it is not wired to provider events or a live usage surface.
+- [ ] VSC-072 Opt-in mission scheduling. Due-time predicate exists, but no persisted opt-in scheduler triggers missions.
+- [ ] VSC-073 Extension capability/plugin contribution contract. Validator helper exists, but extension contributions are not discovered or registered through it.
+- [ ] VSC-074 Stable distribution, upgrade and support policy. Policy constant exists, but release/upgrade behavior does not consume it.
 
 ## Dependency order
 00 → 01 → 02 → 03 → 04 → 05 → 09. 06 depends on stable 00–05. 07 depends on stable provider/agent/mission contracts. 08 is cross-cutting and must not weaken local-core security.

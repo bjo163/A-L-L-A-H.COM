@@ -75,6 +75,10 @@ When the Workspace Agent view is not yet resolved, a selected template is queued
 
 The final VSIX was rebuilt and installed in the active VS Code profile. `code --list-extensions --show-versions` confirmed `a-l-l-a-h.allah-vscode-extension@0.3.0`.
 
+## Roadmap claim audit
+
+The P1/P2 checklist now distinguishes tested utilities from shipped workflows. VSC-058, 059, 061, 063-067, and 069-074 remain pending because their helpers are not consumed by a user-facing or runtime workflow. Their unit tests remain useful, but they are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.
+
 ## Limitations
 
 - A VS Code extension-host harness is not available in the current repository, so activation, webview click-through, multi-root, clean-profile installation, and reload/recovery acceptance remain unverified.
