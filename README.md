@@ -19,7 +19,7 @@ A-L-L-A-H.COM is the central home for the continued evolution of the MoonWitness
 
 Its mission is to preserve the legacy, reconcile generations, connect products and applications, consolidate useful technology, and provide one coherent platform without erasing the identity or history of earlier work.
 
-This repository contains a Fastify/TypeScript ARSY Hub, a Sentinel RADIUS daemon, and five Next.js web applications (GATE, Dock, Headquarters, MoonWitness ID, and WORLD OBSERVATORY). Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
+This repository contains a Fastify/TypeScript ARSY Hub, a Sentinel RADIUS daemon, and the ecosystem web applications (GATE, Dock, Headquarters, MoonWitness ID, WORLD OBSERVATORY, MOONSKY, and HARBOR). Product vision and implementation status must remain separate: inspect source, tests, manifests, and runtime behavior before describing a capability as complete.
 
 ## Start here
 1. [GOAL.md](GOAL.md) — master mission and local AI entrypoint.
@@ -42,6 +42,16 @@ Superusers access other tenants only through explicit `/v1/admin/*` routes. Each
 
 Persistent PGlite upgrades apply idempotent schema sync plus versioned identity and audit migrations at startup. Before upgrading a persistent data directory, test on a restorable copy and verify identity links, audit UID foreign keys, tenant boundaries, and migration retry/rollback; production data was not migrated as part of this change.
 
+## MoonWitness ID — Identity, Secrets & Access Control Plane
+
+MoonWitness ID is the human-facing control plane for personal identity and approved access assets across the ecosystem. Its strategic direction includes identity and sessions, service identities, API credentials, environment configuration references, secret lifecycle workflows, project access, and audit visibility. This is a product direction, not a claim that every capability is implemented.
+
+**Authority boundary:** ID owns the user experience and request orchestration. ARSY remains the sole server-side authority for authentication, authorization, secret custody, encryption/decryption, key issuance and revocation, policy evaluation, audit, and environment deployment integrations. Destination services validate credentials and enforce their own authorization. No secret plaintext is stored in ID browser state, local storage, URLs, logs, analytics, source control, or client-readable configuration.
+
+Current repository evidence includes encrypted NAS secret storage using the ARSY master key and hashed AI virtual keys. These are existing, distinct mechanisms—not a complete general-purpose vault. General secret management, environment versioning, personal API key issuance, service identities, and rotation workflows remain proposed until independently implemented and verified.
+
+See [MoonWitness ID product contract](apps/id/README.md), [system architecture](BLUEPRINT.md), and the active plan under `.plans/20261105-id-secrets-control-plane/`.
+
 ## Ecosystem scope
 Discover and reconcile MoonWitness historical generations, Reborn, XV, narrative canon, ROCKSOUL, MYLUFT, research, creative assets, Moon UI, Headquarter, Dock, Cockpit, Qorpus, and related repositories or technical work where accessible. This is a discovery scope, not a claim that every item is implemented here or must be a separate application.
 
@@ -50,7 +60,7 @@ Discover and reconcile MoonWitness historical generations, Reborn, XV, narrative
 - `apps/gate/` — Next.js public entrance / Empire Gateway (port 3000).
 - `apps/dock/` — Next.js public homepage (port 3001).
 - `apps/headquarter/` — Next.js command center (port 3002).
-- `apps/id/` — Next.js unified account and SSO center (port 3003).
+- `apps/id/` — Next.js identity, account-trust, and proposed secrets control center (port 3003); secret custody and authorization remain server-side in ARSY.
 - `apps/jizz/` — Next.js WORLD OBSERVATORY (port 3004), reached through a server-only ARSY proxy.
 - `packages/ui/` — shared atomic UI system (`@moonwitness/ui`).
 - `packages/sdk/` — isomorphic Fastify Hub client (`@allah/sdk`), including cross-app session handling.
