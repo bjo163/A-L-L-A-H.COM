@@ -3,7 +3,7 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "ID-NEXT-EVOLUTION-SPEC"
 version: "1.0.0"
 owner: "product-architecture"
-status: "proposed"
+status: "in_progress"
 last_verified: "2026-11-05"
 ---
 
@@ -61,4 +61,4 @@ Ship in dependency order: (A) evidence and contract inventory, (B) recovery/secu
 - Data export/deletion must respect legal hold, retention, tenant ownership, and audit invariants.
 
 ## Status
-Proposed planning package. No product feature is claimed implemented by this plan.
+Wave 0 baseline discovery is complete except for deployed-origin verification, which remains in progress. This does not complete the roadmap or claim any new product feature implemented.

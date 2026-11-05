@@ -3,7 +3,7 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "ID-SECRETS-CONTROL-PLANE-SPEC"
 version: "1.0.0"
 owner: "security-architecture"
-status: "proposed"
+status: "in_progress"
 last_verified: "2026-11-05"
 ---
 
@@ -99,3 +99,6 @@ A. Discovery and threat model; B. cryptographic and authority decisions; C. serv
 - Key custody, backup, restore, rotation, and compromise recovery are documented and tested before production secrets are migrated.
 - UI tests prove plaintext never appears after initial issuance and unavailable features do not appear active.
 - CI evidence is recorded; proposed work is never marked implemented or verified prematurely.
+
+## Status
+SEC-001–020 discovery and proposal artifacts are complete. No vault, credential lifecycle, environment manager, or ID control-plane feature is claimed implemented. The crypto and key-custody proposal remains unaccepted; implementation waves are held until the required decisions are recorded.

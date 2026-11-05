@@ -3,7 +3,7 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "ID-SECRETS-CONTROL-PLANE-EXECUTION"
 version: "1.0.0"
 owner: "security-architecture"
-status: "proposed"
+status: "implemented"
 last_verified: "2026-11-05"
 ---
 
@@ -98,6 +98,10 @@ Each agent receives exact file paths and synthetic examples only. Agents must no
 ## Implementation hold points
 
 - No new vault schema, secret repository, encryption helper, API-key lifecycle route, ID UI or environment editor until the relevant decision is accepted.
+
+## Slice result
+
+SEC-001–020 and the required artifacts are complete. A pre-existing NAS API response leak of encrypted secret material was corrected with a metadata-only response projection and regression assertions; this does not add a new secret capability. The crypto/key-custody proposal remains unaccepted, so later implementation waves stay on hold. See [report.md](./report.md) for exact verification results.
 - No reuse of NAS encryption as a general vault primitive without explicit suitability review.
 - No claim that SHA-256-only virtual-key verification is sufficient without a credential threat model and verifier decision.
 - No plaintext secret in browser, AI-agent context, logs, test snapshots, issue text or generated documentation.

@@ -3,25 +3,27 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "ID-NEXT-EVOLUTION-TASKS"
 version: "1.0.0"
 owner: "engineering"
-status: "proposed"
+status: "in_progress"
 last_verified: "2026-11-05"
 ---
 
 # Execution Backlog — MoonWitness ID Next Evolution
 
-Legend: `[ ]` pending · `[/]` in progress · `[x]` completed with evidence. All tasks start pending. Execute sequentially by dependency; small tasks are deliberately narrow.
+Legend: `[ ]` pending · `[/]` in progress · `[x]` completed with evidence. Execute sequentially by dependency; small tasks are deliberately narrow.
+
+Execution update: Wave 0 is recorded in [capability-matrix.md](./capability-matrix.md) and [report.md](./report.md). ID-001–008 and ID-010 are complete; ID-009 remains in progress pending production-origin evidence. Later feature work remains pending until ARSY contracts and product decisions exist.
 
 ## Wave 0 — Baseline and contract discovery (P0)
-- [ ] ID-001 Inventory every current `apps/id/src/app/**` route and record route purpose/access.
-- [ ] ID-002 Inventory all `mwClient.auth.*` methods used by ID and link each to SDK source.
-- [ ] ID-003 Map Better Auth client calls to ARSY route handlers and server plugin implementation.
-- [ ] ID-004 Map identity, credential, session, verification, audit, and tenant models; record data ownership.
-- [ ] ID-005 Verify current session cookie attributes per environment from server source (HttpOnly, Secure, SameSite, Path, Domain, expiry).
-- [ ] ID-006 Inventory existing auth and identity tests; map each product requirement to evidence.
-- [ ] ID-007 Verify route-level loading/error/not-found parity and current shared UI usage.
-- [ ] ID-008 Create capability matrix: implemented, tested, integration-verified, unsupported, proposed.
-- [ ] ID-009 Document current public origins, trusted origins, callback URLs, and deployment domains without exposing secrets.
-- [ ] ID-010 Produce baseline report with exact file references and reproducible commands.
+- [x] ID-001 Inventory every current `apps/id/src/app/**` route and record route purpose/access.
+- [x] ID-002 Inventory all `mwClient.auth.*` methods used by ID and link each to SDK source.
+- [x] ID-003 Map Better Auth client calls to ARSY route handlers and server plugin implementation.
+- [x] ID-004 Map identity, credential, session, verification, audit, and tenant models; record data ownership.
+- [x] ID-005 Verify current session cookie attributes per environment from server source (HttpOnly, Secure, SameSite, Path, Domain, expiry).
+- [x] ID-006 Inventory existing auth and identity tests; map each product requirement to evidence.
+- [x] ID-007 Verify route-level loading/error/not-found parity and current shared UI usage.
+- [x] ID-008 Create capability matrix: implemented, tested, integration-verified, unsupported, proposed.
+- [/] ID-009 Document current public origins, trusted origins, callback URLs, and deployment domains without exposing secrets.
+- [x] ID-010 Produce baseline report with exact file references and reproducible commands.
 
 ## Wave 1 — Security & Trust Center (ID-N01, P0)
 - [ ] ID-011 Define trust-center information architecture; distinguish confirmed facts from unavailable signals.

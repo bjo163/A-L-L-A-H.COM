@@ -3,7 +3,7 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "ID-SECRETS-CONTROL-PLANE-TASKS"
 version: "1.0.0"
 owner: "engineering"
-status: "proposed"
+status: "in_progress"
 last_verified: "2026-11-05"
 ---
 
@@ -11,29 +11,31 @@ last_verified: "2026-11-05"
 
 Task status: [ ] pending · [/] in progress · [x] completed with evidence. Every task is intentionally bounded. Follow dependency order. Do not handle real secret material.
 
+Execution update: SEC-001–020 are complete with source-backed evidence in [audit-matrix.md](./audit-matrix.md), [threat-model.md](./threat-model.md), and [decision-proposal.md](./decision-proposal.md). The proposal is not an accepted ADR. Waves 2–9 remain on hold until the relevant authority, key-custody, and migration decisions are accepted.
+
 ## Wave 0 — Repository discovery and capability map
-- [ ] SEC-001 Locate the actual NAS secret encryption implementation and document exact file paths.
-- [ ] SEC-002 Locate Sentinel NAS secret decryption and document the trust boundary.
-- [ ] SEC-003 Locate AI virtual-key generation and verification implementation.
-- [ ] SEC-004 Locate all routes that create, read, update, rotate, or revoke virtual keys.
-- [ ] SEC-005 Inventory secret-bearing environment variables across Compose, Dockerfiles, workflows, and app code.
-- [ ] SEC-006 Verify all existing NEXT_PUBLIC variables and classify public vs sensitive.
-- [ ] SEC-007 Inventory generic CRUD exclusions for identity, credentials, secrets, and audit models.
-- [ ] SEC-008 Map existing audit event schema and redaction behavior.
-- [ ] SEC-009 Map existing tenant and project membership authorization helpers.
-- [ ] SEC-010 Publish a capability matrix: verified, partial, proposed, unsupported, with source evidence.
+- [x] SEC-001 Locate the actual NAS secret encryption implementation and document exact file paths.
+- [x] SEC-002 Locate Sentinel NAS secret decryption and document the trust boundary.
+- [x] SEC-003 Locate AI virtual-key generation and verification implementation.
+- [x] SEC-004 Locate all routes that create, read, update, rotate, or revoke virtual keys.
+- [x] SEC-005 Inventory secret-bearing environment variables across Compose, Dockerfiles, workflows, and app code.
+- [x] SEC-006 Verify all existing NEXT_PUBLIC variables and classify public vs sensitive.
+- [x] SEC-007 Inventory generic CRUD exclusions for identity, credentials, secrets, and audit models.
+- [x] SEC-008 Map existing audit event schema and redaction behavior.
+- [x] SEC-009 Map existing tenant and project membership authorization helpers.
+- [x] SEC-010 Publish a capability matrix: verified, partial, proposed, unsupported, with source evidence.
 
 ## Wave 1 — Threat model and architecture decisions
-- [ ] SEC-011 Write assets-and-threats inventory for human, service, API-key, secret, environment, and signing-key classes.
-- [ ] SEC-012 Document attacker scenarios: tenant escape, browser XSS, log leak, insider misuse, backup theft, key compromise.
-- [ ] SEC-013 Define trust boundaries among ID, ARSY, Sentinel, destination apps, deployment adapters, and KMS.
-- [ ] SEC-014 Compare envelope-encryption options supported by current Node/runtime dependencies.
-- [ ] SEC-015 Define key hierarchy and separation of KEK, DEK, signing keys, and API-key verifiers.
-- [ ] SEC-016 Define key version metadata and ciphertext envelope schema.
-- [ ] SEC-017 Define backup/restore and disaster-recovery requirements for encrypted records and key material.
-- [ ] SEC-018 Define key rotation and compromise response runbooks.
-- [ ] SEC-019 Define API-key entropy, prefix, verifier, expiry, and one-time display contract.
-- [ ] SEC-020 Record ADR for crypto, key custody, API credential verification, and migration; block code until accepted.
+- [x] SEC-011 Write assets-and-threats inventory for human, service, API-key, secret, environment, and signing-key classes.
+- [x] SEC-012 Document attacker scenarios: tenant escape, browser XSS, log leak, insider misuse, backup theft, key compromise.
+- [x] SEC-013 Define trust boundaries among ID, ARSY, Sentinel, destination apps, deployment adapters, and KMS.
+- [x] SEC-014 Compare envelope-encryption options supported by current Node/runtime dependencies.
+- [x] SEC-015 Define key hierarchy and separation of KEK, DEK, signing keys, and API-key verifiers.
+- [x] SEC-016 Define key version metadata and ciphertext envelope schema.
+- [x] SEC-017 Define backup/restore and disaster-recovery requirements for encrypted records and key material.
+- [x] SEC-018 Define key rotation and compromise response runbooks.
+- [x] SEC-019 Define API-key entropy, prefix, verifier, expiry, and one-time display contract.
+- [x] SEC-020 Record a proposed ADR for crypto, key custody, API credential verification, and migration; block code until accepted.
 
 ## Wave 2 — Shared contracts and type safety
 - [ ] SEC-021 Define SecretMetadata type with no plaintext/ciphertext fields.
