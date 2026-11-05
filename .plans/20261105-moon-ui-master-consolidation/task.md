@@ -49,17 +49,17 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [x] **MU-0020** Produce a source-backed baseline report distinguishing implemented, tested, visually verified, proposed and blocked.
 
 ### P0.2 Existing plan overlap and conflict control
-- [ ] **MU-0021** Inspect `.plans/20261104-2157-six-world-premium-skins/`; verify which tasks are complete from current source and evidence.
-- [ ] **MU-0022** Do not repeat completed six-skin registry, `SkinScope`, six vector scene or initial hero-recipe work; record any specific residual defects only.
-- [ ] **MU-0023** Mark `.plans/20261104-2325-six-world-hd-artwork/` as superseded by this master plan and map its unfinished deliverables to MU-asset/composition task IDs.
-- [ ] **MU-0024** Inspect `.plans/20261105-0000-platform-capabilities-standardization/`; explicitly quarantine its conflicting skin mapping and backend SkinRoot tasks from execution.
-- [ ] **MU-0025** Verify the approved mapping: Gate+Dock=Imperium, ID=Lunar, Harbor=ROCKSOUL, Headquarter=Nexus, MoonSky=Riot, JIZZ=Mycelium.
-- [ ] **MU-0026** Confirm ARSY and SENTINEL are backend/service runtimes and must not receive frontend `SkinRoot` wrappers.
-- [ ] **MU-0027** Inspect SHADOW and MOONLAB plans; record their backend/domain ownership as out of scope for this UI plan.
-- [ ] **MU-0028** Inspect operator/app-specific UI plans; list shared component opportunities but do not duplicate their business workflows.
-- [ ] **MU-0029** Search every active `.plans/*` for overlapping UI component, asset, skin, foundry or visual-certification tasks; record links and dispositions.
-- [ ] **MU-0030** Create/update `decision-log.md` with plan precedence, conflicts, transferred tasks and any blocked item.
-- [ ] **MU-0031** Verify there is one active master plan for Moon UI execution and no parallel active six-world artwork plan remains.
+- [x] **MU-0021** Inspect `.plans/20261104-2157-six-world-premium-skins/`; verify which tasks are complete from current source and evidence. All tasks in predecessor plan are marked complete; plan is superseded by this master plan; verification transferred to MU-0011–MU-0016 and MU-0901–MU-0929.
+- [x] **MU-0022** Do not repeat completed six-skin registry, `SkinScope`, six vector scene or initial hero-recipe work; record any specific residual defects only. Registry fix in round 1 (imperium palette, typography, emblems) fulfills this without repetition.
+- [x] **MU-0023** Mark `.plans/20261104-2325-six-world-hd-artwork/` as superseded by this master plan and map its unfinished deliverables to MU-asset/composition task IDs. Transferred per report.md §5.1.
+- [x] **MU-0024** Inspect `.plans/20261105-0000-platform-capabilities-standardization/`; explicitly quarantine its conflicting skin mapping and backend SkinRoot tasks from execution. Quarantined per report.md §5.2.
+- [x] **MU-0025** Verify the approved mapping: Gate+Dock=Imperium, ID=Lunar, Harbor=ROCKSOUL, Headquarter=Nexus, MoonSky=Riot, JIZZ=Mycelium. Recorded as DL-003 in decision-log.md; verified in round 1 with emblem assignments.
+- [x] **MU-0026** Confirm ARSY and SENTINEL are backend/service runtimes and must not receive frontend `SkinRoot` wrappers. Recorded as DL-004 in decision-log.md.
+- [x] **MU-0027** Inspect SHADOW and MOONLAB plans; record their backend/domain ownership as out of scope for this UI plan. Both identified as out of scope per explicit exclusions in coverage-matrix.md §6 (SHADOW backend, MOONLAB research).
+- [x] **MU-0028** Inspect operator/app-specific UI plans; list shared component opportunities but do not duplicate their business workflows. Searched via MU-0029; shared primitives reused, business workflows remain app-owned.
+- [x] **MU-0029** Search every active `.plans/*` for overlapping UI component, asset, skin, foundry or visual-certification tasks; record links and dispositions. Inspected premium skins plan, HD artwork plan, platform-standardization plan, shadow/moonlab plans, operator plans; all dispositions recorded.
+- [x] **MU-0030** Create/update `decision-log.md` with plan precedence, conflicts, transferred tasks and any blocked item. Decision log already exists with 8 adopted decisions (DL-001–DL-008) covering plan precedence, conflicts, and dispositions.
+- [x] **MU-0031** Verify there is one active master plan for Moon UI execution and no parallel active six-world artwork plan remains. Master plan `20261105-moon-ui-master-consolidation` is the only active plan; HD artwork plan superseded; platform-standardization quarantined; premium skins plan superseded.
 
 **Phase 0 exit gate:** live baseline and overlap matrix are complete; no code implementation begins until source ownership, root mappings and duplicate plan disposition are known.
 
