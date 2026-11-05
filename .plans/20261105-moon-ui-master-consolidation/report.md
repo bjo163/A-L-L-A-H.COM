@@ -103,3 +103,41 @@ The master plan now defines:
 - autonomous no-confirmation execution rules and safety boundaries.
 
 No runtime feature is claimed as implemented by this plan creation.
+
+
+## 9. Consolidation and predecessor-plan commits
+
+The following documentation-only changes were committed directly to `dev`:
+
+| Change | Commit |
+|---|---|
+| Master specification | `f9922c48deb9ec94536e79cc28bc6b91188a0670` |
+| Consolidated architecture design | `7b003abbcf588b3b0c2955539424574b3c0cbd04` |
+| Atomic autonomous task list | `80b88009fa84909597cf8e8f25e6522de744c85a` |
+| Requirement/implementation coverage matrix | `bd0af701958424d71ad430720d369e89b4d33a28` |
+| Autonomous agent rules | `b6831b9f0b3b51f249024162a133932b14791698` |
+| Decision log | `d76fe606ec232304928f89e34325147c62350ecd` |
+| Initial audit report | `37b092da427da361ac0163e2302fc7d942308738` |
+| Supersede six-world HD artwork spec | `278087be95d7bfbf9bae7761e491a3bc69855c57` |
+| Transfer six-world HD artwork tasks | `a9591ab9f1ceb4ea1a4484a05b49abc16c49a6eb` |
+| Quarantine conflicting legacy skin mapping | `109caff1ed936b959663cb365085ec5c2cf6fbf4` |
+| Quarantine legacy skin integration task phase | `4155be62719d15cbdcfd0eba425f2822ce70ce22` |
+| Close predecessor premium-skin execution queue | `6bf2e71843b2618e29fc146289bb1ad187890625` |
+| Transfer residual skin verification | `5417c88ee97abf73c778577fa866de2911b516e4` |
+| README master-plan pointer | `24eb35389e87442366b36eb1e4e894cdeed30b32` |
+| Blueprint master-plan pointer | `fe188112b30abf6cf6a7c6dd708cc7712c5f0ee6` |
+| Research master-plan pointer | `456a71cac3ec4e056965fd3c8232a2c1cf7f19de` |
+| Correct Blueprint relative link | `fd5619e3cb1564033e9a5d88312ff1b6a0c60782` |
+| Correct Research relative link | `9a4db5735f0a91f18173c7b064d59686997f0a62` |
+
+## 10. Final repository verification
+
+- All seven master-plan files are present in the recursive `dev` tree: `spec.md`, `design.md`, `task.md`, `rule.md`, `coverage-matrix.md`, `decision-log.md`, `report.md`.
+- The predecessor artwork plan contains a supersession notice and no longer has an independent task queue.
+- The old platform-standardization skin phase is explicitly quarantined; its non-UI capability work remains untouched.
+- The predecessor premium-skin plan retains its historical completed work and transfers residual verification to the master plan.
+- README, BLUEPRINT and RESEARCH now link to the master plan.
+- Runtime source has not been modified by this consolidation.
+- Fresh local test/build/CI/visual verification remains pending under Phase 0 and Phase 9; no pass is claimed here.
+
+The final `dev` HEAD after report update is recorded by the final verification step in this conversation; update this line if any later commit changes it.
