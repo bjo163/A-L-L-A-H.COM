@@ -1973,3 +1973,175 @@ A release cannot be certified with broken exports, missing/duplicated critical a
 Moon UI must support complete applications across public entry, navigation, forms, data, content, identity, community, operations, settings, media and spatial exploration. It must combine mature platform breadth with a coherent six-world identity, cinematic fidelity where appropriate, original governed assets, robust accessibility, responsive behavior, localization, performance and evidence-backed maturity.
 
 **The distinction:** premium templates sell finished screens. Moon UI provides the engine, language, tools, assets and standards to create an entire family of coherent products and worlds.
+
+
+---
+
+# PART IV — RESEARCH-LED CREATIVE INTERFACE PLATFORM
+
+> This part extends the premium platform blueprint with research-informed capabilities. Every item is a target or proposal unless maturity is verified in source, tests, application integration, and quality evidence.
+
+## 51. Strategic thesis
+
+Moon UI should own the complete path:
+
+**Intent → Task Model → Semantic Brief → World Grammar → Composition → Interaction → Evaluation → Approval**
+
+Five cooperating systems: **World System** (six authored DNA grammars), **Intent System** (task models and adaptive views), **Experience System** (components, blocks, scenes, transitions, media and sound), **Foundry System** (governed original assets), and **Certification System** (accessibility, performance, truth, visual quality, and release evidence).
+
+This is not permission for an LLM to generate arbitrary application code at runtime. Generated composition resolves to approved components, recipes, data contracts, and permission-checked actions.
+
+## 52. Intent-to-Interface Compiler
+
+Pipeline: capture intent → clarify essential ambiguity → build task model → build semantic design brief → resolve approved recipes → preview → evaluate → approve consequential actions → learn from explicit corrections.
+
+A task model includes ID/version, user-visible objective, actors and authority, entities and relationships, required/optional fields, allowed/forbidden operations, data dependencies, validation, completion evidence, undo/recovery, privacy classification, uncertainty, and assumptions.
+
+Generated markup cannot bypass approved APIs. Generated actions cannot bypass authorization or server validation. Destructive and external actions require explicit approval. Views are reproducible from a versioned task model and recipe. Users can inspect, edit, dismiss, and reset adaptive views. AI never claims a suggested action is complete.
+
+## 53. World Grammar Engine
+
+Each DNA receives a versioned definition for identity, narrative intent, composition, spatial metaphors, geometry, material, light, typography, iconography, brand, motion, sound, artwork, responsive transformations, accessibility fallback, and prohibited patterns.
+
+| DNA | Composition | Material / light | Motion | Signature interaction |
+|---|---|---|---|---|
+| IMPERIUM LUMEN | axial, monumental, ceremonial passages, vast negative space | stone, metal, ivory, antique gold, controlled light | slow reveal, alignment, restrained arrival | passage selection and architectural threshold |
+| LUNAR CHRONICLES | orbital maps, celestial timelines, layered archive planes | lunar dust, silver-blue, deep night, luminous precision | orbit, phase transition, quiet drift | time navigation and source-linked exploration |
+| ROCKSOUL | cinematic framing, print plates, chapter cuts, asymmetric editorial rhythm | paper, grain, ink, rain, selective crimson | hard cuts, film-like reveal, intentional imperfection | chapter sequence and narrative transmission |
+| NEXUS PARADOX | instrument planes, impossible geometry, modular scopes | technical surfaces, glass, signal cyan | snap, focus shift, calibration | direct manipulation of scopes and system objects |
+| RIOT ANARCHY | collage, torn edges, poster fields, expressive typography | xerox grain, halftone, ink, paper | kinetic type, cut-up transitions | poster assembly and expressive navigation |
+| MYCELIUM | branching systems, organic clusters, relationship paths | biomorphic membranes, mineral green, translucent layers | growth and meaningful connection pulses | relationship exploration and network traversal |
+
+A world may share semantic behavior, but must not reuse the same default composition and merely change color. Conformance tests cover motifs, tokens, unique identity, emblem uniqueness, motion/reduced-motion, mobile and keyboard navigation, asset provenance, and approved screenshot references.
+
+## 54. Intent Lens
+
+A temporary task-scoped composition, not a hidden personalization engine. Capabilities: visible objective, approved block reordering, contextual emphasis, relevant filters, saved views, pinned elements, one-action reset, “why am I seeing this?” explanation, user correction, and explicit preference capture. States: inactive → proposed → preview → active → corrected → dismissed/reset. It never changes permissions or destructive-action semantics.
+
+## 55. Evidence Surface and AI collaboration
+
+Default view: outcome, concise rationale, source count/freshness, action state (suggested/pending/completed/failed), and material uncertainty. Expandable evidence: source excerpts, provenance, tool/action timeline, agent contribution summary, disagreements, data transformations, approvals, and audit history.
+
+Never display private chain-of-thought. Show useful evidence, observable actions, and concise rationale.
+
+| Mode | Meaning | UI requirement |
+|---|---|---|
+| Assist | AI suggests | accept, dismiss, inspect |
+| Co-create | Shared artifact editing | version, compare, undo, ownership |
+| Prepare | Action prepared but not executed | preview, validate, approve |
+| Delegate | Bounded authorized operation | scope, permission, progress, stop, receipt |
+| Automate | Pre-authorized policy | visibility, logs, limits, pause, revoke |
+
+Agent surfaces need objective, current phase, consequential-action preview, live status only from real events, checkpoints, pause/cancel/retry, recovery, evidence, and compact-by-default detail.
+
+## 56. Scene Graph and spatial storytelling
+
+Data-first model: world, region, destination, passage, object/entity, timeline event, media asset, relationship/edge, viewport, and selected node.
+
+Rendering modes: monumental passage map, orbital atlas, cinematic chapter timeline, technical instrument graph, editorial collage map, organic relationship network, or accessible linear list/tree.
+
+Interaction contract: keyboard navigation, clear selection and detail, pan/zoom only when useful, reset/fit-to-view, minimap for large scenes, search/direct destination access, non-spatial equivalent, no hover-only essential controls, and no fabricated location or relationship data.
+
+## 57. Rendering architecture and constraints
+
+| Tier | Technology | Use |
+|---|---|---|
+| DOM precision | semantic HTML/CSS | all core product interactions |
+| Vector scene | SVG | logos, icons, maps, diagrams |
+| Canvas scene | Canvas 2D | lightweight custom visualization |
+| WebGL scene | Three.js / React Three Fiber | selected 3D scenes |
+| WebGPU scene | capability-detected enhancement | experimental high-performance rendering |
+| Offline master | pre-rendered image/video | cinematic hero and narrative media |
+
+WebGPU is not Baseline across all widely used browsers; never require it. Detect capabilities, load 3D only when needed, keep text and controls in DOM, provide static and 2D fallback, avoid costly post-processing on ordinary routes, set device-aware resolution/particle limits, pause when hidden/constrained, and measure GPU, memory, JS bundle, LCP, CLS, and INP on real devices.
+
+## 58. Motion Choreography System
+
+Motion is semantic, not a bag of presets. Types: arrival, focus, relation, transformation, feedback, transition, and optional ambient movement. Every recipe defines trigger, start/end state, duration, easing, interruption, reduced-motion alternative, performance class, and purpose.
+
+Evaluate Motion for common React transitions; Theatre.js for authored choreography; React Three Fiber/Drei for selected scenes. Adoption requires license, maintenance, bundle, fallback, and device evaluation.
+
+## 59. Creative Foundry 2.0
+
+Studios: Brand (emblem/wordmark/lockups/app icon/favicon/social), Vector (paths/strokes/fills/masks), Icon (semantic and expressive glyphs), Avatar (profile identities/non-human symbols/frames), Artwork (hero/destination/map/world illustration), Cover (chapter/episode/transmission/archive/poster/social/OG), Motion (transitions/loops/loading), Effects (light/grain/halftone/atmosphere/shaders), Sound (original SFX/ambience/mute/license), Loading (entry/transition/skeleton/streaming/offline/retry), and Asset Registry (search/metadata/version/provenance/approval/usage).
+
+Every asset stores stable ID/version, DNA/routes, purpose, source/master, derivatives, dimensions, format, color profile, transparency, crop/focal point, alt text or decorative classification, license/provenance, generation brief where relevant, approval, validation, and usage references. Generators create proposals and variants; they never silently overwrite approved masters.
+
+## 60. Experience Quality Observatory
+
+Maintainer-only workbench for component/block coverage, six-skin conformance, route/state coverage, accessibility and keyboard paths, contrast, responsive screenshot diffs, visual hierarchy/complexity, LCP/CLS/INP, JS/image/GPU cost, asset integrity/provenance, build/typecheck/lint/test, consumer integration, maturity, and release evidence.
+
+All values come from actual evidence. Distinguish current, historical, sampled, and simulated data. No fake green indicators or fabricated telemetry.
+
+## 61. Design Intelligence and anti-slop pipeline
+
+Own a design constitution covering six grammars, tokens, typography, approved compositions, prohibited patterns, accessibility, responsive behavior, asset rules, motion, sound, archetypes, examples, and counterexamples.
+
+**Brief → Direction proposals → Compare → Select → Compose → Browser render → Screenshot critique → Accessibility/performance audit → Refine → Certify**
+
+Detect generic repeated card grids, font/palette drift, excessive gradient/blur/glow, decorative controls, fake data, weak hierarchy, missing states, keyboard/focus failures, reduced-motion gaps, overflow, bad crops, and incorrect/duplicated marks. Automated critique is advisory until tests or human review verify the finding.
+
+## 62. Research-backed principles
+
+1. Agency before automation.
+2. Sufficient, progressive transparency.
+3. Task model before generated view.
+4. Semantic guidance before prompt magic.
+5. Complexity must earn its place.
+6. Structure may be flexible; accessibility and security invariants are not.
+7. Spatial rendering is progressive enhancement.
+8. No deceptive immersion or fabricated telemetry.
+9. Reduced-motion, keyboard, assistive technology, and 2D modes retain task capability.
+10. Evidence-based maturity only.
+
+## 63. New component and pattern candidates
+
+**Intent and AI:** IntentBadge, ObjectiveHeader, TaskModelPreview, GenerationStage, SuggestionRail, ActionPreview, ApprovalGate, AgentActivityTimeline, EvidenceDrawer, SourceProvenance, UncertaintyNotice, DecisionSummary, ToolResult, UndoAction.
+
+**Spatial and scene:** SceneViewport, SceneToolbar, SceneNavigator, SceneMinimap, SceneLegend, PassageMarker, OrbitNavigator, TimelineScrubber, NodeGraph, RelationshipEdge, ObjectInspector, ViewReset, ViewModeSwitch.
+
+**Foundry and assets:** AssetManifest, AssetProvenance, AssetApproval, VariantCompare, CropAnchorEditor, FocalPointPicker, VectorWorkbench, BrandLockupPreview, IconGrid, AvatarComposer, CoverComposer, MotionTimeline, SoundCuePreview.
+
+**Experience quality:** QualityScorecard, BuildEvidence, A11yAuditResult, VisualDiff, PerformanceBudget, AssetHealth, SkinConformance, RouteCoverage, MaturityBadge, EvidenceLink.
+
+These are candidates, not an instruction to create every component. Promote one only when it has independent semantics, reuse, behavior, or accessibility requirements.
+
+## 64. New application compositions
+
+| Composition | Best-fit DNA | Purpose |
+|---|---|---|
+| Intent Workbench | NEXUS PARADOX | objective, context, generated task view, evidence |
+| Evidence Observatory | LUNAR CHRONICLES / NEXUS PARADOX | sources, provenance, confidence, history |
+| World Passage Atlas | IMPERIUM LUMEN | destinations and world transitions |
+| Living Narrative Map | LUNAR CHRONICLES / MYCELIUM | linked events, chapters, archive references |
+| Story Cut / Filmstrip | ROCKSOUL | chapter sequence, scenes, captions, media |
+| Poster Assembly Wall | RIOT ANARCHY | collage-based editorial and campaign composition |
+| Relationship Garden | MYCELIUM | entity relationships and network exploration |
+| Experience Observatory | NEXUS PARADOX | maintainer quality and release evidence |
+| Creative Foundry Floor | RIOT ANARCHY / NEXUS PARADOX | original asset and media production |
+| Agent Mission Control | NEXUS PARADOX | bounded delegated work, approvals, logs, receipts |
+
+## 65. Research-led roadmap
+
+- **R0 — Evidence and decisions:** research ledger, source limitations, decision records.
+- **R1 — World Grammar:** schema, six conformance profiles, unique identity tests, compositions.
+- **R2 — Intent foundation:** task model, semantic brief, recipe resolver, preview, correction.
+- **R3 — Trust and agency:** action authority, evidence surface, approval, undo, delegation, audit.
+- **R4 — Scene system:** data-first scene graph, vector/2D renderer, spatial navigation, fallback.
+- **R5 — Foundry 2.0:** asset registry and brand/vector/icon/avatar/cover studios, then motion/effects/sound.
+- **R6 — Design intelligence:** owned constitution, anti-slop checks, browser screenshot critique.
+- **R7 — Quality Observatory:** evidence-backed accessibility, performance, asset health, app certification.
+- **R8 — Selective advanced rendering:** 3D/WebGL/WebGPU only when a real route requires it.
+- **R9 — Application adoption:** real workflows, removal of duplicated implementations, consumer certification.
+
+## 66. Research and adoption decision record
+
+For each proposal record source/date, evidence class and limitations, user problem, measurable hypothesis, DNA/app consumers, implementation and dependencies, privacy/safety/accessibility/performance risks, alternatives, decision (adopt/prototype/defer/reject), validation, and revisit date.
+
+Do not turn every paper or GitHub trend into a feature. A proposal is accepted only when it solves a real product problem and can be verified.
+
+## 67. Updated final acceptance standard
+
+Moon UI's next frontier is achieved when it can express six distinct world grammars over one engine; translate tasks into predictable, inspectable, user-controlled compositions; surface AI evidence and authority at the right level; render spatial and narrative experiences with non-spatial fallback; produce original governed assets with provenance; certify actual browser output; support complete product workflows; and report maturity honestly.
+
+**The defining advantage:** Moon UI provides the grammar, intelligence, creative tools, spatial language, and evidence system required to build six coherent digital worlds—and keep them usable, trustworthy, and technically excellent.
