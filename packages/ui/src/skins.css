@@ -1,3 +1,11 @@
+/* Moon UI Font Assets – self-hosted, licensed font faces.
+   These declarations map the skin token variables to the bundled font files.
+   Font files are stored in packages/ui/src/fonts/ and have accompanying .font
+   metadata files documenting license and provenance. */
+
+/* Import font-face declarations */
+@import './fonts/fonts.css';
+
 .mw-skin-root,
 .mw-skin-root *,
 .mw-skin-root *::before,

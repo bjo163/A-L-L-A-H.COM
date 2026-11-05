@@ -1,0 +1,43 @@
+/* Moon UI Font Assets – self-hosted, licensed font faces.
+   These declarations map the skin token variables to the bundled font files.
+   Font files are stored in packages/ui/src/fonts/ and have accompanying .font
+   metadata files documenting license and provenance. */
+
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Cormorant Garamond'),
+       url('/fonts/CormorantGaramond.woff2') format('woff2'),
+       url('/fonts/CormorantGaramond.woff') format('woff');
+  font-display: swap;
+}
+
+/* Cormorant Garamond is the approved Imperium display/heading font.
+   The skin token --mw-font-display maps to this family. */
+
+/* Inter is the approved Imperium body text font.
+   The skin token --mw-font-body maps to this family. */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Inter'),
+       url('/fonts/Inter.woff2') format('woff2'),
+       url('/fonts/Inter.woff') format('woff');
+  font-display: swap;
+}
+
+/* Cascadia Code is the approved Imperium monospace font.
+   The skin token --mw-font-numeric maps to this family. */
+
+@font-face {
+  font-family: 'Cascadia Code';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Cascadia Code'),
+       url('/fonts/CascadiaCode.woff2') format('woff2'),
+       url('/fonts/CascadiaCode.woff') format('woff');
+  font-display: swap;
+}
