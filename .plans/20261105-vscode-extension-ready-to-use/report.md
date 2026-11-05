@@ -36,3 +36,4 @@ The extension has stronger automated parity and trust boundaries, but this evide
 - `cd88a1a` explicit provider fallback policy.
 - `6200771` completion evidence in the Workspace Agent.
 - `550fcf6` VSIX package inspection.
+- `72db556` repository DNA metadata scanner and context integration.
