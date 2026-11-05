@@ -29,3 +29,10 @@
 ## Release status
 
 The extension has stronger automated parity and trust boundaries, but this evidence does not justify declaring the full 0.4.0 acceptance matrix complete.
+
+## Recent pushed commits
+
+- `2c32e9c` manifest contract coverage and architecture trace.
+- `cd88a1a` explicit provider fallback policy.
+- `6200771` completion evidence in the Workspace Agent.
+- `550fcf6` VSIX package inspection.

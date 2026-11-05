@@ -47,11 +47,11 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-035 Verify Gateway optionality and visible failure behavior.
 
 ### 04 Agent execution
-- [ ] VSC-036 Document/test Ask, Plan, Ideate, Code, Debug and Autopilot boundaries.
+- [x] VSC-036 Document/test Ask, Plan, Ideate, Code, Debug and Autopilot boundaries. `agentPolicy.test.ts` verifies read-only modes and Autopilot boundaries.
 - [x] VSC-037 Verify bounded context and sensitive-file exclusions.
 - [ ] VSC-038 Enforce plan-first execution for multi-step changes.
 - [x] VSC-039 Enforce proposed diff, approval and conflict detection.
-- [ ] VSC-040 Propagate cancellation through provider and tools.
+- [x] VSC-040 Propagate cancellation through provider and tools. Provider requests accept AbortSignal with a bounded timeout; agent and validation runs abort their active controllers.
 - [x] VSC-041 Restrict tools/terminal commands through policy engine.
 - [x] VSC-042 Produce completion summary with changed files and evidence. The agent result now lists relative changed files and directs the user to approved validation evidence.
 
