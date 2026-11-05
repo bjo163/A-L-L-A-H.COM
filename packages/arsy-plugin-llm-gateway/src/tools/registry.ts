@@ -7,7 +7,7 @@ export type { ToolExecutionRecord };
 
 export class ToolRegistry {
   private tools = new Map<string, Tool>();
-  private executionLog: ToolExecutionRecord[] = [];
+  private executionLog: { companyId: number | null; record: ToolExecutionRecord }[] = [];
 
   register(tool: Tool): void {
     if (this.tools.has(tool.name)) {
@@ -53,7 +53,7 @@ export class ToolRegistry {
     if (!tool) {
       record.error = `Tool '${name}' not found`;
       record.latencyMs = Date.now() - startTime;
-      this.executionLog.push(record);
+      this.executionLog.push({ companyId: context.companyId ?? null, record });
       return { success: false, error: record.error, output: null, latencyMs: record.latencyMs };
     }
 
@@ -63,7 +63,7 @@ export class ToolRegistry {
       record.status = result.success ? 'ok' : 'error';
       record.output = result.output;
       record.error = result.error ?? null;
-      this.executionLog.push(record);
+      this.executionLog.push({ companyId: context.companyId ?? null, record });
       this.persistAudit(record, context.companyId ?? null).catch((err) =>
         logger.warn({ err }, 'Failed to persist tool audit log')
       );
@@ -72,7 +72,7 @@ export class ToolRegistry {
       record.latencyMs = Date.now() - startTime;
       record.status = 'error';
       record.error = err.message || 'Tool execution threw an exception';
-      this.executionLog.push(record);
+      this.executionLog.push({ companyId: context.companyId ?? null, record });
       this.persistAudit(record, context.companyId ?? null).catch((err2) =>
         logger.warn({ err2 }, 'Failed to persist tool audit log')
       );
@@ -80,8 +80,11 @@ export class ToolRegistry {
     }
   }
 
-  getLog(): ToolExecutionRecord[] {
-    return [...this.executionLog].reverse();
+  getLog(companyId: number): ToolExecutionRecord[] {
+    return this.executionLog
+      .filter((entry) => entry.companyId === companyId)
+      .map((entry) => entry.record)
+      .reverse();
   }
 
   getDefinitions(): Array<{ type: 'function'; function: { name: string; description: string; parameters: any } }> {
