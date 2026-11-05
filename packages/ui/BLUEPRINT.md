@@ -1684,3 +1684,292 @@ Moon UI is considered complete only when all of the following are true:
 - Moving all package files in one disruptive refactor just to match a proposed folder tree.
 
 **Final doctrine:** Moon UI is a world-building and interface-production engine. Its atoms provide precision; its primitives provide reliable behavior; its components provide semantics; its blocks provide tasks; its compositions provide identity; its skins provide complete worlds; its foundries provide original media; its effects and sound provide atmosphere; and its verification system protects quality. One engine, six worlds, one unmistakable creative language.
+
+
+---
+
+# PART III — PREMIUM PLATFORM PARITY AND EXPERIENCE ENGINEERING
+
+## 38. Competitive ambition: breadth without template sameness
+
+Moon UI must reach the practical coverage of a mature premium UI platform and exceed it in coherent world identity, cinematic composition, asset governance and narrative experiences. This is a capability benchmark, not permission to copy a commercial template's source, layout, artwork, sound, or signature design.
+
+The quality target combines:
+- breadth of production-ready controls and patterns;
+- depth of application archetypes;
+- exceptional visual craft;
+- dependable accessibility and responsive behavior;
+- real operational workflows;
+- coherent identity across all six worlds;
+- disciplined performance and maintainability.
+
+A visually spectacular landing page cannot compensate for missing form states, weak keyboard behavior, absent data patterns, or broken mobile navigation.
+
+## 39. Application archetypes and shell system
+
+Moon UI must provide multiple shell archetypes. They share runtime foundations but must not collapse into one universal dashboard.
+
+### 39.1 Shell family
+
+| Shell | Purpose | Signature composition |
+|---|---|---|
+| Empire Gateway | Public world entry and discovery | Monumental worldstage and destination passages |
+| Community Dock | Community participation | Social stream, identity rail, conversation canvas |
+| Operations Cockpit | Focused system control | Instrument planes, command rail, detail inspector |
+| Headquarter | Strategic and governance view | Spatial overview, decision context, linked workstreams |
+| MoonWitness Archive | Narrative and source exploration | Timeline, archive shelves, chapter navigation |
+| Immersive Reader | Long-form story and media | Reading canvas, chapter rail, quiet focus mode |
+| Identity Center | Personal identity and access | Profile stage, avatar, sessions and permission surfaces |
+| Knowledge Observatory | Search and linked knowledge | Search field, source graph, reference navigator |
+| Creative Foundry | Design and media production | Workbenches, asset stage, preview and inspector |
+| Instrument Workspace | Diagnostics and configuration | Scope, log stream, controls and evidence panel |
+| Map & Network Explorer | Geographic and relationship data | Spatial canvas, layers, legend and detail inspector |
+| Settings Workbench | Preferences and account management | Grouped settings, change review and confirmation |
+
+### 39.2 Shell contract
+
+Every shell defines:
+- global and local navigation ownership;
+- page frame and content bounds;
+- primary/secondary action hierarchy;
+- responsive transformation at phone, tablet, laptop, desktop and ultrawide;
+- focus order and skip paths;
+- scroll ownership and sticky behavior;
+- loading, empty, error, offline, forbidden and success scenes;
+- optional density and quiet/focus modes;
+- skin adaptation and world-specific composition;
+- route transition and history behavior.
+
+Shells compose blocks and templates. They do not own API calls, authentication policy, business rules or application-specific state.
+
+## 40. Full product capability matrix
+
+A premium-grade platform must cover complete user journeys across these domains.
+
+### 40.1 Application and navigation
+- public, authenticated, immersive, operational and editorial shells;
+- global search, command palette, recent items and contextual actions;
+- hierarchical breadcrumbs, tabs, side navigation, mobile sheets and spatial navigation;
+- deep-link, back/forward, route pending and unsaved-change behavior.
+
+### 40.2 Forms and workflow
+- inline forms, multi-step wizard, conditional sections and repeatable field groups;
+- validation summary, field-level errors, async validation and server conflict;
+- autosave, dirty state, review-before-submit, confirmation and receipt;
+- upload queue, resumable progress where supported, cancellation and retry.
+
+### 40.3 Data and analysis
+- sortable/filterable/searchable tables, column visibility and saved views;
+- charts, time series, distributions, heatmaps, sparklines and accessible data summaries;
+- timeline, audit log, graph, map, topology and comparison;
+- export, pagination, virtualized collections and large-data loading.
+
+### 40.4 Content and knowledge
+- editorial index/detail, long-form reading, references and footnotes;
+- markdown/rich text, code, diff, math, media embeds and table of contents;
+- archive, chapter, transmission, issue, release notes and knowledge base;
+- media gallery, image lightbox, video, audio, waveform and transcript.
+
+### 40.5 Identity and community
+- profile, avatar, membership, role, permission and access request;
+- inbox, threads, comments, mentions, reactions, announcements and activity;
+- invite, accept, assign, suspend and revoke flows;
+- privacy controls, session management and account recovery.
+
+### 40.6 Operations and security
+- command surface, job queue, job detail, logs, status and diagnostics;
+- integration setup, connection test, credential rotation and revoke;
+- secret masking, reveal confirmation, copy controls, expiry and audit trail;
+- rate limits, expired sessions, permission denied and maintenance experiences.
+
+### 40.7 Commerce patterns (optional)
+- plan comparison, entitlement, checkout summary, invoice, payment state and subscription history.
+- Implement only when a real product flow exists. Never imply payment has happened when it has not.
+
+### 40.8 Spatial and media experiences
+- map canvas, map layers, route, legend, coordinate display and point inspector;
+- node graph, relationship explorer, orbit, constellation and topology;
+- image/video/audio, transcript, caption, playlist, cover and fullscreen stage.
+
+## 41. Advanced component catalog
+
+The following extends the component universe from Part II. Avoid duplicate semantics: a pattern may be a block or recipe instead of a new component when it has no independent API or accessibility contract.
+
+**Charts and visualization**
+ChartFrame, LineChart, AreaChart, BarChart, StackedBarChart, PieChart, DonutChart, ScatterPlot, BubblePlot, Heatmap, Histogram, Sparkline, Axis, GridLines, Legend, ChartTooltip, ThresholdBand, RangeBand, DataSummary.
+
+**Rich content and documentation**
+RichText, MarkdownRenderer, TableOfContents, Footnote, Citation, Callout, PullQuote, DropCap, CodeEditorFrame, DiffViewer, SyntaxBlock, MathBlock, MediaEmbed, SourceReference.
+
+**Communication**
+Thread, Message, MessageComposer, MentionPicker, ReactionBar, CommentAnchor, ActivityComposer, InboxRow, ConversationHeader, ParticipantList, TypingIndicator (only when backed by real state).
+
+**Workflow and approvals**
+Stepper, Wizard, ReviewPanel, ApprovalRail, TaskQueue, JobStatus, AuditEvent, RetryPanel, ConflictResolver, UnsavedChangesDialog, ActionReceipt, BulkActionBar.
+
+**Identity and security**
+PasswordField, PasskeyPrompt, SessionList, PermissionMatrix, RoleBadge, AccessRequest, RecoveryCodeList, SecretReveal, CopySecret, ExpiryNotice, SecurityEvent, DeviceSessionCard.
+
+**Search and command**
+GlobalSearch, SearchResults, RecentItems, QuickActions, CommandGroup, KeyboardHint, SearchFilter, SavedSearch, MobileNavigationSheet.
+
+**Calendar and time**
+CalendarGrid, Agenda, DateRangePicker, TimeZoneSelect, RelativeTime, EventMarker, ScheduleTimeline, AvailabilityGrid.
+
+**Files and assets**
+FileCard, FileList, UploadQueue, UploadProgress, AssetPicker, AssetPreview, MetadataEditor, VersionHistory, CropWorkbench, FocalPointEditor.
+
+**Spatial and map**
+MapCanvas, MapLegend, LayerControl, CoordinateReadout, RouteLine, NodeInspector, GraphLegend, Minimap, ViewportControls, SpatialSearch.
+
+**Media**
+VideoFrame, AudioPlayer, Waveform, Transcript, CaptionTrack, Gallery, Lightbox, FullscreenStage, MediaMetadata, PlaybackTimeline.
+
+**Operational feedback**
+InlineValidation, FieldErrorSummary, ConnectionStatus, SyncStatus, SaveIndicator, UndoToast, ConflictBanner, MaintenanceNotice, RateLimitNotice, SessionExpiredScene.
+
+## 42. Interaction recipes and journey contracts
+
+Moon UI must document complete journeys as reusable recipes. Each recipe includes initial state, intermediate states, completion, cancellation, retry, permission denial, timeout and recovery.
+
+| Journey | Stages |
+|---|---|
+| Search and inspect | Search → filter → sort → inspect → act |
+| Create a record | Create → validate → review → confirm → receipt |
+| Publish media | Upload → progress → process → preview → approve → publish |
+| Manage membership | Invite → accept → assign role → suspend/revoke |
+| Curate an asset | Select → crop → preview → approve → export |
+| Explore archive | Open → navigate timeline → read → follow reference |
+| Operate a job | Monitor → inspect logs → retry/cancel → verify |
+| Manage integration | Configure → test → connect → rotate/revoke credential |
+| Explore spatial data | Select layer → inspect point → open detail |
+| Process notification | Receive → open source → mark read → manage preference |
+
+A journey is not complete if it only documents the happy path.
+
+## 43. Cinematic realism and game-grade visual craft
+
+The phrase “PlayStation quality” is a craft target, not a promise that a web UI will render like a native console game. The web platform has real constraints. Moon UI should selectively use game-art techniques where they materially improve the experience.
+
+### 43.1 Visual fidelity ladder
+
+| Tier | Technique | Appropriate use |
+|---|---|---|
+| F0 — Precision | typography, spacing, vector, clean surfaces | forms, text, dense controls |
+| F1 — Crafted 2D | layered illustration, texture, deliberate light | identity, editorial, media |
+| F2 — Cinematic 2.5D | parallax planes, perspective, atmospheric depth | gateway, world entrance, story stage |
+| F3 — Real-time scene | WebGL/WebGPU/3D scene with static fallback | selected hero, map, spatial showcase |
+| F4 — Offline-rendered master | high-resolution pre-rendered art/video | hero plates, covers, chapter artwork |
+
+Default to the lowest tier that achieves the intended result. Do not add real-time 3D to ordinary settings, tables or forms.
+
+### 43.2 Realism principles
+- **Scale:** use foreground, middle distance and background to establish believable depth.
+- **Lighting:** define key, fill, rim and ambient contribution; avoid arbitrary glow.
+- **Material:** distinguish stone, metal, glass, paper, ink, water and organic membrane by roughness, reflectance, translucency and texture.
+- **Camera:** define focal length feel, perspective, horizon, framing and depth-of-field restraint.
+- **Atmosphere:** use fog, haze, dust, rain or particles only when they serve the scene and remain subtle.
+- **Composition:** preserve focal hierarchy, negative space, text-safe areas and mobile crop anchors.
+- **Motion:** establish, focus, resolve; use motion to communicate navigation and state.
+- **Consistency:** art direction must be repeatable across scenes, not dependent on one lucky image prompt.
+
+### 43.3 Rendering and performance
+- Prefer pre-rendered 2D/2.5D assets for broad device compatibility.
+- Use CSS transforms and opacity for common transitions; avoid layout-thrashing animation.
+- Use WebGL/WebGPU only behind capability detection, lazy loading and a static fallback.
+- Avoid permanent high-cost blur, excessive backdrop filters, giant shadow stacks and unbounded particles.
+- Respect device pixel ratio without blindly rendering 4K textures on mobile.
+- Use responsive image sources, modern codecs, correct dimensions, lazy loading and decode-aware transitions.
+- Measure LCP, CLS, INP, memory, GPU cost and bundle size on representative devices.
+- A scene must degrade gracefully when GPU acceleration is unavailable.
+
+## 44. Responsive, accessibility and internationalization system
+
+### 44.1 Responsive modes
+Design deliberate compositions for compact phone, large phone, tablet, laptop, desktop and ultrawide. Breakpoints are content-driven. Components must not assume hover, wide pointer or fixed viewport height. Provide touch-sized controls and alternate navigation.
+
+### 44.2 Accessibility
+- semantic HTML first; correct accessible names, descriptions and roles;
+- full keyboard operation and visible focus;
+- screen-reader announcements for asynchronous state changes;
+- contrast verified for every skin and interactive state;
+- reduced motion and no-motion modes;
+- non-color state differentiation;
+- captions/transcripts for media;
+- data chart summaries and table alternatives;
+- accessible validation summary and error focus;
+- zoom/reflow support and logical reading order.
+
+### 44.3 Internationalization
+- translation-ready labels and message catalogs;
+- locale-aware date, number, currency and relative time;
+- variable text length and font fallback;
+- right-to-left layout readiness where a consuming app requires it;
+- no text embedded in reusable artwork unless the asset is explicitly language-specific.
+
+## 45. Data visualization and truthful information design
+
+- A visualization must state what data it represents and its units.
+- Distinguish observed, estimated, simulated and illustrative values.
+- Never invent telemetry, locations, user activity, progress, uptime or network relationships.
+- Provide empty, partial, stale, loading, error and permission states.
+- Provide textual summaries and accessible alternatives.
+- Use consistent scales and avoid misleading axes.
+- Large datasets require pagination, aggregation or virtualization.
+- Real-time views must show source and freshness where relevant.
+
+## 46. Asset production and delivery pipeline
+
+Brief → concept → art direction approval → source/master → derivatives → optimization → metadata → integrity checks → visual review → approval → release → usage tracking.
+
+Asset quality gates:
+- correct dimensions and aspect ratio; valid MIME and decodable file;
+- SVG sanitization, bounded complexity and no broken external references;
+- correct alpha/color profile; crop/focal point verified on phone, desktop and ultrawide;
+- contrast and text-safe area; file-size/decode budget;
+- alt text/decorative semantics; license/provenance;
+- duplicate detection, stable ID and fallback for critical assets.
+
+Resolution profiles:
+- UI glyphs: vector masters with crisp small-size rendering.
+- Brand marks: SVG masters plus platform raster exports.
+- Avatars: square masters with circular-safe crops.
+- Covers: portrait and landscape derivatives.
+- Hero scenes: wide master with art-directed device crops.
+- Textures: seamless or bounded atlas assets.
+- Audio: short normalized one-shot effects plus source master.
+- Motion: optimized sequence with poster and reduced-motion fallback.
+
+## 47. Theme, density and customization model
+
+Separate independent axes: DNA skin; color mode; density (comfortable, compact, touch); motion (full, reduced, off); sound (muted or enabled); contrast (standard or high). Do not multiply combinations into separate skins. App overrides must be token-scoped and never mutate global package state.
+
+## 48. Quality engineering and release certification
+
+Test unit/interaction, keyboard/accessibility, automated and manual a11y, six-skin visual regression, responsive screenshots, reduced-motion/no-audio, light/dark/contrast, asset integrity/provenance, SSR/hydration, performance, app builds/typechecks and public exports.
+
+Every catalog item carries a truthful maturity state:
+- **Proposed:** documented idea, no implementation claim.
+- **Designed:** API and behavior contract approved.
+- **Implemented:** source exists and exports.
+- **Tested:** required automated tests pass.
+- **Integrated:** used by a real application workflow.
+- **Certified:** visual, accessibility, responsive and performance evidence accepted.
+
+A release cannot be certified with broken exports, missing/duplicated critical assets, skin contrast gaps, keyboard failures, absent reduced-motion behavior, failing app consumers, unexplained visual regressions or inaccurate documentation.
+
+## 49. Expanded roadmap — premium parity
+
+- **P0 Truth and foundation:** inventory exports/consumers, maturity status, brand/font/token defects, shell/asset/state/a11y contracts.
+- **P1 Product foundations:** atoms, primitives, controls, navigation, form recipes, core shells and mobile navigation.
+- **P2 Workflow/data:** tables, search, filters, charts, timeline, uploads, notifications, identity/security, operations and content.
+- **P3 Signature worlds:** two or more strong compositions per DNA, unique brand systems, cinematic scenes and loading transitions.
+- **P4 Foundries:** asset registry, vector/icon/brand/avatar/artwork/cover generators, Motion/Effects/Loading/Sound Labs.
+- **P5 Spatial/cinematic:** selected 2.5D/3D scenes, map/network/orbit and GPU fallback certification.
+- **P6 Adoption/certification:** migrate apps, remove duplicate visual systems, certify every consumer.
+
+## 50. Final premium acceptance standard
+
+Moon UI must support complete applications across public entry, navigation, forms, data, content, identity, community, operations, settings, media and spatial exploration. It must combine mature platform breadth with a coherent six-world identity, cinematic fidelity where appropriate, original governed assets, robust accessibility, responsive behavior, localization, performance and evidence-backed maturity.
+
+**The distinction:** premium templates sell finished screens. Moon UI provides the engine, language, tools, assets and standards to create an entire family of coherent products and worlds.
