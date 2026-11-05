@@ -53,8 +53,7 @@ A-L-L-A-H.COM/
 │   └── arsy-plugin-*/      # ARSY plugins
 ├── addons/                 # ARSY addons
 ├── .github/                # GitHub workflows, templates
-├── docs/                   # Documentation
-└── .plans/                 # Implementation plans
+└── docs/                   # Documentation
 ```
 
 ## 📋 Development Workflow

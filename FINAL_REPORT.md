@@ -1,3 +1,7 @@
+> Superseded snapshot. This report was written under the retired `.plans/` method;
+> the authoritative queue is now GitHub Issues (D-018, tracking #266). Paths below
+> pointing into `.plans/` no longer exist in the tree.
+
 STATUS: PARTIAL
 REPOSITORY: Z:\project\rocksoul-dx
 CURRENT_BRANCH: dev
@@ -7,7 +11,7 @@ PLANS_DISCOVERED: 112 plans audited (per verify:fast)
 PLANS_COMPLETED: 0 — no plan was fully integrated from this session's operations alone
 PLANS_INTEGRATED: 0 — registry fix (emblem + elevatedSurface) already on origin/dev via concurrent commit 008586b; not from this agent's commit
 PLANS_ARCHIVED: 0
-PLANS_IN_PROGRESS: 1 (.plans/20261105-package-ui-core-delivery — Phase 0 verified, Phases 2-7 pending)
+PLANS_IN_PROGRESS: 1 ([#407 @moonwitness/ui Core Delivery](https://github.com/bjo163/A-L-L-A-H.COM/issues/407) — Phase 0 verified, Phases 2-7 pending)
 PLANS_BLOCKED: 0 (blocked by workspace concurrency, not specification)
 
 TASKS_TOTAL: 287 PUI tasks across 7 phases

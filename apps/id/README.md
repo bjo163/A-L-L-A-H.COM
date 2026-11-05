@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "APP-ID-README"
-version: "2.0.0"
+version: "2.0.1"
 owner: "product"
 status: "implemented"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 
 # MoonWitness ID
@@ -261,7 +261,7 @@ ARSY owns Better Auth configuration. `BETTER_AUTH_SECRET` is a server secret, mu
 ## Documentation and execution map
 
 - Product and architecture contract: [BLUEPRINT.md](BLUEPRINT.md)
-- Autonomous implementation plans: [.plan/README.md](.plan/README.md)
+- Autonomous implementation plans: [MoonWitness ID delivery epic](https://github.com/bjo163/A-L-L-A-H.COM/issues/3)
 - Canonical DNA: [../../DNA/02-LUNAR-CHRONICLES.md](../../DNA/02-LUNAR-CHRONICLES.md)
 - Shared skin contract: [../../DNA/00-ENGINE-CONTRACT.md](../../DNA/00-ENGINE-CONTRACT.md)
 - Ecosystem architecture: [../../BLUEPRINT.md](../../BLUEPRINT.md)

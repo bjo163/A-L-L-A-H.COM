@@ -1,8 +1,0 @@
-.vscode-test/**
-test/**
-.vscodeignore
-.gitignore
-src/**
-tsconfig.json
-tsup.config.ts
-*.log

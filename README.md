@@ -50,7 +50,7 @@ MoonWitness ID is the human-facing control plane for personal identity and appro
 
 Current repository evidence includes encrypted NAS secret storage using the ARSY master key and hashed AI virtual keys. These are existing, distinct mechanisms—not a complete general-purpose vault. General secret management, environment versioning, personal API key issuance, service identities, and rotation workflows remain proposed until independently implemented and verified.
 
-See [MoonWitness ID product contract](apps/id/README.md), [system architecture](BLUEPRINT.md), and the active plan under `.plans/20261105-id-secrets-control-plane/`.
+See [MoonWitness ID product contract](apps/id/README.md), [system architecture](BLUEPRINT.md), and the active plan [MoonWitness ID — Identity & Secrets Control Plane](https://github.com/bjo163/A-L-L-A-H.COM/issues/443).
 
 ## Ecosystem scope
 Discover and reconcile MoonWitness historical generations, Reborn, XV, narrative canon, ROCKSOUL, MYLUFT, research, creative assets, Moon UI, Headquarter, Dock, Cockpit, Qorpus, and related repositories or technical work where accessible. This is a discovery scope, not a claim that every item is implemented here or must be a separate application.
@@ -92,19 +92,7 @@ Ports follow the Coolify convention: Compose puts every service on one isolated 
 
 Required production credentials (`JWT_SECRET`, `ARSY_MASTER_KEY`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `CORS_ORIGINS`) are declared in Coolify's environment for the resource; Compose fails closed before any container starts when one is missing, and `ARSY_MASTER_KEY` must be the identical value in `arsy` and `sentinel` because one encrypts and the other decrypts NAS secrets.
 
-## VS Code Extension
-The extension in `packages/vscode-extension` integrates the `.plans` workflow, the MoonWitness LLM gateway, and the Arsy Fastify API.
-- The Plans tree supports pending, in-progress, and completed tasks, opens plan/task files, watches `.plans` changes, and can target any workspace root. Context actions mark tasks in progress, complete, or reset to pending.
-- Local and gateway-generated plans contain `spec.md`, `task.md`, `design.md`, and `rules.md`. AI generation stops on gateway errors, malformed output, or Arsy mock completions.
-- The Arsy API view checks `/health` and `/ready` and opens the Swagger UI at `/docs`.
-- The model picker uses identifiers from Arsy's gateway catalog. Catalog entries do not confirm that an upstream provider is configured.
-- The Windows-local agent supports Ask, Plan, Code, Debug, Ideate, and Autopilot modes with workspace-scoped tools, explicit context consent, reviewable edits, and bounded validation commands.
-- Headquarter can pair/revoke extension devices, submit/cancel missions, and view persisted events. New accounts receive isolated personal tenants; shared device access requires explicit membership in the same organization tenant.
-- Verification commands: `pnpm extension:test`, `pnpm --filter allah-vscode-extension typecheck`, and `pnpm extension:build`.
-- Arsy and the extension default to port `5150`. If Arsy uses another port, set both `allah.arsyUrl` and `allah.gatewayUrl` to that server's URL.
-- Extension-specific setup and commands: [`packages/vscode-extension/README.md`](packages/vscode-extension/README.md).
-
 ## Branch Strategy & CI/CD Release Gate
 - `dev`: Primary development branch. All commits and features are pushed here.
-- CI Gate (`.github/workflows/ci-dev.yml`): Validates all six active service builds, VS Code extension, and documentation contract before promotion.
+- CI Gate (`.github/workflows/ci-dev.yml`): Validates all six active service builds and the documentation contract before promotion.
 - `main`: Production release branch. Auto-promoted from `dev` only when all CI checks pass. Promotion dispatches the Docker-gated GHCR publish and Coolify workflow; the workflow creates the root package's versioned GitHub release after the webhook succeeds.

@@ -47,7 +47,6 @@ jobs:
               if (filename.startsWith('packages/lint/')) labels.add('pkg:lint');
               if (filename.startsWith('packages/arsy-orm/')) labels.add('pkg:arsy-orm');
               if (filename.startsWith('packages/arsy-plugin-')) labels.add('pkg:arsy-plugin');
-              if (filename.startsWith('packages/vscode-extension/')) labels.add('pkg:vscode-ext');
               
               // Config/CI
               if (filename.startsWith('.github/workflows/')) labels.add('ci');

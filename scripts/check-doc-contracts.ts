@@ -121,50 +121,6 @@ function checkAntislop(filePath: string, body: string): string[] {
   return errors;
 }
 
-function checkPlansStandard(repoRoot: string): { errors: string[]; plansChecked: number } {
-  const plansDir = path.resolve(repoRoot, '.plans');
-  const errors: string[] = [];
-  let plansChecked = 0;
-
-  if (!fs.existsSync(plansDir)) {
-    return { errors, plansChecked };
-  }
-
-  const entries = fs.readdirSync(plansDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    plansChecked++;
-    const planFolder = entry.name;
-    const planPath = path.join(plansDir, planFolder);
-
-    const specPath = path.join(planPath, 'spec.md');
-    const taskPath = path.join(planPath, 'task.md');
-    const designPath = path.join(planPath, 'design.md');
-    const rulesPath = path.join(planPath, 'rules.md');
-    const reportPath = path.join(planPath, 'report.md');
-
-    // Canonical 4-artifact standard
-    if (!fs.existsSync(specPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: spec.md`);
-    if (!fs.existsSync(taskPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: task.md`);
-    if (!fs.existsSync(designPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: design.md`);
-    if (!fs.existsSync(rulesPath)) errors.push(`[.plans/${planFolder}] Missing mandatory artifact: rules.md`);
-
-    // Completed plan requires report.md
-    if (fs.existsSync(specPath)) {
-      const specContent = fs.readFileSync(specPath, 'utf-8');
-      const { metadata } = parseFrontmatter(specContent);
-      if (metadata?.status === 'completed') {
-        if (!fs.existsSync(reportPath)) {
-          errors.push(`[.plans/${planFolder}] Plan is marked 'completed' in spec.md but missing mandatory audit artifact: report.md`);
-        }
-      }
-    }
-
-  }
-
-  return { errors, plansChecked };
-}
-
 function checkDnaCanon(repoRoot: string): string[] {
   const dnaDir = path.resolve(repoRoot, 'DNA');
   const errors: string[] = [];
@@ -278,7 +234,7 @@ function main() {
 
   let frontmatterScore = 35;
   let linkScore = 25;
-  let changeSyncScore = 20;
+  const changeSyncScore = 20;
   let antislopScore = 20;
 
   const inspections: DocInspection[] = [];
@@ -350,13 +306,6 @@ function main() {
     inspections.push(insp);
   }
 
-  // Check Spec-Driven Plans Standard (.plans/)
-  const planCheck = checkPlansStandard(repoRoot);
-  if (planCheck.errors.length > 0) {
-    totalErrors.push(...planCheck.errors);
-    changeSyncScore = Math.max(0, changeSyncScore - planCheck.errors.length * 5);
-  }
-
   // DNA canon coverage: every design-DNA document must obey the same contract.
   const dnaErrors = checkDnaCanon(repoRoot);
   if (dnaErrors.length > 0) {
@@ -384,13 +333,11 @@ function main() {
     const status = insp.errors.length === 0 ? '✓ PASS' : '✗ FAIL';
     console.log(`  ${status.padEnd(8)} ${insp.filePath.padEnd(30)} [ID: ${insp.id}] (v${insp.metadata?.version || 'N/A'})`);
   }
-  console.log(`  Plan Inspection: ${planCheck.plansChecked} plan(s) audited.`);
-
   console.log(`\n------------------------------------------------------------`);
   console.log(`  Score Breakdown:`);
   console.log(`  - Frontmatter & Metadata:   ${frontmatterScore} / 35 pts`);
   console.log(`  - Relative Link Integrity:  ${linkScore} / 25 pts`);
-  console.log(`  - Change Matrix & Plans:    ${changeSyncScore} / 20 pts`);
+  console.log(`  - Change Matrix & Sync:     ${changeSyncScore} / 20 pts`);
   console.log(`  - Antislop Conformance:     ${antislopScore} / 20 pts`);
   console.log(`  ----------------------------------------------------------`);
   console.log(`  TOTAL COMPLIANCE SCORE:     ${finalScore} / 100 pts (Threshold: 100 pts)`);

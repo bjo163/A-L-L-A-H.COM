@@ -87,10 +87,6 @@ jobs:
         env:
           GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
         run: node scripts/run-gate.mjs 'TypeScript' pnpm typecheck
-      - name: VS Code extension tests
-        env:
-          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
-        run: node scripts/run-gate.mjs 'Extension tests' pnpm extension:test
       - name: Arsy tests
         env:
           GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl

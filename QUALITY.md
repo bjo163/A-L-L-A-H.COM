@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "QUALITY"
-version: "1.5.0"
+version: "1.6.0"
 owner: "qa"
 status: "implemented"
-last_verified: "2026-11-04"
+last_verified: "2026-11-06"
 ---
 # QUALITY.md
 
@@ -69,11 +69,11 @@ Every row is a command run against the current worktree with its recorded exit c
 | `pnpm typecheck` | pass — 28 projects, strict mode enabled in 9, 0 errors (EXIT=0) |
 | `pnpm lint:arch` | pass — all invariants (18 rules incl. ICON_PURITY, LANDMARK_PURITY, NO_PUBLIC_CLIENT_SECRETS, artwork existence) · 2,397 files scanned (EXIT=0) |
 | `pnpm lint` | pass — eslint `--max-warnings 0`, 0 errors / 0 warnings (EXIT=0) |
-| `pnpm docs:check` | 100/100 · 95 plans audited (EXIT=0) |
+| `pnpm docs:check` | 100/100 · plans gate retired with the GitHub Issues migration (EXIT=0) |
 | `pnpm ui:test` | 43/43 pass — component, skin, and brand-asset contracts incl. artwork existence and HD preview checks (EXIT=0) |
 | `pnpm ui:contrast` | pass — 6 skins, every token pair measured ≥ WCAG threshold (EXIT=0) |
 | `pnpm gate:build` · `dock:build` · `headquarter:build` · `id:build` · `jizz:build` | pass (EXIT=0 each) |
 | `pnpm --filter @moonwitness/moonsky build` · `--filter @moonwitness/harbor build` | pass (EXIT=0 each) |
 | `pnpm --filter @allah/arsy build` | pass (EXIT=0) |
-| `pnpm --filter @moonwitness/sentinel build` · `pnpm extension:build` | pass (EXIT=0 each) |
+| `pnpm --filter @moonwitness/sentinel build` | pass (EXIT=0) |
 | `pnpm --filter @allah/arsy test` | 60/60 pass — hub suite (swarm · ai_gateway · tools_mcp · agent_loop · onboarding · trust boundary) run serially via `--test-concurrency=1` (EXIT=0) |

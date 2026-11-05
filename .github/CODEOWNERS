@@ -29,7 +29,6 @@
 /packages/arsy-core/ @bjo163
 /packages/arsy-plugin-* @bjo163
 /packages/sentinel-radius/ @bjo163
-/packages/vscode-extension/ @bjo163
 
 # Apps - each app has specific owners
 /apps/gate/ @bjo163
@@ -47,9 +46,6 @@
 # CI/CD
 /.github/workflows/ @bjo163
 /.github/dependabot.yml @bjo163
-
-# Plans
-/.plans/ @bjo163
 
 # Configuration
 /tailwind.config.* @bjo163

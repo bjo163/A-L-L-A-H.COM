@@ -27,10 +27,7 @@ import { storagePlugin } from '@allah/arsy-plugin-storage';
 
 import { registerAllAddons } from '../../../addons/index';
 import { chunkText, computeSha256 } from '../../../addons/mw_qorpus/src/chunker';
-import { reconcilePlans } from '../../../addons/project/services/sync_worker';
 import { startCronRunner, stopCronRunner } from '../../../addons/project/services/cron_runner';
-import { DEFAULT_PROJECT_CRON } from '../../../addons/project/data/default';
-import type { SyncPayload } from '../../../addons/project/services/plan_scanner';
 import { recordNotifyEvent } from '../../../addons/mw_notify/services/events';
 
 export interface BuildAppOptions {
@@ -1092,40 +1089,6 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     return reply.send(ok(updated));
   });
 
-  // Push sync: Extension scans local .plans/ and sends the payload here.
-  // Hub reconciles DB state and returns outbound patches for the Extension to apply.
-  app.post('/v1/projects/:projectId/sync', async (request, reply) => {
-    const scope = tenantOf(request);
-    const { projectId } = request.params as { projectId: string };
-    const id = parseId(projectId, 'projectId');
-    const project = await repository('project.project').findById(id, scope);
-    if (!project) throw new AppError('Project not found', 404, 'NOT_FOUND');
-    if (project.sync_mode === 'disabled') {
-      throw new AppError('Sync is disabled for this project', 400, 'SYNC_DISABLED');
-    }
-    const body = request.body as SyncPayload;
-    if (!Array.isArray(body?.plans)) {
-      throw new AppError('Request body must include a plans array', 400, 'VALIDATION_ERROR');
-    }
-    const companyId = (scope as { companyId: number }).companyId;
-    const result = await reconcilePlans(companyId, id, body.plans);
-    return reply.send(ok(result));
-  });
-
-  // Export: returns all project tasks so Extension can apply outbound patches.
-  app.get('/v1/projects/:projectId/export', async (request, reply) => {
-    const scope = tenantOf(request);
-    const { projectId } = request.params as { projectId: string };
-    const id = parseId(projectId, 'projectId');
-    const project = await repository('project.project').findById(id, scope);
-    if (!project) throw new AppError('Project not found', 404, 'NOT_FOUND');
-    const tasks = await repository('project.task').find({
-      scope,
-      filters: [{ field: 'project_id', operator: '=', value: id }],
-    });
-    return reply.send(ok({ project, tasks }));
-  });
-
   // Task stages CRUD.
   app.get('/v1/projects/:projectId/stages', async (request, reply) => {
     const scope = tenantOf(request);
@@ -1162,27 +1125,6 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         ORDER BY nextcall`
     );
     return reply.send(ok(crons));
-  });
-
-  // Admin: seed default cron jobs for a company.
-  app.post('/v1/admin/cron/seed/:companyId', async (request, reply) => {
-    const principal = assertSuperuser(request);
-    const { companyId: rawCompanyId } = request.params as { companyId: string };
-    const companyId = parseId(rawCompanyId, 'companyId');
-    const actor = adminActor(request, requireAdminReasonHash(request.body), principal);
-    const scope: TenantScope = { companyId };
-    const nextcall = new Date(Date.now() + 60_000).toISOString();
-    const created = await dbEngine.transaction(async (tx) => {
-      // The schedule definition is the addon-owned `DEFAULT_PROJECT_CRON` single
-      // source; this route only stamps the tenant id and the first run time so
-      // there is one cron spec, not one here and one in the addon data.
-      return repository('ir.cron', tx).create(
-        { ...DEFAULT_PROJECT_CRON, company_id: companyId, nextcall },
-        scope,
-        actor
-      );
-    });
-    return reply.status(201).send(ok(created));
   });
 
   // Start cron runner after all routes are ready.

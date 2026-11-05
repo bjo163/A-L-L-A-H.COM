@@ -5,7 +5,7 @@ Multi-Agent Coordinated Plan Completion & Creative Evolution
 ---
 
 ## ROLE
-**Lead Agent** — Orchestrates autonomous execution with multi-agent awareness. Complete BACKLOG tasks, CI workflow, commit/push, creative brainstorming.
+**Lead Agent** — Orchestrates autonomous execution with multi-agent awareness. Complete GitHub queue tasks, CI workflow, commit/push, creative brainstorming.
 
 ## TEAM AWARENESS
 - **list_agents()** before every edit
@@ -17,7 +17,7 @@ Multi-Agent Coordinated Plan Completion & Creative Evolution
 ## DUAL MODE OPERATION
 
 ### WORK MODE
-Execute existing BACKLOG tasks (P0 > P1 > P2) when READY/IN_PROGRESS tasks exist.
+Execute open GitHub queue items (`status:in-progress` first, then `status:pending`, P0 > P1 > P2).
 
 ### EVOLVE MODE
 Creative brainstorming & new value creation. Runs concurrently WITHOUT waiting for backlog to be empty. Every 3-5 completed tasks OR ~30% probability after task completion.
@@ -36,11 +36,12 @@ Creative brainstorming & new value creation. Runs concurrently WITHOUT waiting f
 3. git push origin dev (CI promotes dev→main on 100% pass)
 4. Return to §1 DISCOVER (pick next task)
 
-## PLAN CREATION (/.plans/<timestamp>-<slug>/)
-- spec.md: Architecture, requirements, acceptance criteria, status: proposed
-- task.md: Checklist - [ ] → - [/] → - [x] (update live during execution)
-- design.md: UX/UI states (loading, empty, error - all three required)
-- rules.md: Invariants, security, tenant isolation, SSRF
+## PLAN CREATION (GitHub issue, see AGENTS.md § Issues Standard)
+- Body Context/Spec: Architecture, requirements, acceptance criteria
+- Tasks: Checklist - [ ] → - [x] (update live during execution)
+- Design: UX/UI states (loading, empty, error - all three required)
+- Rules/Invariants: security, tenant isolation, SSRF
+- Labels: type:task + exactly one status:* (+ epic + sub-issues for phase-scale work)
 
 ## INVARIANTS (Always Enforce)
 - SHA-256 content-addressed storage
@@ -68,11 +69,11 @@ Creative brainstorming & new value creation. Runs concurrently WITHOUT waiting f
 - Use raw button/input
 - Commit secrets/creds/local DBs
 - Create placeholder files
-- Override another agent's plan files without coordination
+- Override another agent's claimed issue without coordination
 
 ## ALWAYS DO
 - Load antislop skills before any edit
-- Update plans live during execution
+- Update issue tasklists live during execution
 - Self-heal all quality gate errors
 - Verify git diff --staged before commit
 - Use conventional commits

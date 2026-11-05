@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DECISIONS"
-version: "1.5.0"
+version: "1.6.0"
 owner: "architecture"
 status: "implemented"
-last_verified: "2026-11-04"
+last_verified: "2026-11-06"
 ---
 # DECISIONS.md
 
@@ -82,7 +82,7 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - alternatives: Repair and continue maintaining both backend stacks.
 - rationale: One backend authority reduces deploy complexity and prevents stale Rust builds from blocking production.
 - consequences: Production Docker builds contain only Arsy and the web applications. Rust history remains recoverable from Git.
-- related: [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md), [Coolify deployment plan](.plans/20261104-1200-production-release-docker-gate/spec.md)
+- related: [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md), [Coolify deployment plan](https://github.com/bjo163/A-L-L-A-H.COM/issues/303)
 
 ### D-010 — Docker-Gated Production Release
 - status: ACCEPTED — 2026-11-04
@@ -91,7 +91,7 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - alternatives: Call Coolify's deployment endpoint from GitHub Actions using Coolify credentials.
 - rationale: Coolify already owns the repository webhook integration, so GitHub Actions does not need Coolify credentials or a duplicate deploy request.
 - consequences: A failed image blocks the GitHub release, but Coolify's webhook may start deployment before the images publish. Compose pulls the GHCR image tags.
-- related: [Production deployment](README.md#production-deployment), [Docker-gate plan](.plans/20261104-1200-production-release-docker-gate/spec.md)
+- related: [Production deployment](README.md#production-deployment), [Docker-gate plan](https://github.com/bjo163/A-L-L-A-H.COM/issues/303)
 
 ### D-011 — MOONSKY as an Independent Communication Service
 - status: ACCEPTED — 2026-11-04
@@ -101,7 +101,7 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: Preserve independent provider lifecycle, fault isolation, scaling, persistence, and operator workflows without creating a second identity/business authority or fragmenting the ecosystem repository.
 - consequences: MOONSKY runtime and PostgreSQL remain separate services within the monorepo. Operator authentication and tenant authorization must integrate with ARSY; static broad service keys and standalone production operator identity are not accepted as the final ecosystem model. MOONSKY UI must use the shared `@moonwitness/ui` engine. Baileys remains an unofficial WhatsApp Web adapter behind a provider-neutral contract; an official WhatsApp Business provider can be added separately. No production data migration or deployment is authorized by this decision.
 - UI ownership clarification (locked): **MOONSKY Console** is the independently usable, full operator workspace and owns inbox, message composition, pairing/session repair, channel configuration, routing, automation, webhook operations, and delivery diagnostics. **HEADQUARTER** is the ecosystem command surface and owns aggregate health, metrics, alerts, recent activity summaries, and deep-links into the relevant Console context. Headquarter may show compact summaries or narrowly scoped safe actions, but must not fork inbox state, duplicate operator workflows, or become a second communication control plane. Both surfaces use shared ecosystem identity/navigation and the shared UI/skin engine; MOONSKY Console remains operable if Headquarter is unavailable, while Headquarter degrades gracefully if MOONSKY is unavailable. Standalone means independent runtime and operator capability—not disconnected identity, branding, or navigation.
-- related: [MOONSKY Integration Plan](.plans/20261104-moonsky-integration/spec.md), D-003, D-007, D-008
+- related: [MOONSKY Integration Plan](https://github.com/bjo163/A-L-L-A-H.COM/issues/22), D-003, D-007, D-008
 
 ### D-012 — Native-First Primitives and One Token Source
 - status: ACCEPTED — 2026-11-04
@@ -165,3 +165,12 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: A rule that cannot fail is not enforcement; the previous gate reported 100% compliance over 24 violations, and the same class of bug hid the hex pattern. Absorbing the vocabulary into the package is what lets the six worlds differ in composition while sharing behaviour, accessibility, and state.
 - consequences: Adding a world-level visual change now means editing one `[data-moonframe-skin]` block instead of five apps. Applications cannot introduce a one-off hero, an unstyled state, or a palette colour without a failing gate. Measured contrast for every skin pair is available with `pnpm ui:contrast`; the tightest ratio in the set is 4.99:1 (ROCKSOUL accent text on accent), which clears WCAG AA for normal text.
 - related: D-007, D-012, [DNA/07-COMPONENT-MAPPING.md](DNA/07-COMPONENT-MAPPING.md), [DESIGN.md](DESIGN.md), [QUALITY.md](QUALITY.md)
+
+### D-018 — GitHub Issues as the Single Work Queue
+- status: ACCEPTED — 2026-11-06
+- context: The repo ran its method on `.plans/<timestamp>-<slug>/` folders (spec/task/design/rules/conflict/decision/report) with a local plan-sync addon, a plan-audit scheduler, and commit helpers. That stack overlapped with the multi-session work already tracked in GitHub Issues, and the automated issue bot was disabled for noise (commit `d80b1c2`, 192 CI issues). The owner decided to move the entire method to GitHub Issues as the one authoritative queue.
+- decision: All plans migrate to GitHub Issues (completed plans become closed issues with their report as the closing comment); `.plans/` and `apps/id/.plan/` are deleted from the repo (history preserved in git and the `pre-issues-migration` tag). The queue model is epic + native sub-issues for phase-scale work, single issue-with-tasklist for bounded work (tiering at ~40 checkboxes). The vscode-extension, plan-sync addon services, headquarter projects page, arsy sync/export/seed routes, plan helper scripts, and `ci-monitor.yml`/`stale.yml` are retired; `addons/project` keeps models, `cron_registry` and `cron_runner` (used by `mw_notify`), with `plan_slug`/`source_file`/`sync_*` columns left as inert legacy. `AGENTS.md` § Issues Standard and `AUTONOMOUS.md` §1/§2/§8 define the new method. The `checkPlansStandard` gate is removed from `check-doc-contracts.ts`; the bucket is relabelled `Change Matrix & Sync` (20 pts preserved).
+- alternatives: Keep `.plans/` and reconcile it against Issues (rejected: two sources of truth); keep the extension and retire plan-sync only partially (owner chose full deletion); convert every task checkbox to its own issue (rejected: ~1,290 issues).
+- rationale: One queue, owned by the tools the owner already uses. Existing hand-written planning issues stay canonical (bodies are not overwritten; plan documents attach as comments). Tiering keeps the open queue to tens of items instead of thousands.
+- consequences: Every work write goes through `gh` CLI. Session checkpointing uses an editable `SESSION CHECKPOINT` comment on the active issue instead of `EXECUTION-STATE.md`. The `migrated-from-plans` label plus the (uncommitted, deleted-after-migration) state file make bulk close/reopen possible if the decision is reverted. A Turso token that was hard-coded in the removed extension is still in git history; rotating it is an owner action outside the repo.
+- related: D-017, [AGENTS.md](AGENTS.md) § Issues Standard, [AUTONOMOUS.md](AUTONOMOUS.md), [migration tracking issue](https://github.com/bjo163/A-L-L-A-H.COM/issues/266)

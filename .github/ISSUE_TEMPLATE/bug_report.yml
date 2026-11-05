@@ -1,47 +1,54 @@
----
-name: "🐛 Bug Report"
-about: Report a bug to help improve A-L-L-A-H.COM
+name: Bug Report
+description: Report a defect in behaviour, build, or deployment.
 title: "[Bug] "
 labels: ["bug"]
-assignees: ["bjo163"]
----
-
-## 🐛 Describe the Bug
-
-A clear and concise description of what the bug is.
-
-## 🔍 To Reproduce
-
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '...'
-3. Scroll down to '...'
-4. See error
-
-## ✅ Expected Behavior
-
-A clear and concise description of what you expected to happen.
-
-## ❌ Actual Behavior
-
-What actually happened instead.
-
-## 📸 Screenshots
-
-If applicable, add screenshots to help explain your problem.
-
-## 🌐 Environment
-
-- **App**: [gate | dock | headquarter | id | jizz | arsy | sentinel]
-- **Browser**: [e.g. chrome, safari]
-- **OS**: [e.g. windows, macos, linux]
-- **Node version**: [e.g. 24.x]
-- **Branch**: [dev | main]
-
-## 📝 Additional Context
-
-Add any other context about the problem here.
-
-## 🔧 Possible Solution (Optional)
-
-If you have an idea for a fix, describe it here.
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What breaks, in one or two sentences.
+      placeholder: The hub returns 500 on POST /v1/works when company_id is missing.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduce
+      description: Exact command or click path, plus the observed output.
+      value: |
+        1.
+        2.
+        3.
+        Observed:
+        Expected:
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Log lines, failing test output, file paths. Paste verbatim.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - apps/arsy
+        - apps/gate
+        - apps/dock
+        - apps/headquarter
+        - apps/id
+        - apps/jizz
+        - apps/moonsky
+        - apps/harbor
+        - apps/sentinel
+        - addons
+        - packages/ui
+        - packages/sdk
+        - CI / deploy
+        - Other
+    validations:
+      required: true

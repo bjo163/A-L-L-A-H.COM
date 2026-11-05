@@ -2,7 +2,7 @@
   "name": "project",
   "version": "0.1.0",
   "category": "Project Management",
-  "summary": "Odoo-style project & task manager with .plans sync and ir.cron worker",
+  "summary": "Odoo-style project & task manager with ir.cron worker",
   "depends": ["base"],
   "models": [
     "project.project",

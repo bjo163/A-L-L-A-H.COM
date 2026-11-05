@@ -551,6 +551,6 @@ See [RESEARCH-AND-DIRECTION.md](./RESEARCH-AND-DIRECTION.md) for sources, limita
 
 ## 15. Canonical execution plan
 
-The complete source-to-implementation reconciliation, current implementation baseline, duplicate-plan disposition, atomic autonomous tasks, agent guardrails, coverage matrix and evidence log are maintained in the repository's [Moon UI Master Consolidation Plan](../../.plans/20261105-moon-ui-master-consolidation/spec.md).
+The complete source-to-implementation reconciliation, current implementation baseline, duplicate-plan disposition, atomic autonomous tasks, agent guardrails, coverage matrix and evidence log are maintained in the repository's [Moon UI Master Consolidation Plan](https://github.com/bjo163/A-L-L-A-H.COM/issues/483).
 
 Use that master plan as the **single execution queue** for Moon UI. Do not create parallel plans for skins, artwork, components, foundries or visual certification. Before implementing a listed capability, verify its current source and tests; reuse existing foundations and record evidence instead of rebuilding them.

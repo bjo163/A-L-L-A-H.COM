@@ -14,12 +14,6 @@ test('shared package changes build every application', () => {
   assert.equal(result.selected.length, components.length);
 });
 
-test('isolated VS Code extension changes build only the extension', () => {
-  const result = selectBuilds(['packages/vscode-extension/src/extension.ts']);
-  assert.equal(result.all, false);
-  assert.deepEqual(result.selected.map(([name]) => name), ['extension']);
-});
-
 test('workspace package manifests build every consumer', () => {
   const result = selectBuilds(['packages/ui/package.json']);
   assert.equal(result.all, true);
@@ -56,19 +50,18 @@ test('empty, malformed, and app plus shared changes never under-select', () => {
 test('build cache paths exist only for Next.js applications', () => {
   const matrix = matrixForBuilds(components);
   assert.equal(matrix.find(({ component }) => component === 'e-isp').cachePath, 'apps/e-isp/.next/cache');
-  for (const component of ['arsy', 'sentinel', 'extension']) {
+  for (const component of ['arsy', 'sentinel']) {
     assert.equal(matrix.find((item) => item.component === component).cachePath, '');
   }
 });
 
-test('Docker build matrix includes affected apps with Dockerfiles, not the extension', () => {
+test('Docker build matrix includes affected apps with Dockerfiles', () => {
   const matrix = matrixForDockerBuilds(components);
   assert.deepEqual(
     matrix.map(({ component }) => component).sort(),
-    components.filter(([component, prefix]) => prefix.startsWith('apps/') && component !== 'extension')
+    components.filter(([, prefix]) => prefix.startsWith('apps/'))
       .map(([component]) => component).sort(),
   );
-  assert.deepEqual(matrixForDockerBuilds([components.find(([component]) => component === 'extension')]), []);
 });
 
 test('discovered applications with a build script can be selected directly', () => {

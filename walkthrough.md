@@ -11,7 +11,6 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 - **WORLD OBSERVATORY** (`apps/jizz`) — Next.js public observatory (port 3004)
 - **Sentinel** (`apps/sentinel`) — RADIUS daemon (UDP 1812/1813, HTTP health 9181)
 - **Shared UI** (`packages/ui`) — shadcn/ui component library (`@moonwitness/ui`)
-- **VS Code Extension** (`packages/vscode-extension`) — `.plans` workflow, MoonWitness LLM gateway, Arsy Fastify API views
 - **Docker** — containerization with Coolify deployment support
 
 ## Recent Changes (Autonomous Evolution Engine)
@@ -30,7 +29,6 @@ A-L-L-A-H.COM is a modular monorepo platform featuring:
 - ✅ Dock build: `pnpm dock:build` passes
 - ✅ Headquarter build: `pnpm headquarter:build` passes
 - ✅ ARSY build: `pnpm --filter @allah/arsy build` passes
-- ✅ VS Code extension build: `pnpm extension:build` passes
 
 ## Production Delivery
 - Build and publish the six active service Docker images to GHCR: Arsy, Dock, Headquarter, ID, Jizz, and Sentinel.

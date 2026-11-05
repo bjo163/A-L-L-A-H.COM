@@ -162,10 +162,10 @@ function collectAllModels(scanDirs) {
 
 // 1. RULE: UI_PURITY
 // Raw interactive or structural controls may only exist inside the design system itself.
-// packages/ui defines the controls; packages/vscode-extension webviews use raw HTML by design.
+// packages/ui defines the controls; apps consume the design system.
 function checkUiPurity() {
   const scanDirs = [path.join(ROOT_DIR, 'apps'), path.join(ROOT_DIR, 'packages')];
-  const exemptPrefixes = ['packages/ui/', 'packages/vscode-extension/'];
+  const exemptPrefixes = ['packages/ui/'];
   const rawElements = {
     button: 'Use <Button>.',
     input: 'Use <Input>.',

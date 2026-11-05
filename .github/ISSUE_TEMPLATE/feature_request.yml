@@ -1,29 +1,36 @@
----
-name: "✨ Feature Request"
-about: Suggest a new feature or improvement for A-L-L-A-H.COM
+name: Feature Request
+description: Propose new capability or product direction.
 title: "[Feature] "
 labels: ["enhancement"]
-assignees: ["bjo163"]
----
-
-## 🎯 Summary
-
-A clear and concise description of the feature you'd like.
-
-## 💡 Why This Matters
-
-What problem does this feature solve? Who benefits?
-
-## 📋 Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-## 🏗️ Implementation Ideas (Optional)
-
-If you have technical ideas for how to implement this, describe them here.
-
-## 📝 Additional Context
-
-Any other context, screenshots, or references.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is missing or painful today, and who feels it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: The capability being asked for, behaviour first not implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: Measurable outcomes; name the files or subsystems that must change.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else could solve this, and why it was not chosen.
+    validations:
+      required: false

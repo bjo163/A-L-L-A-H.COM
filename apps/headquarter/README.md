@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "APP_HEADQUARTER_README"
-version: "1.0.0"
+version: "1.1.0"
 owner: "frontend"
 status: "implemented"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 # HEADQUARTER — NEXUS PARADOX
 
@@ -36,10 +36,9 @@ Documentation baseline only; planned capabilities are not claims of completion. 
 | Swarm Ops | src/app/swarm/ | Verify history, review, cancellation and persisted outcomes |
 | Tool Registry | src/app/tools/ | Verify registry ownership and invocation permissions |
 | Knowledge | src/app/knowledge/ | Verify citations, freshness and tenant visibility |
-| Projects | src/lib/nav-registry.ts | Declared in navigation; reconcile route and navigation consumers |
 | Skin Laboratory | src/app/skin-lab/ | Utility route, not a strategic module |
 
-**Known drift:** nav-registry.ts declares Projects, but headquarter-shell.tsx and src/app/page.tsx maintain separate lists that omit it. Make HQ_NAV the single source. Classify Skin Laboratory separately.
+**Known drift:** Make HQ_NAV the single source; headquarter-shell.tsx and src/app/page.tsx should not maintain separate lists. Classify Skin Laboratory separately.
 
 ## Architecture
 - Next.js App Router / React / TypeScript, port 3002.
@@ -68,7 +67,7 @@ pnpm ui:contrast
 Use the root lockfile. Read [app guidance](./AGENTS.md), [root AGENTS](../../AGENTS.md), and installed Next.js docs before framework changes.
 
 ## Execution plan
-Start at the [active plan directory](../../.plans/), then follow the current rules and task artifacts for the Headquarter workstream. First gate: inspect route tree, SDK exports/types, ARSY endpoint schemas, tests and branch state. Do not add endpoints, tables, dependencies, services or duplicate primitives until a real gap is proven.
+Start at the [Headquarter command-center epic](https://github.com/bjo163/A-L-L-A-H.COM/issues/381) and its sub-issues, then follow the current rules and task lists for the Headquarter workstream. First gate: inspect route tree, SDK exports/types, ARSY endpoint schemas, tests and branch state. Do not add endpoints, tables, dependencies, services or duplicate primitives until a real gap is proven.
 
 ## Quality bar
 No fake data/live states, dead controls, unexplained metrics, duplicate navigation sources, client-side authorization, silent destructive actions, or unsupported completion claims. Consequential workflows must be tenant-safe, evidence-backed, accessible, responsive and verifiable.

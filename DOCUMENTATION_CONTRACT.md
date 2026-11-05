@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DOCUMENTATION_CONTRACT"
-version: "1.5.0"
+version: "1.5.1"
 owner: "engineering"
 status: "implemented"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 # Documentation Contract
 
@@ -15,7 +15,7 @@ One canonical source per topic. Link — never copy rules across files. Read wit
 | Document | Owns |
 |---|---|
 | `README.md` | Entry point · capabilities · setup · deployment |
-| `AGENTS.md` | Always-on engineering rules · monorepo map · invariants · quality gates · plans standard |
+| `AGENTS.md` | Always-on engineering rules · monorepo map · invariants · quality gates · issues standard |
 | `AUTONOMOUS.md` | Execution loop · security audit steps · git workflow |
 | `GOAL.md` | Mission · /goal directive |
 | `DOCUMENTATION_CONTRACT.md` | These rules |

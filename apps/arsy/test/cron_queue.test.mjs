@@ -73,7 +73,7 @@ test('a failing job enters error, records the cause, and backs off', async () =>
   assert.ok(new Date(row.next_retry_at).getTime() > Date.now(), 'next_retry_at is set to the backoff instant');
 });
 
-test('a disabled default cron is never claimed (seeded sync_local_plans is off)', async () => {
+test('a disabled cron row is never claimed by the runner', async () => {
   let calls = 0;
   registerCronHandler('queue_disabled', async () => { calls += 1; });
   await mkCron('queue_disabled', 'disabled');

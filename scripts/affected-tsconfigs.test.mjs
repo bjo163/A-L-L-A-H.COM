@@ -6,20 +6,12 @@ const projects = [
   'apps/dock/tsconfig.json',
   'apps/headquarter/tsconfig.json',
   'packages/ui/tsconfig.json',
-  'packages/vscode-extension/tsconfig.json',
 ];
 
 test('application edits select only the matching TypeScript project', () => {
   assert.deepEqual(selectTsconfigs(['apps/dock/src/page.tsx'], projects), {
     all: false,
     selected: ['apps/dock/tsconfig.json'],
-  });
-});
-
-test('extension edits select its own TypeScript project', () => {
-  assert.deepEqual(selectTsconfigs(['packages/vscode-extension/src/client.ts'], projects), {
-    all: false,
-    selected: ['packages/vscode-extension/tsconfig.json'],
   });
 });
 

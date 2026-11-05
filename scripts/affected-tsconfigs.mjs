@@ -11,7 +11,7 @@ export function selectTsconfigs(files, projectPaths) {
     if (!match) return { all: true, selected: projectPaths };
     const project = `${match[1]}/tsconfig.json`;
     if (!projects.has(project)) return { all: true, selected: projectPaths };
-    if (match[1].startsWith('packages/') && match[1] !== 'packages/vscode-extension') {
+    if (match[1].startsWith('packages/')) {
       return { all: true, selected: projectPaths };
     }
     selected.add(project);

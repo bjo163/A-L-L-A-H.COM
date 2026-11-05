@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "APP-ID-BLUEPRINT"
-version: "2.0.0"
+version: "2.1.0"
 owner: "architecture"
 status: "implemented"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 
 # MoonWitness ID — Product, Experience & Technical Blueprint
@@ -318,6 +318,8 @@ Run repository-level gates required by `AGENTS.md`, `QUALITY.md`, and `AUTONOMOU
 
 ## 12. Delivery phases and dependencies
 
+These phases ship as sub-issues of the [MoonWitness ID delivery epic](https://github.com/bjo163/A-L-L-A-H.COM/issues/3); the table is the index.
+
 | Order | Plan | Outcome | Depends on |
 |---:|---|---|---|
 | 00 | Contract and baseline audit | Evidence-backed implementation map | None |
@@ -336,7 +338,7 @@ Each plan is deliberately bounded for one small coding-agent run. The agent may 
 ## 13. Canonical references
 
 - Product narrative: [README.md](README.md)
-- Autonomous tasks: [.plan/README.md](.plan/README.md)
+- Autonomous tasks: [MoonWitness ID delivery epic](https://github.com/bjo163/A-L-L-A-H.COM/issues/3) (one sub-issue per phase below)
 - LUNAR CHRONICLES: [../../DNA/02-LUNAR-CHRONICLES.md](../../DNA/02-LUNAR-CHRONICLES.md)
 - Shared skin engine: [../../DNA/00-ENGINE-CONTRACT.md](../../DNA/00-ENGINE-CONTRACT.md)
 - Ecosystem blueprint: [../../BLUEPRINT.md](../../BLUEPRINT.md)

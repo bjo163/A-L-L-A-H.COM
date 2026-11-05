@@ -51,7 +51,7 @@ if (choice.selected.length === 0) {
 }
 
 const workspaceNames = choice.selected
-  .filter((project) => project.startsWith('apps/') || project === 'packages/vscode-extension/tsconfig.json')
+  .filter((project) => project.startsWith('apps/'))
   .map((project) => {
     const directory = dirname(join(root, project));
     return JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8')).name;

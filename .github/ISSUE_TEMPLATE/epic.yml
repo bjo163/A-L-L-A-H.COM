@@ -1,0 +1,37 @@
+name: Epic
+description: A large plan decomposed into sub-issues, one per phase or section.
+title: ""
+labels: ["epic", "status:pending"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / Spec
+      description: The capability being delivered and why; requirements and measurable acceptance criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: Architecture, API contracts, UX states. Long documents go in a SPEC/DESIGN comment.
+    validations:
+      required: false
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules / Invariants
+      description: Constraints every sub-issue must hold (security, tenancy, style purity).
+    validations:
+      required: false
+  - type: textarea
+    id: phases
+    attributes:
+      label: Phases
+      description: One native sub-issue per phase, linked as a tasklist; keep this in sync with the sub-issues panel.
+      value: |
+        ## Sub-issues
+        - [ ] Phase 1
+        - [ ] Phase 2
+    validations:
+      required: true

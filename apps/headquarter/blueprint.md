@@ -129,4 +129,4 @@ Done: implementation matches source contracts; all data has provenance/freshness
 ## Canonical references
 - [Root architecture](../../BLUEPRINT.md) · [Design doctrine](../../DESIGN.md) · [Engineering rules](../../AGENTS.md)
 - [Quality](../../QUALITY.md) · [Decisions](../../DECISIONS.md) · [App agent rules](AGENTS.md)
-- [Execution plan](../../.plans/20261105-headquarter-command-center/plan.md)
+- [Execution plan](https://github.com/bjo163/A-L-L-A-H.COM/issues/381)

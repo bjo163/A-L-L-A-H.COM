@@ -1,159 +1,22 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "BACKLOG"
-version: "1.0.0"
+version: "2.0.0"
 owner: "product"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-06"
 ---
 
 # BACKLOG.md
 
-## VSCODE-COCKPIT-READY-TO-USE: A-L-L-A-H Developer Cockpit evolution
-- Priority: P0
-- Status: PLANNING BASELINE PUBLISHED; IMPLEMENTATION NOT STARTED
-- Outcome: Added product narrative, architecture blueprint, master specification, local-agent execution rules, 74-task roadmap, and ten phase plans for VS Code extension readiness.
-- Acceptance: Release 0.4.0 requires manifest/runtime parity, extension-host verification, local Ollama journey, optional Gateway behavior, approved edit/validation workflow, mission recovery/replay, security checks, and clean standalone VSIX installation.
-- Verification: Documentation publication only. No extension source changes or tests were performed by this plan-generation commit. Interactive extension-host verification remains a release blocker.
-- Plan: `.plans/20261105-vscode-extension-ready-to-use/`
+The GitHub issue queue is the authoritative work backlog (see
+[AGENTS.md](AGENTS.md) § Issues Standard and [AUTONOMOUS.md](AUTONOMOUS.md) §1 DISCOVER).
 
-## VSCODE-MISSION-TIMELINE: Observable and replay-safe workspace agent missions
-- Priority: P0
-- Status: IMPLEMENTED; INTERACTIVE SMOKE PENDING
-- Outcome: Added typed, redacted timeline persistence, interrupted-session recovery, remote replay protection, validation events, and one approval-gated repair proposal.
-- Acceptance: Local and remote-backed mission state is inspectable; interrupted or replayed missions do not silently repeat execution; repair uses the existing context and edit approval policy.
-- Verification: 33 focused tests pass; extension typecheck, build, runtime parity, lint, and documentation checks pass; packaged and installed VSIX bundle hashes match. Interactive extension-host verification remains pending. Workspace-aware mission templates remain a follow-up milestone; see `.plans/20261104-1344-vscode-mission-timeline/`.
+```bash
+gh issue list --repo bjo163/A-L-L-A-H.COM --state open --label status:pending
+```
 
-## VSCODE-DEEP-RUNTIME-HARDENING: VS Code extension activation and packaging
-- Priority: P0
-- Status: IMPLEMENTED; INTERACTIVE COMMAND PALETTE CHECK PENDING
-- Outcome: Added activation failure logging, manifest/source/runtime parity validation, local VSIX packaging, standalone SDK bundling verification, gateway smoke evidence, and exact workspace/VSIX/installed bundle hash parity.
-- Acceptance: Every command has source and activation coverage; runtime packaging contains one standalone extension entrypoint; workspace, VSIX, and installed bundle hashes match; gateway health, readiness, and model catalog return HTTP 200.
-- Verification: Focused extension tests pass 28/28; extension typecheck passes; extension runtime parity passes; VSIX installed into VS Code 1.144.1; three bundle hashes match. Final repository lint/typecheck remain blocked by unrelated Sentinel baseline violations; interactive Command Palette execution remains pending.
-
-## WINDOWS-VSCODE-LOCAL-AGENT: Windows-local VS Code agent and remote operations
-- Priority: P0
-- Status: IMPLEMENTED; INTERACTIVE VERIFICATION PENDING
-- Outcome: The extension offers six local agent modes with explicit workspace-context consent, workspace-scoped edits, bounded validation commands, and outbound paired-device missions. Headquarter can manage tenant-scoped devices and missions. New accounts receive isolated personal tenants; team access requires shared organization membership.
-- Acceptance: Local permissions remain authoritative; personal accounts are isolated; users in the same tenant can manage shared devices and missions; focused extension and device-control tests pass.
-- Verification: `pnpm extension:test` (28/28), `pnpm typecheck`, `pnpm lint:arch`, `pnpm docs:check`, `pnpm extension:build`, all four documented application/Arsy builds, and auth/gateway package builds pass. Interactive Windows extension-host and Headquarter behavior checks remain pending; see `.plans/20261104-0138-windows-vscode-agent-platform/`.
-
-## MOONFRAME-SIX-DNA-UI-SKINS: Shared UI skin engine and app assignments
-- Priority: P0
-- Status: IMPLEMENTED; APP ROUTES AUDITED; INTERACTIVE BROWSER VERIFICATION PENDING
-- Outcome: `@moonwitness/ui` exposes six typed skin definitions, semantic token roles, a deterministic server-rendered `SkinRoot`, and shared component recipes. Dock uses Imperium Lumen, Headquarter uses Nexus Paradox, ID uses Lunar Chronicles, and WORLD OBSERVATORY uses Mycelium. All 12 current app routes have been visually and responsively audited; the Skin Laboratory and live interactive verification remain pending.
-- Acceptance: All six IDs are registered; shared component behavior remains semantic and accessible; four consumer roots select the approved skin; `apps/web` remains unchanged; no full verification claim without Skin Laboratory evidence.
-- Verification: See `.plans/20261104-0310-ui-skin-refinement/report.md` for current route, viewport, test, and browser-environment evidence.
-
-## SWARM-ORCHESTRATION: Autonomous IDE Agent Workbench & Multi-Agent Swarm Orchestration
-- Priority: P0
-- Status: VERIFIED
-- Outcome: Hierarchical multi-agent swarm with Supervisor, Researcher, Builder, and Verifier agents orchestrated via Fastify Hub. Includes Arsy endpoints, SDK methods, VS Code webview, and Headquarter dashboard.
-- Acceptance: All swarm endpoints respond, SDK methods exported, extension compiles, dashboard renders with `@moonwitness/ui`, lint:arch passes, docs:check passes.
-- Verification: pnpm typecheck (plugin, sdk, headquarter, vscode), pnpm lint:arch, pnpm docs:check all pass.
-
-## WORLD-OBSERVATORY: Create WORLD OBSERVATORY Next.js app (apps/jizz)
-- Priority: P0
-- Status: VERIFIED
-- Outcome: Public intelligence observatory app deployed at apps/jizz, port 3004, consuming ROCKSOUL JIZZ read-only API and @moonwitness/ui components.
-- Acceptance: Working app with home page, observations, perspectives, navigation, responsive layout.
-- Verification: pnpm jizz:build, pnpm docs:check, pnpm lint:arch, pnpm typecheck all pass.
-
-## COGNITIVE-AGENT-LOOP: Autonomous Cognitive Agent Loop & Generative SDUI (Phase 4)
-- Priority: P0
-- Status: VERIFIED
-- Outcome: ReAct multi-step cognitive agent loop with safety guards, generative SDUI synthesis tool, Fastify SSE endpoints, universal SDK client, and Headquarter Agent Studio dashboard.
-- Acceptance: POST /v1/agent/run and /v1/agent/stream execute multi-step tool chains; render_sdui tool generates valid SDUI schemas; SDK provides typed agentRun/agentStream; Agent Studio renders live reasoning timeline and SDUI preview; all quality gates pass.
-- Verification: pnpm typecheck (all packages), pnpm lint:arch (100%), pnpm docs:check (100/100), pnpm arsy:build, pnpm headquarter:build, pnpm dock:build, pnpm id:build all succeed.
-## EVOLVE-PLATFORM-FOUNDATIONS
-- Priority: P1
-- Status: VERIFIED
-- Outcome: Advance platform foundations with concrete verification evidence.
-- Acceptance: Extension parity and observatory verification complete with evidence.
-- Verification: Pending per plan 20261104-131923-evolve-platform-foundations
-
-## NEW-PLATFORM-CAPABILITY-4: Simulated new platform capability
-- Priority: P0
-- Status: VERIFIED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T08-13-57-new-platform-capability-4
-
-## NEW-PLATFORM-CAPABILITY-6: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-04-05-new-platform-capability-6
-- Reason: Marked VERIFIED without product change. Evolve commits for capability 6 added only empty plan templates plus a BACKLOG update; report.md claims gates pass without real code or measured output (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-7: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-10-04-new-platform-capability-7
-- Reason: Marked VERIFIED without product change. Evolve commit for capability 7 added only empty plan templates plus a BACKLOG update; report.md claims gates pass without real code or measured output (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-8: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-19-48-new-platform-capability-8
-- Reason: Marked VERIFIED without product change. Evolve commit for capability 8 added only empty plan templates plus a BACKLOG update; report.md claims gates pass without real code or measured output (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-9: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-26-31-new-platform-capability-9
-- Reason: Marked VERIFIED without product change. Evolve commit for capability 9 added GitHub workflow templates plus empty plan files, not a capability feature; report.md claims gates pass without measured output (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-10: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-34-20-new-platform-capability-10
-- Reason: Marked VERIFIED without product change. Evolve commit for capability 10 added empty plan templates and an unrelated .qoder plan; report.md claims gates pass without measured output (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-11: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-44-14-new-platform-capability-11
-- Reason: Marked VERIFIED without product change. Evolve commit for capability 11 added empty plan templates plus a small theme.css edit; no capability feature or measured output (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-12: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-47-02-new-platform-capability-12
-- Reason: Marked VERIFIED without product change. Capability 12 has no code and its report.md claims gates pass without measured output; plan dir still untracked (see evolve-loop-guard plan).
-
-
-## NEW-PLATFORM-CAPABILITY-13: New platform capability
-- Priority: P0
-- Status: DISCOVERED
-- Outcome: Implement new platform capability from brainstorming
-- Acceptance: New capability implemented and verified
-- Verification: Pending per plan 2026-11-04T09-52-59-new-platform-capability-13
-- Reason: Plan is only an empty template with no concrete requirement or acceptance criteria; no product change. Held under evolve-loop-guard until a real capability is specified.
-
-
-## EVOLVE-LOOP-GUARD: Harden the EVOLVE loop against empty plans and unverified claims
-- Priority: P0
-- Status: IN_PROGRESS
-- Outcome: Add guardrails to AUTONOMOUS.md so EVOLVE cannot create plans without a concrete spec, and cannot mark VERIFIED without a report.md containing real evidence. Correct the falsely VERIFIED capability entries and clean up duplicate empty plan dirs.
-- Acceptance: AUTONOMOUS.md section 8 carries the three guards; BACKLOG shows no VERIFIED capability without code; report.md records the commands actually run; push to dev.
-- Verification: In progress per plan 20261104-175034-evolve-loop-guard
+This file is retained as a historical pointer only. The former `.plans/<timestamp>-<slug>/`
+entries it catalogued were migrated to GitHub Issues under the `migrated-from-plans` label
+(see [DECISIONS.md](DECISIONS.md) D-018); their current status lives on the issues, not here.
+Do not add new work items to this file - open an issue instead.

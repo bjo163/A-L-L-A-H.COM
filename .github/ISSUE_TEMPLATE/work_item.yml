@@ -1,0 +1,46 @@
+name: Work Item
+description: "A bounded unit of work for the queue: spec, design, rules, tasks."
+title: ""
+labels: ["type:task", "status:pending"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / Spec
+      description: Why this work exists; requirements and acceptance criteria naming files or subsystems with measurable outcomes.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: UX states, API contracts, data model changes. Write "none" if purely mechanical.
+    validations:
+      required: false
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules / Invariants
+      description: Security, tenant isolation, SSRF, style-purity constraints this work must not break.
+    validations:
+      required: false
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Checkbox list, updated live during execution.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - priority:P0
+        - priority:P1
+        - priority:P2
+    validations:
+      required: true

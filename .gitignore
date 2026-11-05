@@ -13,3 +13,5 @@ data/
 *.err
 *.out
 apps/server/
+.plans/
+.plans-quarantine/

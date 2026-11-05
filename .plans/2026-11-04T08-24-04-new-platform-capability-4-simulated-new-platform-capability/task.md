@@ -1,4 +1,0 @@
-- [x] Implement task requirements
-- [x] Run quality gates
-- [x] Document changes
-- [x] Commit and push

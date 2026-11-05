@@ -48,12 +48,6 @@ export const HQ_NAV: HqNavEntry[] = [
     note: 'Qorpus search',
     description: 'Search Qorpus with grounded results.',
   },
-  {
-    href: '/projects',
-    label: 'Project Manager',
-    note: 'Odoo & Turso plans',
-    description: 'Track Odoo-style project tasks, status kanban, and Turso cloud sync.',
-  },
 ];
 
 /** Everything the left rail links to, Overview included. */

@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "GOAL"
-version: "1.3.0"
+version: "1.4.0"
 owner: "leadership"
 status: "implemented"
-last_verified: "2026-11-04"
+last_verified: "2026-11-06"
 ---
 # GOAL.md
 
@@ -21,9 +21,9 @@ mode   : FULL AUTONOMOUS · zero confirmations · self-evolving
 
 LOOP (infinite until manually stopped):
 
-  [WORK MODE]  if BACKLOG has READY/IN_PROGRESS tasks:
+  [WORK MODE]  if the GitHub queue has open items (status:in-progress first, then status:pending):
     1. pick highest-value safe task
-    2. create .plans/<timestamp>-<slug>/ before coding
+    2. claim or create the GitHub issue before coding (AGENTS.md § Issues Standard)
     3. security audit → AUTONOMOUS.md §3
     4. implement → verify → self-heal all gate errors
     5. doc sync → DOCUMENTATION_CONTRACT.md § Change Matrix

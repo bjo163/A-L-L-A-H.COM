@@ -13,7 +13,6 @@ const knownComponents = [
   ['moonsky', 'apps/moonsky/', 'pnpm moonsky:build'],
   ['e-isp', 'apps/e-isp/', 'pnpm esp:build'],
   ['sentinel', 'apps/sentinel/', 'pnpm sentinel:build'],
-  ['extension', 'packages/vscode-extension/', 'pnpm extension:build'],
 ];
 
 const knownAppPaths = new Set(knownComponents.filter(([, prefix]) => prefix.startsWith('apps/')).map(([, prefix]) => prefix));
@@ -34,7 +33,6 @@ const additionalApps = readdirSync('apps', { withFileTypes: true })
 export const components = [...knownComponents, ...additionalApps];
 
 const sharedPrefixes = ['addons/', 'scripts/', '.github/', '.husky/'];
-const isolatedPrefixes = ['packages/vscode-extension/'];
 const rootFiles = new Set([
   'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'tsconfig.base.json',
   'eslint.config.mjs', 'eslint.config.js', '.npmrc', '.node-version', '.nvmrc',
@@ -55,12 +53,12 @@ export function selectBuilds(files, targets = components) {
     if (documentationOnly(file)) return false;
     if (generatedCodeInputs.some((pattern) => pattern.test(file))) return false;
     if (rootFiles.has(file) || sharedPrefixes.some((prefix) => file.startsWith(prefix))) return false;
-    if (file.startsWith('packages/') && !isolatedPrefixes.some((prefix) => file.startsWith(prefix))) return false;
+    if (file.startsWith('packages/')) return false;
     return ![...targetPaths].some((prefix) => file.startsWith(prefix));
   });
   const all = hasUnknown || files.some((file) =>
     rootFiles.has(file) || sharedPrefixes.some((prefix) => file.startsWith(prefix)) ||
-    (file.startsWith('packages/') && !isolatedPrefixes.some((prefix) => file.startsWith(prefix))) ||
+    (file.startsWith('packages/')) ||
     generatedCodeInputs.some((pattern) => pattern.test(file)),
   );
   return {
@@ -77,7 +75,7 @@ export function matrixForBuilds(selected) {
   return selected.map(([component]) => {
     const appDir = component === 'e-isp' ? 'e-isp' : component;
     let usesNext = ['dock', 'gate', 'headquarter', 'id', 'jizz', 'harbor', 'moonsky', 'e-isp'].includes(component);
-    if (!usesNext && !['arsy', 'sentinel', 'extension'].includes(component)) {
+    if (!usesNext && !['arsy', 'sentinel'].includes(component)) {
       try {
         const manifest = JSON.parse(readFileSync(join('apps', appDir, 'package.json'), 'utf8'));
         usesNext = Boolean(manifest.dependencies?.next || manifest.devDependencies?.next);

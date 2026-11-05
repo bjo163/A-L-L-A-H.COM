@@ -182,6 +182,6 @@ Before adopting an external library or pattern: verify maintenance, license, sec
 
 ## Execution mapping and adoption status
 
-Research-derived concepts are proposals until implemented and verified. Their bounded implementation tasks, existing-code overlap checks and adoption/defer decisions are tracked in the [Moon UI Master Consolidation Plan](../../.plans/20261105-moon-ui-master-consolidation/spec.md), especially its coverage matrix and task list.
+Research-derived concepts are proposals until implemented and verified. Their bounded implementation tasks, existing-code overlap checks and adoption/defer decisions are tracked in the [Moon UI Master Consolidation Plan](https://github.com/bjo163/A-L-L-A-H.COM/issues/483), especially its coverage matrix and task list.
 
 Do not add a library, runtime AI service, WebGL/WebGPU renderer or generative pipeline solely because it appears in a paper, Dribbble study or GitHub trend. The master plan requires a real workflow, current-source gap, license/maintenance/security review, accessible fallback and measurable verification before adoption.

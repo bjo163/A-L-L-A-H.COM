@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.8.0"
+version: "1.9.0"
 owner: "engineering"
 status: "implemented"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 # AGENTS.md
 
@@ -90,19 +90,20 @@ Pre-commit: `git diff --cached --check`. Pre-push: `verify:fast` for rapid local
 
 Production Docker builds run on GitHub Actions only. Coolify receives its own GitHub webhook; image publication and Coolify deployment may run concurrently. Do not duplicate the resource-heavy Docker gate locally.
 
-## Plans Standard
+## Issues Standard
 
-Path: `.plans/<timestamp>-<slug>/`
+Queue: GitHub Issues on `bjo163/A-L-L-A-H.COM`. The issue is the only authoritative work item; `.plans/` folders are retired (D-018). All GitHub writes go through the `gh` CLI.
 
-| Artifact | Required | Purpose |
-|---|---|---|
-| `spec.md` | always | Architecture · requirements · acceptance criteria · `status`: `proposed→in_progress→completed` |
-| `task.md` | always | `- [ ] → - [/] → - [x]`. Update live during execution. |
-| `design.md` | always | UX/UI states · API contracts |
-| `rules.md` | always | Invariants · security · tenant isolation · SSRF |
-| `conflict.md` | when blocked | Ambiguity / trade-off needing human input (`- [ ] Confirmed by User`) |
-| `decision.md` | when ADR needed | Rationale · alternatives · consensus |
-| `report.md` | on `completed` | Verified deliverables + evidence. No invented estimates. |
+| Rule | Spec |
+|---|---|
+| Work item | One issue per bounded plan. Body: Context/Spec · Design · Rules · Tasks. Acceptance criteria name files/subsystems with measurable outcomes. |
+| Tiering | ≤40 checkboxes → single issue with tasklist. >40 with phase sections → epic (`epic` label) + one native sub-issue per phase. |
+| Labels | `type:task` + exactly one `status:*` · `epic` · `priority:P0\|P1\|P2` · domain labels · `blocked` when owner input is required · `evolve` for self-evolution work. |
+| Status flow | proposed → open + `status:pending` · claim → `status:in-progress` + work-start comment · done → closing comment with evidence (commands, exit codes, files changed) then close · rejected → `wontfix` + pointer. |
+| Conflicts | Blocked work gets `blocked` + a comment naming the open conflict IDs. Only dependent work stalls. |
+| ADR | Decisions land as issue comments; repo-wide ones also append `DECISIONS.md`. |
+| Resume | `gh issue list --state open --label status:in-progress`, then `status:pending` ordered by priority then smallest tasklist. |
+| Anti-stacking | No new `evolve` issue while an `evolve` issue is still open. |
 
 <!-- antislop:start -->
 ## Antislop

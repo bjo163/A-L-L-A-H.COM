@@ -31,7 +31,7 @@ A-L-L-A-H.COM is currently maintained by a single principal maintainer:
 
 1. **Day-to-day changes**: Committed directly to `dev` following `AUTONOMOUS.md`.
 2. **Architecture changes**: Require an updated `BLUEPRINT.md` / `DECISIONS.md` entry.
-3. **Breaking changes**: Require a `.plans/` specification before implementation.
+3. **Breaking changes**: Require an accepted GitHub work item (AGENTS.md § Issues Standard) before implementation.
 4. **Production releases**: Gate through the GitHub Actions pipeline (dev → main promotion).
 
 ## Contribution Model
