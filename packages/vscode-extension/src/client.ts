@@ -1,17 +1,11 @@
-﻿import * as vscode from 'vscode';
-import {
-  createClient,
-  type SessionTokenStore,
-  type SwarmAgentMessage,
-  type SwarmExecutionResult,
-  type SwarmStep,
-} from '@allah/sdk';
+import * as vscode from 'vscode';
 import {
   getGatewayErrorMessage,
   parsePlanCompletionResponse,
   type GatewayModel,
 } from './gatewayContracts';
 import type { PlanMarkdownBodies } from './planManager';
+import type { ChatCompletionResponse, ChatMessage, RemoteAgentMission } from '@moonwitness/types';
 
 const API_KEY_SECRET = process.env.API_KEY_SECRET_NAME || 'allah.apiKey';
 const SESSION_TOKEN_SECRET = process.env.SESSION_TOKEN_SECRET_NAME || 'allah.sessionToken';
@@ -26,6 +20,110 @@ interface HealthResponse {
 interface ServiceCheck {
   ok: boolean;
   message: string;
+}
+
+interface SwarmEvent {
+  event: string;
+  data: Record<string, unknown>;
+}
+
+class StandaloneHttpClient {
+  constructor(
+    private readonly baseUrl: string,
+    private readonly headers: Record<string, string>,
+  ) {}
+
+  private async request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...init,
+      headers: {
+        Accept: 'application/json',
+        ...this.headers,
+        ...(init.headers as Record<string, string> | undefined),
+      },
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (!response.ok) {
+      const error = isRecord(payload.error) && typeof payload.error.message === 'string'
+        ? payload.error.message
+        : typeof payload.message === 'string' ? payload.message : `Request failed with status ${response.status}`;
+      throw new Error(error);
+    }
+    return (payload.data === undefined ? payload : payload.data) as T;
+  }
+
+  readonly health = {
+    check: (): Promise<Record<string, unknown>> => this.request('/health'),
+    ready: (): Promise<Record<string, unknown>> => this.request('/ready'),
+  };
+
+  readonly router = {
+    listModels: async (): Promise<Array<{ id: string; owned_by?: string }>> => {
+      const payload = await this.request<{ object?: string; data?: Array<{ id?: unknown; owned_by?: unknown }> }>('/v1/models');
+      return (payload.data ?? []).flatMap((model) => typeof model.id === 'string'
+        ? [{ id: model.id, ...(typeof model.owned_by === 'string' ? { owned_by: model.owned_by } : {}) }]
+        : []);
+    },
+    chat: (body: { model: string; messages: ChatMessage[] }, signal?: AbortSignal): Promise<ChatCompletionResponse> =>
+      this.request('/v1/chat/completions', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        signal,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+  };
+
+  readonly agentControl = {
+    claimPairing: (code: string, deviceName: string): Promise<{ deviceId: string; deviceToken: string }> =>
+      this.request('/v1/agent/devices/claim', {
+        method: 'POST',
+        body: JSON.stringify({ code, deviceName }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    nextMission: (deviceToken: string): Promise<{ mission?: RemoteAgentMission }> =>
+      this.request('/v1/agent/missions/next', { headers: { 'x-device-token': deviceToken } }),
+    reportMissionEvent: (deviceToken: string, missionId: string, event: string, payload: Record<string, unknown>) =>
+      this.request('/v1/agent/missions/event', {
+        method: 'POST',
+        body: JSON.stringify({ missionId, event, payload }),
+        headers: { 'Content-Type': 'application/json', 'x-device-token': deviceToken },
+      }),
+  };
+
+  readonly swarm = {
+    stream: async (body: { goal: string; max_turns: number }, onEvent: (event: SwarmEvent['event'], data: SwarmEvent['data']) => void, signal?: AbortSignal): Promise<void> => {
+      const response = await fetch(`${this.baseUrl}/v1/swarm/stream`, {
+        method: 'POST',
+        headers: { ...this.headers, Accept: 'text/event-stream', 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal,
+      });
+      if (!response.ok || !response.body) {
+        throw new Error(`Swarm stream failed with status ${response.status}`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data:')) continue;
+            const raw = line.slice(5).trim();
+            if (!raw) continue;
+            const parsed = JSON.parse(raw) as Record<string, unknown>;
+            onEvent(typeof parsed.event === 'string' ? parsed.event : 'message', parsed);
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    },
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -108,17 +206,12 @@ export class MoonWitnessClient {
     );
   }
 
-  private async createSdkClient(baseUrl = this.baseUrl, useApiKey = true) {
-    const sessionStore: SessionTokenStore = {
-      get: async () => (await this.context.secrets.get(SESSION_TOKEN_SECRET)) ?? null,
-      set: async (token) => this.context.secrets.store(SESSION_TOKEN_SECRET, token),
-      clear: async () => this.context.secrets.delete(SESSION_TOKEN_SECRET),
-    };
-    const virtualKey = useApiKey ? await this.context.secrets.get(API_KEY_SECRET) : undefined;
-    return createClient({
-      baseUrl,
-      sessionStore,
-      ...(virtualKey === undefined ? {} : { virtualKey }),
+  private async createSdkClient(baseUrl = this.baseUrl, useApiKey = true): Promise<StandaloneHttpClient> {
+    const apiKey = useApiKey ? await this.context.secrets.get(API_KEY_SECRET) : undefined;
+    const sessionToken = await this.context.secrets.get(SESSION_TOKEN_SECRET);
+    return new StandaloneHttpClient(baseUrl, {
+      ...(apiKey ? { 'x-virtual-key': apiKey } : {}),
+      ...(sessionToken ? { 'x-session-token': sessionToken } : {}),
     });
   }
 
@@ -179,10 +272,7 @@ export class MoonWitnessClient {
   async streamSwarm(
     goal: string,
     maxTurns: number,
-    onEvent: (
-      event: string,
-      data: SwarmStep | SwarmAgentMessage | SwarmExecutionResult | { error: string }
-    ) => void,
+    onEvent: (event: string, data: Record<string, unknown>) => void,
     signal?: AbortSignal
   ): Promise<void> {
     const client = await this.createSdkClient(this.arsyBaseUrl);
@@ -206,7 +296,7 @@ export class MoonWitnessClient {
         { role: 'user', content: prompt },
       ],
     }, signal);
-    const content = response.choices[0]?.message.content;
+    const content = response.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || content.trim().length === 0) {
       throw new Error('The model returned an empty agent response.');
     }

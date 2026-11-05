@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { RemoteAgentMission } from '@moonwitness/types';
+import type { RemoteAgentMission } from './contracts';
 import { MoonWitnessClient } from './client';
 import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
 
@@ -59,7 +59,7 @@ export class RemoteMissionService implements vscode.Disposable {
 
       if (mission.state === 'cancel_requested') {
         if (this.activeMission?.id === mission.id) {
-          this.activeMission.controller.abort();
+          this.activeMission?.controller.abort();
         } else {
           await this.reportEvent(deviceToken, mission.id, 'cancelled');
         }
