@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
 COPY packages/arsy-core ./packages/arsy-core
 COPY packages/arsy-orm ./packages/arsy-orm
 COPY packages/sentinel-radius ./packages/sentinel-radius
-COPY addons/nexus ./addons/nexus
+COPY addons ./addons
 COPY apps/sentinel ./apps/sentinel
 
 RUN pnpm --filter @allah/arsy-core build \
@@ -38,7 +38,7 @@ ENV PG_DATA_DIR=/app/data
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/addons/nexus ./addons/nexus
+COPY --from=builder /app/addons ./addons
 COPY --from=builder /app/apps/sentinel ./apps/sentinel
 
 WORKDIR /app/apps/sentinel

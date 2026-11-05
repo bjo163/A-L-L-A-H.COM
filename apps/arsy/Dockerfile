@@ -48,6 +48,7 @@ ENV PORT=5150
 
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/packages ./packages
+COPY --from=builder --chown=node:node /app/addons ./addons
 COPY --from=builder --chown=node:node /app/apps/arsy ./apps/arsy
 
 WORKDIR /app/apps/arsy

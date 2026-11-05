@@ -34,10 +34,20 @@ jobs:
           CORS_ORIGINS: https://example.com
         run: docker compose config --quiet
 
+  validate-docker-contracts:
+    name: Validate Docker build contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Validate every app Docker contract
+        run: node scripts/check-docker-contracts.mjs
+
   publish:
     name: Publish ${{ matrix.component }} image
     runs-on: ubuntu-latest
-    needs: validate-compose
+    needs: [validate-compose, validate-docker-contracts]
     strategy:
       fail-fast: false
       matrix:
@@ -60,6 +70,8 @@ jobs:
             dockerfile: apps/harbor/Dockerfile
           - component: moonsky
             dockerfile: apps/moonsky/Dockerfile
+          - component: e-isp
+            dockerfile: apps/e-isp/Dockerfile
     steps:
       - name: Check out source
         uses: actions/checkout@v7
