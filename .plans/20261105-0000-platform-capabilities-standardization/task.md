@@ -188,41 +188,9 @@ Objective: Update all DISCOVERED capability entries to appropriate states.
 
 ## Detailed Subtasks
 
-### T-001: Add SkinRoot to dock app
-1. Import SkinRoot from `@moonwitness/ui` in layout.tsx
-2. Wrap root return with `<SkinRoot>`
-3. Pass skin prop or omit for default (`imperium-lumen`)
-4. Verify `data-moonframe-skin` attribute on rendered root
-5. Run pnpm typecheck for dock
-6. Run pnpm lint:arch for dock
-7. Run pnpm docs:check for dock
+### Skin integration subtasks — SUPERSEDED
 
-### T-002: Add SkinRoot to gate app
-(Steps same as T-001, for gate application)
-
-### T-003: Add SkinRoot to headquarter app
-(Steps same as T-001, for headquarter application)
-
-### T-004: Add SkinRoot to id app
-(Steps same as T-001, for id application)
-
-### T-005: Add SkinRoot to jizz app
-(Steps same as T-001, for jizz application)
-
-### T-006: Add SkinRoot to moonsky app
-(Steps same as T-001, for moonsky application)
-
-### T-007: Add SkinRoot to harbor app
-(Steps same as T-001, for harbor application)
-
-### T-008: Add SkinRoot to arsy app
-(Steps same as T-001, for arsy application - Fastify-based)
-
-### T-009: Add SkinRoot to server app
-(Steps same as T-001, for server application - API server)
-
-### T-010: Add SkinRoot to sentinel app
-(Steps same as T-001, for sentinel application - RADIUS daemon, where applicable)
+The old T-001 through T-010 detail sections have been removed from this execution document. They are transferred to MU-0801–MU-0822 in `.plans/20261105-moon-ui-master-consolidation/task.md`. Do not recreate SkinRoot wrappers or use the old all-app mapping here.
 
 ### T-020: Implement capability 4
 1. Read brainstorming output from plan directory 2026-11-04T08-13-57-new-platform-capability-4
@@ -240,7 +208,7 @@ Objective: Update all DISCOVERED capability entries to appropriate states.
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
-- Phase 1 (Skin Integration) → Phase 2 (Capability Implementation) → Phase 3 (Guardrails) → Phase 4 (BACKLOG Updates)
+- Phase 2 (Capability Implementation) → Phase 3 (Guardrails) → Phase 4 (BACKLOG Updates). UI skin integration is tracked separately by the Moon UI Master Consolidation plan.
 
 ### Parallel Dependencies
 - Within Phase 1: All 10 applications independent (parallel)
@@ -249,13 +217,11 @@ Objective: Update all DISCOVERED capability entries to appropriate states.
 - Within Phase 4: Independent status updates (parallel)
 
 ### Key Cross-Phase Dependencies
-- Skin integration (Phase 1) enables some capabilities that depend on skin tokens
 - Phase 2 implementations must pass quality gates before Phase 3 can verify guardrails
 - Phase 4 status updates require completed implementations from Phase 2
 - AUTONOMOUS.md guardrails (Phase 3) apply to future plan creation, not retroactive
 
 ### Required Files & Affected Modules
-- `apps/*/src/app/layout.tsx` - all 10 apps (SkinRoot integration)
 - `AUTONOMOUS.md` - section 8 (guardrails)
 - `BACKLOG.md` - capability status entries
 - `.plans/20261105-0000-platform-capabilities-standardization/` - all 4 documents
@@ -263,26 +229,22 @@ Objective: Update all DISCOVERED capability entries to appropriate states.
 - `packages/ui/src/skins/` - already exists, may need minor updates
 
 ### Testing and Validation Procedures
-1. **Skin Integration Test**: Verify each app renders with `data-moonframe-skin` attribute and correct `--mw-*` CSS variables
 2. **Quality Gate Tests**: Run `pnpm typecheck`, `pnpm lint:arch`, `pnpm docs:check`, and app-specific builds
 3. **Capability Verification**: Each capability must have real code, not just plan templates
 4. **Guardrail Test**: Attempt to create plan without spec - should be blocked by AUTONOMOUS.md guards
 5. **BACKLOG Status Test**: Verify all capability entries have appropriate statuses
 
 ### Documentation Requirements
-- All 10 applications have SkinRoot integration documented
 - All 11 platform capabilities have complete documentation (spec, design, task, rule)
 - AUTONOMOUS.md section 8 has three enforceable guardrails
 - BACKLOG.md accurately reflects implementation status
 - No "VERIFIED without code" entries remain in BACKLOG.md
 
 ### Completion Checklist
-- [ ] All 10 applications have SkinRoot with valid skin ID
 - [ ] All 11 platform capabilities have real code implementation
 - [ ] All quality gates pass: typecheck, lint:arch, docs:check, and 5 app builds
 - [ ] BACKLOG.md updated: no VERIFIED capability without code
 - [ ] AUTONOMOUS.md section 8 has three evolve-loop-guard guards
 - [ ] Each capability directory has spec.md, design.md, task.md, rule.md
 - [ ] No duplicate functionality across capabilities
-- [ ] Skin tokens flow correctly through all applications
 - [ ] Zero regressions in existing quality gates
