@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.changes.outputs.matrix }}
+      docker_matrix: ${{ steps.changes.outputs.docker_matrix }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -211,13 +212,37 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+  docker-build:
+    name: Build Docker image ${{ matrix.component }}
+    needs: verify
+    if: needs.verify.outputs.docker_matrix != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include: ${{ fromJSON(needs.verify.outputs.docker_matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build image without publishing
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/${{ matrix.component }}/Dockerfile
+          push: false
+          cache-from: type=gha,scope=ci-${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=ci-${{ matrix.component }}
+
   promote-to-main:
     name: Promote dev to main
-    needs: [verify, verify-harbor, verify-moonsky, build]
+    needs: [verify, verify-harbor, verify-moonsky, build, docker-build]
     if: >-
       always() && github.event_name == 'push' && github.ref == 'refs/heads/dev' &&
       needs.verify.result == 'success' &&
-      (needs.build.result == 'success' || needs.build.result == 'skipped')
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.docker-build.result == 'success' || needs.docker-build.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write

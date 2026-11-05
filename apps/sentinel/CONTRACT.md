@@ -39,5 +39,5 @@ The sync and alert throttles are configurable:
 
 The builder and runner must copy the complete `addons/` tree. `src/server.ts`
 loads `addons/index.ts`, whose registry imports every installable addon before
-selecting the `nexus` and `mw_notify` roots at startup. It idempotently seeds the
-base catalog and notification templates after schema synchronization.
+selecting the `nexus` and `mw_notify` roots at startup. It registers the ORM auth
+models before schema synchronization and seeds the notification templates.

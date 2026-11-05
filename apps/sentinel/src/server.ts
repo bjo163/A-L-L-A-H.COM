@@ -8,7 +8,7 @@
 
 import 'dotenv/config';
 import { logger } from '@allah/arsy-core';
-import { dbEngine, modelRegistry, BaseRepository, SYSTEM_ACTOR, decryptSecret, drainOutbox, type SyncOutboxRow } from '@allah/arsy-orm';
+import { dbEngine, modelRegistry, BaseRepository, SYSTEM_ACTOR, decryptSecret, drainOutbox, registerAuthModels, type SyncOutboxRow } from '@allah/arsy-orm';
 import {
   RadiusServer,
   RadiusCodec,
@@ -20,7 +20,6 @@ import {
 } from '@allah/sentinel-radius';
 import { registerAddonsFor } from '../../../addons/index';
 import { recordNotifyEvent } from '../../../addons/mw_notify/services/events';
-import { loadDefaultData as loadBaseDefaultData } from '../../../addons/base/data/index';
 import { loadDefaultData as loadNotifyDefaultData } from '../../../addons/mw_notify/data/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
@@ -614,6 +613,7 @@ async function startSentinel() {
   // rows the hub's `notify_dispatch` cron drains; it transitively pulls `project`
   // (its dispatch-registry dependency) without starting a runner in this process.
   registerAddonsFor(['nexus', 'mw_notify'], (message) => logger.info(message));
+  registerAuthModels();
   SentinelAccountModel = modelRegistry.get('sentinel.account');
   SentinelSessionModel = modelRegistry.get('sentinel.session');
   await dbEngine.connect();
@@ -631,7 +631,6 @@ async function startSentinel() {
     },
     actor: SYSTEM_ACTOR,
   };
-  await loadBaseDefaultData(seedContext);
   await loadNotifyDefaultData(seedContext);
   logger.info('Notification templates synchronized');
 

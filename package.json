@@ -51,6 +51,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@allah/arsy-core": "workspace:*",
     "@allah/arsy-orm": "workspace:*"
   },
   "devDependencies": {

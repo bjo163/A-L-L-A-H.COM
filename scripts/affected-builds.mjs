@@ -1,5 +1,5 @@
 import { getChangedFiles } from './changed-files.mjs';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const knownComponents = [
@@ -88,4 +88,12 @@ export function matrixForBuilds(selected) {
     const cachePath = usesNext ? `apps/${appDir}/.next/cache` : '';
     return { component, cachePath };
   });
+}
+
+export function matrixForDockerBuilds(selected) {
+  return matrixForBuilds(
+    selected.filter(([component, prefix]) =>
+      prefix.startsWith('apps/') && existsSync(join('apps', component, 'Dockerfile'))
+    )
+  );
 }

@@ -243,6 +243,14 @@ function checkCiAndRelease() {
   if (!ci.includes('pnpm docker:contract:check') || !ci.includes('pnpm platform:contract:check')) {
     failures.push('platform-contracts.yml: required Docker and platform contract gates are missing');
   }
+  if (
+    !appCi.includes('docker_matrix: ${{ steps.changes.outputs.docker_matrix }}') ||
+    !appCi.includes('docker/build-push-action@') ||
+    !appCi.includes('file: apps/${{ matrix.component }}/Dockerfile') ||
+    !appCi.includes('push: false')
+  ) {
+    failures.push('ci-dev.yml: affected app Docker images must build without publishing');
+  }
   for (const gate of ['pnpm docs:check', 'pnpm contract:check', 'pnpm lint:arch']) {
     if (!ci.includes(gate)) failures.push(`platform-contracts.yml: missing ${gate} API/model contract gate`);
   }

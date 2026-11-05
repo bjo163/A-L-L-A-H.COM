@@ -4,15 +4,16 @@ import {
   BaseRepository,
   dbEngine,
   modelRegistry,
+  registerAuthModels,
   SchemaMigrator,
   SYSTEM_ACTOR,
 } from '@allah/arsy-orm';
 import { registerAddonsFor } from '../../../addons/index.ts';
-import { loadDefaultData as loadBaseDefaultData } from '../../../addons/base/data/index.ts';
 import { loadDefaultData } from '../../../addons/mw_notify/data/index.ts';
 
 test('sentinel registers and seeds the notification template catalog', async () => {
   registerAddonsFor(['nexus', 'mw_notify']);
+  registerAuthModels();
   await dbEngine.connect();
   try {
     await new SchemaMigrator(dbEngine).sync();
@@ -23,9 +24,7 @@ test('sentinel registers and seeds the notification template catalog', async () 
     };
     const context = { repository, actor: SYSTEM_ACTOR };
 
-    await loadBaseDefaultData(context);
     await loadDefaultData(context);
-    await loadBaseDefaultData(context);
     await loadDefaultData(context);
 
     const templates = await repository('notify.template').find({

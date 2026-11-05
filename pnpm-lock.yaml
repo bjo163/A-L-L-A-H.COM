@@ -166,6 +166,9 @@ importers:
 
   .:
     dependencies:
+      '@allah/arsy-core':
+        specifier: workspace:*
+        version: link:packages/arsy-core
       '@allah/arsy-orm':
         specifier: workspace:*
         version: link:packages/arsy-orm
