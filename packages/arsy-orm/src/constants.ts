@@ -37,6 +37,14 @@ export function sqlQuotedColumnList(columns: readonly string[]): string {
 }
 
 /**
+ * Guard dynamic SQL identifiers (table/column/index names). Only lowercase-led
+ * `[a-z0-9_]` up to 63 chars is safe, matching the Postgres NAMEDATALEN limit.
+ */
+export function isSafeIdentifier(name: string): boolean {
+  return /^[a-z][a-z0-9_]{0,62}$/.test(name);
+}
+
+/**
  * One SHA-256 helper for the whole platform. Replaces the ~11 independent
  * `crypto.createHash('sha256')...digest('hex')` reimplementations across the
  * addons and packages (roadmap T9). Accepts text or raw bytes.

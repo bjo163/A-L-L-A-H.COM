@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "8b2f0def9983e0e76517366749f50c64dcdbff9d15859f32c3297270e75bd000",
+  "source_digest": "f8fdef60e47d107b5b0dbb873d66270ac81b374cd2196c18c7ce60588e59eab8",
   "units": [
     {
       "dir": "addons/base",
@@ -77,7 +77,20 @@
       "version": "1.0.0",
       "status": "implemented",
       "last_verified": "2026-11-05",
-      "summary": "Solar/Power Inverters, Battery Energy Storage Systems, and Physical Utility Infrastructure"
+      "summary": "Solar/Power Inverters, Battery Energy Storage Systems, and Physical Utility Infrastructure",
+      "manifest": {
+        "name": "heliogrid",
+        "models": [
+          "heliogrid.site",
+          "heliogrid.inverter",
+          "heliogrid.battery",
+          "heliogrid.telemetry"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
     },
     {
       "dir": "addons/mw_llm_router",
