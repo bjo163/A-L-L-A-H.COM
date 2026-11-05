@@ -39,6 +39,9 @@ interface LocalAgentSession {
   updatedAt: string;
   timeline?: MissionTimelineEvent[];
   remoteMissionId?: string;
+  resumePrompt?: string;
+  resumeExpiresAt?: string;
+  resumedBySessionId?: string;
 }
 
 interface PreparedEdit {
@@ -56,6 +59,8 @@ const MAX_CONTEXT_FILES = 200;
 const MAX_EDIT_FILE_CHARS = 250_000;
 const MAX_COMMAND_OUTPUT_CHARS = 20_000;
 const COMMAND_TIMEOUT_MS = 5 * 60_000;
+const MAX_RESUME_PROMPT_CHARS = 4_000;
+const RESUME_PROMPT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -76,6 +81,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   private pendingTemplateDelivery?: Promise<boolean>;
   private templateWorkspace?: vscode.WorkspaceFolder;
   private activeRun: AbortController | undefined;
+  private readonly resumeLocks = new Set<string>();
   private readonly repairCandidates = new Map<string, {
     session: LocalAgentSession;
     command: string;
@@ -102,7 +108,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       if (!isRecord(message) || typeof message.command !== 'string') return;
       if (message.command === 'ready') {
         const sessions = await this.restoreSessionHistory();
-        this.post({ type: 'history', sessions });
+        this.post({ type: 'history', sessions: this.toHistoryView(sessions) });
         await this.sendProviderStatus();
         try {
           await this.deliverPendingTemplateDraft();
@@ -148,6 +154,14 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         await this.proposeRepair(message.sessionId);
         return;
       }
+      if (message.command === 'resumeSession' && typeof message.sessionId === 'string') {
+        this.prepareSessionResume(message.sessionId);
+        return;
+      }
+      if (message.command === 'forgetSavedTask' && typeof message.sessionId === 'string') {
+        await this.forgetSavedTask(message.sessionId);
+        return;
+      }
       if (message.command === 'runValidation' && isAgentMode(message.mode)) {
         await this.runValidation(message.mode, message.validationCommand);
         return;
@@ -159,7 +173,27 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       ) {
         const templateWorkspace = this.templateWorkspace;
         this.templateWorkspace = undefined;
-        await this.run(message.mode, message.prompt, undefined, undefined, templateWorkspace);
+        const resumeSessionId = typeof message.resumeSessionId === 'string'
+          ? message.resumeSessionId
+          : undefined;
+        if (resumeSessionId && this.resumeLocks.has(resumeSessionId)) {
+          this.post({ type: 'blocked', message: 'This saved task is already being resumed.' });
+          return;
+        }
+        if (resumeSessionId) this.resumeLocks.add(resumeSessionId);
+        try {
+          await this.run(
+            message.mode,
+            message.prompt,
+            undefined,
+            undefined,
+            templateWorkspace,
+            message.persistForResume === true || Boolean(resumeSessionId),
+            resumeSessionId
+          );
+        } finally {
+          if (resumeSessionId) this.resumeLocks.delete(resumeSessionId);
+        }
       }
     });
   }
@@ -344,10 +378,22 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     prompt: string,
     externalSignal?: AbortSignal,
     remoteMissionId?: string,
-    preferredWorkspace?: vscode.WorkspaceFolder
+    preferredWorkspace?: vscode.WorkspaceFolder,
+    persistForResume = false,
+    resumeSessionId?: string
   ): Promise<LocalAgentSession['state'] | undefined> {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || this.activeRun || externalSignal?.aborted) return 'cancelled';
+    const savedPrompt = persistForResume || resumeSessionId
+      ? redactSensitiveContent(trimmedPrompt)
+      : undefined;
+    if (savedPrompt && savedPrompt.length > MAX_RESUME_PROMPT_CHARS) {
+      this.post({
+        type: 'blocked',
+        message: `Saved tasks are limited to ${MAX_RESUME_PROMPT_CHARS} characters. Shorten the task or turn off Save for resume.`,
+      });
+      return 'blocked';
+    }
     if (!vscode.workspace.isTrusted) {
       this.post({ type: 'blocked', message: 'Workspace Trust is required before the agent can inspect or edit files.' });
       return 'blocked';
@@ -366,6 +412,13 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     }
     const folder = preferredWorkspace ?? await this.chooseWorkspace();
     if (!folder) return 'blocked';
+    const resumeSource = resumeSessionId
+      ? this.getResumableSession(resumeSessionId)
+      : undefined;
+    if (resumeSessionId && !resumeSource) {
+      this.post({ type: 'blocked', message: 'This saved task is expired, unavailable, or has already been resumed.' });
+      return 'blocked';
+    }
 
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -379,13 +432,21 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       updatedAt: new Date().toISOString(),
       timeline: [],
       remoteMissionId,
+      ...(savedPrompt ? {
+        resumePrompt: savedPrompt,
+        resumeExpiresAt: new Date(Date.now() + RESUME_PROMPT_RETENTION_MS).toISOString(),
+      } : {}),
     };
     this.activeRun = controller;
     this.post({ type: 'started', sessionId: session.id, mode });
 
     try {
-      await this.postMissionEvent(session, 'mission.started', 'Mission started', 'Workspace mission accepted.');
-      await this.persistSession(session);
+      if (resumeSource) {
+        await this.persistResumedSession(resumeSource, session);
+      } else {
+        await this.postMissionEvent(session, 'mission.started', 'Mission started', 'Workspace mission accepted.');
+        await this.persistSession(session);
+      }
       const workspaceContext = await this.getWorkspaceContext(folder);
       await this.postMissionEvent(session, 'context.selected', 'Workspace context selected');
       const plan = mode === 'code' || mode === 'debug' || mode === 'autopilot'
@@ -920,12 +981,13 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     const previous = this.getSessionHistory();
     const next = [session, ...previous.filter((entry) => entry.id !== session.id)].slice(0, 50);
     await this.context.globalState.update(SESSION_HISTORY_KEY, next);
-    this.post({ type: 'history', sessions: next });
+    this.post({ type: 'history', sessions: this.toHistoryView(next) });
   }
 
   private getSessionHistory(): LocalAgentSession[] {
     const value = this.context.globalState.get<unknown>(SESSION_HISTORY_KEY, []);
     if (!Array.isArray(value)) return [];
+    const now = Date.now();
     const sessions = value.filter((entry): entry is LocalAgentSession => (
       isRecord(entry)
       && typeof entry.id === 'string'
@@ -938,13 +1000,36 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         || entry.state === 'blocked')
       && typeof entry.startedAt === 'string'
       && typeof entry.updatedAt === 'string'
-      && (!('remoteMissionId' in entry) || typeof entry.remoteMissionId === 'string')
-    )).map((entry) => ({
-      ...entry,
-      timeline: Array.isArray(entry.timeline)
-        ? entry.timeline.filter(isMissionTimelineEvent).slice(-100)
-        : [],
-    })).slice(0, 50);
+      && (typeof entry.remoteMissionId === 'undefined' || typeof entry.remoteMissionId === 'string')
+    )).map((entry) => {
+      const expiresAt = typeof entry.resumeExpiresAt === 'string'
+        ? Date.parse(entry.resumeExpiresAt)
+        : Number.NaN;
+      const resumePrompt = typeof entry.resumePrompt === 'string'
+        && entry.resumePrompt.length <= MAX_RESUME_PROMPT_CHARS
+        && Number.isFinite(expiresAt)
+        && expiresAt > now
+        ? redactSensitiveContent(entry.resumePrompt)
+        : undefined;
+      return {
+        id: entry.id,
+        mode: entry.mode,
+        state: entry.state,
+        startedAt: entry.startedAt,
+        updatedAt: entry.updatedAt,
+        timeline: Array.isArray(entry.timeline)
+          ? entry.timeline.filter(isMissionTimelineEvent).slice(-100)
+          : [],
+        ...(typeof entry.remoteMissionId === 'string' ? { remoteMissionId: entry.remoteMissionId } : {}),
+        ...(resumePrompt ? {
+          resumePrompt,
+          resumeExpiresAt: new Date(expiresAt).toISOString(),
+        } : {}),
+        ...(typeof entry.resumedBySessionId === 'string'
+          ? { resumedBySessionId: entry.resumedBySessionId }
+          : {}),
+      };
+    }).slice(0, 50);
     return normalizeInterruptedMissions(sessions);
   }
 
@@ -974,6 +1059,100 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     });
     await this.context.globalState.update(SESSION_HISTORY_KEY, sessions);
     return sessions;
+  }
+
+  private isResumableSession(session: LocalAgentSession): boolean {
+    return (session.state === 'blocked' || session.state === 'cancelled' || session.state === 'failed')
+      && typeof session.resumePrompt === 'string'
+      && typeof session.resumeExpiresAt === 'string'
+      && Date.parse(session.resumeExpiresAt) > Date.now()
+      && !session.resumedBySessionId;
+  }
+
+  private getResumableSession(sessionId: string): LocalAgentSession | undefined {
+    const session = this.getSessionHistory().find((entry) => entry.id === sessionId);
+    return session && this.isResumableSession(session) ? session : undefined;
+  }
+
+  private toHistoryView(sessions: LocalAgentSession[]): Array<Record<string, unknown>> {
+    return sessions.map((session) => {
+      const visibleSession = { ...session };
+      delete visibleSession.resumePrompt;
+      delete visibleSession.resumeExpiresAt;
+      delete visibleSession.resumedBySessionId;
+      return {
+        ...visibleSession,
+        canResume: this.isResumableSession(session),
+        hasSavedTask: Boolean(session.resumePrompt),
+      };
+    });
+  }
+
+  private prepareSessionResume(sessionId: string): void {
+    const session = this.getResumableSession(sessionId);
+    if (!session?.resumePrompt) {
+      this.post({ type: 'blocked', message: 'This saved task is expired, unavailable, or has already been resumed.' });
+      return;
+    }
+    this.post({
+      type: 'resume-draft',
+      sessionId: session.id,
+      mode: session.mode,
+      prompt: session.resumePrompt,
+    });
+  }
+
+  private async forgetSavedTask(sessionId: string): Promise<void> {
+    const sessions = this.getSessionHistory();
+    const session = sessions.find((entry) => entry.id === sessionId);
+    if (!session?.resumePrompt) {
+      this.post({ type: 'blocked', message: 'This session has no saved task to remove.' });
+      return;
+    }
+    delete session.resumePrompt;
+    delete session.resumeExpiresAt;
+    const next = [session, ...sessions.filter((entry) => entry.id !== session.id)].slice(0, 50);
+    try {
+      await this.context.globalState.update(SESSION_HISTORY_KEY, next);
+      this.post({ type: 'history', sessions: this.toHistoryView(next) });
+      this.post({ type: 'saved-task-forgotten' });
+    } catch (error) {
+      this.post({
+        type: 'history-error',
+        message: `Could not remove the saved task: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
+  }
+
+  private async persistResumedSession(
+    source: LocalAgentSession,
+    session: LocalAgentSession
+  ): Promise<void> {
+    const sourceEvent = createMissionTimelineEvent(
+      source.timeline || [],
+      'mission.resumed',
+      'Task resumed',
+      `Restarted as session ${session.id}.`
+    );
+    const sessionEvent = createMissionTimelineEvent(
+      session.timeline || [],
+      'mission.started',
+      'Mission started',
+      'Resumed from a saved task after explicit user action.'
+    );
+    source.resumedBySessionId = session.id;
+    source.timeline = appendMissionTimelineEvent(source.timeline || [], sourceEvent);
+    source.updatedAt = sourceEvent.createdAt;
+    session.timeline = appendMissionTimelineEvent(session.timeline || [], sessionEvent);
+    session.updatedAt = sessionEvent.createdAt;
+
+    const previous = this.getSessionHistory().filter((entry) =>
+      entry.id !== source.id && entry.id !== session.id
+    );
+    const next = [session, source, ...previous].slice(0, 50);
+    await this.context.globalState.update(SESSION_HISTORY_KEY, next);
+    this.post({ type: 'history', sessions: this.toHistoryView(next) });
+    this.post({ type: 'mission-event', event: sessionEvent });
   }
 
   private async postMissionEvent(
@@ -1016,6 +1195,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       const vscode = acquireVsCodeApi();
       const mode = document.getElementById('mode');
       const prompt = document.getElementById('prompt');
+      const persistForResume = document.getElementById('persist-for-resume');
       const run = document.getElementById('run');
       const stop = document.getElementById('stop');
       const validationCommand = document.getElementById('validation-command');
@@ -1031,6 +1211,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       const output = document.getElementById('output');
       const history = document.getElementById('history');
       const timeline = document.getElementById('mission-timeline');
+      let resumeSessionId;
       const setBusy = (busy) => {
         run.disabled = busy;
         stop.disabled = !busy;
@@ -1073,7 +1254,31 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
           const item = document.createElement('li');
           const updated = new Date(session.updatedAt);
           const time = Number.isNaN(updated.getTime()) ? 'time unavailable' : updated.toLocaleString();
-          item.textContent = session.mode + ' · ' + session.state + ' · ' + time;
+          const summary = document.createElement('span');
+          summary.textContent = session.mode + ' · ' + session.state + ' · ' + time;
+          item.appendChild(summary);
+          if (session.canResume) {
+            const resume = document.createElement('button');
+            resume.type = 'button';
+            resume.className = 'quiet';
+            resume.textContent = 'Resume as draft';
+            resume.setAttribute('aria-label', 'Load saved task as a draft for review');
+            resume.addEventListener('click', () => {
+              vscode.postMessage({ command: 'resumeSession', sessionId: session.id });
+            });
+            item.appendChild(resume);
+          }
+          if (session.hasSavedTask) {
+            const forget = document.createElement('button');
+            forget.type = 'button';
+            forget.className = 'quiet';
+            forget.textContent = 'Forget saved task';
+            forget.setAttribute('aria-label', 'Remove saved task from local session history');
+            forget.addEventListener('click', () => {
+              vscode.postMessage({ command: 'forgetSavedTask', sessionId: session.id });
+            });
+            item.appendChild(forget);
+          }
           history.appendChild(item);
         }
       };
@@ -1106,8 +1311,21 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
           if (!['ask', 'plan', 'code', 'debug', 'ideate'].includes(data.mode) || typeof data.prompt !== 'string') return;
           mode.value = data.mode;
           prompt.value = data.prompt;
+          resumeSessionId = undefined;
           prompt.focus();
           status.textContent = 'Template loaded. Review the task before starting the session.';
+        } else if (data.type === 'resume-draft') {
+          if (!['ask', 'plan', 'code', 'debug', 'ideate', 'autopilot'].includes(data.mode)
+            || typeof data.prompt !== 'string'
+            || typeof data.sessionId !== 'string') return;
+          mode.value = data.mode;
+          prompt.value = data.prompt;
+          persistForResume.checked = true;
+          resumeSessionId = data.sessionId;
+          prompt.focus();
+          status.textContent = 'Saved task loaded. Review or edit it, then start the session to resume.';
+        } else if (data.type === 'saved-task-forgotten') {
+          status.textContent = 'Saved task removed from local session history.';
         } else if (data.type === 'provider-status') {
           renderProviderStatus(data);
         } else if (data.type === 'mission-restored') {
@@ -1190,10 +1408,20 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
 
       run.addEventListener('click', () => {
         if (!prompt.value.trim()) return;
-        vscode.postMessage({ command: 'run', mode: mode.value, prompt: prompt.value });
+        const sourceSessionId = resumeSessionId;
+        resumeSessionId = undefined;
+        vscode.postMessage({
+          command: 'run',
+          mode: mode.value,
+          prompt: prompt.value,
+          persistForResume: persistForResume.checked,
+          ...(sourceSessionId ? { resumeSessionId: sourceSessionId } : {}),
+        });
       });
       resetDraft.addEventListener('click', () => {
         prompt.value = '';
+        persistForResume.checked = false;
+        resumeSessionId = undefined;
         vscode.postMessage({ command: 'clearTemplateDraft' });
         output.replaceChildren();
         renderTimeline([]);
@@ -1265,6 +1493,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   .section-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
   .section-note { max-width: 220px; text-align: right; }
   label { display: block; margin: 10px 0 4px; color: var(--vscode-foreground); font-size: 11px; font-weight: 600; }
+  .save-task-label { display: flex; align-items: center; gap: 8px; }
+  input[type="checkbox"] { width: 16px; height: 16px; flex: 0 0 16px; margin: 0; accent-color: var(--vscode-checkbox-background); }
   select, textarea, button { width: 100%; box-sizing: border-box; font: inherit; }
   select, textarea { min-height: 40px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); padding: 8px 9px; }
   textarea { min-height: 112px; resize: vertical; }
@@ -1272,6 +1502,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   button:hover:not(:disabled) { background: var(--vscode-button-hoverBackground); }
   button:active:not(:disabled) { transform: translateY(1px); }
   button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+  input:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
   button:disabled { opacity: .5; cursor: not-allowed; }
   button.quiet { color: var(--vscode-foreground); background: transparent; border-color: var(--vscode-panel-border); }
   .action-row { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; }
@@ -1281,6 +1512,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   .mission-list li { position: relative; padding: 8px 0 8px 14px; border-left: 2px solid var(--vscode-panel-border); }
   .mission-list li strong, .mission-list li span { display: block; overflow-wrap: anywhere; }
   .mission-list li span { margin-top: 2px; color: var(--vscode-descriptionForeground); }
+  .history-list li { padding-left: 0; border-left: 0; }
+  .history-list button { width: auto; margin: 6px 6px 0 0; }
   @media (max-width: 420px) {
     body { padding: 12px 10px 24px; }
     .agent-header, .section-heading { display: block; }
@@ -1344,6 +1577,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
 <p id="mode-help" class="field-help">Read-only modes never edit files. Code and Debug prepare a diff before apply.</p>
 <label for="prompt">Task</label>
 <textarea id="prompt" placeholder="Example: trace the failing test and propose the smallest fix"></textarea>
+<label class="save-task-label"><input id="persist-for-resume" type="checkbox"> Save this task for explicit resume</label>
+<p class="field-help">Opt-in only. Stored in this VS Code profile for 30 days; credential-like text is redacted. Avoid personal or sensitive details.</p>
 <div class="action-row">
   <button id="run" class="primary">Start session</button>
   <button id="reset-draft" class="quiet" type="button">Clear</button>
@@ -1381,7 +1616,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
 </section>
 <section aria-labelledby="history-heading">
   <h4 id="history-heading">Local session history</h4>
-  <ol id="history" aria-live="polite"><li>Loading session history…</li></ol>
+  <ol id="history" class="mission-list history-list" aria-live="polite"><li>Loading session history…</li></ol>
 </section>
 </main>
 <script nonce="${nonce}">${script}</script>

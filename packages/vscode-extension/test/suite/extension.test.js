@@ -213,6 +213,124 @@ suite('A-L-L-A-H.COM extension host', () => {
       assert.equal(providerCalls, 0);
     });
 
+    test('resumes an opted-in interrupted task only after the user starts its reviewed draft', async () => {
+      const timestamp = new Date().toISOString();
+      const sourceSession = {
+        id: 'saved-interrupted-session',
+        mode: 'ask',
+        state: 'running',
+        startedAt: timestamp,
+        updatedAt: timestamp,
+        timeline: [],
+        resumePrompt: 'Explain api_key=secret-value',
+        resumeExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      };
+      const expiredSession = {
+        id: 'expired-saved-session',
+        mode: 'ask',
+        state: 'blocked',
+        startedAt: timestamp,
+        updatedAt: timestamp,
+        timeline: [],
+        resumePrompt: 'This task has expired.',
+        resumeExpiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      const stateKey = 'allah.localAgent.sessions';
+      const providerCalls = [];
+      const provider = createLocalAgentProvider({
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent(system, prompt) {
+          providerCalls.push(prompt);
+          return 'Task completed.';
+        },
+      });
+      await provider.context.globalState.update(stateKey, [sourceSession, expiredSession]);
+      const messages = [];
+      let receiveMessage;
+      const webview = {
+        cspSource: 'vscode-webview:',
+        options: {},
+        html: '',
+        onDidReceiveMessage(handler) {
+          receiveMessage = handler;
+          return { dispose() {} };
+        },
+        async postMessage(message) {
+          messages.push(message);
+          return true;
+        },
+      };
+      const originalQuickPick = vscode.window.showQuickPick;
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        provider.resolveWebviewView({
+          webview,
+          onDidDispose() {
+            return { dispose() {} };
+          },
+        });
+        await receiveMessage({ command: 'ready' });
+        assert.equal(providerCalls.length, 0);
+        const history = messages.find((message) => message.type === 'history');
+        assert.equal(history.sessions[0].canResume, true);
+        assert.equal(history.sessions[0].resumePrompt, undefined);
+        assert.equal(history.sessions.find((session) => session.id === expiredSession.id).hasSavedTask, false);
+        assert.equal(
+          provider.context.globalState.get(stateKey, []).find((session) => session.id === expiredSession.id).resumePrompt,
+          undefined
+        );
+        await receiveMessage({ command: 'resumeSession', sessionId: expiredSession.id });
+        assert.equal(providerCalls.length, 0);
+
+        await receiveMessage({ command: 'resumeSession', sessionId: sourceSession.id });
+        const draft = messages.find((message) => message.type === 'resume-draft');
+        assert.equal(draft.prompt, 'Explain api_key=[REDACTED]');
+        assert.equal(providerCalls.length, 0);
+
+        await receiveMessage({
+          command: 'run',
+          mode: draft.mode,
+          prompt: draft.prompt,
+          persistForResume: true,
+          resumeSessionId: sourceSession.id,
+        });
+        assert.equal(providerCalls.length, 1);
+        assert.ok(providerCalls[0].includes('Explain api_key=[REDACTED]'));
+        const newSessionId = messages.find((message) => message.type === 'started').sessionId;
+        const savedSessions = provider.context.globalState.get(stateKey, []);
+        const savedSource = savedSessions.find((session) => session.id === sourceSession.id);
+        const resumedSession = savedSessions.find((session) => session.id === newSessionId);
+        assert.equal(savedSource.resumedBySessionId, newSessionId);
+        assert.equal(savedSource.state, 'blocked');
+        assert.equal(resumedSession.state, 'completed');
+        assert.equal(resumedSession.resumePrompt, 'Explain api_key=[REDACTED]');
+        assert.ok(Date.parse(resumedSession.resumeExpiresAt) > Date.now());
+        const latestHistory = messages.filter((message) => message.type === 'history').at(-1);
+        assert.equal(latestHistory.sessions.find((session) => session.id === newSessionId).hasSavedTask, true);
+        assert.equal(
+          provider.getSessionHistory().find((session) => session.id === newSessionId).resumePrompt,
+          'Explain api_key=[REDACTED]'
+        );
+
+        await receiveMessage({ command: 'resumeSession', sessionId: sourceSession.id });
+        assert.equal(providerCalls.length, 1);
+        assert.ok(messages.some((message) => message.type === 'blocked'));
+        await receiveMessage({ command: 'forgetSavedTask', sessionId: newSessionId });
+        assert.ok(
+          messages.some((message) => message.type === 'saved-task-forgotten'),
+          messages.map((message) => `${message.type}: ${message.message || ''}`).join('\n')
+        );
+        const forgottenSession = provider.context.globalState.get(stateKey, [])
+          .find((session) => session.id === newSessionId);
+        assert.equal(forgottenSession.resumePrompt, undefined);
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+      }
+    });
+
     test('does not re-execute completed or interrupted remote missions', async () => {
       const timestamp = new Date().toISOString();
       let providerCalls = 0;

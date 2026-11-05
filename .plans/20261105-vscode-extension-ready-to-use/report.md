@@ -181,7 +181,7 @@ The extension host verifies that rejected or cancelled approval never starts a c
 
 ## Timeline recovery host evidence
 
-Host tests hydrate a persisted running session as blocked with a `mission.interrupted` event and confirm the provider is not called automatically. Replay attempts for completed or interrupted remote missions return their existing state without provider work. Actual VS Code process-restart recovery and a user-visible local resume flow remain open under VSC-019 because local prompts are not persisted.
+Host tests hydrate a stored running session as blocked with a `mission.interrupted` event and confirm the provider is not called automatically. Users can opt in to saving a redacted task for 30 days. The restored-state path loads a saved task into the editor as an editable draft; the model is called only after the user starts it. Each source session can be resumed once, the timeline links the new session, and users can remove the saved task. Replay attempts for completed or interrupted remote missions return their existing state without provider work. The host fixture seeds `globalState`; it does not prove persistence across a separate VS Code process restart.
 
 | Command | Result |
 |---|---|
@@ -193,7 +193,7 @@ The P1/P2 checklist distinguishes tested utilities from shipped workflows. VSC-0
 
 ## Limitations
 
-- Automated host coverage verifies activation, workspace roots, provider routing, edit approval, validation approval, cancellation, and repair bounds. Manual installed-webview click-through, live Ollama execution, and persisted timeline recovery remain unverified.
+- Automated host coverage verifies activation, workspace roots, provider routing, edit approval, validation approval, cancellation, and repair bounds. Manual installed-webview click-through, live Ollama execution, and cross-process timeline recovery remain unverified.
 - The latest `pnpm verify:fast` is blocked by an unrelated parse error in `packages/arsy-orm/src/migrator.ts:612`. `pnpm docs:check` is blocked by the unrelated `.plans/20261105-cross-app-identity-federation` plan missing its required `rules.md`; neither file was changed for this extension batch.
 - Ollama live acceptance remains environment-dependent; no running Ollama endpoint/model was available during this pass.
 - The existing Vitest-only provider service tests are not part of the extension package dependency graph and were not claimed as passed.
@@ -247,6 +247,24 @@ Multi-step Code, Debug, and Autopilot sessions now require a JSON task plan with
 | `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
 | `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, 26 host tests |
+
+## Explicit local mission resume
+
+Task persistence is opt-in and limited to a redacted 4,000-character prompt with a 30-day expiry. Extension history excludes prompt text; the user must select `Resume as draft`, inspect or edit the task, then start a separate run. A single atomic history update records the parent/child relationship before the provider runs. Users can forget the saved prompt at any time.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 59 tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, 27 host tests |
+| `pnpm extension:build` | Passed |
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 28 commands and 8 views |
+| `pnpm --filter allah-vscode-extension check-package` | Passed: 6 packaged files |
+| `pnpm --filter allah-vscode-extension package` | Passed: VSIX created |
+| `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
+| `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
 
 ## Recent pushed commits
 

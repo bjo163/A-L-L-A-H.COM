@@ -55,6 +55,11 @@ service to activate or manage local projects.
   Notes are stored in the VS Code profile for 30 days and are sent only when
   selected as context for a session. Credential-like text is redacted before
   storage and again before use. Do not store sensitive or personal information.
+- Opt in to `Save this task for explicit resume` before starting a session.
+  The extension stores a redacted task in the VS Code profile for 30 days.
+  After a restart, `Resume as draft` loads it for review; the model is not
+  called until you edit or approve the task and start a new session. Use
+  `Forget saved task` to remove it sooner.
 - The Workspace Agent checks the selected provider before every session,
   discovers Ollama models from `/api/tags`, and lets you select an installed
   model. It never switches providers silently.

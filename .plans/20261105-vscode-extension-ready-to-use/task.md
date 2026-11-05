@@ -24,7 +24,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-016 Test provider setup/discovery/failure/timeout/offline/cancellation. Host acceptance covers SecretStorage setup, Ollama model discovery, unavailable-provider messaging, and no Gateway fallback; unit tests cover body-read timeout, caller cancellation, and malformed success responses.
 - [x] VSC-017 Test diff review, approval/rejection, conflicts and safe apply. Host tests verify approved edits apply, rejected edits remain unchanged, and external edits made during review are not overwritten.
 - [x] VSC-018 Test validation approval/cancellation and bounded repair. Host acceptance verifies rejection prevents execution, cancellation during approval prevents execution, active process cancellation is reported without success, and repeated identical failures allow only one repair proposal.
-- [!] VSC-019 Test timeline, reload, interruption, explicit resume and replay. Host tests cover interrupted-state recovery and remote replay protection; actual VS Code restart recovery and a user-visible local resume flow remain open because prompts are not persisted.
+- [!] VSC-019 Test timeline, reload, interruption, explicit resume and replay. Opt-in prompts are redacted and expire after 30 days; interrupted tasks load as editable drafts, require a separate user start, and can be resumed once or forgotten. Host coverage verifies the restored-state path, but cross-process VS Code profile persistence and packaged click-through remain unverified.
 - [x] VSC-020 Install the VSIX in isolated user-data and extension directories, then verify its installed identifier and version without a monorepo checkout.
 
 ### 02 Cockpit UX
@@ -65,7 +65,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 09 Release 0.4.0
 - [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repository gates are blocked by unrelated dirty `packages/arsy-orm/src/migrator.ts:612` parsing and a missing `rules.md` in another plan.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 26 tests total.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 27 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.
