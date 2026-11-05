@@ -515,3 +515,32 @@ Each recipe includes success, failure, cancellation, timeout, empty and permissi
 ## 13.6 Quality parity rule
 
 A component catalog item is not a delivered capability. A capability is delivered only when its public API, accessibility, responsive states, skin recipes, tests, documentation, visual fixture and at least one real consuming workflow are complete.
+
+
+---
+
+## 13. Research-informed next frontier
+
+The next evolution of Moon UI is not simply “more components”. It is a governed creative-interface platform informed by current HCI research, visual practice, and open-source tooling.
+
+### New strategic capabilities
+- **Intent-to-Interface Compiler:** translate a task into a structured model, semantic design brief, approved composition, and testable interface. Generated output remains inside semantic, accessibility, security, and world-identity constraints.
+- **World Grammar Engine:** make each DNA a versioned grammar of composition, geometry, material, light, typography, motion, sound, iconography, and fallback behavior—not a palette switch.
+- **Intent Lens:** temporarily reorganize approved blocks around a task, visibly state the active objective, and let users correct, pin, or reset the adaptation.
+- **Evidence Surface:** show a concise AI outcome first, then sources, freshness, actions, uncertainty, disagreement, and audit detail. Never expose private chain-of-thought.
+- **Scene Graph:** represent worlds, passages, destinations, timelines, media, and relationships independently of their spatial or linear rendering.
+- **Creative Foundry with provenance:** govern logo, vector, icon, avatar, artwork, cover, motion, effects, and sound production with stable IDs, source masters, derivatives, licenses, approvals, and validation.
+- **Experience Quality Observatory:** certify performance, accessibility, visual regression, asset health, route coverage, and maturity with measured evidence.
+
+### Research principles added to the doctrine
+1. Adaptation preserves user agency: steer, pause, revise, approve, reject, undo, and reset.
+2. Transparency is progressive and task-sensitive; more process detail is not always more useful.
+3. Generate from structured task and semantic models, not unbounded prompt-to-markup.
+4. Spatial depth and visual cues must reduce ambiguity or communicate relationships.
+5. Every immersive feature has a semantic 2D fallback and respects reduced motion.
+6. WebGPU is optional progressive enhancement, never a baseline requirement.
+7. Visual direction is not certified until it passes task, accessibility, performance, responsive, and visual-quality checks.
+
+See [RESEARCH-AND-DIRECTION.md](./RESEARCH-AND-DIRECTION.md) for sources, limitations, and adoption policy. The expanded implementation contract is in [BLUEPRINT.md](./BLUEPRINT.md).
+
+**The new ambition:** one functional engine, six authored worlds, adaptive task experiences, evidence-led AI collaboration, original media foundries, and measurable experience quality.
