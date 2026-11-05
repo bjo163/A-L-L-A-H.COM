@@ -66,6 +66,11 @@
         "category": "A-L-L-A-H"
       },
       {
+        "command": "allah.indexWorkspace",
+        "title": "Workspace: Build Context Index",
+        "category": "A-L-L-A-H"
+      },
+      {
         "command": "allah.testConnection",
         "title": "MoonWitness: Test Gateway Connection",
         "category": "A-L-L-A-H"
