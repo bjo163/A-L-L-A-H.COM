@@ -53,7 +53,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-039 Enforce proposed diff, approval and conflict detection.
 - [ ] VSC-040 Propagate cancellation through provider and tools.
 - [x] VSC-041 Restrict tools/terminal commands through policy engine.
-- [ ] VSC-042 Produce completion summary with changed files and evidence.
+- [x] VSC-042 Produce completion summary with changed files and evidence. The agent result now lists relative changed files and directs the user to approved validation evidence.
 
 ### 05 Mission reliability
 - [x] VSC-043 Finalize typed mission transitions and invariants.

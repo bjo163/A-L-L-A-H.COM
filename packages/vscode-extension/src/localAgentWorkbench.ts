@@ -373,6 +373,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         type: 'result',
         response: proposal.response,
         appliedEdits: edits.length,
+        changedFiles: edits.map((edit) => vscode.workspace.asRelativePath(edit.document.uri, false)),
+        evidence: 'Edits are applied in memory. Run an approved validation command to produce evidence.',
         message: 'Workspace edits were applied and remain unsaved.',
       });
       return session.state;
@@ -998,7 +1000,13 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
             : 'Model response received, not independently verified';
           statusBar.dataset.state = 'success';
           const result = document.createElement('pre');
-          result.textContent = data.response || data.message || '';
+          const files = Array.isArray(data.changedFiles) && data.changedFiles.length > 0
+            ? '\\nChanged files:\\n' + data.changedFiles.map((file) => '- ' + file).join('\\n')
+            : '';
+          const evidence = typeof data.evidence === 'string'
+            ? '\\n\\nEvidence:\\n' + data.evidence
+            : '';
+          result.textContent = (data.response || data.message || '') + files + evidence;
           output.appendChild(result);
           setBusy(false);
         } else if (data.type === 'validation-result' || data.type === 'validation-failed') {
