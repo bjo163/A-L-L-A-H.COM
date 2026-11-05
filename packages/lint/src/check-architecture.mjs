@@ -2,6 +2,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { execFileSync } from 'node:child_process';
 import { findPrivateUiClass } from './ui-purity.mjs';
 import {
   listUnitDirs,
@@ -1178,19 +1179,21 @@ function checkStylePurity(baseline) {
 // auto-synced from @moonwitness/assets at predev/prebuild. Any tracked copy
 // signals a drifted working tree that will eventually break ui:test on clean checkout.
 function checkAssetPurity() {
-  const assetFiles = execSync(
-    `git ls-files 'apps/*/public/artwork/*' 'apps/*/public/brand/*' 'apps/*/public/fonts/*'`,
-    { encoding: 'utf8' }
-  ).trim();
-  if (assetFiles) {
-    const files = assetFiles.split('\n').filter((f) => f.trim());
-    for (const file of files) {
-      addViolation(
-        'ASSET_PURITY',
-        file,
-        `Tracked asset copy detected: '${file}'. Asset copies must be git-rm --cached; sync.mjs regenerates them at predev/prebuild.`
-      );
-    }
+  // Cross-shell safe: pass the pathspec through execFileSync so quoting is not
+  // mangled by cmd.exe on Windows. List everything under apps/ and filter by the
+  // precise regex below, so both deep (artwork/brand/fonts) and shallow (favicon)
+  // copies are caught regardless of path depth.
+  const out = execFileSync('git', ['ls-files', '--', 'apps'], { encoding: 'utf8' });
+  const tracked = out
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^apps\/[^/]+\/public\/(artwork|brand|fonts)\//.test(line) || /^apps\/[^/]+\/public\/favicon\.(ico|png)$/.test(line));
+  for (const file of tracked) {
+    addViolation(
+      'ASSET_PURITY',
+      file,
+      `Tracked asset copy detected: '${file}'. Asset copies must be git-rm --cached; sync.mjs regenerates them at predev/prebuild.`
+    );
   }
 }
 
@@ -1422,6 +1425,7 @@ checkUnitContractConsistency();
 const styleBaseline = readBaseline();
 checkStylePurity(styleBaseline);
 checkInlineStylePurity(styleBaseline);
+checkAssetPurity();
 checkStateParity(styleBaseline);
 checkSkinRoot(styleBaseline);
 checkPalettePurity(styleBaseline);
