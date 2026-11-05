@@ -1,6 +1,17 @@
 import { PGliteEngine, QueryExecutor, dbEngine } from './engine';
 import { AuditActor, ModelDefinition } from './model';
-import { QueryBuilder, QueryOptions, TenantScope, isSystemScope, tenantCompanyId } from './query_builder';
+import { FieldDefinition } from './fields';
+import { modelRegistry } from './registry';
+import {
+  QueryBuilder,
+  QueryOptions,
+  TenantScope,
+  isSystemScope,
+  tenantCompanyId,
+  KeysetCursor,
+  GroupAggregate,
+  UnknownFieldError,
+} from './query_builder';
 import { logger } from '@allah/arsy-core';
 
 /**
@@ -107,14 +118,40 @@ export class BaseRepository<T = Record<string, unknown>> {
 
   async find(options: QueryOptions): Promise<T[]> {
     const { sql, params } = this.queryBuilder.buildSelect(options);
-    const rows = await this.executor.query<T>(sql, params);
+    let rows = await this.executor.query<T>(sql, params);
 
     // Apply transparent field translation if context.lang is provided
     if (options.lang && rows.length > 0) {
       const companyId = isSystemScope(options.scope) ? null : tenantCompanyId(options.scope);
-      return this._applyTranslations(rows, options.lang, companyId);
+      rows = await this._applyTranslations(rows, options.lang, companyId);
     }
 
+    // Batched relation traversal (roadmap T2.2): m2o inline, o2m/m2m resolved via
+    // one scoped IN query per relation. Related rows use the same tenant scope as
+    // the parent — never a caller-supplied id — so cross-tenant leaks are closed.
+    if (options.expand && options.expand.length > 0) {
+      rows = await this.applyExpand(rows, options.expand, options.scope);
+    }
+
+    // Computed / related fields (roadmap T2.3). Non-stored compute and single-hop
+    // `related` are resolved at read; `store: true` compute is persisted at write.
+    await this.applyComputed(rows as unknown as Array<Record<string, unknown>>, options.scope);
+
+    return rows;
+  }
+
+  // Keyset (seek) page: stable `(column, id)` ordering, no O(offset) scan. The
+  // caller feeds the last row's (columnValue, id) back as `after`.
+  async findKeyset(
+    options: QueryOptions,
+    keyset: { column: string; after?: KeysetCursor }
+  ): Promise<T[]> {
+    const { sql, params } = this.queryBuilder.buildKeyset(options, keyset);
+    const rows = await this.executor.query<T>(sql, params);
+    if (options.lang && rows.length > 0) {
+      const companyId = isSystemScope(options.scope) ? null : tenantCompanyId(options.scope);
+      return this._applyTranslations(rows, options.lang, companyId);
+    }
     return rows;
   }
 
@@ -144,10 +181,26 @@ export class BaseRepository<T = Record<string, unknown>> {
     const { sql, params } = this.queryBuilder.buildInsert(data, scope, actorId);
     const created = await this.withAuditContext(actor, actorId, async (executor) => {
       const rows = await executor.query<T>(sql, params);
-      return rows[0];
+      const row = rows[0];
+      if (!row) throw new Error(`Failed to create a record in '${this.model.tableName}'.`);
+      if (this.hasStoredCompute()) {
+        const id = Number((row as unknown as Record<string, unknown>).id);
+        await this.recomputeWithinTx(executor, [id], scope, actorId);
+        const refreshed = await this.readWithinTx(executor, [id], scope);
+        return refreshed[0] ?? row;
+      }
+      return row;
     });
     if (!created) throw new Error(`Failed to create a record in '${this.model.tableName}'.`);
     return created;
+  }
+
+  private async readWithinTx(executor: QueryExecutor, ids: number[], scope: TenantScope): Promise<T[]> {
+    const { sql, params } = this.queryBuilder.buildSelect({
+      scope,
+      filters: [{ field: 'id', operator: 'IN', value: ids }],
+    });
+    return executor.query<T>(sql, params);
   }
 
   // Batched insert: N rows in a single statement inside one audit-context
@@ -162,11 +215,17 @@ export class BaseRepository<T = Record<string, unknown>> {
     const actorId = await this.resolveActor(actor);
     const { sql, params } = this.queryBuilder.buildInsertMany(rows, scope, actorId);
     const created = await this.withAuditContext(actor, actorId, async (executor) => {
-      return executor.query<T>(sql, params);
+      const inserted = await executor.query<T>(sql, params);
+      if (inserted.length !== rows.length) {
+        throw new Error(`Batch insert into '${this.model.tableName}' expected ${rows.length} rows, got ${inserted.length}.`);
+      }
+      if (this.hasStoredCompute()) {
+        const ids = this.distinctIds(inserted.map((row) => (row as unknown as Record<string, unknown>).id));
+        await this.recomputeWithinTx(executor, ids, scope, actorId);
+        return this.readWithinTx(executor, ids, scope);
+      }
+      return inserted;
     });
-    if (created.length !== rows.length) {
-      throw new Error(`Batch insert into '${this.model.tableName}' expected ${rows.length} rows, got ${created.length}.`);
-    }
     return created;
   }
 
@@ -181,12 +240,20 @@ export class BaseRepository<T = Record<string, unknown>> {
     const { sql, params } = this.queryBuilder.buildUpdate(id, data, scope, actorId, expected);
     return this.withAuditContext(actor, actorId, async (executor) => {
       const rows = await executor.query<T>(sql, params);
-      return rows[0] || null;
+      const updated = rows[0] || null;
+      if (updated && this.hasStoredCompute()) {
+        const rowId = Number((updated as unknown as Record<string, unknown>).id);
+        await this.recomputeWithinTx(executor, [rowId], scope, actorId);
+        const refreshed = await this.readWithinTx(executor, [rowId], scope);
+        return refreshed[0] ?? updated;
+      }
+      return updated;
     });
   }
 
-  // Batched update: run many row updates inside a single audit-context
-  // transaction instead of one transaction per updateById call (roadmap T14).
+  // Batched update: a set-based `UPDATE … FROM (VALUES …)` per column-shape
+  // (roadmap T2.4b) inside one audit-context transaction. Row-level triggers fire
+  // once per updated row, so every change still gets its audit + sync event.
   async updateMany(
     updates: Array<{ id: string | number; data: Record<string, unknown> }>,
     scope: TenantScope,
@@ -194,12 +261,20 @@ export class BaseRepository<T = Record<string, unknown>> {
   ): Promise<T[]> {
     if (updates.length === 0) return [];
     const actorId = await this.resolveActor(actor);
+    const statements = this.queryBuilder.buildUpdateMany(updates, scope, actorId);
     return this.withAuditContext(actor, actorId, async (executor) => {
       const out: T[] = [];
-      for (const { id, data } of updates) {
-        const { sql, params } = this.queryBuilder.buildUpdate(id, data, scope, actorId);
+      const touched: number[] = [];
+      for (const { sql, params } of statements) {
         const rows = await executor.query<T>(sql, params);
-        if (rows[0]) out.push(rows[0]);
+        for (const row of rows) {
+          out.push(row);
+          touched.push(Number((row as unknown as Record<string, unknown>).id));
+        }
+      }
+      if (this.hasStoredCompute() && touched.length > 0) {
+        await this.recomputeWithinTx(executor, touched, scope, actorId);
+        return this.readWithinTx(executor, touched, scope);
       }
       return out;
     });
@@ -234,6 +309,345 @@ export class BaseRepository<T = Record<string, unknown>> {
       return rows.length > 0;
     });
   }
+
+  // Archive is a soft state flip, not a physical delete. Returns the number of
+  // rows whose state actually changed (re-archiving an archived row is a no-op).
+  async archive(ids: Array<string | number>, scope: TenantScope, actor: AuditActor): Promise<number> {
+    return this.setArchived(ids, false, scope, actor);
+  }
+
+  async unarchive(ids: Array<string | number>, scope: TenantScope, actor: AuditActor): Promise<number> {
+    return this.setArchived(ids, true, scope, actor);
+  }
+
+  private async setArchived(
+    ids: Array<string | number>,
+    active: boolean,
+    scope: TenantScope,
+    actor: AuditActor
+  ): Promise<number> {
+    if (ids.length === 0) return 0;
+    const actorId = await this.resolveActor(actor);
+    const { sql, params } = this.queryBuilder.buildArchive(ids, active, scope, actorId);
+    return this.withAuditContext(actor, actorId, async (executor) => {
+      const rows = await executor.query<{ id: number }>(sql, params);
+      return rows.length;
+    });
+  }
+
+  // Odoo-style search: rows for the page plus the total matching count, so list
+  // routes stop fabricating `total = records.length`. `expand` / `fields` /
+  // `includeArchived` are honored via the shared find()/count() builders.
+  async search(options: QueryOptions): Promise<{ rows: T[]; total: number }> {
+    const [rows, total] = await Promise.all([this.find(options), this.count(options)]);
+    return { rows, total };
+  }
+
+  // Grouped aggregate read; groupBy/aggregate fields run through the same
+  // allowlist as any other query, and the aggregate function set is fixed.
+  async readGroup(
+    options: QueryOptions,
+    spec: { groupBy: string[]; aggregates: GroupAggregate[] }
+  ): Promise<Record<string, unknown>[]> {
+    const { sql, params } = this.queryBuilder.buildReadGroup(options, spec);
+    return this.executor.query<Record<string, unknown>>(sql, params);
+  }
+
+  // Resolve the field used to render a record's display name (roadmap T2.2).
+  private resolveDisplayField(): string {
+    const spec = this.model.displayNameSpec;
+    if (spec && spec in this.model.fields) return spec;
+    if ('name' in this.model.fields) return 'name';
+    const firstChar = Object.entries(this.model.fields).find(([, f]) => f.type === 'char');
+    if (!firstChar) {
+      throw new Error(`Model '${this.model.name}' has no display field for name_search.`);
+    }
+    return firstChar[0];
+  }
+
+  // name_search: id + display name for records whose display field matches the
+  // term. The match value is fully parameterized (wildcards added here), so the
+  // term itself never reaches the SQL text.
+  async nameSearch(
+    term: string,
+    options: { scope: TenantScope; limit?: number; operator?: 'ILIKE' | '=' }
+  ): Promise<Array<{ id: number; name: string }>> {
+    const displayField = this.resolveDisplayField();
+    const operator = options.operator ?? 'ILIKE';
+    const value = operator === 'ILIKE' ? `%${term}%` : term;
+    const rows = await this.find({
+      scope: options.scope,
+      fields: ['id', displayField],
+      filters: [{ field: displayField, operator, value }],
+      orderBy: displayField,
+      limit: options.limit ?? 80,
+    });
+    return rows.map((row) => {
+      const record = row as unknown as Record<string, unknown>;
+      return { id: Number(record.id), name: String(record[displayField] ?? '') };
+    });
+  }
+
+  // fields_get: field metadata for the SDUI/views pipeline. Exposes type,
+  // relation, and selection options; never exposes values or reserved columns.
+  fieldsGet(): Record<string, Record<string, unknown>> {
+    const out: Record<string, Record<string, unknown>> = {};
+    for (const [fieldName, fieldDef] of Object.entries(this.model.fields)) {
+      out[fieldName] = {
+        type: fieldDef.type,
+        string: fieldDef.label ?? fieldName,
+        help: fieldDef.help ?? '',
+        required: fieldDef.required ?? false,
+        readonly: fieldDef.readonly ?? false,
+        ...(fieldDef.relation ? { relation: fieldDef.relation } : {}),
+        ...(fieldDef.selection ? { selection: Object.entries(fieldDef.selection) } : {}),
+      };
+    }
+    return out;
+  }
+
+  // Batched relation traversal. Only relational fields are expandable; the
+  // related model is looked up in the shared registry and every generated query
+  // carries the parent's tenant scope.
+  private async applyExpand(rows: T[], expandFields: string[], scope: TenantScope): Promise<T[]> {
+    if (rows.length === 0) return rows;
+    const recordRows = rows as unknown as Array<Record<string, unknown>>;
+    for (const field of expandFields) {
+      const fieldDef = (this.model.fields as Record<string, FieldDefinition>)[field];
+      if (!fieldDef) throw new UnknownFieldError(this.model.name, field);
+      if (fieldDef.type === 'many2one') {
+        await this.expandMany2One(recordRows, field, fieldDef, scope);
+      } else if (fieldDef.type === 'one2many') {
+        await this.expandOne2Many(recordRows, field, fieldDef, scope);
+      } else if (fieldDef.type === 'many2many') {
+        await this.expandMany2Many(recordRows, field, fieldDef, scope);
+      } else {
+        throw new Error(`Cannot expand non-relational field '${this.model.name}.${field}'.`);
+      }
+    }
+    return recordRows as unknown as T[];
+  }
+
+  private relatedBuilder(relation: string): { model: ModelDefinition; builder: QueryBuilder } {
+    const related = modelRegistry.get(relation);
+    if (!related) {
+      throw new Error(`Expand target model '${relation}' is not registered.`);
+    }
+    return { model: related, builder: new QueryBuilder(related) };
+  }
+
+  private async expandMany2One(
+    rows: Array<Record<string, unknown>>,
+    field: string,
+    fieldDef: FieldDefinition,
+    scope: TenantScope
+  ): Promise<void> {
+    const ids = this.distinctIds(rows.map((row) => row[field]));
+    if (ids.length === 0) {
+      for (const row of rows) row[field] = null;
+      return;
+    }
+    const { builder } = this.relatedBuilder(fieldDef.relation!);
+    const { sql, params } = builder.buildSelect({
+      scope,
+      filters: [{ field: 'id', operator: 'IN', value: ids }],
+    });
+    const relatedRows = await this.executor.query<Record<string, unknown>>(sql, params);
+    const byId = new Map(relatedRows.map((r) => [Number(r.id), r]));
+    for (const row of rows) {
+      const key = row[field];
+      row[field] = key === null || key === undefined ? null : byId.get(Number(key)) ?? null;
+    }
+  }
+
+  private async expandOne2Many(
+    rows: Array<Record<string, unknown>>,
+    field: string,
+    fieldDef: FieldDefinition,
+    scope: TenantScope
+  ): Promise<void> {
+    const parentIds = this.distinctIds(rows.map((row) => row.id));
+    if (parentIds.length === 0) return;
+    const { model: related, builder } = this.relatedBuilder(fieldDef.relation!);
+    const inverse = this.findInverseField(related);
+    const { sql, params } = builder.buildSelect({
+      scope,
+      filters: [{ field: inverse, operator: 'IN', value: parentIds }],
+    });
+    const children = await this.executor.query<Record<string, unknown>>(sql, params);
+    const grouped = new Map<number, Record<string, unknown>[]>();
+    for (const child of children) {
+      const parentId = Number(child[inverse]);
+      if (!grouped.has(parentId)) grouped.set(parentId, []);
+      grouped.get(parentId)!.push(child);
+    }
+    for (const row of rows) row[field] = grouped.get(Number(row.id)) ?? [];
+  }
+
+  private async expandMany2Many(
+    rows: Array<Record<string, unknown>>,
+    field: string,
+    fieldDef: FieldDefinition,
+    scope: TenantScope
+  ): Promise<void> {
+    const { relationTable: table, column1, column2 } = fieldDef;
+    if (!table || !column1 || !column2) {
+      throw new Error(`many2many '${this.model.name}.${field}' is missing join-table wiring.`);
+    }
+    if (![table, column1, column2].every((name) => /^[a-z][a-z0-9_]{0,62}$/.test(name))) {
+      throw new Error(`many2many '${this.model.name}.${field}' uses an unsafe join identifier.`);
+    }
+    const parentIds = this.distinctIds(rows.map((row) => row.id));
+    if (parentIds.length === 0) return;
+    const linkParams: unknown[] = [];
+    const placeholders = parentIds.map((id) => {
+      linkParams.push(id);
+      return `$${linkParams.length}`;
+    });
+    const links = await this.executor.query<{ c1: number; c2: number }>(
+      `SELECT "${column1}" AS c1, "${column2}" AS c2 FROM "${table}" WHERE "${column1}" IN (${placeholders.join(', ')})`,
+      linkParams
+    );
+    const relatedIds = this.distinctIds(links.map((link) => link.c2));
+    if (relatedIds.length === 0) {
+      for (const row of rows) row[field] = [];
+      return;
+    }
+    const { builder } = this.relatedBuilder(fieldDef.relation!);
+    const { sql, params } = builder.buildSelect({
+      scope,
+      filters: [{ field: 'id', operator: 'IN', value: relatedIds }],
+    });
+    const relatedRows = await this.executor.query<Record<string, unknown>>(sql, params);
+    const byId = new Map(relatedRows.map((r) => [Number(r.id), r]));
+    const grouped = new Map<number, Record<string, unknown>[]>();
+    for (const link of links) {
+      const record = byId.get(Number(link.c2));
+      if (!record) continue;
+      if (!grouped.has(Number(link.c1))) grouped.set(Number(link.c1), []);
+      grouped.get(Number(link.c1))!.push(record);
+    }
+    for (const row of rows) row[field] = grouped.get(Number(row.id)) ?? [];
+  }
+
+  private findInverseField(related: ModelDefinition): string {
+    const entry = Object.entries(related.fields as Record<string, FieldDefinition>).find(
+      ([, fieldDef]) => fieldDef.type === 'many2one' && fieldDef.relation === this.model.name
+    );
+    if (!entry) {
+      throw new Error(`No inverse many2one on '${related.name}' for '${this.model.name}'.`);
+    }
+    return entry[0];
+  }
+
+  private distinctIds(values: unknown[]): number[] {
+    const set = new Set<number>();
+    for (const value of values) {
+      if (value === null || value === undefined) continue;
+      const num = Number(value);
+      if (Number.isSafeInteger(num)) set.add(num);
+    }
+    return [...set];
+  }
+
+  // ---- Computed & related fields (roadmap T2.3) ----
+
+  private computeFields(): Array<{ field: string; def: FieldDefinition }> {
+    return Object.entries(this.model.fields as Record<string, FieldDefinition>).map(([field, def]) => ({ field, def }));
+  }
+
+  // Stored compute fields are the only ones needing a write-time recompute; a
+  // model with none behaves exactly like before this feature (zero regression).
+  private storedComputeHandlers(): Array<{ field: string; handler: NonNullable<ReturnType<ModelDefinition['getComputeHandler']>> }> {
+    const out: Array<{ field: string; handler: NonNullable<ReturnType<ModelDefinition['getComputeHandler']>> }> = [];
+    for (const { field, def } of this.computeFields()) {
+      if (def.compute && def.store === true) {
+        const handler = this.model.getComputeHandler(def.compute);
+        if (handler) out.push({ field, handler });
+      }
+    }
+    return out;
+  }
+
+  hasStoredCompute(): boolean {
+    return this.storedComputeHandlers().length > 0;
+  }
+
+  // Fill non-stored compute fields (via their handler) and single-hop `related`
+  // fields (by expanding the source m2o) into the fetched rows in place.
+  private async applyComputed(rows: Array<Record<string, unknown>>, scope: TenantScope): Promise<void> {
+    if (rows.length === 0) return;
+    for (const { field, def } of this.computeFields()) {
+      if (def.related) {
+        await this.resolveRelated(rows, field, def.related, scope);
+      } else if (def.compute && def.store !== true) {
+        const handler = this.model.getComputeHandler(def.compute);
+        if (handler) {
+          for (const row of rows) row[field] = handler(row);
+        }
+      }
+    }
+  }
+
+  // related is intentionally scoped to a single m2o hop ('<m2oField>.<valueField>')
+  // resolved through the same expand traversal, so it stays tenant-scoped.
+  private async resolveRelated(
+    rows: Array<Record<string, unknown>>,
+    field: string,
+    path: string,
+    scope: TenantScope
+  ): Promise<void> {
+    const parts = path.split('.');
+    if (parts.length !== 2) {
+      throw new Error(`related '${this.model.name}.${field}' must be a single-hop 'm2oField.valueField' path.`);
+    }
+    const [sourceField, valueField] = parts;
+    const sourceDef = (this.model.fields as Record<string, FieldDefinition>)[sourceField];
+    if (!sourceDef || sourceDef.type !== 'many2one') {
+      throw new Error(`related '${this.model.name}.${field}' needs a many2one source '${sourceField}'.`);
+    }
+    await this.applyExpand(rows as unknown as T[], [sourceField], scope);
+    for (const row of rows) {
+      const resolved = row[sourceField];
+      row[field] = resolved && typeof resolved === 'object' ? (resolved as Record<string, unknown>)[valueField] ?? null : null;
+    }
+  }
+
+  // Fixed-point recompute of stored compute fields, capped at 2 rounds, run on
+  // the caller's (already transactional) executor so it commits with the write.
+  private async recomputeWithinTx(
+    executor: QueryExecutor,
+    ids: number[],
+    scope: TenantScope,
+    actorId: number
+  ): Promise<void> {
+    const handlers = this.storedComputeHandlers();
+    if (handlers.length === 0) return;
+    let pending = ids;
+    for (let round = 0; round < 2 && pending.length > 0; round++) {
+      const { sql, params } = this.queryBuilder.buildSelect({
+        scope,
+        filters: [{ field: 'id', operator: 'IN', value: pending }],
+      });
+      const rows = await executor.query<Record<string, unknown>>(sql, params);
+      const updates: Array<{ id: number; data: Record<string, unknown> }> = [];
+      for (const row of rows) {
+        const data: Record<string, unknown> = {};
+        for (const { field, handler } of handlers) {
+          const next = handler(row);
+          if (next !== row[field]) data[field] = next;
+        }
+        if (Object.keys(data).length > 0) updates.push({ id: Number(row.id), data });
+      }
+      if (updates.length === 0) break;
+      for (const update of updates) {
+        const { sql: upSql, params: upParams } = this.queryBuilder.buildUpdate(update.id, update.data, scope, actorId);
+        await executor.query(upSql, upParams);
+      }
+      pending = updates.map((u) => u.id);
+    }
+  }
+
 
   private async _applyTranslations(
     rows: T[],
@@ -303,4 +717,30 @@ export class BaseRepository<T = Record<string, unknown>> {
 
     return result;
   }
+}
+
+/**
+ * Context handed to a `withTransaction` callback: an already-transactional
+ * executor plus a factory that binds repositories to it, so several model
+ * writes commit or roll back as one unit while each still satisfies the
+ * audit `assertTransactional` invariant (roadmap T2.2).
+ */
+export interface TransactionContext {
+  executor: QueryExecutor;
+  repositoryFor<R = Record<string, unknown>>(model: ModelDefinition): BaseRepository<R>;
+}
+
+export async function withTransaction<T>(
+  run: (tx: TransactionContext) => Promise<T>,
+  engine: PGliteEngine = dbEngine
+): Promise<T> {
+  return engine.transaction((executor) => {
+    const context: TransactionContext = {
+      executor,
+      repositoryFor<R = Record<string, unknown>>(model: ModelDefinition): BaseRepository<R> {
+        return new BaseRepository<R>(model, engine, executor);
+      },
+    };
+    return run(context);
+  });
 }

@@ -10,11 +10,13 @@
     "ai.route",
     "ai.virtual_key",
     "ai.usage_log",
+    "ai.usage_daily",
     "ai.semantic_cache",
     "ai.thread",
     "ai.message"
   ],
   "views": [],
+  "data": ["data/index.ts"],
   "installable": true,
   "application": true
 }

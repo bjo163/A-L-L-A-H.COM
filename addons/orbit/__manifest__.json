@@ -6,6 +6,7 @@
   "depends": ["base"],
   "models": ["orbit.instance", "orbit.template", "orbit.volume"],
   "views": [],
+  "data": ["data/index.ts"],
   "installable": true,
   "application": true
 }

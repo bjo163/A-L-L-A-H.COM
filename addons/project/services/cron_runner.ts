@@ -1,12 +1,19 @@
 // Lightweight cron runner that polls ir.cron every 10 s and executes due jobs.
 // Cross-tenant by design — the outbox pattern used in sync.ts applies here too:
 // each row still carries company_id for downstream scoping.
+//
+// All reads/writes go through the registered `ir.cron` / `project.project`
+// repositories rather than raw SQL (roadmap T3.1), so every state transition
+// flows through the ORM's tenant-scope + audit triggers. The claim is an
+// optimistic compare-and-swap on the row's previously-read `state`.
 
-import { dbEngine } from '@allah/arsy-orm';
+import { BaseRepository, SYSTEM_ACTOR, dbEngine, type TenantScope } from '@allah/arsy-orm';
+import { IrCron } from '../models/ir_cron';
+import { ProjectProject } from '../models/project_project';
 
 const POLL_INTERVAL_MS = 10_000;
 
-interface CronRow {
+interface CronRow extends Record<string, unknown> {
   id: number;
   company_id: number;
   name: string;
@@ -14,6 +21,8 @@ interface CronRow {
   method_name: string | null;
   interval_number: number;
   interval_unit: 'seconds' | 'minutes' | 'hours' | 'days';
+  state: string;
+  run_count: number;
 }
 
 function intervalToMs(number: number, unit: string): number {
@@ -27,22 +36,36 @@ function intervalToMs(number: number, unit: string): number {
 
 async function runDueCrons(): Promise<void> {
   const now = new Date().toISOString();
-  const due = await dbEngine.query<CronRow>(
-    `SELECT id, company_id, name, model_name, method_name, interval_number, interval_unit
-       FROM ir_cron
-      WHERE active = true AND state != $1 AND nextcall <= $2
-      ORDER BY nextcall
-      LIMIT 10`,
-    ['running', now]
-  );
+  const cronRepo = new BaseRepository<CronRow>(IrCron, dbEngine);
+  const projectRepo = new BaseRepository<Record<string, unknown>>(ProjectProject, dbEngine);
+
+  // Cross-tenant poll: `systemScope` reads every tenant's due rows (the row's
+  // own company_id scopes each job's work below). The default `active = true`
+  // filter is applied by the builder.
+  const due = await cronRepo.find({
+    scope: { systemScope: true },
+    filters: [
+      { field: 'state', operator: '!=', value: 'running' },
+      { field: 'nextcall', operator: '<=', value: now },
+    ],
+    orderBy: 'nextcall',
+    limit: 10,
+  });
 
   for (const cron of due) {
-    // Optimistic lock: only proceed if we won the state transition.
-    const locked = await dbEngine.query<{ id: number }>(
-      `UPDATE ir_cron SET state = 'running' WHERE id = $1 AND state != 'running' RETURNING id`,
-      [cron.id]
+    const writeScope: TenantScope = { systemScope: true, companyId: cron.company_id };
+
+    // Optimistic lock through the registered repository: the CAS `expected`
+    // clause only wins if nobody else transitioned the row since we read it,
+    // and the write is audited like every other ORM mutation.
+    const claimed = await cronRepo.updateById(
+      cron.id,
+      { state: 'running' },
+      writeScope,
+      SYSTEM_ACTOR,
+      { state: cron.state },
     );
-    if (locked.length === 0) continue;
+    if (!claimed) continue;
 
     let lastError = '';
     try {
@@ -50,19 +73,17 @@ async function runDueCrons(): Promise<void> {
       if (cron.method_name === 'sync_local_plans') {
         // Deferred import to avoid circular dependency at module load time.
         const { reconcilePlans } = await import('./sync_worker');
-        const projects = await dbEngine.query<{ id: number; workspace_path: string | null }>(
-          `SELECT id, workspace_path
-             FROM project_project
-            WHERE company_id = $1 AND active = true AND sync_mode != 'disabled'`,
-          [cron.company_id]
-        );
+        const projects = await projectRepo.find({
+          scope: { companyId: cron.company_id },
+          filters: [{ field: 'sync_mode', operator: '!=', value: 'disabled' }],
+        });
         // Projects without a workspace_path use Extension-push sync only; skip here.
         for (const project of projects) {
           if (!project.workspace_path) continue;
           // The Hub running in a local dev environment with filesystem access
           // can call reconcilePlans with an empty plans array to trigger a no-op
           // that updates last_sync_at. Full sync via Extension push is preferred.
-          await reconcilePlans(cron.company_id, project.id, []);
+          await reconcilePlans(cron.company_id, Number(project.id), []);
         }
       }
     } catch (err: unknown) {
@@ -70,22 +91,35 @@ async function runDueCrons(): Promise<void> {
     }
 
     const nextcall = new Date(Date.now() + intervalToMs(cron.interval_number, cron.interval_unit)).toISOString();
-    await dbEngine.query(
-      `UPDATE ir_cron
-          SET state = $1, nextcall = $2, last_error = $3, run_count = run_count + 1
-        WHERE id = $4`,
-      [lastError ? 'error' : 'idle', nextcall, lastError, cron.id]
+    await cronRepo.updateById(
+      cron.id,
+      {
+        state: lastError ? 'error' : 'idle',
+        nextcall,
+        last_error: lastError,
+        run_count: cron.run_count + 1,
+      },
+      writeScope,
+      SYSTEM_ACTOR,
     );
   }
 }
 
 let runnerHandle: ReturnType<typeof setTimeout> | undefined;
 
-export function startCronRunner(): void {
+/**
+ * Start the poll loop. `onError` is injected by the host (which owns the logger
+ * dependency) so this addon stays free of `@allah/arsy-core` — the same
+ * convention as `runBootSeed(log)`. A failed poll must not crash the loop, but
+ * must not be silently swallowed either (roadmap T3.1 replaced `.catch(() => {})`).
+ */
+export function startCronRunner(onError: (err: unknown) => void = () => {}): void {
   const tick = (): void => {
-    runDueCrons().catch(() => {}).finally(() => {
-      runnerHandle = setTimeout(tick, POLL_INTERVAL_MS);
-    });
+    runDueCrons()
+      .catch(onError)
+      .finally(() => {
+        runnerHandle = setTimeout(tick, POLL_INTERVAL_MS);
+      });
   };
   runnerHandle = setTimeout(tick, POLL_INTERVAL_MS);
 }

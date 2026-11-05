@@ -75,6 +75,11 @@ jobs:
       - name: Validate architecture invariants
         run: pnpm lint:arch
 
+      - name: Build ORM test dependencies
+        run: |
+          pnpm --filter @allah/arsy-core build
+          pnpm --filter @allah/arsy-orm build
+
       - name: Validate ORM model and persistence contracts
         run: pnpm --filter @allah/arsy-orm test
 

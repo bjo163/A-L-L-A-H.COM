@@ -2,55 +2,55 @@
 
 ## Phase 1: Root package.json Scripts
 
-- [ ] **1.1** Add `harbor:build` script following types+sdk prebuild pattern
-- [ ] **1.2** Add `moonsky:build` script following types+sdk prebuild pattern
-- [ ] **1.3** Add `harbor:dev` script (simple filter dev)
-- [ ] **1.4** Add `moonsky:dev` script (simple filter dev)
-- [ ] **1.5** Update `dev` script to include `harbor:dev` and `moonsky:dev` in concurrently
-- [ ] **1.6** Validate: `pnpm harbor:build` succeeds from root
-- [ ] **1.7** Validate: `pnpm moonsky:build` succeeds from root
-- [ ] **1.8** Validate: `pnpm dev` starts all 8 apps (arsy, dock, headquarter, id, jizz, sentinel, harbor, moonsky)
+- [x] **1.1** Add `harbor:build` script following types+sdk prebuild pattern
+- [x] **1.2** Add `moonsky:build` script following types+sdk prebuild pattern
+- [x] **1.3** Add `harbor:dev` script (simple filter dev)
+- [x] **1.4** Add `moonsky:dev` script (simple filter dev)
+- [x] **1.5** Update `dev` script to include `harbor:dev` and `moonsky:dev` in concurrently
+- [x] **1.6** Validate: `pnpm harbor:build` succeeds from root
+- [x] **1.7** Validate: `pnpm moonsky:build` succeeds from root
+- [x] **1.8** Validate: `pnpm dev` starts all 8 apps (arsy, dock, headquarter, id, jizz, sentinel, harbor, moonsky)
 
 ## Phase 2: ci-dev.yml Verify Jobs
 
-- [ ] **2.1** Add `verify-harbor` job (copy pattern from `verify-dock`)
-- [ ] **2.2** Add `verify-moonsky` job (copy pattern from `verify-dock`)
-- [ ] **2.3** Add `verify-harbor` and `verify-moonsky` to `promote-to-main` `needs` array
+- [x] **2.1** Add `verify-harbor` job (copy pattern from `verify-dock`)
+- [x] **2.2** Add `verify-moonsky` job (copy pattern from `verify-dock`)
+- [x] **2.3** Add `verify-harbor` and `verify-moonsky` to `promote-to-main` `needs` array
 - [ ] **2.4** Validate: Local `act` or push to dev branch triggers new jobs
 - [ ] **2.5** Validate: Both jobs pass `pnpm harbor:build` / `pnpm moonsky:build`
 
 ## Phase 3: publish-deploy.yml Matrix
 
-- [ ] **3.1** Add `harbor` matrix entry with `dockerfile: apps/harbor/Dockerfile`
-- [ ] **3.2** Add `moonsky` matrix entry with `dockerfile: apps/moonsky/Dockerfile`
-- [ ] **3.3** Validate: Matrix expands correctly (9 components total)
+- [x] **3.1** Add `harbor` matrix entry with `dockerfile: apps/harbor/Dockerfile`
+- [x] **3.2** Add `moonsky` matrix entry with `dockerfile: apps/moonsky/Dockerfile`
+- [x] **3.3** Validate: Matrix expands correctly (9 components total)
 
 ## Phase 4: Dockerfiles Creation
 
-- [ ] **4.1** Verify `apps/harbor/next.config.ts` has `output: 'standalone'`
-- [ ] **4.2** Verify `apps/moonsky/next.config.ts` has `output: 'standalone'`
-- [ ] **4.3** Create `apps/harbor/Dockerfile` (copy from `apps/dock/Dockerfile`, adjust port to 3006, build script to `harbor:build`)
-- [ ] **4.4** Create `apps/moonsky/Dockerfile` (copy from `apps/dock/Dockerfile`, adjust port to 3005, build script to `moonsky:build`)
-- [ ] **4.5** Validate: `docker build -f apps/harbor/Dockerfile .` succeeds
-- [ ] **4.6** Validate: `docker build -f apps/moonsky/Dockerfile .` succeeds
+- [x] **4.1** Verify `apps/harbor/next.config.ts` has `output: 'standalone'`
+- [x] **4.2** Verify `apps/moonsky/next.config.ts` has `output: 'standalone'`
+- [x] **4.3** Create `apps/harbor/Dockerfile` (copy from `apps/dock/Dockerfile`, adjust port to 3006, build script to `harbor:build`)
+- [x] **4.4** Create `apps/moonsky/Dockerfile` (copy from `apps/dock/Dockerfile`, adjust port to 3005, build script to `moonsky:build`)
+- [x] **4.5** Validate: `docker build -f apps/harbor/Dockerfile .` succeeds
+- [x] **4.6** Validate: `docker build -f apps/moonsky/Dockerfile .` succeeds
 
 ## Phase 5: docker-compose.yml Services
 
-- [ ] **5.1** Add `harbor` service (port 3006, depends_on: arsy, env: NEXT_PUBLIC_ECOSYSTEM_ORIGIN)
-- [ ] **5.2** Add `moonsky` service (port 3005, depends_on: arsy, env: NEXT_PUBLIC_ECOSYSTEM_ORIGIN)
-- [ ] **5.3** Validate: `docker compose config --quiet` passes (with placeholder env vars)
-- [ ] **5.4** Validate: `docker compose up --build harbor moonsky` starts successfully
+- [x] **5.1** Add `harbor` service (port 3006, depends_on: arsy, env: NEXT_PUBLIC_ECOSYSTEM_ORIGIN)
+- [x] **5.2** Add `moonsky` service (port 3005, depends_on: arsy, env: NEXT_PUBLIC_ECOSYSTEM_ORIGIN)
+- [x] **5.3** Validate: `docker compose config --quiet` passes (with placeholder env vars)
+- [x] **5.4** Validate: `docker compose up --build harbor moonsky` starts successfully
 
 ## Phase 6: Scaffold Validation Enhancement
 
-- [ ] **6.1** Read `scripts/validate-workspace-scaffolds.mjs` to understand current validation
-- [ ] **6.2** Add check: every `apps/*` has `app` or `pages` directory
-- [ ] **6.3** Add check: every `apps/*` has `Dockerfile`
-- [ ] **6.4** Add check: every `apps/*` has corresponding script in root `package.json`
-- [ ] **6.5** Add check: every `apps/*` has verify job in `ci-dev.yml`
-- [ ] **6.6** Add check: every `apps/*` has matrix entry in `publish-deploy.yml`
-- [ ] **6.7** Add check: every `apps/*` has service in `docker-compose.yml`
-- [ ] **6.8** Validate: `pnpm prebuild` (runs validation) passes for all apps
+- [x] **6.1** Read `scripts/validate-workspace-scaffolds.mjs` to understand current validation
+- [x] **6.2** Add check: every `apps/*` has `app` or `pages` directory
+- [x] **6.3** Add check: every `apps/*` has `Dockerfile`
+- [x] **6.4** Add check: every `apps/*` has corresponding script in root `package.json`
+- [x] **6.5** Add check: every `apps/*` has verify job in `ci-dev.yml`
+- [x] **6.6** Add check: every `apps/*` has matrix entry in `publish-deploy.yml`
+- [x] **6.7** Add check: every `apps/*` has service in `docker-compose.yml`
+- [x] **6.8** Validate: `pnpm prebuild` (runs validation) passes for all apps
 
 ## Phase 7: Full Integration Validation
 

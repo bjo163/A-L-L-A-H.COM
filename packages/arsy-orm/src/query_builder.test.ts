@@ -12,6 +12,7 @@ const model = defineModel({
     state: fields.char({ label: 'State', required: true }),
     label: fields.char({ label: 'Label' }),
     attempts: fields.integer({ label: 'Attempts' }),
+    count: fields.integer({ label: 'Count' }),
   },
 });
 
@@ -112,4 +113,165 @@ test('increment updates perform arithmetic in the database with audited, scoped 
     () => new QueryBuilder(model).buildIncrementUpdate(7, { missing: 1 }, {}, { companyId: 3 }, 41),
     /Unknown field/
   );
+});
+
+test('mixed AND/OR filters fold left-to-right with explicit parentheses', () => {
+  const result = new QueryBuilder(model).buildSelect({
+    scope: { systemScope: true },
+    filters: [
+      { field: 'state', operator: '=', value: 'a' },
+      { field: 'label', operator: '=', value: 'b', connector: 'OR' },
+      { field: 'attempts', operator: '>', value: 3 },
+    ],
+  });
+  // Without grouping, SQL would read `state OR (label AND attempts)` by precedence.
+  assert.match(result.sql, /\(\("state" = \$1 OR "label" = \$2\) AND "attempts" > \$3\)/);
+});
+
+test('nested domain compiles through the column allowlist and stays parameterized', () => {
+  const result = new QueryBuilder(model).buildSelect({
+    scope: { companyId: 9 },
+    domain: ['&', ['state', '=', 'ready'], ['|', ['label', 'ILIKE', '%x%'], ['!', ['attempts', '>', 5]]]],
+  });
+  assert.match(result.sql, /"company_id" = \$1/);
+  assert.match(
+    result.sql,
+    /\("state" = \$2 AND \("label" ILIKE \$3 OR \(NOT "attempts" > \$4\)\)\)/
+  );
+  assert.deepEqual(result.params, [9, 'ready', '%x%', 5]);
+});
+
+test('domain leaves reject unknown fields and unsupported operators', () => {
+  const builder = new QueryBuilder(model);
+  assert.throws(
+    () => builder.buildSelect({ scope: { companyId: 1 }, domain: ['password_hash', '=', 'x'] }),
+    /Unknown field/
+  );
+  assert.throws(
+    () => builder.buildSelect({ scope: { companyId: 1 }, domain: ['state', 'ILIKE;', 'x'] }),
+    /Unsupported filter operator/
+  );
+});
+
+test('field projection restricts the select list and validates every column', () => {
+  const result = new QueryBuilder(model).buildSelect({ scope: { companyId: 2 }, fields: ['state', 'id'] });
+  assert.match(result.sql, /^SELECT "state", "id" FROM/);
+  assert.throws(
+    () => new QueryBuilder(model).buildSelect({ scope: { companyId: 2 }, fields: ['state', 'secret'] }),
+    /Unknown field 'secret'/
+  );
+});
+
+test('buildCount is a dedicated builder that never regex-swaps a count column', () => {
+  const result = new QueryBuilder(model).buildCount({
+    scope: { companyId: 4 },
+    fields: ['count'],
+    filters: [{ field: 'count', operator: '>', value: 0 }],
+  });
+  assert.match(result.sql, /^SELECT COUNT\(\*\)::integer AS count FROM "agent_test" WHERE/);
+  assert.match(result.sql, /"count" > \$2/);
+  assert.doesNotMatch(result.sql, /SELECT "count"/);
+  assert.deepEqual(result.params, [4, 0]);
+});
+
+test('keyset pagination seeks on (column, id) with a bounded, parameterized page', () => {
+  const first = new QueryBuilder(model).buildKeyset({ scope: { companyId: 5 }, limit: 20 }, { column: 'attempts' });
+  assert.match(first.sql, /ORDER BY "attempts" ASC, "id" ASC LIMIT \$2/);
+  assert.deepEqual(first.params, [5, 20]);
+
+  const next = new QueryBuilder(model).buildKeyset(
+    { scope: { companyId: 5 }, limit: 20 },
+    { column: 'attempts', after: { columnValue: 7, id: 42 } }
+  );
+  assert.match(next.sql, /AND \("attempts", "id"\) > \(\$2, \$3\)/);
+  assert.deepEqual(next.params, [5, 7, 42, 20]);
+});
+
+test('forUpdate appends a row lock after the page clause; includeArchived drops active', () => {
+  const locked = new QueryBuilder(model).buildSelect({
+    scope: { companyId: 5 },
+    filters: [{ field: 'state', operator: '=', value: 'a' }],
+    limit: 10,
+    forUpdate: true,
+  });
+  assert.match(locked.sql, /LIMIT \$3 FOR UPDATE$/);
+
+  const archived = new QueryBuilder(model).buildSelect({ scope: { companyId: 5 }, includeArchived: true });
+  assert.doesNotMatch(archived.sql, /"active" = true/);
+  const notArchived = new QueryBuilder(model).buildSelect({ scope: { companyId: 5 } });
+  assert.match(notArchived.sql, /"active" = true/);
+});
+
+test('read_group parameterizes scope and restricts aggregates to numeric fields', () => {
+  const result = new QueryBuilder(model).buildReadGroup(
+    { scope: { companyId: 8 }, filters: [{ field: 'state', operator: '=', value: 'done' }] },
+    { groupBy: ['state'], aggregates: [{ fn: 'count', alias: 'count' }, { fn: 'sum', field: 'attempts', alias: 'total' }] }
+  );
+  assert.match(result.sql, /SELECT "state", COUNT\(\*\)::integer AS "count", SUM\("attempts"\)::numeric AS "total"/);
+  assert.match(result.sql, /GROUP BY "state" ORDER BY "state" ASC/);
+  assert.deepEqual(result.params, [8, 'done']);
+  assert.doesNotMatch(result.sql, /done/);
+});
+
+test('read_group rejects summing a non-numeric field and unknown group columns', () => {
+  const builder = new QueryBuilder(model);
+  assert.throws(
+    () => builder.buildReadGroup({ scope: { companyId: 1 } }, { groupBy: [], aggregates: [{ fn: 'sum', field: 'state', alias: 's' }] }),
+    /Unknown field 'state'/
+  );
+  assert.throws(
+    () => builder.buildReadGroup({ scope: { companyId: 1 } }, { groupBy: ['secret'], aggregates: [] }),
+    /Unknown field 'secret'/
+  );
+});
+
+test('archive flips active within the tenant scope and only touches opposite-state rows', () => {
+  const result = new QueryBuilder(model).buildArchive([3, 4], false, { companyId: 6 }, 41);
+  assert.match(result.sql, /SET "active" = \$1, "write_uid" = \$2/);
+  assert.match(result.sql, /WHERE "active" = true AND "id" IN \(\$3, \$4\) AND "company_id" = \$5/);
+  assert.deepEqual(result.params, [false, 41, 3, 4, 6]);
+  assert.throws(
+    () => new QueryBuilder(model).buildArchive([], false, { companyId: 6 }, 41),
+    /at least one id/
+  );
+});
+
+test('updateMany emits one set-based UPDATE per column shape, values never interpolated', () => {
+  // Two rows share the {state} shape and fold into one statement; a third row
+  // touches {attempts} so it becomes its own statement.
+  const statements = new QueryBuilder(model).buildUpdateMany(
+    [
+      { id: 1, data: { state: 'a' } },
+      { id: 2, data: { state: 'b' } },
+      { id: 3, data: { attempts: 5 } },
+    ],
+    { companyId: 9 },
+    41
+  );
+  assert.equal(statements.length, 2);
+  const first = statements[0];
+  assert.match(first.sql, /UPDATE "agent_test" AS t SET "state" = v\."state", "write_uid" = \$/);
+  assert.match(first.sql, /FROM \(VALUES \(\$1::integer, \$2::text\), \(\$3::integer, \$4::text\)\) AS v\("id", "state"\)/);
+  assert.match(first.sql, /WHERE t\."id" = v\."id" AND t\."active" = true AND "company_id" = \$6/);
+  assert.deepEqual(first.params, [1, 'a', 2, 'b', 41, 9]);
+  assert.doesNotMatch(first.sql, /'a'|'b'/);
+  assert.match(statements[1].sql, /"attempts" = v\."attempts"/);
+  assert.match(statements[1].sql, /\$2::integer/);
+});
+
+test('updateMany rejects unknown and ORM-managed write fields and empty data', () => {
+  const builder = new QueryBuilder(model);
+  assert.throws(
+    () => builder.buildUpdateMany([{ id: 1, data: { secret: 'x' } }], { companyId: 1 }, 41),
+    /Unknown field/
+  );
+  assert.throws(
+    () => builder.buildUpdateMany([{ id: 1, data: { write_uid: 9 } }], { companyId: 1 }, 41),
+    /managed by the ORM/
+  );
+  assert.throws(
+    () => builder.buildUpdateMany([{ id: 1, data: {} }], { companyId: 1 }, 41),
+    /at least one field/
+  );
+  assert.deepEqual(builder.buildUpdateMany([], { companyId: 1 }, 41), []);
 });

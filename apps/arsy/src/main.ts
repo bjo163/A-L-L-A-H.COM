@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
 import { buildArsyApp } from './app';
+import { runBootSeed } from './seed';
+import { resolveMigrations } from '../../../addons/migrations';
 import { logger } from '@allah/arsy-core';
-import { dbEngine } from '@allah/arsy-orm';
+import { dbEngine, SchemaMigrator } from '@allah/arsy-orm';
 
 dotenv.config();
 
@@ -12,6 +14,28 @@ const HOST = process.env.HOST || '127.0.0.1';
 
 async function bootstrap() {
   const app = await buildArsyApp({ enableLogging: true });
+
+  // Apply addon-declared ordered migrations after the schema is synced but before
+  // any seed data. buildArsyApp already ran `SchemaMigrator.sync()`, so the
+  // ledger table exists; a migration failure must not block boot (roadmap: boot
+  // resilience), but a checksum drift is a loud, fail-closed signal.
+  try {
+    const { applied, skipped } = await new SchemaMigrator(dbEngine).runOrderedMigrations(
+      resolveMigrations()
+    );
+    if (applied.length > 0) logger.info(`Applied ${applied.length} migration(s): ${applied.join(', ')}`);
+    else logger.info(`Migrations up to date (${skipped} already applied).`);
+  } catch (err) {
+    logger.error({ err }, 'Ordered migration failed; serving with existing schema');
+  }
+
+  // Load platform default data after the schema is migrated. A seed failure is
+  // logged but must not prevent the hub from serving (roadmap: boot resilience).
+  try {
+    await runBootSeed((message) => logger.info(message));
+  } catch (err) {
+    logger.error({ err }, 'Boot seed failed; serving with existing data');
+  }
 
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}. Initiating graceful shutdown...`);

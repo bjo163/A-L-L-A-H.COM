@@ -2,470 +2,197 @@ name: CI Validation Gate & Promotion
 
 on:
   push:
-    branches:
-      - dev
+    branches: [dev]
   pull_request:
-    branches:
-      - dev
+    branches: [dev]
   workflow_dispatch:
 
 permissions:
-  # Least privilege at workflow level: pull_request runs from dev-branch PRs
-  # would otherwise inherit these grants through every verify job. The only
-  # job that writes (fast-forward main, start publish-deploy) declares its own
-  # elevated permissions below.
   contents: read
 
 concurrency:
-  group: ci-dev-gate
-  cancel-in-progress: false
+  group: ci-dev-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  verify-scaffolds:
-    name: Verify Workspace Scaffolds
+  verify:
+    name: Required quality gates
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.changes.outputs.matrix }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
         with:
           version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-
+      - name: Start gate timing summary
+        run: echo '| Gate | Duration | Exit |' >> "$GITHUB_STEP_SUMMARY" && echo '|---|---:|---:|' >> "$GITHUB_STEP_SUMMARY"
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Frozen lockfile install' pnpm install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: .cache/typecheck
+          key: typecheck-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            typecheck-${{ runner.os }}-${{ github.ref_name }}-
+            typecheck-${{ runner.os }}-
+      - id: changes
+        name: Select affected build targets
+        env:
+          BUILD_AFFECTED_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/select-affected-builds.mjs >> "$GITHUB_OUTPUT"
+      - name: Documentation contract
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Documentation contract' pnpm docs:check
+      - name: Unit contract consistency
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Unit contract consistency' pnpm contract:check
+      - name: Contract index freshness
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Contract index freshness' pnpm contract:index:check
+      - name: Architecture invariants
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Architecture invariants' pnpm lint:arch
+      - name: Affected build selector tests
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Affected build selector' pnpm build:affected:test
+      - name: Affected TypeScript selector tests
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Affected TypeScript selector' pnpm typecheck:affected:test
+      - name: Workspace scaffold validation
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Workspace scaffolds' node scripts/validate-workspace-scaffolds.mjs
+      - name: ESLint
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'ESLint' pnpm lint
+      - name: TypeScript
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'TypeScript' pnpm typecheck
+      - name: VS Code extension tests
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Extension tests' pnpm extension:test
+      - name: Arsy tests
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Arsy tests' pnpm --filter @allah/arsy test
+      - name: Verify harbor
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Verify harbor' pnpm harbor:build
+      - name: Verify moonsky
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Verify moonsky' pnpm moonsky:build
+      - name: Design system tests
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'UI tests' pnpm ui:test
+      - name: Skin contrast
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'UI contrast' pnpm ui:contrast
+      - name: Upload quality gate timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-timings-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gate-timings.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Verify harbor
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Verify harbor' pnpm harbor:build
+      - name: Verify moonsky
+        env:
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs 'Verify moonsky' pnpm moonsky:build
 
-      - name: Run Scaffold Validation
-        run: node scripts/validate-workspace-scaffolds.mjs
-
-  verify-lint-arch:
-    name: Verify Architectural Lint (@moonwitness/lint)
+  build:
+    name: Build ${{ matrix.component }}
+    needs: verify
+    if: needs.verify.outputs.matrix != '[]'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.verify.outputs.matrix) }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Run Architectural Lint Gate
-        run: pnpm lint:arch
-
-  verify-typecheck:
-    name: Verify TypeScript Type-Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - name: Restore Next.js build cache
+        if: matrix.cachePath != ''
+        uses: actions/cache@v4
         with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+          path: ${{ matrix.cachePath }}
+          key: next-${{ matrix.component }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', format('apps/{0}/**', matrix.component), 'packages/ui/src/**', 'packages/types/src/**', 'packages/sdk/src/**') }}
+          restore-keys: |
+            next-${{ matrix.component }}-${{ runner.os }}-
+      - name: Build selected component
+        env:
+          BUILD_COMPONENT: ${{ matrix.component }}
+          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
+        run: node scripts/run-gate.mjs "Build $BUILD_COMPONENT" node scripts/build-one.mjs
+      - name: Upload build timing
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Strict TypeScript Typecheck
-        run: pnpm typecheck
-
-  verify-lint:
-    name: Verify ESLint Code-Style
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run ESLint Gate
-        run: pnpm lint
-
-  verify-dock:
-    name: Verify Dock (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Dock App
-        run: pnpm dock:build
-
-  verify-headquarter:
-    name: Verify Headquarter (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Headquarter App
-        run: pnpm headquarter:build
-
-  verify-id:
-    name: Verify ID (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build ID App
-        run: pnpm id:build
-
-  verify-harbor:
-    name: Verify Harbor (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Harbor App
-        run: pnpm harbor:build
-
-  verify-moonsky:
-    name: Verify Moonsky (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Moonsky App
-        run: pnpm moonsky:build
-
-  verify-jizz:
-    name: Verify Jizz (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build shared type contracts
-        run: pnpm --filter @moonwitness/types build
-
-      - name: Build Jizz App
-        run: pnpm jizz:build
-
-  verify-gate:
-    name: Verify Gate (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Gate App
-        run: pnpm gate:build
-
-  verify-esp:
-    name: Verify E-ISP (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build E-ISP App
-        run: pnpm esp:build
-
-  verify-arsy:
-    name: Verify Arsy Fastify Hub
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Arsy Hub
-        run: pnpm --filter @allah/arsy build
-
-  verify-sentinel:
-    name: Verify Sentinel RADIUS Daemon
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Sentinel Daemon
-        run: pnpm sentinel:build
-
-  verify-extension:
-    name: Verify VS Code Extension
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Extension
-        run: pnpm extension:build
-
-  verify-tests:
-    name: Verify Extension Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Extension Tests
-        run: pnpm extension:test
-
-      - name: Run Design System Tests
-        run: pnpm ui:test
-
-      - name: Run Skin Contrast Gate
-        run: pnpm ui:contrast
-
-  verify-docs:
-    name: Verify Documentation Contract & Scoring
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.16.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check Doc Contract & Scoring Gate
-        run: pnpm docs:check
+          name: build-timing-${{ matrix.component }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gate-timings.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
 
   promote-to-main:
     name: Promote dev to main
+    needs: [verify, verify-harbor, verify-moonsky, build]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/dev' &&
+      needs.verify.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: write
-    needs: [verify-scaffolds, verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-harbor, verify-moonsky, verify-gate, verify-esp, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
-      - name: Check out dev branch
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           ref: dev
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Configure Git User
-        run: |
+      - run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Fast-forward main to dev
-        run: |
           git checkout main || git checkout -b main origin/main
           git merge --ff-only dev
           git push origin main
-
-      - name: Start production publish and deploy
+      - name: Start production publish workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run publish-deploy.yml --ref main

@@ -1,0 +1,22 @@
+{
+  "model": "res.company",
+  "views": {
+    "tree": {
+      "title": "Companies",
+      "fields": [
+        { "name": "name", "label": "Name", "sortable": true },
+        { "name": "currency_id", "label": "Currency" },
+        { "name": "country_id", "label": "Country" }
+      ]
+    },
+    "form": {
+      "title": "Company Details",
+      "fields": [
+        { "name": "name", "label": "Company Name", "col_span": 12 },
+        { "name": "currency_id", "label": "Currency", "widget": "many2one", "col_span": 6 },
+        { "name": "country_id", "label": "Country", "widget": "many2one", "col_span": 6 },
+        { "name": "parent_id", "label": "Parent Company", "widget": "many2one", "col_span": 6 }
+      ]
+    }
+  }
+}

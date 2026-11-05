@@ -270,8 +270,6 @@ services:
       - SENTINEL_COA_PORT=3799
       - PG_DATA_DIR=/app/data
       - ARSY_MASTER_KEY=${ARSY_MASTER_KEY:?ARSY_MASTER_KEY is required and must match arsy}
-    volumes:
-      - sentinel_data:/app/data
     healthcheck:
       test:
         - CMD
@@ -285,3 +283,5 @@ services:
 volumes:
   arsy_data:
   sentinel_data:
+  harbor_data:
+  moonsky_data:

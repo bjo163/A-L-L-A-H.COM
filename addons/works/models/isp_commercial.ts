@@ -7,14 +7,22 @@ export const IspPlan = defineModel({
   fields: {
     company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Plan Name', required: true }),
+    slug: fields.char({ label: 'Public Slug' }),
+    description: fields.text({ label: 'Description' }),
     download_mbps: fields.integer({ label: 'Download (Mbps)', default: 10 }),
     upload_mbps: fields.integer({ label: 'Upload (Mbps)', default: 5 }),
     price: fields.float({ label: 'Price', default: 0 }),
     currency: fields.char({ label: 'Currency', default: 'IDR' }),
     burst_profile: fields.char({ label: 'Burst Profile' }),
     fup_limit_gb: fields.integer({ label: 'FUP Limit (GB)' }),
+    is_public: fields.boolean({ label: 'Published', default: false }),
+    sequence: fields.integer({ label: 'Display Order', default: 10 }),
   },
-  indexes: [{ fields: ['company_id'] }],
+  indexes: [
+    { fields: ['company_id'] },
+    { fields: ['company_id', 'slug'] },
+    { fields: ['is_public'] },
+  ],
 });
 
 export const IspSubscription = defineModel({

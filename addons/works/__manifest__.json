@@ -4,8 +4,9 @@
   "category": "Commerce",
   "summary": "WORKS ISP Commercial Foundation & Billing Lifecycle",
   "depends": ["base"],
-  "models": ["isp.plan", "isp.subscription", "isp.invoice"],
+  "models": ["isp.plan", "isp.subscription", "isp.invoice", "isp.coverage"],
   "views": [],
+  "data": ["data/index.ts"],
   "installable": true,
   "application": true
 }

@@ -28,6 +28,7 @@ import { registerAllAddons } from '../../../addons/index';
 import { chunkText, computeSha256 } from '../../../addons/mw_qorpus/src/chunker';
 import { reconcilePlans } from '../../../addons/project/services/sync_worker';
 import { startCronRunner, stopCronRunner } from '../../../addons/project/services/cron_runner';
+import { DEFAULT_PROJECT_CRON } from '../../../addons/project/data/default';
 import type { SyncPayload } from '../../../addons/project/services/plan_scanner';
 
 export interface BuildAppOptions {
@@ -58,6 +59,10 @@ const PUBLIC_ROUTES: PublicRouteRule[] = [
   { method: 'POST', path: '/v1/agent/pairings/claim' },
   { method: 'GET', path: '/v1/agent/device/missions/next' },
   { method: 'POST', pattern: /^\/v1\/agent\/device\/missions\/[0-9]+\/events$/ },
+  // Public read-only ISP catalog projections for the e-isp top-of-funnel site.
+  // Exact paths; both return only `is_public` rows projected to safe fields.
+  { method: 'GET', path: '/v1/public/isp/plans' },
+  { method: 'GET', path: '/v1/public/isp/coverage' },
 ];
 if (!isProduction) PUBLIC_ROUTES.push({ method: 'GET', pattern: /^\/docs(\/.*)?$/ });
 
@@ -789,6 +794,59 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     return ok(invoices, { totalItems: invoices.length });
   });
 
+  // Public ISP projections. Read the cross-tenant platform catalog with
+  // systemScope filtered to is_public, then assemble an explicit field whitelist
+  // so no company_id / fup / burst / relation id can ever reach an anonymous
+  // caller. BaseRepository owns the scoping; there is no raw SQL here.
+  const publicScope = (): TenantScope => ({ systemScope: true });
+
+  app.get('/v1/public/isp/plans', async () => {
+    const plans = await repository('isp.plan').find({
+      scope: publicScope(),
+      filters: [{ field: 'is_public', operator: '=', value: true }],
+      orderBy: 'sequence',
+      orderDirection: 'ASC',
+      limit: 100,
+    });
+    const projected = plans.map((plan) => ({
+      slug: plan.slug ?? null,
+      name: plan.name,
+      description: plan.description ?? '',
+      download_mbps: plan.download_mbps,
+      upload_mbps: plan.upload_mbps,
+      price: plan.price,
+      currency: plan.currency,
+    }));
+    return ok(projected, { totalItems: projected.length });
+  });
+
+  app.get('/v1/public/isp/coverage', async (request) => {
+    const coverage = await repository('isp.coverage').find({
+      scope: publicScope(),
+      filters: [{ field: 'is_public', operator: '=', value: true }],
+      orderBy: 'sequence',
+      orderDirection: 'ASC',
+      limit: 500,
+    });
+    const query = String((request.query as Record<string, unknown>).q ?? '').trim().toLowerCase();
+    const projected = coverage
+      .filter((area) => {
+        if (!query) return true;
+        const haystack = `${String(area.area_name ?? '')} ${String(area.city ?? '')} ${String(area.district ?? '')}`
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+      .map((area) => ({
+        slug: area.slug ?? null,
+        area_name: area.area_name,
+        city: area.city ?? '',
+        district: area.district ?? '',
+        status: area.status,
+        description: area.description ?? '',
+      }));
+    return ok(projected, { totalItems: projected.length });
+  });
+
   // Platform catalogs are shared rows owned by company_id 0. Reading them needs the public
   // rows plus this tenant's overrides, and the id list always comes from the principal.
   const catalogScope = (): TenantScope => ({ systemScope: true });
@@ -1030,17 +1088,11 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     const scope: TenantScope = { companyId };
     const nextcall = new Date(Date.now() + 60_000).toISOString();
     const created = await dbEngine.transaction(async (tx) => {
+      // The schedule definition is the addon-owned `DEFAULT_PROJECT_CRON` single
+      // source; this route only stamps the tenant id and the first run time so
+      // there is one cron spec, not one here and one in the addon data.
       return repository('ir.cron', tx).create(
-        {
-          company_id: companyId,
-          name: 'Project .plans Sync',
-          model_name: 'project.project',
-          method_name: 'sync_local_plans',
-          interval_number: 5,
-          interval_unit: 'minutes',
-          nextcall,
-          state: 'idle',
-        },
+        { ...DEFAULT_PROJECT_CRON, company_id: companyId, nextcall },
         scope,
         actor
       );
@@ -1050,7 +1102,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
 
   // Start cron runner after all routes are ready.
   app.addHook('onReady', async () => {
-    startCronRunner();
+    startCronRunner((err) => logger.warn({ err }, 'Cron poll failed; will retry next tick'));
   });
 
   app.addHook('onClose', async () => {

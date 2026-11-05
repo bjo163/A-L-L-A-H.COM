@@ -30,6 +30,24 @@ export interface AddonManifest {
   depends: string[];
   models: string[];
   installable: boolean;
+  /**
+   * Relative module paths (from the addon dir) that export a `loadDefaultData`
+   * loader. Every addon must declare this key — an empty array is an explicit,
+   * deliberate statement that the addon ships no platform reference data, so a
+   * missing `data` field is a wiring bug rather than an accidental gap.
+   */
+  data: string[];
+  /** Optional sample rows seeded only outside production (see `runBootSeed`). */
+  demo?: string[];
+  /**
+   * Optional ordered SQL migrations this addon ships (roadmap T2.4c). The names
+   * are migration keys applied in ascending lexicographic order by
+   * `SchemaMigrator.runOrderedMigrations`; the SQL itself is registered in the
+   * static `MIGRATION_REGISTRY` (boot bundles addons via static imports, so a
+   * manifest-declared path is never dynamically imported). An absent/empty key
+   * is an explicit statement that the addon owns no migrations.
+   */
+  migrations?: string[];
 }
 
 interface CatalogEntry {

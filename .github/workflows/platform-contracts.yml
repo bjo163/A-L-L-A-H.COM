@@ -48,6 +48,16 @@ jobs:
       - name: Validate architecture invariants
         run: pnpm lint:arch
 
+      - name: Build Arsy API test dependencies
+        run: |
+          pnpm --filter @moonwitness/types build
+          pnpm --filter @allah/arsy-core build
+          pnpm --filter @allah/arsy-orm build
+          pnpm --filter @allah/arsy-plugin-auth build
+          pnpm --filter @allah/arsy-plugin-llm-gateway build
+          pnpm --filter @allah/arsy-plugin-sdui build
+          pnpm --filter @allah/arsy-plugin-storage build
+
       - name: Validate Arsy API and trust boundaries
         run: pnpm --filter @allah/arsy test
 

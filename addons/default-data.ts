@@ -20,10 +20,10 @@ import { loadDefaultData as nexusDefaultData } from './nexus/data/index';
 import { loadDefaultData as orbitDefaultData } from './orbit/data/index';
 
 /**
- * addon name -> its default-data loader. Only addons that own platform rows
- * appear; the no-data addons (`mw_qorpus`, `mw_storage`, `nexus`, `orbit`) state
- * deliberate absence with an explicit `data: []` in their manifest and ship no
- * loader, so there is nothing to register or seed for them.
+ * addon name -> its default-data loader. All eight addons ship a loader;
+ * four (`mw_qorpus`, `mw_storage`, `nexus`, `orbit`) return an empty result
+ * because they own no platform reference rows, but their presence is an
+ * explicit, deliberate statement (matching `data: []` in the manifest).
  */
 export const DEFAULT_DATA_REGISTRY: Record<string, (ctx: SeedContext) => Promise<SeedResult>> = {
   base: baseDefaultData,

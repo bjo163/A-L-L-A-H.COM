@@ -164,6 +164,88 @@ test('model writes create immutable, redacted audit events with trusted actors',
   }
 });
 
+test('updateMany emits one set-based UPDATE yet fires a row-level audit event per row', { timeout: 60_000 }, async () => {
+  const { engine, registry } = await createAuditedDatabase();
+  try {
+    const userModel = registry.get('res.users');
+    const recordModel = registry.get('audit.test');
+    const owner = await new BaseRepository(userModel, engine).create(
+      {
+        company_id: -1,
+        name: 'Owner',
+        email: 'batch@example.test',
+        password: '[MANAGED_BY_AUTH_USER]',
+        role: 'user',
+      },
+      { systemScope: true },
+      SYSTEM_ACTOR
+    );
+    const ownerId = Number(owner.id);
+    const actor = { type: 'user', userId: ownerId, reasonHash: 'b'.repeat(64), requestId: 'batch-update' };
+    const repository = new BaseRepository(recordModel, engine);
+
+    const rows = await repository.createMany(
+      [
+        { name: 'row one', note: 'n1' },
+        { name: 'row two', note: 'n2' },
+        { name: 'row three', note: 'n3' },
+      ],
+      { companyId: -1 },
+      actor
+    );
+    const ids = rows.map((r) => Number(r.id));
+    const insertUpdates = await engine.query(
+      `SELECT count(*)::INTEGER AS c FROM "arsy_audit_event" WHERE "model_name" = $1 AND "operation" = 'insert';`,
+      ['audit.test']
+    );
+    assert.equal(Number(insertUpdates[0].c), 3);
+
+    // Two rows share the {note} shape; the third touches {name, note} — the
+    // repository emits two set-based statements but PostgreSQL still fires the
+    // AFTER-INSERT/UPDATE row trigger once for every changed row.
+    const updated = await repository.updateMany(
+      [
+        { id: ids[0], data: { note: 'batch-a' } },
+        { id: ids[1], data: { note: 'batch-b' } },
+        { id: ids[2], data: { name: 'renamed', note: 'batch-c' } },
+      ],
+      { companyId: -1 },
+      actor
+    );
+    assert.equal(updated.length, 3);
+    assert.deepEqual(updated.map((r) => Number(r.write_uid)).sort(), [ownerId, ownerId, ownerId]);
+
+    const updateEvents = await engine.query(
+      `SELECT "record_id", "changed_fields", "actor_uid" FROM "arsy_audit_event"
+       WHERE "model_name" = $1 AND "operation" = 'update' ORDER BY "record_id";`,
+      ['audit.test']
+    );
+    assert.equal(updateEvents.length, 3, 'one update event per updated row');
+    assert.deepEqual(updateEvents.map((e) => Number(e.actor_uid)), [ownerId, ownerId, ownerId]);
+    const changesById = new Map(updateEvents.map((e) => [Number(e.record_id), e.changed_fields]));
+    assert.deepEqual(changesById.get(ids[0]), ['note']);
+    assert.deepEqual(changesById.get(ids[1]), ['note']);
+    assert.deepEqual(changesById.get(ids[2]), ['name', 'note']);
+    assert.doesNotMatch(JSON.stringify(updateEvents), /batch-a|batch-b|batch-c|renamed/);
+
+    // Non-matching ids (wrong tenant) are silently skipped, exactly like the
+    // single-row path, and produce no audit event.
+    const skipped = await repository.updateMany(
+      [{ id: 999999, data: { note: 'ghost' } }],
+      { companyId: -1 },
+      actor
+    );
+    assert.equal(skipped.length, 0);
+    const stillThree = await engine.query(
+      `SELECT count(*)::INTEGER AS c FROM "arsy_audit_event" WHERE "model_name" = $1 AND "operation" = 'update';`,
+      ['audit.test']
+    );
+    assert.equal(Number(stillThree[0].c), 3);
+  } finally {
+    await engine.close();
+  }
+});
+
 test('versioned schema migrations roll back writes and remain retryable', { timeout: 60_000 }, async () => {
   const { engine, migrator } = await createAuditedDatabase();
   try {
@@ -193,6 +275,64 @@ test('versioned schema migrations roll back writes and remain retryable', { time
       ['audit-history-retry-test']
     );
     assert.equal(applied.length, 1);
+
+    // A second boot re-ensures the ledger and backfills the ad-hoc, name-only
+    // row to version 0 / 'legacy' idempotently (roadmap T2.4c).
+    await migrator.runOrderedMigrations([]);
+    const backfilled = await engine.query(
+      `SELECT "version", "checksum" FROM "arsy_schema_migrations" WHERE "name" = $1;`,
+      ['audit-history-retry-test']
+    );
+    assert.equal(Number(backfilled[0].version), 0);
+    assert.equal(backfilled[0].checksum, 'legacy');
+  } finally {
+    await engine.close();
+  }
+});
+
+test('ordered migrations apply lexicographically, are idempotent, and guard checksum drift', { timeout: 60_000 }, async () => {
+  const { engine, migrator } = await createAuditedDatabase();
+  try {
+    const migrations = [
+      // Deliberately out of order: the runner must apply b then a? No — a then b.
+      { name: '0002_b', sql: 'CREATE TABLE mig_b ("id" INTEGER);' },
+      { name: '0001_a', sql: 'CREATE TABLE mig_a ("id" INTEGER);' },
+    ];
+
+    const first = await migrator.runOrderedMigrations(migrations);
+    assert.deepEqual(first.applied, ['0001_a', '0002_b'], 'applied in ascending name order');
+    assert.equal(first.skipped, 0);
+
+    // Both tables exist and the ledger carries a monotonically increasing version
+    // and a sha256 checksum.
+    await engine.query('SELECT 1 FROM mig_a;');
+    await engine.query('SELECT 1 FROM mig_b;');
+    const rows = await engine.query(
+      `SELECT "name", "version", "checksum" FROM "arsy_schema_migrations" ORDER BY "version";`
+    );
+    assert.deepEqual(rows.map((r) => [r.name, Number(r.version)]), [['0001_a', 1], ['0002_b', 2]]);
+    assert.match(rows[0].checksum, /^[0-9a-f]{64}$/);
+
+    // Re-running the identical set is a pure no-op: nothing applied, both skipped.
+    const second = await migrator.runOrderedMigrations(migrations);
+    assert.deepEqual(second.applied, []);
+    assert.equal(second.skipped, 2);
+
+    // Editing an already-applied migration fails closed instead of silently
+    // skipping the changed SQL.
+    await assert.rejects(
+      migrator.runOrderedMigrations([{ name: '0001_a', sql: 'CREATE TABLE mig_a ("other" INTEGER);' }]),
+      /checksum drift/
+    );
+
+    // Duplicate names within one ordered set are rejected before any SQL runs.
+    await assert.rejects(
+      migrator.runOrderedMigrations([
+        { name: 'dup', sql: 'SELECT 1;' },
+        { name: 'dup', sql: 'SELECT 1;' },
+      ]),
+      /Duplicate migration name/
+    );
   } finally {
     await engine.close();
   }

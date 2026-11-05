@@ -25,14 +25,50 @@ export interface QueryFilter {
   connector?: 'AND' | 'OR';
 }
 
+/** A single `['field', op, value]` predicate — the leaf of a nested domain. */
+export type DomainLeaf = [field: string, operator: QueryFilter['operator'], value: unknown];
+
+/**
+ * Odoo-polish prefix domain tree: `['&', a, b]` / `['|', a, b]` combine two
+ * sub-nodes, `['!', a]` negates one, anything else is a `DomainLeaf`. Every leaf
+ * routes through the same column allowlist + parameterized placeholder path as a
+ * flat `QueryFilter`, so nesting never widens the injection surface.
+ */
+export type DomainNode =
+  | DomainLeaf
+  | ['&', DomainNode, DomainNode]
+  | ['|', DomainNode, DomainNode]
+  | ['!', DomainNode];
+
+/** Stable tiebreaker cursor for keyset pagination over `(column, id)`. */
+export interface KeysetCursor {
+  columnValue: unknown;
+  id: string | number;
+}
+
+/** A single `read_group` aggregate; numeric operators require a field at compile time. */
+export type GroupAggregate =
+  | { fn: 'count'; field?: string; alias: string }
+  | { fn: 'sum' | 'avg' | 'min' | 'max'; field: string; alias: string };
+
 export interface QueryOptions {
   scope: TenantScope;
   lang?: string;
   filters?: QueryFilter[];
+  /** Nested prefix domain, AND-combined with any flat `filters`. */
+  domain?: DomainNode;
+  /** Column projection; validated against reserved + model fields. Default `*`. */
+  fields?: string[];
+  /** Relation fields resolved after fetch (m2o inline, o2m/m2m batched); read by the repository. */
+  expand?: string[];
   limit?: number;
   offset?: number;
   orderBy?: string;
   orderDirection?: 'ASC' | 'DESC';
+  /** Include archived (`active = false`) rows; default false keeps the `active = true` filter. */
+  includeArchived?: boolean;
+  /** Append a row-level `FOR UPDATE` lock to the select (single-statement scope). */
+  forUpdate?: boolean;
 }
 
 export class TenantScopeRequiredError extends Error {
@@ -95,45 +131,89 @@ export class QueryBuilder {
     return [`"company_id" = $${params.length}`];
   }
 
-  buildSelect(options: QueryOptions): { sql: string; params: unknown[] } {
+  // Compile one `['field', op, value]` predicate into a parameterized clause.
+  // Both the flat `filters` path and every nested `domain` leaf go through here,
+  // so the column allowlist and placeholder numbering have exactly one owner.
+  private compileLeaf(field: string, operator: QueryFilter['operator'], value: unknown, params: unknown[]): string {
+    const column = this.column(field);
+    const op = operator.toUpperCase();
+    if (!SUPPORTED_OPERATORS.has(op)) throw new UnsupportedOperatorError(operator);
+    if (op === 'IN' || op === 'NOT IN') {
+      const values = Array.isArray(value) ? value : [value];
+      if (values.length === 0) throw new Error(`'${field}' IN requires at least one value.`);
+      const placeholders = values.map((v) => {
+        params.push(v);
+        return `$${params.length}`;
+      });
+      return `${column} ${op} (${placeholders.join(', ')})`;
+    }
+    if (value === null && op === '=') return `${column} IS NULL`;
+    if (value === null && op === '!=') return `${column} IS NOT NULL`;
+    params.push(value);
+    return `${column} ${op} $${params.length}`;
+  }
+
+  // Recursive prefix-domain compiler. A node is logical only when its head is a
+  // join/negation operator AND it has the right arity; anything else is a leaf.
+  private compileDomain(node: DomainNode, params: unknown[]): string {
+    const head = Array.isArray(node) ? node[0] : undefined;
+    const isJoin = (head === '&' || head === '|') && node.length === 3;
+    const isNot = head === '!' && node.length === 2;
+    if (isJoin) {
+      const parts = node as ['&' | '|', DomainNode, DomainNode];
+      const left = this.compileDomain(parts[1], params);
+      const right = this.compileDomain(parts[2], params);
+      return `(${left} ${head === '&' ? 'AND' : 'OR'} ${right})`;
+    }
+    if (isNot) {
+      const operand = this.compileDomain((node as ['!', DomainNode])[1], params);
+      return `(NOT ${operand})`;
+    }
+    const leaf = node as DomainLeaf;
+    return this.compileLeaf(leaf[0], leaf[1], leaf[2], params);
+  }
+
+  // Shared WHERE clause + params for every read builder. Pagination, projection
+  // and ordering are layered on by each caller, never here, so `buildCount` can
+  // reuse the exact same predicate set without a regex rewrite.
+  private buildWhere(options: QueryOptions): { whereSql: string; params: unknown[] } {
     const params: unknown[] = [];
-    const whereClauses: string[] = ['"active" = true', ...this.scopeClause(options.scope, params)];
+    // Archived rows are excluded by default; `includeArchived` opts out of the
+    // `active = true` predicate without touching the tenant scope.
+    const activeClause = options.includeArchived ? [] : ['"active" = true'];
+    const whereClauses: string[] = [...activeClause, ...this.scopeClause(options.scope, params)];
 
-    if (options.filters) {
-      const filterClauses: string[] = [];
-      for (const filter of options.filters) {
-        const column = this.column(filter.field);
-        const operator = filter.operator.toUpperCase();
-        if (!SUPPORTED_OPERATORS.has(operator)) throw new UnsupportedOperatorError(filter.operator);
-
-        if (operator === 'IN' || operator === 'NOT IN') {
-          const values = Array.isArray(filter.value) ? filter.value : [filter.value];
-          if (values.length === 0) throw new Error(`'${filter.field}' IN requires at least one value.`);
-          const placeholders = values.map((value) => {
-            params.push(value);
-            return `$${params.length}`;
-          });
-          filterClauses.push(`${column} ${operator} (${placeholders.join(', ')})`);
-        } else if (filter.value === null && operator === '=') {
-          filterClauses.push(`${column} IS NULL`);
-        } else if (filter.value === null && operator === '!=') {
-          filterClauses.push(`${column} IS NOT NULL`);
-        } else {
-          params.push(filter.value);
-          filterClauses.push(`${column} ${operator} $${params.length}`);
-        }
-      }
-      if (filterClauses.length > 0) {
-        const combined = filterClauses.reduce((sql, clause, index) => {
-          if (index === 0) return clause;
-          const connector = options.filters?.[index].connector === 'OR' ? 'OR' : 'AND';
-          return `${sql} ${connector} ${clause}`;
-        }, '');
-        whereClauses.push(`(${combined})`);
-      }
+    if (options.domain) {
+      whereClauses.push(this.compileDomain(options.domain, params));
     }
 
-    let sql = `SELECT * FROM "${this.model.tableName}" WHERE ${whereClauses.join(' AND ')}`;
+    if (options.filters) {
+      const filterClauses = options.filters.map((filter) =>
+        this.compileLeaf(filter.field, filter.operator, filter.value, params),
+      );
+      // Fold left-to-right with explicit parentheses, so SQL operator precedence
+      // (AND binds tighter than OR) can never silently regroup a mixed chain —
+      // the qorpus-search accident this replaces. A single clause needs no group.
+      const combined = filterClauses.reduce((sql, clause, index) => {
+        if (index === 0) return clause;
+        const connector = options.filters?.[index].connector === 'OR' ? 'OR' : 'AND';
+        return `(${sql} ${connector} ${clause})`;
+      }, '');
+      whereClauses.push(`(${combined})`);
+    }
+
+    return { whereSql: whereClauses.join(' AND '), params };
+  }
+
+  // Project only whitelisted columns; default remains `SELECT *`.
+  private resolveProjection(fields?: string[]): string {
+    if (!fields || fields.length === 0) return '*';
+    return fields.map((field) => this.column(field)).join(', ');
+  }
+
+  buildSelect(options: QueryOptions): { sql: string; params: unknown[] } {
+    const { whereSql, params } = this.buildWhere(options);
+    let sql = `SELECT ${this.resolveProjection(options.fields)} FROM "${this.model.tableName}" WHERE ${whereSql}`;
 
     if (options.orderBy) {
       const dir = options.orderDirection === 'DESC' ? 'DESC' : 'ASC';
@@ -150,15 +230,84 @@ export class QueryBuilder {
       sql += ` OFFSET $${params.length}`;
     }
 
+    // Row-level lock goes last, after LIMIT/OFFSET, per PostgreSQL grammar.
+    if (options.forUpdate) sql += ' FOR UPDATE';
+
     return { sql, params };
   }
 
   buildCount(options: QueryOptions): { sql: string; params: unknown[] } {
-    const select = this.buildSelect({ ...options, limit: undefined, offset: undefined, orderBy: undefined });
+    // Built from the same clause arrays as buildSelect — no `SELECT *` regex
+    // swap, so a column literally named `count` (or any projection) is safe.
+    const { whereSql, params } = this.buildWhere({ ...options, filters: options.filters, domain: options.domain });
     return {
-      sql: select.sql.replace(/^SELECT \* /, 'SELECT COUNT(*)::integer AS count '),
-      params: select.params,
+      sql: `SELECT COUNT(*)::integer AS count FROM "${this.model.tableName}" WHERE ${whereSql}`,
+      params,
     };
+  }
+
+  // Grouped aggregate read (Odoo `read_group`). `groupBy` columns and every
+  // aggregated field go through the same allowlist as the plain select; the
+  // aggregate function set is fixed and sum/avg/min/max are only allowed over
+  // numeric-typed fields, so no operator or column name is ever user-controlled.
+  buildReadGroup(
+    options: QueryOptions,
+    spec: { groupBy: string[]; aggregates: GroupAggregate[] }
+  ): { sql: string; params: unknown[] } {
+    if (spec.groupBy.length === 0 && spec.aggregates.length === 0) {
+      throw new Error('read_group requires at least one groupBy field or aggregate.');
+    }
+    const { whereSql, params } = this.buildWhere({
+      scope: options.scope,
+      filters: options.filters,
+      domain: options.domain,
+      includeArchived: options.includeArchived,
+    });
+
+    const selectParts: string[] = spec.groupBy.map((field) => this.column(field));
+    for (const aggregate of spec.aggregates) {
+      if (aggregate.fn === 'count') {
+        selectParts.push(`COUNT(*)::integer AS "${aggregate.alias}"`);
+        continue;
+      }
+      const fieldDef = this.model.fields[aggregate.field];
+      if (!fieldDef || (fieldDef.type !== 'integer' && fieldDef.type !== 'float')) {
+        throw new UnknownFieldError(this.model.name, aggregate.field);
+      }
+      const column = this.column(aggregate.field);
+      selectParts.push(`${aggregate.fn.toUpperCase()}(${column})::numeric AS "${aggregate.alias}"`);
+    }
+
+    let sql = `SELECT ${selectParts.join(', ')} FROM "${this.model.tableName}" WHERE ${whereSql}`;
+    if (spec.groupBy.length > 0) {
+      sql += ` GROUP BY ${spec.groupBy.map((field) => this.column(field)).join(', ')}`;
+      sql += ` ORDER BY ${spec.groupBy.map((field) => `${this.column(field)} ASC`).join(', ')}`;
+    }
+    if (options.limit) {
+      params.push(options.limit);
+      sql += ` LIMIT $${params.length}`;
+    }
+    return { sql, params };
+  }
+
+  // Keyset (seek) pagination over a stable `(column, id)` ordering. The offset
+  // path in buildSelect is kept but legacy; this avoids O(offset) scans.
+  buildKeyset(
+    options: QueryOptions,
+    keyset: { column: string; after?: KeysetCursor }
+  ): { sql: string; params: unknown[] } {
+    const { whereSql, params } = this.buildWhere(options);
+    const column = this.column(keyset.column);
+    let sql = `SELECT ${this.resolveProjection(options.fields)} FROM "${this.model.tableName}" WHERE ${whereSql}`;
+    if (keyset.after) {
+      params.push(keyset.after.columnValue, keyset.after.id);
+      sql += ` AND (${column}, "id") > ($${params.length - 1}, $${params.length})`;
+    }
+    sql += ` ORDER BY ${column} ASC, "id" ASC`;
+    const limit = options.limit && options.limit > 0 ? options.limit : 50;
+    params.push(limit);
+    sql += ` LIMIT $${params.length}`;
+    return { sql, params };
   }
 
   private assertAuditActor(actorId: number): void {
@@ -389,5 +538,123 @@ export class QueryBuilder {
       sql: `DELETE FROM "${this.model.tableName}" WHERE "active" = true AND "id" = $1 AND ${companyClause} RETURNING "id";`,
       params,
     };
+  }
+
+  // Archive / unarchive: a lifecycle flip on the reserved `active` column, which
+  // buildUpdate refuses to write. Pinned to the tenant scope and only touches
+  // rows currently in the opposite state, so re-archiving is a no-op. Runs
+  // through the audit-context transaction so the row trigger captures it.
+  buildArchive(
+    ids: Array<string | number>,
+    active: boolean,
+    scope: TenantScope,
+    actorId: number
+  ): { sql: string; params: unknown[] } {
+    this.assertAuditActor(actorId);
+    if (ids.length === 0) {
+      throw new Error(`'${this.model.name}' archive requires at least one id.`);
+    }
+    const params: unknown[] = [];
+    params.push(active);
+    const setTarget = `$${params.length}`;
+    params.push(actorId);
+    const setWriter = `$${params.length}`;
+    const idPlaceholders = ids.map((id) => {
+      params.push(id);
+      return `$${params.length}`;
+    });
+    const companyClause = this.mutationScopeClause(scope, params);
+    // Precondition: only flip rows that are not already in the target state.
+    const precondition = active ? '"active" = false' : '"active" = true';
+    const sql = `UPDATE "${this.model.tableName}" SET "active" = ${setTarget}, "write_uid" = ${setWriter}, "write_date" = CURRENT_TIMESTAMP WHERE ${precondition} AND "id" IN (${idPlaceholders.join(', ')}) AND ${companyClause} RETURNING "id";`;
+    return { sql, params };
+  }
+
+  // Cast a bound value to the column's Postgres type so a heterogeneous VALUES
+  // list (which may carry NULLs) still has a concrete inferred column type.
+  private valueCastFor(field: string): string {
+    if (field === 'id') return 'integer';
+    const def = this.model.fields[field];
+    switch (def?.type) {
+      case 'integer':
+      case 'many2one':
+        return 'integer';
+      case 'float':
+        return 'double precision';
+      case 'boolean':
+        return 'boolean';
+      case 'datetime':
+        return 'timestamptz';
+      case 'json':
+        return 'jsonb';
+      default:
+        // char/text/selection and every unknown field arrive as text.
+        return 'text';
+    }
+  }
+
+  // Set-based batched update (roadmap T2.4b). One `UPDATE … FROM (VALUES …)`
+  // statement replaces the per-row loop, but rows that touch different column
+  // sets cannot share a statement, so we group them by their sorted column
+  // signature and emit one statement per (group, chunk). Chunks stay under the
+  // 65535-parameter cap. PostgreSQL fires the row-level BEFORE/AFTER triggers
+  // once per updated row, so the audit + sync event families still capture every
+  // change exactly as the single-row path did.
+  buildUpdateMany(
+    updates: Array<{ id: string | number; data: Record<string, unknown> }>,
+    scope: TenantScope,
+    actorId: number
+  ): Array<{ sql: string; params: unknown[] }> {
+    this.assertAuditActor(actorId);
+    if (updates.length === 0) return [];
+
+    type Shape = { cols: string[]; rows: Array<{ id: string | number; data: Record<string, unknown> }> };
+    const shapes = new Map<string, Shape>();
+    for (const update of updates) {
+      const cols = Object.keys(update.data);
+      if (cols.length === 0) throw new Error('An update must include at least one field.');
+      for (const field of cols) this.assertWritableField(field, isSystemScope(scope));
+      const sorted = [...cols].sort();
+      const key = sorted.join(',');
+      let shape = shapes.get(key);
+      if (!shape) {
+        shape = { cols: sorted, rows: [] };
+        shapes.set(key, shape);
+      }
+      shape.rows.push(update);
+    }
+
+    const statements: Array<{ sql: string; params: unknown[] }> = [];
+    for (const shape of shapes.values()) {
+      // id + one value per column, plus room for actor + company scalars.
+      const perRow = shape.cols.length + 1;
+      const chunkSize = Math.max(1, Math.min(1000, Math.floor(60000 / (perRow + 2))));
+      const valueColumns = ['id', ...shape.cols].map((c) => `"${c}"`).join(', ');
+      const assignments = shape.cols.map((c) => `"${c}" = v."${c}"`).join(', ');
+
+      for (let start = 0; start < shape.rows.length; start += chunkSize) {
+        const chunk = shape.rows.slice(start, start + chunkSize);
+        const params: unknown[] = [];
+        const tuples = chunk.map((row) => {
+          const parts = [`$${params.push(row.id) || params.length}::integer`];
+          for (const col of shape.cols) {
+            const ref = `$${params.push(row.data[col] ?? null) || params.length}`;
+            parts.push(`${ref}::${this.valueCastFor(col)}`);
+          }
+          return `(${parts.join(', ')})`;
+        });
+        params.push(actorId);
+        const actorRef = `$${params.length}`;
+        const companyClause = this.mutationScopeClause(scope, params);
+        statements.push({
+          sql:
+            `UPDATE "${this.model.tableName}" AS t SET ${assignments}, "write_uid" = ${actorRef}, `
+            + `"write_date" = CURRENT_TIMESTAMP FROM (VALUES ${tuples.join(', ')}) AS v(${valueColumns}) `
+            + `WHERE t."id" = v."id" AND t."active" = true AND ${companyClause} RETURNING t.*;`,
+          params,
+        });
+      }
+    }
+    return statements;
   }
 }

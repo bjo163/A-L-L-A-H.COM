@@ -25,6 +25,15 @@ export interface FieldDefinition<T = unknown> {
   primary?: boolean;
   size?: number;
   choices?: [string, string][];
+  // many2many join-table wiring (relation_table/column1/column2). Virtual on
+  // read, but the migrator turns these into a real UNIQUE(pair) join table.
+  relationTable?: string;
+  column1?: string;
+  column2?: string;
+  // Computed / related field metadata (roadmap T2.3).
+  compute?: string;
+  related?: string;
+  store?: boolean;
 }
 
 export const fields = {
@@ -57,6 +66,19 @@ export const fields = {
     relation: string,
     opts: Omit<FieldDefinition<unknown[]>, 'type' | 'relation'> = {}
   ): FieldDefinition<unknown[]> => ({ type: 'one2many', relation, ...opts } as FieldDefinition<unknown[]>),
+  many2many: (
+    relation: string,
+    rel: { relation_table: string; column1: string; column2: string },
+    opts: Omit<FieldDefinition<unknown[]>, 'type' | 'relation' | 'relationTable' | 'column1' | 'column2'> = {}
+  ): FieldDefinition<unknown[]> =>
+    ({
+      type: 'many2many',
+      relation,
+      relationTable: rel.relation_table,
+      column1: rel.column1,
+      column2: rel.column2,
+      ...opts,
+    }) as FieldDefinition<unknown[]>,
   json: (opts: Omit<FieldDefinition<unknown>, 'type'> = {}): FieldDefinition<unknown> =>
     ({ type: 'json', ...opts } as FieldDefinition<unknown>),
 };

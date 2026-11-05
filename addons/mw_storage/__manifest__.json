@@ -6,6 +6,7 @@
   "depends": ["base"],
   "models": ["mw.storage.backend", "ir.attachment", "ir.legal.hold"],
   "views": [],
+  "data": ["data/index.ts"],
   "installable": true,
   "application": true
 }

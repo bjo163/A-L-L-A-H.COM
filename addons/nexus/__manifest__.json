@@ -6,6 +6,7 @@
   "depends": ["base"],
   "models": ["nexus.site", "nexus.device", "nexus.nas", "nexus.ip_pool", "nexus.nas_secret_log"],
   "views": [],
+  "data": ["data/index.ts"],
   "installable": true,
   "application": true
 }

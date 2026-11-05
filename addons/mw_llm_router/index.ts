@@ -113,6 +113,24 @@ export const AiSemanticCache = defineModel({
   },
 });
 
+export const AiUsageDaily = defineModel({
+  name: 'ai.usage_daily',
+  tableName: 'ai_usage_daily',
+  displayName: 'AI Usage Daily Rollup',
+  fields: {
+    company_id: fields.integer({ label: 'Company ID', required: true }),
+    day: fields.char({ label: 'Day (YYYY-MM-DD)', required: true }),
+    provider_id: fields.many2one('ai.provider', { label: 'Provider' }),
+    model_id: fields.many2one('ai.model', { label: 'Model' }),
+    request_count: fields.integer({ label: 'Request Count', default: 0 }),
+    prompt_tokens: fields.integer({ label: 'Prompt Tokens', default: 0 }),
+    completion_tokens: fields.integer({ label: 'Completion Tokens', default: 0 }),
+    total_cost_usd: fields.float({ label: 'Total Cost USD', default: 0 }),
+    latency_p50_ms: fields.integer({ label: 'Latency p50 MS', default: 0 }),
+    latency_p95_ms: fields.integer({ label: 'Latency p95 MS', default: 0 }),
+  },
+});
+
 export const AiThread = defineModel({
   name: 'ai.thread',
   tableName: 'ai_thread',
@@ -145,6 +163,7 @@ export function registerMwLlmRouterAddon(): void {
   modelRegistry.register(AiRoute);
   modelRegistry.register(AiVirtualKey);
   modelRegistry.register(AiUsageLog);
+  modelRegistry.register(AiUsageDaily);
   modelRegistry.register(AiSemanticCache);
   modelRegistry.register(AiThread);
   modelRegistry.register(AiMessage);

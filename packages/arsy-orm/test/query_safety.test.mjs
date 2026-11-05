@@ -65,6 +65,81 @@ test('identifiers are whitelisted against the model', async (t) => {
   });
 });
 
+test('nested domain and field projection never widen the injection surface', async (t) => {
+  await t.test('a domain leaf on an unknown column is rejected, not interpolated', () => {
+    assert.throws(
+      () => qb.buildSelect({ scope: tenant, domain: ['secret_encrypted', '=', 'x'] }),
+      UnknownFieldError
+    );
+  });
+
+  await t.test('a nested domain with a SQL-fragment field is rejected', () => {
+    assert.throws(
+      () => qb.buildSelect({ scope: tenant, domain: ['&', ['name', '=', 'a'], ['name) = 1 OR (1', '=', '1']] }),
+      UnknownFieldError
+    );
+  });
+
+  await t.test('a valid nested domain stays parameterized', () => {
+    const { sql, params } = qb.buildSelect({
+      scope: tenant,
+      domain: ['|', ['name', '=', 'alice'], ['amount', '>', 100]],
+    });
+    assert.match(sql, /\("name" = \$2 OR "amount" > \$3\)/);
+    assert.deepEqual(params, [7, 'alice', 100]);
+    assert.doesNotMatch(sql, /alice/);
+  });
+
+  await t.test('a projected column outside the allowlist is rejected', () => {
+    assert.throws(() => qb.buildSelect({ scope: tenant, fields: ['password'] }), UnknownFieldError);
+  });
+
+  await t.test('a keyset cursor column is validated like any identifier', () => {
+    assert.throws(() => qb.buildKeyset({ scope: tenant }, { column: 'name; DROP TABLE x' }), UnknownFieldError);
+  });
+
+  await t.test('buildCount never emits a projected SELECT when a count column exists', () => {
+    const { sql } = qb.buildCount({ scope: tenant, fields: ['name'] });
+    assert.match(sql, /^SELECT COUNT\(\*\)::integer AS count FROM/);
+    assert.doesNotMatch(sql, /SELECT "name"/);
+  });
+});
+
+test('read_group and archive stay inside the identifier allowlist', async (t) => {
+  await t.test('a SQL fragment in a groupBy column is rejected, not interpolated', () => {
+    assert.throws(
+      () => qb.buildReadGroup({ scope: tenant }, { groupBy: ['name; DROP TABLE demo_thing'], aggregates: [] }),
+      UnknownFieldError
+    );
+  });
+
+  await t.test('sum over a non-numeric field is rejected', () => {
+    assert.throws(
+      () => qb.buildReadGroup({ scope: tenant }, { groupBy: [], aggregates: [{ fn: 'sum', field: 'name', alias: 'x' }] }),
+      UnknownFieldError
+    );
+  });
+
+  await t.test('a read_group filter value is never interpolated into the SQL text', () => {
+    const { sql, params } = qb.buildReadGroup(
+      { scope: tenant, filters: [{ field: 'name', operator: '=', value: 'inject--' }] },
+      { groupBy: ['amount'], aggregates: [{ fn: 'count', alias: 'count' }] }
+    );
+    assert.doesNotMatch(sql, /inject/);
+    assert.ok(params.includes('inject--'));
+  });
+
+  await t.test('archive parameterizes the id list and pins tenant scope', () => {
+    const { sql, params } = qb.buildArchive([1, 2], false, tenant, 1);
+    assert.match(sql, /"id" IN \(\$3, \$4\) AND "company_id" = \$5/);
+    assert.deepEqual(params, [false, 1, 1, 2, 7]);
+  });
+
+  await t.test('archive with an empty id list is rejected before any SQL', () => {
+    assert.throws(() => qb.buildArchive([], false, tenant, 1), /at least one id/);
+  });
+});
+
 test('inserts honour tenancy and column whitelist', async (t) => {
   await t.test('a caller-supplied company_id is dropped in tenant scope and replaced by the tenant', () => {
     const { sql, params } = qb.buildInsert({ name: 'a', company_id: 999 }, tenant, 1);
