@@ -64,8 +64,8 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-048 Add extension-host evidence for timeline/recovery.
 
 ### 09 Release 0.4.0
-- [!] VSC-049 Run build, typecheck, lint and focused tests. Build and focused tests passed; full lint was not run because the repository contains unrelated dirty changes.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 8 tests total.
+- [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source/test lint, unit tests, and host tests passed; repo-wide lint remains unrun because unrelated files are dirty.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 10 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.

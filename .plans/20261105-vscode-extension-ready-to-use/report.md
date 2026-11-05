@@ -83,6 +83,7 @@ Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set 
 |---|---|
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm extension:test` | Passed: 46 tests |
+| `pnpm exec eslint packages/vscode-extension/src packages/vscode-extension/test --max-warnings 0` | Passed |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, ten host tests |
 
 ## Roadmap claim audit
