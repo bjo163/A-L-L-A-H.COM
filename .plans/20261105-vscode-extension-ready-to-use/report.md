@@ -42,6 +42,10 @@ The extension has stronger automated parity and trust boundaries, but this evide
 | `pnpm --filter allah-vscode-extension build` | Passed |
 | `git diff --check -- packages/vscode-extension package.json .plans/20261105-vscode-extension-ready-to-use` | Passed |
 
+| `pnpm --filter allah-vscode-extension package` | Passed: VSIX created |
+| `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed: installed |
+| `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
+
 Latest pushed commits:
 
 - `0f37099` workspace-aware mission template matching.
