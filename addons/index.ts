@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Manifest-driven, dependency-ordered addon loader (roadmap T8).
  *
  * The load order and dependency edges are read from each addon's
@@ -14,6 +14,7 @@ import { registerMwLlmRouterAddon } from './mw_llm_router/index';
 import { registerNexusAddon } from './nexus/index';
 import { registerOrbitAddon } from './orbit/index';
 import { registerWorksAddon } from './works/index';
+import { registerProjectAddon } from './project/index';
 
 import baseManifest from './base/__manifest__.json';
 import mwStorageManifest from './mw_storage/__manifest__.json';
@@ -22,6 +23,7 @@ import mwLlmRouterManifest from './mw_llm_router/__manifest__.json';
 import nexusManifest from './nexus/__manifest__.json';
 import orbitManifest from './orbit/__manifest__.json';
 import worksManifest from './works/__manifest__.json';
+import projectManifest from './project/__manifest__.json';
 
 export interface AddonManifest {
   name: string;
@@ -45,6 +47,7 @@ const ADDON_CATALOG: Record<string, CatalogEntry> = {
   [nexusManifest.name]: { manifest: nexusManifest as AddonManifest, register: registerNexusAddon },
   [orbitManifest.name]: { manifest: orbitManifest as AddonManifest, register: registerOrbitAddon },
   [worksManifest.name]: { manifest: worksManifest as AddonManifest, register: registerWorksAddon },
+  [projectManifest.name]: { manifest: projectManifest as AddonManifest, register: registerProjectAddon },
 };
 
 // Every addon the loader knows about, used as the default root set for the hub.

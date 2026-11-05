@@ -26,6 +26,9 @@ import { storagePlugin } from '@allah/arsy-plugin-storage';
 
 import { registerAllAddons } from '../../../addons/index';
 import { chunkText, computeSha256 } from '../../../addons/mw_qorpus/src/chunker';
+import { reconcilePlans } from '../../../addons/project/services/sync_worker';
+import { startCronRunner, stopCronRunner } from '../../../addons/project/services/cron_runner';
+import type { SyncPayload } from '../../../addons/project/services/plan_scanner';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;
@@ -853,6 +856,197 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     if (newRows.length > 0) await repo.createMany(newRows, scope, actor);
 
     return ok({ message: 'Translation catalog synchronized successfully' });
+  });
+
+  // --- Project Manager Routes ---
+
+  // List projects (tenant-scoped).
+  app.get('/v1/projects', async (request, reply) => {
+    const scope = tenantOf(request);
+    const projects = await repository('project.project').find({ scope });
+    return reply.send(ok(projects));
+  });
+
+  // Create a project.
+  app.post('/v1/projects', async (request, reply) => {
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+    const body = request.body as Record<string, unknown>;
+    const name = requireString(body, 'name');
+    const created = await dbEngine.transaction(async (tx) => {
+      return repository('project.project', tx).create(
+        { ...body, company_id: (scope as { companyId: number }).companyId, name },
+        scope,
+        actor
+      );
+    });
+    return reply.status(201).send(ok(created));
+  });
+
+  // Get single project.
+  app.get('/v1/projects/:projectId', async (request, reply) => {
+    const scope = tenantOf(request);
+    const { projectId } = request.params as { projectId: string };
+    const id = parseId(projectId, 'projectId');
+    const project = await repository('project.project').findById(id, scope);
+    if (!project) throw new AppError('Project not found', 404, 'NOT_FOUND');
+    return reply.send(ok(project));
+  });
+
+  // Update a project (name, sync_mode, workspace_path, etc).
+  app.patch('/v1/projects/:projectId', async (request, reply) => {
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+    const { projectId } = request.params as { projectId: string };
+    const id = parseId(projectId, 'projectId');
+    const body = request.body as Record<string, unknown>;
+    const updated = await dbEngine.transaction(async (tx) => {
+      return repository('project.project', tx).updateById(id, body, scope, actor);
+    });
+    if (!updated) throw new AppError('Project not found', 404, 'NOT_FOUND');
+    return reply.send(ok(updated));
+  });
+
+  // List tasks for a project.
+  app.get('/v1/projects/:projectId/tasks', async (request, reply) => {
+    const scope = tenantOf(request);
+    const { projectId } = request.params as { projectId: string };
+    const id = parseId(projectId, 'projectId');
+    const tasks = await repository('project.task').find({
+      scope,
+      filters: [{ field: 'project_id', operator: '=', value: id }],
+      orderBy: 'plan_slug',
+      orderDirection: 'ASC',
+    });
+    return reply.send(ok(tasks));
+  });
+
+  // Update a task state from Hub UI or VS Code Extension.
+  app.patch('/v1/projects/:projectId/tasks/:taskId', async (request, reply) => {
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+    const { projectId, taskId } = request.params as { projectId: string; taskId: string };
+    parseId(projectId, 'projectId'); // validate parent exists in scope implicitly via tenant filter
+    const tid = parseId(taskId, 'taskId');
+    const body = request.body as Record<string, unknown>;
+    // Fail-closed: legal_hold tasks cannot be modified from outside.
+    const existing = await repository('project.task').findById(tid, scope);
+    if (!existing) throw new AppError('Task not found', 404, 'NOT_FOUND');
+    if (existing.legal_hold === true && 'state' in body) {
+      throw new AppError('Task is under legal hold and cannot be modified', 403, 'LEGAL_HOLD');
+    }
+    const updated = await dbEngine.transaction(async (tx) => {
+      return repository('project.task', tx).updateById(tid, body, scope, actor);
+    });
+    return reply.send(ok(updated));
+  });
+
+  // Push sync: Extension scans local .plans/ and sends the payload here.
+  // Hub reconciles DB state and returns outbound patches for the Extension to apply.
+  app.post('/v1/projects/:projectId/sync', async (request, reply) => {
+    const scope = tenantOf(request);
+    const { projectId } = request.params as { projectId: string };
+    const id = parseId(projectId, 'projectId');
+    const project = await repository('project.project').findById(id, scope);
+    if (!project) throw new AppError('Project not found', 404, 'NOT_FOUND');
+    if (project.sync_mode === 'disabled') {
+      throw new AppError('Sync is disabled for this project', 400, 'SYNC_DISABLED');
+    }
+    const body = request.body as SyncPayload;
+    if (!Array.isArray(body?.plans)) {
+      throw new AppError('Request body must include a plans array', 400, 'VALIDATION_ERROR');
+    }
+    const companyId = (scope as { companyId: number }).companyId;
+    const result = await reconcilePlans(companyId, id, body.plans);
+    return reply.send(ok(result));
+  });
+
+  // Export: returns all project tasks so Extension can apply outbound patches.
+  app.get('/v1/projects/:projectId/export', async (request, reply) => {
+    const scope = tenantOf(request);
+    const { projectId } = request.params as { projectId: string };
+    const id = parseId(projectId, 'projectId');
+    const project = await repository('project.project').findById(id, scope);
+    if (!project) throw new AppError('Project not found', 404, 'NOT_FOUND');
+    const tasks = await repository('project.task').find({
+      scope,
+      filters: [{ field: 'project_id', operator: '=', value: id }],
+    });
+    return reply.send(ok({ project, tasks }));
+  });
+
+  // Task stages CRUD.
+  app.get('/v1/projects/:projectId/stages', async (request, reply) => {
+    const scope = tenantOf(request);
+    const stages = await repository('project.task.stage').find({
+      scope,
+      orderBy: 'sequence',
+      orderDirection: 'ASC',
+    });
+    return reply.send(ok(stages));
+  });
+
+  app.post('/v1/projects/:projectId/stages', async (request, reply) => {
+    const scope = tenantOf(request);
+    const actor = actorOf(request);
+    const body = request.body as Record<string, unknown>;
+    const name = requireString(body, 'name');
+    const created = await dbEngine.transaction(async (tx) => {
+      return repository('project.task.stage', tx).create(
+        { ...body, company_id: (scope as { companyId: number }).companyId, name },
+        scope,
+        actor
+      );
+    });
+    return reply.status(201).send(ok(created));
+  });
+
+  // Admin: list scheduled actions (superuser only).
+  app.get('/v1/admin/cron', async (request, reply) => {
+    assertSuperuser(request);
+    const crons = await dbEngine.query(
+      `SELECT id, company_id, name, model_name, method_name, interval_number, interval_unit,
+              nextcall, active, state, run_count, last_error
+         FROM ir_cron
+        ORDER BY nextcall`
+    );
+    return reply.send(ok(crons));
+  });
+
+  // Admin: seed default cron jobs for a company.
+  app.post('/v1/admin/cron/seed/:companyId', async (request, reply) => {
+    const principal = assertSuperuser(request);
+    const { companyId: rawCompanyId } = request.params as { companyId: string };
+    const companyId = parseId(rawCompanyId, 'companyId');
+    const actor = adminActor(request, requireAdminReasonHash(request.body), principal);
+    const scope: TenantScope = { companyId };
+    const nextcall = new Date(Date.now() + 60_000).toISOString();
+    const created = await dbEngine.transaction(async (tx) => {
+      return repository('ir.cron', tx).create(
+        {
+          company_id: companyId,
+          name: 'Project .plans Sync',
+          model_name: 'project.project',
+          method_name: 'sync_local_plans',
+          interval_number: 5,
+          interval_unit: 'minutes',
+          nextcall,
+          state: 'idle',
+        },
+        scope,
+        actor
+      );
+    });
+    return reply.status(201).send(ok(created));
+  });
+
+  // Start cron runner after all routes are ready.
+  app.addHook('onReady', async () => {
+    startCronRunner();
+  });
+
+  app.addHook('onClose', async () => {
+    stopCronRunner();
   });
 
   return app;

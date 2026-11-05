@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+﻿import * as vscode from 'vscode';
 import {
   createClient,
   type SessionTokenStore,
@@ -244,5 +244,63 @@ export class MoonWitnessClient {
       throw new Error(getGatewayErrorMessage(response) || 'Gateway returned an invalid chat completion response.');
     }
     return parsePlanCompletionResponse(response);
+  }
+
+  // --- Project Manager API ---
+
+  private async arsyFetch(path: string, init: RequestInit = {}): Promise<unknown> {
+    const token = await this.context.secrets.get(SESSION_TOKEN_SECRET);
+    const response = await fetch(`${this.arsyBaseUrl}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers as Record<string, string> ?? {}),
+      },
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Arsy ${init.method ?? 'GET'} ${path} failed (${response.status}): ${text}`);
+    }
+    return response.json();
+  }
+
+  async listProjects(): Promise<unknown[]> {
+    const result = await this.arsyFetch('/v1/projects') as { data?: unknown[] };
+    return result.data ?? [];
+  }
+
+  async createProject(payload: Record<string, unknown>): Promise<unknown> {
+    const result = await this.arsyFetch('/v1/projects', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }) as { data?: unknown };
+    return result.data;
+  }
+
+  async syncProjectToHub(projectId: number, plans: unknown[]): Promise<unknown> {
+    const result = await this.arsyFetch(`/v1/projects/${projectId}/sync`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId, plans }),
+    }) as { data?: unknown };
+    return result.data;
+  }
+
+  async exportProjectFromHub(projectId: number): Promise<unknown> {
+    const result = await this.arsyFetch(`/v1/projects/${projectId}/export`) as { data?: unknown };
+    return result.data;
+  }
+
+  async updateTask(projectId: number, taskId: number, patch: Record<string, unknown>): Promise<unknown> {
+    const result = await this.arsyFetch(`/v1/projects/${projectId}/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }) as { data?: unknown };
+    return result.data;
+  }
+
+  async listProjectTasks(projectId: number): Promise<unknown[]> {
+    const result = await this.arsyFetch(`/v1/projects/${projectId}/tasks`) as { data?: unknown[] };
+    return result.data ?? [];
   }
 }

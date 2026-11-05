@@ -1,229 +1,251 @@
 {
-  "name": "allah-vscode-extension",
-  "displayName": "A-L-L-A-H.COM (MoonWitness) Developer Tools",
-  "description": "VS Code tools for .plans project management, the MoonWitness LLM gateway, and Arsy API readiness.",
-  "version": "0.3.0",
-  "publisher": "a-l-l-a-h",
-  "license": "MIT",
-  "engines": {
-    "vscode": "^1.90.0"
-  },
-  "categories": [
-    "AI",
-    "Programming Languages",
-    "Developer Tools"
-  ],
-  "main": "./dist/extension.js",
-  "activationEvents": [
-    "onStartupFinished",
-    "onCommand:allah.listModels",
-    "onCommand:allah.testConnection"
-  ],
-  "contributes": {
-    "commands": [
-      {
-        "command": "allah.createPlan",
-        "title": "MoonWitness: Create Spec-Driven Plan (.plans)",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.generatePlanWithAI",
-        "title": "MoonWitness: Generate Spec-Driven Plan with AI",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.refreshPlans",
-        "title": "MoonWitness: Refresh Project Management Plans",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.markTaskInProgress",
-        "title": "MoonWitness: Mark Task In Progress",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.markTaskCompleted",
-        "title": "MoonWitness: Mark Task Completed",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.resetTaskToPending",
-        "title": "MoonWitness: Reset Task to Pending",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.testConnection",
-        "title": "MoonWitness: Test Gateway Connection",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.setApiKey",
-        "title": "MoonWitness: Set API Key",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.pairAgentDevice",
-        "title": "Agent: Pair This Windows Device",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.listModels",
-        "title": "MoonWitness: List Registered LLM Models",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.refreshArsyStatus",
-        "title": "Arsy: Refresh API Status",
-        "category": "A-L-L-A-H"
-      },
-      {
-        "command": "allah.openArsyDocs",
-        "title": "Arsy: Open API Documentation",
-        "category": "A-L-L-A-H"
-      }
-    ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "allah-explorer",
-          "title": "MoonWitness",
-          "icon": "$(hubot)"
-        }
-      ]
-    },
-    "views": {
-      "allah-explorer": [
-        {
-          "id": "allah.views.plans",
-          "name": "Project Manager (.plans)",
-          "icon": "$(checklist)"
-        },
-        {
-          "id": "allah.views.arsy",
-          "name": "Arsy API",
-          "icon": "$(server)"
-        },
-        {
-          "id": "allah.views.models",
-          "name": "Gateway Model Catalog",
-          "icon": "$(symbol-property)"
-        },
-        {
-          "id": "allah.agentWorkbench",
-          "name": "Swarm Operations"
-        },
-        {
-          "id": "allah.localAgentWorkbench",
-          "name": "Workspace Agent",
-          "icon": "$(hubot)"
-        }
-      ]
-    },
-    "viewsWelcome": [
-      {
-        "view": "allah.views.plans",
-        "contents": "Open a workspace folder to browse its plans.",
-        "when": "workspaceFolderCount == 0"
-      },
-      {
-        "view": "allah.views.plans",
-        "contents": "No plans found. [Create a plan](command:allah.createPlan) or [generate one from the gateway](command:allah.generatePlanWithAI).",
-        "when": "workspaceFolderCount > 0"
-      }
-    ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "allah.generatePlanWithAI",
-          "when": "view == allah.views.plans",
-          "group": "navigation@1"
-        },
-        {
-          "command": "allah.createPlan",
-          "when": "view == allah.views.plans",
-          "group": "navigation@2"
-        },
-        {
-          "command": "allah.refreshPlans",
-          "when": "view == allah.views.plans",
-          "group": "navigation@3"
-        },
-        {
-          "command": "allah.refreshArsyStatus",
-          "when": "view == allah.views.arsy",
-          "group": "navigation@1"
-        },
-        {
-          "command": "allah.listModels",
-          "when": "view == allah.views.models",
-          "group": "navigation@1"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "allah.markTaskInProgress",
-          "when": "view == allah.views.plans && viewItem == taskItem",
-          "group": "task@1"
-        },
-        {
-          "command": "allah.markTaskCompleted",
-          "when": "view == allah.views.plans && viewItem == taskItem",
-          "group": "task@2"
-        },
-        {
-          "command": "allah.resetTaskToPending",
-          "when": "view == allah.views.plans && viewItem == taskItem",
-          "group": "task@3"
-        }
-      ]
-    },
-    "configuration": {
-      "title": "A-L-L-A-H MoonWitness",
-      "properties": {
-        "allah.gatewayUrl": {
-          "type": "string",
-          "default": "http://127.0.0.1:5150",
-          "description": "Base URL of the MoonWitness LLM gateway."
-        },
-        "allah.arsyUrl": {
-          "type": "string",
-          "default": "http://127.0.0.1:5150",
-          "description": "Base URL of the Arsy API server."
-        },
-        "allah.plannerModel": {
-          "type": "string",
-          "default": "dx-reasoning",
-          "description": "LLM model used to generate project plans."
-        },
-        "allah.agentModel": {
-          "type": "string",
-          "default": "",
-          "description": "Optional model identifier used by workspace agent sessions."
-        },
-        "allah.apiKey": {
-          "type": "string",
-          "default": "",
-          "deprecationMessage": "Use the MoonWitness: Set API Key command. Credentials are stored in VS Code SecretStorage."
-        }
-      }
-    }
-  },
-  "scripts": {
-    "build": "tsup --config tsup.config.ts",
-    "watch": "tsup --config tsup.config.ts --watch",
-    "typecheck": "tsc --noEmit",
-    "package": "vsce package --no-dependencies",
-    "check-runtime": "node ../../scripts/check-vscode-extension-runtime.mjs"
-  },
-  "dependencies": {
-    "@allah/sdk": "workspace:*",
-    "@moonwitness/types": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.1",
-    "@types/vscode": "^1.90.0",
-    "@vscode/vsce": "^4.1.0",
-    "tsup": "^8.3.5",
-    "typescript": "^5.7.2"
-  }
+    "name":  "allah-vscode-extension",
+    "displayName":  "A-L-L-A-H.COM (MoonWitness) Developer Tools",
+    "description":  "VS Code tools for .plans project management, the MoonWitness LLM gateway, and Arsy API readiness.",
+    "version":  "0.3.0",
+    "publisher":  "a-l-l-a-h",
+    "license":  "MIT",
+    "engines":  {
+                    "vscode":  "^1.90.0"
+                },
+    "categories":  [
+                       "AI",
+                       "Programming Languages",
+                       "Developer Tools"
+                   ],
+    "main":  "./dist/extension.js",
+    "activationEvents":  [
+                             "onStartupFinished",
+                             "onCommand:allah.listModels",
+                             "onCommand:allah.testConnection"
+                         ],
+    "contributes":  {
+                        "commands":  [
+                                         {
+                                             "command":  "allah.createPlan",
+                                             "title":  "MoonWitness: Create Spec-Driven Plan (.plans)",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.generatePlanWithAI",
+                                             "title":  "MoonWitness: Generate Spec-Driven Plan with AI",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.refreshPlans",
+                                             "title":  "MoonWitness: Refresh Project Management Plans",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.markTaskInProgress",
+                                             "title":  "MoonWitness: Mark Task In Progress",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.markTaskCompleted",
+                                             "title":  "MoonWitness: Mark Task Completed",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.resetTaskToPending",
+                                             "title":  "MoonWitness: Reset Task to Pending",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.testConnection",
+                                             "title":  "MoonWitness: Test Gateway Connection",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.setApiKey",
+                                             "title":  "MoonWitness: Set API Key",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.pairAgentDevice",
+                                             "title":  "Agent: Pair This Windows Device",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.listModels",
+                                             "title":  "MoonWitness: List Registered LLM Models",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.refreshArsyStatus",
+                                             "title":  "Arsy: Refresh API Status",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.openArsyDocs",
+                                             "title":  "Arsy: Open API Documentation",
+                                             "category":  "A-L-L-A-H"
+                                         },
+                                         {
+                                             "command":  "allah.syncPlansToHub",
+                                             "title":  "MoonWitness: Sync .plans to Arsy Hub",
+                                             "category":  "A-L-L-A-H",
+                                             "icon":  "$(cloud-upload)"
+                                         },
+                                         {
+                                             "command":  "allah.pullPlanFromHub",
+                                             "title":  "MoonWitness: Pull Plan States from Arsy Hub",
+                                             "category":  "A-L-L-A-H",
+                                             "icon":  "$(cloud-download)"
+                                         }
+                                     ],
+                        "viewsContainers":  {
+                                                "activitybar":  [
+                                                                    {
+                                                                        "id":  "allah-explorer",
+                                                                        "title":  "MoonWitness",
+                                                                        "icon":  "$(hubot)"
+                                                                    }
+                                                                ]
+                                            },
+                        "views":  {
+                                      "allah-explorer":  [
+                                                             {
+                                                                 "id":  "allah.views.plans",
+                                                                 "name":  "Project Manager (.plans)",
+                                                                 "icon":  "$(checklist)"
+                                                             },
+                                                             {
+                                                                 "id":  "allah.views.arsy",
+                                                                 "name":  "Arsy API",
+                                                                 "icon":  "$(server)"
+                                                             },
+                                                             {
+                                                                 "id":  "allah.views.models",
+                                                                 "name":  "Gateway Model Catalog",
+                                                                 "icon":  "$(symbol-property)"
+                                                             },
+                                                             {
+                                                                 "id":  "allah.agentWorkbench",
+                                                                 "name":  "Swarm Operations"
+                                                             },
+                                                             {
+                                                                 "id":  "allah.localAgentWorkbench",
+                                                                 "name":  "Workspace Agent",
+                                                                 "icon":  "$(hubot)"
+                                                             }
+                                                         ]
+                                  },
+                        "viewsWelcome":  [
+                                             {
+                                                 "view":  "allah.views.plans",
+                                                 "contents":  "Open a workspace folder to browse its plans.",
+                                                 "when":  "workspaceFolderCount == 0"
+                                             },
+                                             {
+                                                 "view":  "allah.views.plans",
+                                                 "contents":  "No plans found. [Create a plan](command:allah.createPlan) or [generate one from the gateway](command:allah.generatePlanWithAI).",
+                                                 "when":  "workspaceFolderCount \u003e 0"
+                                             }
+                                         ],
+                        "menus":  {
+                                      "view/title":  [
+                                                         {
+                                                             "command":  "allah.generatePlanWithAI",
+                                                             "when":  "view == allah.views.plans",
+                                                             "group":  "navigation@1"
+                                                         },
+                                                         {
+                                                             "command":  "allah.createPlan",
+                                                             "when":  "view == allah.views.plans",
+                                                             "group":  "navigation@2"
+                                                         },
+                                                         {
+                                                             "command":  "allah.refreshPlans",
+                                                             "when":  "view == allah.views.plans",
+                                                             "group":  "navigation@3"
+                                                         },
+                                                         {
+                                                             "command":  "allah.refreshArsyStatus",
+                                                             "when":  "view == allah.views.arsy",
+                                                             "group":  "navigation@1"
+                                                         },
+                                                         {
+                                                             "command":  "allah.listModels",
+                                                             "when":  "view == allah.views.models",
+                                                             "group":  "navigation@1"
+                                                         },
+                                                         {
+                                                             "command":  "allah.syncPlansToHub",
+                                                             "when":  "view == allah.plansView",
+                                                             "group":  "navigation@1"
+                                                         },
+                                                         {
+                                                             "command":  "allah.pullPlanFromHub",
+                                                             "when":  "view == allah.plansView",
+                                                             "group":  "navigation@2"
+                                                         }
+                                                     ],
+                                      "view/item/context":  [
+                                                                {
+                                                                    "command":  "allah.markTaskInProgress",
+                                                                    "when":  "view == allah.views.plans \u0026\u0026 viewItem == taskItem",
+                                                                    "group":  "task@1"
+                                                                },
+                                                                {
+                                                                    "command":  "allah.markTaskCompleted",
+                                                                    "when":  "view == allah.views.plans \u0026\u0026 viewItem == taskItem",
+                                                                    "group":  "task@2"
+                                                                },
+                                                                {
+                                                                    "command":  "allah.resetTaskToPending",
+                                                                    "when":  "view == allah.views.plans \u0026\u0026 viewItem == taskItem",
+                                                                    "group":  "task@3"
+                                                                }
+                                                            ]
+                                  },
+                        "configuration":  {
+                                              "title":  "A-L-L-A-H MoonWitness",
+                                              "properties":  {
+                                                                 "allah.gatewayUrl":  {
+                                                                                          "type":  "string",
+                                                                                          "default":  "http://127.0.0.1:5150",
+                                                                                          "description":  "Base URL of the MoonWitness LLM gateway."
+                                                                                      },
+                                                                 "allah.arsyUrl":  {
+                                                                                       "type":  "string",
+                                                                                       "default":  "http://127.0.0.1:5150",
+                                                                                       "description":  "Base URL of the Arsy API server."
+                                                                                   },
+                                                                 "allah.plannerModel":  {
+                                                                                            "type":  "string",
+                                                                                            "default":  "dx-reasoning",
+                                                                                            "description":  "LLM model used to generate project plans."
+                                                                                        },
+                                                                 "allah.agentModel":  {
+                                                                                          "type":  "string",
+                                                                                          "default":  "",
+                                                                                          "description":  "Optional model identifier used by workspace agent sessions."
+                                                                                      },
+                                                                 "allah.apiKey":  {
+                                                                                      "type":  "string",
+                                                                                      "default":  "",
+                                                                                      "deprecationMessage":  "Use the MoonWitness: Set API Key command. Credentials are stored in VS Code SecretStorage."
+                                                                                  }
+                                                             }
+                                          }
+                    },
+    "scripts":  {
+                    "build":  "tsup --config tsup.config.ts",
+                    "watch":  "tsup --config tsup.config.ts --watch",
+                    "typecheck":  "tsc --noEmit",
+                    "package":  "vsce package --no-dependencies",
+                    "check-runtime":  "node ../../scripts/check-vscode-extension-runtime.mjs"
+                },
+    "dependencies":  {
+                         "@allah/sdk":  "workspace:*",
+                         "@moonwitness/types":  "workspace:*"
+                     },
+    "devDependencies":  {
+                            "@types/node":  "^22.10.1",
+                            "@types/vscode":  "^1.90.0",
+                            "@vscode/vsce":  "^4.1.0",
+                            "tsup":  "^8.3.5",
+                            "typescript":  "^5.7.2"
+                        }
 }

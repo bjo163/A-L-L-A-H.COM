@@ -392,6 +392,72 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }),
     vscode.commands.registerCommand('allah.refreshArsyStatus', () => arsyStatusProvider.refresh()),
+    vscode.commands.registerCommand('allah.syncPlansToHub', async () => {
+      const folder = await chooseWorkspaceFolder();
+      if (!folder) return;
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'Syncing .plans with Arsy Hub...' },
+        async () => {
+          try {
+            const projects = (await client.listProjects()) as Array<{ id: number; name: string; workspace_path?: string }>;
+            let match = projects.find((p) => p.workspace_path === folder.uri.fsPath);
+            if (!match) {
+              match = (await client.createProject({
+                name: folder.name,
+                workspace_path: folder.uri.fsPath,
+                sync_mode: 'bidirectional',
+              })) as { id: number; name: string; workspace_path?: string };
+            }
+            const localPlans = PlanManager.scanWorkspace(folder.uri.fsPath);
+            const syncPayload = localPlans.map((p) => ({
+              slug: p.folderName,
+              title: p.title,
+              specStatus: p.status,
+              folderHash: p.id,
+              tasks: p.tasks.map((t) => ({
+                text: t.text,
+                state: t.status === 'in-progress' ? 'in_progress' : t.status,
+                lineIndex: t.lineIndex,
+                sourceLine: t.sourceLine,
+                fileHash: t.text,
+              })),
+            }));
+            const res = (await client.syncProjectToHub(match.id, syncPayload)) as {
+              outboundPatches?: Array<{ planSlug: string; lineIndex: number; sourceLine: string; newState: string }>;
+            };
+            if (res?.outboundPatches && res.outboundPatches.length > 0) {
+              planProvider.refresh();
+            }
+            vscode.window.showInformationMessage(`Successfully synced plans with Arsy Hub project "${match.name}".`);
+          } catch (err) {
+            vscode.window.showErrorMessage(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      );
+    }),
+    vscode.commands.registerCommand('allah.pullPlanFromHub', async () => {
+      const folder = await chooseWorkspaceFolder();
+      if (!folder) return;
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'Pulling project tasks from Arsy Hub...' },
+        async () => {
+          try {
+            const projects = (await client.listProjects()) as Array<{ id: number; workspace_path?: string }>;
+            const match = projects.find((p) => p.workspace_path === folder.uri.fsPath);
+            if (!match) {
+              vscode.window.showWarningMessage('No matching Arsy project registered for this workspace.');
+              return;
+            }
+            const exportData = (await client.exportProjectFromHub(match.id)) as { tasks?: unknown[] };
+            const count = exportData?.tasks?.length ?? 0;
+            vscode.window.showInformationMessage(`Pulled ${count} tasks from Arsy Hub.`);
+            planProvider.refresh();
+          } catch (err) {
+            vscode.window.showErrorMessage(`Pull failed: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      );
+    }),
     vscode.commands.registerCommand('allah.openArsyDocs', async () => {
       try {
         const opened = await vscode.env.openExternal(vscode.Uri.parse(client.arsyDocsUrl));
