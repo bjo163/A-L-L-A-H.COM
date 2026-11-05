@@ -35,6 +35,7 @@
     "sentinel:dev": "pnpm --filter @allah/sentinel dev",
     "sentinel:build": "pnpm --filter @allah/sentinel build",
     "sentinel:start": "pnpm --filter @allah/sentinel start",
+    "esp:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/e-isp build",
     "prepare": "husky"
   },
   "dependencies": {
