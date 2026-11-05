@@ -37,6 +37,7 @@ import { registerOfflineWorkbench } from './offlineWorkbench';
 import { RepositoryContextService } from './repositoryContext';
 import { matchMissionTemplates } from './missionTemplateMatcher';
 
+export { MoonWitnessClient };
 
 function isTaskItem(value: unknown): value is TaskItem {
   if (typeof value !== 'object' || value === null) {

@@ -97,6 +97,16 @@ The optional Ollama adapter discovers installed model names from `/api/tags`, th
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm exec eslint packages/vscode-extension/src/providers --max-warnings 0` | Passed |
 
+## Local-provider coding workflow
+
+The extension host ran a Code-mode edit through the real `MoonWitnessClient` against a loopback Ollama-compatible mock while the configured Gateway URL was unreachable. The provider discovered the local model, returned an edit proposal, and applied it only after the normal approval step. Only `/api/tags` and `/api/chat` reached the loopback server. This proves provider isolation and local workflow orchestration, not execution against an installed Ollama model.
+
+| Command | Result |
+|---|---|
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty-one host tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+
 ## SecretStorage enforcement
 
 Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set API Key` command remains the supported entry point, while activation retains a one-time migration path for previously configured values and removes them from settings. Host acceptance verified that the stored value is absent from configuration and is sent only to the configured local mock gateway as `x-virtual-key`.
@@ -146,7 +156,7 @@ Host tests hydrate a persisted running session as blocked with a `mission.interr
 
 | Command | Result |
 |---|---|
-| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty host tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty-one host tests |
 
 ## Roadmap claim audit
 

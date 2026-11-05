@@ -43,7 +43,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-031 Make provider/model selection explicit and observable. Provider selection is explicit, model readiness is checked before sessions, and fallback is opt-in only.
 - [x] VSC-032 Normalize streaming, timeout, cancellation, retry and errors. Gateway timeouts remain active through response-body reads, caller aborts propagate, malformed success payloads fail explicitly, and Ollama discovery is bounded.
 - [x] VSC-033 Store credentials only in SecretStorage. Removed the `allah.apiKey` setting; host acceptance verifies the command-stored key reaches the mock gateway through the SecretStorage-backed client.
-- [ ] VSC-034 Verify full local workflow with network disabled.
+- [!] VSC-034 Local Ollama host acceptance uses a loopback mock and unreachable Gateway, proving provider isolation through an approved edit. Live Ollama execution remains unverified.
 - [x] VSC-035 Verify optional-provider activation and no silent Gateway fallback when configured Ollama is unavailable.
 
 ### 04 Agent execution
@@ -65,7 +65,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 09 Release 0.4.0
 - [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repository gates are blocked by unrelated dirty `packages/arsy-orm/src/migrator.ts:612` parsing and a missing `rules.md` in another plan.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 20 tests total.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 21 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.

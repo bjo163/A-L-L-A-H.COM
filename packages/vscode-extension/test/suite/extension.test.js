@@ -337,6 +337,69 @@ suite('A-L-L-A-H.COM extension host', () => {
       }
     });
 
+    test('completes a local Ollama edit without contacting the Gateway', async () => {
+      const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const filePath = path.join(root, 'src', 'offline-ollama-flow.ts');
+      const original = 'const provider = "before";\n';
+      await fs.writeFile(filePath, original);
+      const configuration = vscode.workspace.getConfiguration('allah');
+      const previous = {
+        agentProvider: configuration.inspect('agentProvider')?.globalValue,
+        agentModel: configuration.inspect('agentModel')?.globalValue,
+        ollamaUrl: configuration.inspect('ollamaUrl')?.globalValue,
+        gatewayUrl: configuration.inspect('gatewayUrl')?.globalValue,
+      };
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const requests = [];
+      const proposal = JSON.stringify({
+        response: 'Updated the provider.',
+        edits: [{
+          path: 'src/offline-ollama-flow.ts',
+          oldText: original,
+          newText: 'const provider = "ollama";\n',
+        }],
+      });
+      const server = http.createServer((request, response) => {
+        requests.push(request.url);
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(request.url === '/api/tags'
+          ? { models: [{ name: 'host-local-model' }] }
+          : { message: { content: proposal } }));
+      });
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', resolve);
+      });
+
+      try {
+        const address = server.address();
+        await configuration.update('agentProvider', 'ollama', vscode.ConfigurationTarget.Global);
+        await configuration.update('agentModel', 'host-local-model', vscode.ConfigurationTarget.Global);
+        await configuration.update('ollamaUrl', `http://127.0.0.1:${address.port}`, vscode.ConfigurationTarget.Global);
+        await configuration.update('gatewayUrl', 'http://127.0.0.1:1', vscode.ConfigurationTarget.Global);
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = async (message) =>
+          message.startsWith('Apply ') ? 'Apply changes' : undefined;
+
+        const ExtensionClient = require('../../dist/extension.js').MoonWitnessClient;
+        const client = new ExtensionClient({ secrets: { get: async () => undefined } });
+        const provider = createLocalAgentProvider(client);
+        assert.equal(await provider.run('code', 'Change the provider constant.'), 'completed');
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        assert.equal(document.getText(), 'const provider = "ollama";\n');
+        assert.deepEqual(requests, ['/api/tags', '/api/chat']);
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+        await configuration.update('agentProvider', previous.agentProvider, vscode.ConfigurationTarget.Global);
+        await configuration.update('agentModel', previous.agentModel, vscode.ConfigurationTarget.Global);
+        await configuration.update('ollamaUrl', previous.ollamaUrl, vscode.ConfigurationTarget.Global);
+        await configuration.update('gatewayUrl', previous.gatewayUrl, vscode.ConfigurationTarget.Global);
+        await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      }
+    });
+
     test('applies proposed edits only after approval', async () => {
       const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
       const filePath = path.join(root, 'src', 'agent-approval-accepted.ts');
