@@ -6,11 +6,10 @@ import type { PhenomenonRecord, PerspectiveRecord, SignalRecord, ProvenanceRecor
  * Fail-closed by default: reject if not explicitly allowed.
  */
 const ALLOWED_UPSTREAMS = [
-  // Only localhost for local development
+  // Local development and the host gateway used by Docker Compose.
   new URL('http://localhost:4000'),
   new URL('http://127.0.0.1:4000'),
-  // Production JIZZ API - uncomment and add actual production endpoints here
-  // new URL('https://jizz.bjo163.dev'),
+  new URL('http://host.docker.internal:4000'),
 ].map(u => u.origin);
 
 /**
@@ -593,4 +592,20 @@ export class JizzClientAdapter {
       ],
     };
   }
+}
+
+export function createJizzClientFromEnvironment(
+  env: {
+    JIZZ_API_URL: string | undefined;
+    JIZZ_API_KEY: string | undefined;
+  } = {
+    JIZZ_API_URL: process.env.JIZZ_API_URL,
+    JIZZ_API_KEY: process.env.JIZZ_API_KEY,
+  },
+): JizzClientAdapter {
+  const baseUrl = env.JIZZ_API_URL?.trim() || 'http://localhost:4000';
+  return new JizzClientAdapter({
+    base_url: baseUrl,
+    api_key: env.JIZZ_API_KEY,
+  });
 }

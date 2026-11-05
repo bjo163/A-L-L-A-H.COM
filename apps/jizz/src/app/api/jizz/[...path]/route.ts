@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { JizzClientAdapter } from '@/lib/jizz/client';
+import { createJizzClientFromEnvironment } from '@/lib/jizz/client';
 
 /**
  * Server-side proxy for the JIZZ upstream observatory API.
@@ -10,13 +10,6 @@ import { JizzClientAdapter } from '@/lib/jizz/client';
  * Only a closed set of read-only paths is reachable — this is a
  * proxy, not a general forwarding endpoint.
  */
-
-// The adapter owns the SSRF allowlist; the base url must be present for
-// production deployments and defaults to the documented local upstream.
-const client = new JizzClientAdapter({
-  base_url: process.env.JIZZ_API_URL ?? 'http://localhost:4000',
-  api_key: process.env.JIZZ_API_KEY,
-});
 
 type Segment = string;
 
@@ -35,29 +28,33 @@ const SAFE_ID = /^[A-Za-z0-9_-]+$/;
 async function handle(segments: Segment[], request: NextRequest): Promise<Response> {
   const [head, second, third] = segments;
   const query = request.nextUrl.searchParams;
+  let client: ReturnType<typeof createJizzClientFromEnvironment> | undefined;
+  const getClient = () => client ??= createJizzClientFromEnvironment();
 
   if (head === 'phenomena' && segments.length === 1) {
     const limit = Number.parseInt(query.get('limit') ?? '50', 10);
     const offset = Number.parseInt(query.get('offset') ?? '0', 10);
     if (!Number.isFinite(limit) || !Number.isFinite(offset)) return badRequest('limit and offset must be integers');
-    const result = await client.listPhenomena(limit, offset);
+    const result = await getClient().listPhenomena(limit, offset);
     return result.success ? NextResponse.json(result.data) : NextResponse.json({ error: result.error }, { status: result.error.statusCode ?? 502 });
   }
 
   if (head === 'phenomena' && second && (third === 'perspectives' || third === 'signals') && segments.length === 3) {
     if (!SAFE_ID.test(second)) return badRequest('Invalid phenomenon id');
-    const result = third === 'perspectives' ? await client.listPerspectives(second) : await client.listSignals(second);
+    const result = third === 'perspectives'
+      ? await getClient().listPerspectives(second)
+      : await getClient().listSignals(second);
     return result.success ? NextResponse.json(result.data) : NextResponse.json({ error: result.error }, { status: result.error.statusCode ?? 502 });
   }
 
   if (head === 'phenomena' && second && segments.length === 2) {
     if (!SAFE_ID.test(second)) return badRequest('Invalid phenomenon id');
-    const result = await client.getPhenomenon(second);
+    const result = await getClient().getPhenomenon(second);
     return result.success ? NextResponse.json(result.data) : NextResponse.json({ error: result.error }, { status: result.error.statusCode ?? 404 });
   }
 
   if (head === 'health' && segments.length === 1) {
-    return NextResponse.json(await client.healthCheck());
+    return NextResponse.json(await getClient().healthCheck());
   }
 
   return notFound();

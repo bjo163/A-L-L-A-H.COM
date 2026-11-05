@@ -9,6 +9,7 @@ import {
   isPerspectiveRecord,
   isSignalRecord,
   SSRFError,
+  createJizzClientFromEnvironment,
 } from './client';
 
 // Local type definitions matching @moonwitness/types contracts
@@ -147,6 +148,19 @@ describe('JizzClientAdapter', () => {
   describe('constructor & SSRF protection', () => {
     test('allows localhost URLs', () => {
       const c = new JizzClientAdapter(mockEndpoint);
+      assert.ok(c);
+    });
+
+    test('allows the configured Docker Compose host gateway', () => {
+      const c = new JizzClientAdapter({
+        ...mockEndpoint,
+        base_url: 'http://host.docker.internal:4000',
+      });
+      assert.ok(c);
+    });
+
+    test('uses the local default when the runtime URL is blank', () => {
+      const c = createJizzClientFromEnvironment({ JIZZ_API_URL: '  ', JIZZ_API_KEY: '' });
       assert.ok(c);
     });
 

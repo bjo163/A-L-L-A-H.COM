@@ -196,6 +196,17 @@ function checkEnvironmentContract() {
     const environment = composeEnvironment(services.get(service) ?? []);
     for (const key of keys) if (!environment.has(key)) failures.push(`docker-compose.yml: ${service} must declare ${key}`);
   }
+  const jizzLines = services.get('jizz') ?? [];
+  if (!jizzLines.some((line) => line.includes('host.docker.internal:host-gateway'))) {
+    failures.push('docker-compose.yml: jizz must map host.docker.internal to the Docker host gateway');
+  }
+  if (!jizzLines.some((line) => line.includes('JIZZ_API_URL=${JIZZ_API_URL:-http://host.docker.internal:4000}'))) {
+    failures.push('docker-compose.yml: jizz must declare its host-gateway upstream default');
+  }
+  const jizzRoute = read(join(root, 'apps/jizz/src/app/api/jizz/[...path]/route.ts'));
+  if (jizzRoute.includes('new JizzClientAdapter') || !jizzRoute.includes('createJizzClientFromEnvironment()')) {
+    failures.push('apps/jizz API proxy: upstream client must be created lazily at request time');
+  }
   const sourcePattern = /process\.env(?:\.|\[['"])([A-Z][A-Z0-9_]+)/g;
   for (const app of apps) {
     const source = sourceText(join(root, 'apps', app));

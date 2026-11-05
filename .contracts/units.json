@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "54e9b4febcdc16f9378c1f37db3b04465d1e79713bcb070378ded070b58c0af4",
+  "source_digest": "9244727f0c4f3e8166ee5455d8c08dd75f02a569b3db1d0d9c1fa78aff5075f6",
   "units": [
     {
       "dir": "addons/base",
@@ -531,7 +531,7 @@
       "owner": "frontend",
       "version": "0.1.0",
       "status": "released",
-      "last_verified": "2026-02-10",
+      "last_verified": "2026-11-05",
       "summary": "Riot-anarchy media and phenomena front-end with skin previews"
     },
     {
