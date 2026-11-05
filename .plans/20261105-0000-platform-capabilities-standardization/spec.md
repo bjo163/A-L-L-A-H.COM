@@ -1,3 +1,5 @@
+> **Moon UI skin-phase reconciliation (2026-11-05):** The skin mapping and all-application SkinRoot tasks in this older plan are superseded by the current accepted mapping in `DESIGN.md`, `DNA/README.md`, and `.plans/20261105-moon-ui-master-consolidation/spec.md`. The correct frontend mapping is Gate+Dock=Imperium, ID=Lunar, Harbor=ROCKSOUL, Headquarter=Nexus, MoonSky=Riot, JIZZ=Mycelium. ARSY and SENTINEL are backend/service runtimes and must not receive `SkinRoot`. Do not execute the old skin phase as written. Other non-UI capability work in this plan is unaffected.
+
 # Feature Specification: Platform Capabilities Standardization
 
 ## Overview
@@ -72,7 +74,7 @@ The `evolve-loop-guard` plan (20261104-175034) specifically identifies this prob
 ### US-001: Application Skin Assignment
 As a developer, I want each application to have a properly configured SkinRoot so that the application renders with the correct skin tokens and branding.
 
-**Acceptance:** Dock renders with Imperium Lumen skin, Headquarter with Nexus Paradox, ID with Lunar Chronicles, Jizz with Mycelium, Moonsky with Rocksoul, Gate with Riot Anarchy.
+**Acceptance:** Gate and Dock render with Imperium Lumen, ID with Lunar Chronicles, Harbor with ROCKSOUL, Headquarter with Nexus Paradox, MoonSky with RIOT ANARCHY, and JIZZ with MYCELIUM. ARSY and SENTINEL are backend/service runtimes and are not SkinRoot consumers.
 
 ### US-002: Platform Capability Verification
 As a reviewer, I want each "new-platform-capability" entry to have real implementation evidence, not just empty plan templates.
