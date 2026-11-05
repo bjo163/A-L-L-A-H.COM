@@ -79,6 +79,14 @@ The final VSIX was rebuilt and installed in the active VS Code profile. `code --
 
 The README now identifies Workspace Agent as the primary coding entry point and maps plans, provider configuration, health, usage, and audit views. Extension-host command tests assert that exactly one Workspace Agent view is contributed. The separate remote-swarm capability inventory remains open under VSC-022.
 
+## Workspace metadata selection
+
+The repository index now prefers the workspace-root `package.json` when nested packages are also present, and falls back to a nested manifest only when the root manifest is absent. A host fixture with conflicting Next.js and Vue manifests verifies the selected framework metadata.
+
+| Command | Result |
+|---|---|
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty host tests |
+
 ## SecretStorage enforcement
 
 Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set API Key` command remains the supported entry point, while activation retains a one-time migration path for previously configured values and removes them from settings. Host acceptance verified that the stored value is absent from configuration and is sent only to the configured local mock gateway as `x-virtual-key`.
@@ -128,7 +136,7 @@ Host tests hydrate a persisted running session as blocked with a `mission.interr
 
 | Command | Result |
 |---|---|
-| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, nineteen host tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty host tests |
 
 ## Roadmap claim audit
 

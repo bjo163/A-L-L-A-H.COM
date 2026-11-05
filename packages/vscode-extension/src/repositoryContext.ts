@@ -83,7 +83,9 @@ export class RepositoryContextService {
   }
 
   private async readPackageManifest(root: string, files: string[]): Promise<Record<string, unknown> | undefined> {
-    const packageFile = files.find((file) => /(^|[\\/])package\.json$/.test(file));
+    const packageFile = files.includes('package.json')
+      ? 'package.json'
+      : files.find((file) => /(^|[\\/])package\.json$/.test(file));
     if (!packageFile) return undefined;
     try {
       const raw = await fs.readFile(path.join(root, packageFile), 'utf8');

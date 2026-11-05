@@ -53,6 +53,13 @@ suite('A-L-L-A-H.COM extension host', () => {
   });
 
   if (Number(process.env.ALLAH_EXPECTED_WORKSPACE_ROOTS) === 1) {
+    test('repository index prefers the workspace root package manifest', async () => {
+      const provider = createLocalAgentProvider({});
+      const index = await provider.repositoryContext.build(vscode.workspace.workspaceFolders[0]);
+      assert.ok(index.dna.frameworks.includes('Next.js'));
+      assert.equal(index.dna.frameworks.includes('Vue'), false);
+    });
+
     test('restores interrupted sessions as blocked without restarting provider work', async () => {
       const timestamp = new Date().toISOString();
       const session = {

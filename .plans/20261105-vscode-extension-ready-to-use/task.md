@@ -65,7 +65,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 09 Release 0.4.0
 - [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repository gates are blocked by unrelated dirty `packages/arsy-orm/src/migrator.ts:612` parsing and a missing `rules.md` in another plan.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 18 tests total.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 20 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.

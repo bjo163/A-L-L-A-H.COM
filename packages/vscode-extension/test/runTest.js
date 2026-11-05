@@ -46,7 +46,16 @@ async function main() {
     const roots = [path.join(fixture, 'first'), path.join(fixture, 'second')];
     await Promise.all(roots.map((root) => fs.mkdir(root, { recursive: true })));
     await fs.mkdir(path.join(roots[0], 'src', 'routes'), { recursive: true });
-    await fs.writeFile(path.join(roots[0], 'package.json'), JSON.stringify({ name: 'host-fixture' }));
+    await fs.writeFile(path.join(roots[0], 'package.json'), JSON.stringify({
+      name: 'host-fixture',
+      dependencies: { next: '16.0.0' },
+    }));
+    const nestedManifest = path.join(roots[0], 'apps', 'nested', 'package.json');
+    await fs.mkdir(path.dirname(nestedManifest), { recursive: true });
+    await fs.writeFile(nestedManifest, JSON.stringify({
+      name: 'nested-fixture',
+      dependencies: { vue: '3.0.0' },
+    }));
     await fs.writeFile(path.join(roots[0], 'src', 'routes', 'users.ts'), 'export const users = [];\n');
     const planDirectory = path.join(roots[0], '.plans', 'extension-host-plan');
     await fs.mkdir(planDirectory, { recursive: true });
