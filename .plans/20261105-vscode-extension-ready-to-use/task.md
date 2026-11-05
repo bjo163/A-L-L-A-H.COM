@@ -32,7 +32,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-022 Consolidate duplicate agent surfaces without deleting capabilities. The extension contributes one agent view, but preservation of removed remote-swarm capabilities remains unverified.
 - [x] VSC-023 Unify provider setup and connection status. The command-palette command and Workspace Agent Configure button share one extension-filtered settings route; provider readiness and model selection remain visible in the agent panel.
 - [x] VSC-024 Integrate plans, active mission and timeline navigation. Plan task context actions load an editable Workspace Agent draft without starting it; session history can display any saved timeline, and timeline commands focus the local timeline or replay view.
-- [ ] VSC-025 Integrate diagnostics, usage and audit without duplicate dashboards.
+- [x] VSC-025 Integrate diagnostics, usage and audit without duplicate dashboards. Health, symbol impact, usage, and audit commands now open their specific existing views; the host test verifies all four destinations are distinct.
 - [ ] VSC-026 Complete loading/empty/error/offline/permission states.
 - [ ] VSC-027 Verify keyboard accessibility, themes and narrow panels.
 
@@ -65,7 +65,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 09 Release 0.4.0
 - [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repository gates are blocked by unrelated dirty `packages/arsy-orm/src/migrator.ts:612` parsing and a missing `rules.md` in another plan.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 29 tests total.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 32 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.

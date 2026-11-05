@@ -14,6 +14,7 @@
 - AI plans now provide validated task dependencies, acceptance criteria, and verification checks before approval.
 - Opt-in saved tasks can be reviewed and explicitly resumed after VS Code restarts, then forgotten from local history.
 - Plan checklist items can open as Workspace Agent drafts, and timeline commands navigate to the active local timeline or replay view.
+- Health, symbol impact, usage, and audit commands now open their specific existing views.
 - Explicit workspace notes can be saved, cleared, and selectively included as redacted context with a 30-day retention limit.
 - Setup, security, and troubleshooting guidance for local Ollama and optional Gateway use.
 - MIT license and repository metadata in the extension package.
@@ -21,5 +22,5 @@
 ### Validation
 
 - Extension unit tests, typecheck, manifest checks, standalone checks, and VSIX package inspection pass.
-- Twenty-nine extension-host tests pass across no-workspace, single-root, and multi-root profiles.
+- Thirty-two extension-host tests pass across no-workspace, single-root, and multi-root profiles.
 - Full manual webview click-through, live Ollama model execution, and persisted timeline recovery remain unverified.

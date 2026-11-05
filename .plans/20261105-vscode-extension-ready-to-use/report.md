@@ -266,6 +266,24 @@ Task persistence is opt-in and limited to a redacted 4,000-character prompt with
 | `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
 | `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
 
+## Diagnostics, usage, and audit navigation
+
+The health, impact-analysis, usage, and timeline-replay commands now open their own contributed views. They no longer stop at focusing the shared MoonWitness activity container, and no new dashboard copies were added.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 59 tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, 32 host tests |
+| `pnpm --filter allah-vscode-extension check-runtime` | Passed: 29 commands |
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 29 commands and 8 views |
+| `pnpm --filter allah-vscode-extension package` | Passed: `allah-vscode-extension-0.3.0.vsix` |
+| `pnpm --filter allah-vscode-extension check-package` | Passed: 6 packaged files |
+| `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
+| `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
+
 ## Plan, mission, and timeline navigation
 
 Plan checklist context actions now load the selected item and workspace as a reviewable Code-mode draft. The user must still start the session and approve workspace context and any edits. Local session history exposes each stored timeline, `Timeline: Show Recent Events` focuses the active local timeline, and `Audit: Timeline Replay & Export` opens the separate replay view.

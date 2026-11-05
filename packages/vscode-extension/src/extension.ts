@@ -701,7 +701,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
     }),
     vscode.commands.registerCommand('allah.showHealthDashboard', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+      await vscode.commands.executeCommand('workbench.action.openView', HealthDashboardProvider.viewType);
     }),
     vscode.commands.registerCommand('allah.configureProviders', async () => {
       await vscode.commands.executeCommand(
@@ -710,10 +710,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       );
     }),
     vscode.commands.registerCommand('allah.analyzeImpact', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+      await vscode.commands.executeCommand('workbench.action.openView', ImpactAnalyzerProvider.viewType);
     }),
     vscode.commands.registerCommand('allah.showUsageDashboard', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+      await vscode.commands.executeCommand('workbench.action.openView', UsageDashboardPanel.viewType);
     }),
     vscode.commands.registerCommand('allah.showTimelineReplay', async () => {
       await vscode.commands.executeCommand('workbench.action.openView', TimelineReplayProvider.viewType);

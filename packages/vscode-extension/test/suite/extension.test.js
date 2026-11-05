@@ -74,6 +74,37 @@ suite('A-L-L-A-H.COM extension host', () => {
     }
   });
 
+  test('dashboard commands open their existing health, impact, usage, and audit views', async () => {
+    const extension = vscode.extensions.getExtension('a-l-l-a-h.allah-vscode-extension');
+    await extension.activate();
+    const executeCommand = vscode.commands.executeCommand.bind(vscode.commands);
+    const openedViews = [];
+
+    try {
+      vscode.commands.executeCommand = async (command, ...args) => {
+        if (command === 'workbench.action.openView') {
+          openedViews.push(args[0]);
+          return undefined;
+        }
+        return executeCommand(command, ...args);
+      };
+      await executeCommand('allah.showHealthDashboard');
+      await executeCommand('allah.analyzeImpact');
+      await executeCommand('allah.showUsageDashboard');
+      await executeCommand('allah.showTimelineReplay');
+    } finally {
+      vscode.commands.executeCommand = executeCommand;
+    }
+
+    assert.deepEqual(openedViews, [
+      'allah.views.health',
+      'allah.views.impactAnalyzer',
+      'allah.views.usageDashboard',
+      'allah.views.timelineReplay',
+    ]);
+    assert.equal(new Set(openedViews).size, openedViews.length);
+  });
+
   if (Number(process.env.ALLAH_EXPECTED_WORKSPACE_ROOTS) === 1) {
     test('workspace memory is opt-in and saved notes are scoped to one workspace', async () => {
       const provider = createLocalAgentProvider({});

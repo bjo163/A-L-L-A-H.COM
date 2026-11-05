@@ -20,7 +20,9 @@ service to activate or manage local projects.
 - Right-click a plan checklist item and choose `Workspace Agent: Load Task as Draft`.
   The selected task and workspace are loaded for review; the agent does not start automatically.
 - Configure providers with `LLM: Configure Providers` and store a gateway key with `MoonWitness: Set API Key`.
-- Open provider health, usage, and audit tools from the MoonWitness activity bar.
+- Use `Monitoring: View Health Dashboard`, `Analysis: Analyze Symbol Impact`,
+  `Budget: View Usage Dashboard`, and `Audit: Timeline Replay & Export` to open
+  their individual existing views from the command palette.
 
 ## Coding workflow
 
