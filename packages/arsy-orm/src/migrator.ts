@@ -412,10 +412,15 @@ export class SchemaMigrator {
 
     const enforce = async (executor: QueryExecutor) => {
       // Cross-app sync outbox (roadmap F3). Opt-in per model by name; defaults to the
-      // identity record so a res.users write emits exactly one outbox row. Every row is
-      // tenant-tagged and append-only, mirroring the audit-event trigger family.
+      // identity record so a res.users write emits exactly one outbox row, plus the
+      // NEXUS NAS registry (roadmap T3.3) so secret rotation propagates to the sentinel
+      // replica, plus the notification event log (roadmap T3.4) so every appended
+      // notify.event emits exactly one ledger row. Every row is tenant-tagged and
+      // append-only, mirroring the audit-event trigger family. `nexus.nas` only joins
+      // the list because `arsy_capture_sync_event` strips every `*_encrypted`/
+      // `*_hash` column from the payload before it is stored.
       const syncModels = new Set(
-        (process.env.ARSY_SYNC_MODELS ?? 'res.users')
+        (process.env.ARSY_SYNC_MODELS ?? 'res.users,nexus.nas,notify.event')
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean)
@@ -598,6 +603,7 @@ export class SchemaMigrator {
           old_data JSONB;
           new_data JSONB;
           payload JSONB;
+          safe_payload JSONB;
           op TEXT := lower(TG_OP);
           event_company_id INTEGER;
           event_record_id TEXT;
@@ -605,6 +611,19 @@ export class SchemaMigrator {
           old_data := CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN to_jsonb(OLD) ELSE NULL END;
           new_data := CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN to_jsonb(NEW) ELSE NULL END;
           payload := COALESCE(new_data, old_data);
+
+          -- Secrets must NEVER enter the append-only cross-app ledger. Strip every
+          -- *_encrypted / *_hash column before the payload is stored or diffed.
+          -- A regex (!~) is required, not LIKE: LIKE treats the underscore as a
+          -- single-char wildcard, so 'x_encrypted' LIKE matching is fragile.
+          -- The derived changed array reads from the redacted payload below, so
+          -- secret columns never surface as a business-field delta either.
+          SELECT COALESCE(jsonb_object_agg(key, value), '{}'::jsonb)
+            INTO safe_payload
+            FROM jsonb_each(payload)
+           WHERE key !~ '_encrypted$'
+             AND key !~ '_hash$';
+          payload := safe_payload;
 
           IF TG_OP = 'DELETE' THEN
             event_company_id := COALESCE(NULLIF(old_data ->> 'company_id', '')::INTEGER, 0);

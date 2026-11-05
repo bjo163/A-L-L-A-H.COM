@@ -25,6 +25,13 @@ export const DEFAULT_PROJECT_STAGES: DefaultProjectStage[] = [
  * The default scheduled action a project tenant gets. This is the single
  * definition of the job; the admin seed route builds its row from here so the
  * schedule is not duplicated between the addon data and the route body.
+ *
+ * It ships `state: 'disabled'` on purpose (roadmap T3.2): the ORM owns the
+ * reserved `active` column (flips go through the audited `archive()` path, not a
+ * write), so "off by default" is expressed with the model's own `disabled`
+ * state, which the runner's due filter excludes. `sync_local_plans` is a
+ * DB-only, no-op-bounded pass — an operator opts a tenant in by setting the row
+ * back to `idle`. See the roadmap decision artifact.
  */
 export interface DefaultProjectCron {
   name: string;
@@ -41,5 +48,5 @@ export const DEFAULT_PROJECT_CRON: DefaultProjectCron = {
   method_name: 'sync_local_plans',
   interval_number: 5,
   interval_unit: 'minutes',
-  state: 'idle',
+  state: 'disabled',
 };

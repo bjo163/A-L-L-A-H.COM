@@ -196,6 +196,15 @@ test('forUpdate appends a row lock after the page clause; includeArchived drops 
   });
   assert.match(locked.sql, /LIMIT \$3 FOR UPDATE$/);
 
+  // roadmap T3.2: 'skip_locked' pulls the next unlocked rows for a concurrent claimer.
+  const skip = new QueryBuilder(model).buildSelect({
+    scope: { companyId: 5 },
+    filters: [{ field: 'state', operator: '=', value: 'a' }],
+    limit: 10,
+    forUpdate: 'skip_locked',
+  });
+  assert.match(skip.sql, /LIMIT \$3 FOR UPDATE SKIP LOCKED$/);
+
   const archived = new QueryBuilder(model).buildSelect({ scope: { companyId: 5 }, includeArchived: true });
   assert.doesNotMatch(archived.sql, /"active" = true/);
   const notArchived = new QueryBuilder(model).buildSelect({ scope: { companyId: 5 } });

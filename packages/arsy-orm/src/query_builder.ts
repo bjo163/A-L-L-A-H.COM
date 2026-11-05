@@ -67,8 +67,13 @@ export interface QueryOptions {
   orderDirection?: 'ASC' | 'DESC';
   /** Include archived (`active = false`) rows; default false keeps the `active = true` filter. */
   includeArchived?: boolean;
-  /** Append a row-level `FOR UPDATE` lock to the select (single-statement scope). */
-  forUpdate?: boolean;
+  /**
+   * Append a row-level lock to the select (single-statement scope). `true` is a
+   * plain `FOR UPDATE`; `'skip_locked'` appends `FOR UPDATE SKIP LOCKED`, which
+   * a concurrent claimer uses to pull the next unlocked rows instead of blocking
+   * (roadmap T3.2 cron work queue).
+   */
+  forUpdate?: boolean | 'skip_locked';
 }
 
 export class TenantScopeRequiredError extends Error {
@@ -231,7 +236,8 @@ export class QueryBuilder {
     }
 
     // Row-level lock goes last, after LIMIT/OFFSET, per PostgreSQL grammar.
-    if (options.forUpdate) sql += ' FOR UPDATE';
+    if (options.forUpdate === 'skip_locked') sql += ' FOR UPDATE SKIP LOCKED';
+    else if (options.forUpdate) sql += ' FOR UPDATE';
 
     return { sql, params };
   }
