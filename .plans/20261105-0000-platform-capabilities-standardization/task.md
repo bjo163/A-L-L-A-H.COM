@@ -2,55 +2,14 @@
 
 ## Implementation Phases
 
-### Phase 1: Skin System Integration (Weeks 1-2)
-Objective: Ensure all 10 applications have SkinRoot integration with valid skin IDs.
+### Phase 1: Skin System Integration — SUPERSEDED / DO NOT EXECUTE
 
-**Ordered Tasks:**
-- [ ] T-001: Add SkinRoot import and wrapping to dock app layout.tsx
-- [ ] T-002: Add SkinRoot import and wrapping to gate app layout.tsx
-- [ ] T-003: Add SkinRoot import and wrapping to headquarter app layout.tsx
-- [ ] T-004: Add SkinRoot import and wrapping to id app layout.tsx
-- [ ] T-005: Add SkinRoot import and wrapping to jizz app layout.tsx
-- [ ] T-006: Add SkinRoot import and wrapping to moonsky app layout.tsx
-- [ ] T-007: Add SkinRoot import and wrapping to harbor app layout.tsx
-- [ ] T-008: Add SkinRoot import and wrapping to arsy app layout/entry point
-- [ ] T-009: Add SkinRoot import and wrapping to server app entry point
-- [ ] T-010: Add SkinRoot import and wrapping to sentinel app entry point
-- [ ] T-011: Verify SkinRoot renders correctly in each application
-- [ ] T-012: Run pnpm docs:check across all applications (target: 100/100)
-- [ ] T-013: Run pnpm lint:arch across all applications (target: 0 warnings)
-- [ ] T-014: Document skin integration status in each app's plan
+The original T-001 through T-014 skin integration work is superseded by the current canonical mapping and the Moon UI Master Consolidation plan.
 
-**Dependencies:** None (parallelizable per application)
+- [-] **T-001–T-010:** Do not wrap apps using the old mapping. Current approved mapping: Gate+Dock=Imperium; ID=Lunar; Harbor=ROCKSOUL; Headquarter=Nexus; MoonSky=Riot; JIZZ=Mycelium. ARSY and SENTINEL are backend/service runtimes, not SkinRoot consumers.
+- [-] **T-011–T-014:** Skin integration verification and documentation reconciliation are tracked by MU-0801–MU-0822 and MU-0930–MU-0942 in `.plans/20261105-moon-ui-master-consolidation/task.md`.
 
-**Parallelizable Workstreams:** All 10 applications can be updated simultaneously since each SkinRoot integration is independent.
-
-**Required Files:**
-- `apps/dock/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/gate/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/headquarter/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/id/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/jizz/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/moonsky/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/harbor/src/app/layout.tsx` - add SkinRoot import and wrapper
-- `apps/arsy/` - add SkinRoot integration
-- `apps/server/` - add SkinRoot integration
-- `apps/sentinel/` - add SkinRoot integration (where applicable)
-
-**Testing & Validation:**
-- Visual verification that each app renders with correct skin tokens
-- `pnpm typecheck` for each modified application
-- `pnpm lint:arch` for each modified application
-- Check `data-moonframe-skin` attribute on rendered root
-
-**Documentation Requirements:**
-- Update each app's plan directory (or create one if missing) with skin integration status
-- Verify `data-moonframe-skin` attribute present on root div
-
-**Quality Gates:**
-- All typecheck must pass
-- All lint:arch must pass with 0 warnings
-- docs:check must pass (100/100)
+Do not mark these old tasks as implementation complete. Their scope has been transferred and must be executed only in the master plan.
 
 ### Phase 2: Platform Capability Implementation (Weeks 3-8)
 Objective: Implement all 11 DISCOVERED platform capabilities with real code and verification evidence.
