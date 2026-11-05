@@ -1,0 +1,103 @@
+# Master Task Index
+
+Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks start pending.
+
+## P0 — Release 0.4.0
+### 00 Architecture reconciliation
+- [ ] VSC-001 Inventory extension source, exports and entrypoints.
+- [ ] VSC-002 Map every manifest command to registration, implementation and test.
+- [ ] VSC-003 Map activation events, views, menus and status items.
+- [ ] VSC-004 Trace AgentWorkbenchProvider and LocalAgentWorkbenchProvider responsibilities.
+- [ ] VSC-005 Trace ProviderRegistry, ProviderIntegration, Ollama and Gateway ownership.
+- [ ] VSC-006 Trace MissionTimeline, remote mission service and persistence.
+- [ ] VSC-007 Identify legacy/dead code and monorepo-only runtime imports.
+- [ ] VSC-008 Audit Workspace Trust, paths, webviews, secrets and shell tools.
+- [ ] VSC-009 Produce source-of-truth matrix and disposition decisions.
+- [ ] VSC-010 Confirm package scripts, bundle entrypoints and standalone dependency graph.
+
+### 01 Runtime and extension-host
+- [ ] VSC-011 Extend parity to every contributed command and view.
+- [ ] VSC-012 Add VS Code extension-host harness using existing supported tooling.
+- [ ] VSC-013 Test activation/deactivation, missing optional providers and no workspace.
+- [ ] VSC-014 Test single-root and multi-root workspaces.
+- [ ] VSC-015 Test plan Explorer create/read/update and task progress.
+- [ ] VSC-016 Test provider setup/discovery/failure/timeout/offline/cancellation.
+- [ ] VSC-017 Test diff review, approval/rejection, conflicts and safe apply.
+- [ ] VSC-018 Test validation approval/cancellation and bounded repair.
+- [ ] VSC-019 Test timeline, reload, interruption, explicit resume and replay.
+- [ ] VSC-020 Test clean VSIX install without monorepo checkout.
+
+### 02 Cockpit UX
+- [ ] VSC-021 Define one primary agent entry point and navigation map.
+- [ ] VSC-022 Consolidate duplicate agent surfaces without deleting capabilities.
+- [ ] VSC-023 Unify provider setup and connection status.
+- [ ] VSC-024 Integrate plans, active mission and timeline navigation.
+- [ ] VSC-025 Integrate diagnostics, usage and audit without duplicate dashboards.
+- [ ] VSC-026 Complete loading/empty/error/offline/permission states.
+- [ ] VSC-027 Verify keyboard accessibility, themes and narrow panels.
+
+### 03 Providers and local-first
+- [ ] VSC-028 Finalize one provider adapter contract and registry.
+- [ ] VSC-029 Verify Ollama endpoint setup and connection test.
+- [ ] VSC-030 Verify model discovery and capability metadata.
+- [ ] VSC-031 Make provider/model selection explicit and observable.
+- [ ] VSC-032 Normalize streaming, timeout, cancellation, retry and errors.
+- [ ] VSC-033 Store credentials only in SecretStorage.
+- [ ] VSC-034 Verify full local workflow with network disabled.
+- [ ] VSC-035 Verify Gateway optionality and visible failure behavior.
+
+### 04 Agent execution
+- [ ] VSC-036 Document/test Ask, Plan, Ideate, Code, Debug and Autopilot boundaries.
+- [ ] VSC-037 Verify bounded context and sensitive-file exclusions.
+- [ ] VSC-038 Enforce plan-first execution for multi-step changes.
+- [ ] VSC-039 Enforce proposed diff, approval and conflict detection.
+- [ ] VSC-040 Propagate cancellation through provider and tools.
+- [ ] VSC-041 Restrict tools/terminal commands through policy engine.
+- [ ] VSC-042 Produce completion summary with changed files and evidence.
+
+### 05 Mission reliability
+- [ ] VSC-043 Finalize typed mission transitions and invariants.
+- [ ] VSC-044 Verify redacted persistence and schema versioning.
+- [ ] VSC-045 Verify interrupted recovery without automatic replay.
+- [ ] VSC-046 Verify explicit resume, cancellation and idempotency.
+- [ ] VSC-047 Verify remote replay protection and bounded repair.
+- [ ] VSC-048 Add extension-host evidence for timeline/recovery.
+
+### 09 Release 0.4.0
+- [ ] VSC-049 Run build, typecheck, lint and focused tests.
+- [ ] VSC-050 Run extension-host suite and record environment/results.
+- [ ] VSC-051 Run security and standalone checks.
+- [ ] VSC-052 Inspect VSIX contents and monorepo imports.
+- [ ] VSC-053 Install VSIX in clean profile and complete user journey.
+- [ ] VSC-054 Finalize README/setup/provider/troubleshooting/security docs.
+- [ ] VSC-055 Update changelog and release report with evidence/limitations.
+
+## P1 — 0.5.0
+- [ ] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture.
+- [ ] VSC-057 Dependency and documentation knowledge map.
+- [ ] VSC-058 Context memory with explicit scope, retention and controls.
+- [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria.
+- [ ] VSC-060 Workspace-aware mission templates.
+- [ ] VSC-061 Dependency-aware scheduling and progress synchronization.
+- [ ] VSC-062 Documentation drift detection and proposed updates.
+
+## P1 — 0.6.0
+- [ ] VSC-063 Define agent roles, tools, inputs, outputs and capabilities.
+- [ ] VSC-064 Add supervisor and bounded delegation.
+- [ ] VSC-065 Add researcher, builder and reviewer roles.
+- [ ] VSC-066 Add inter-agent message schema and trace correlation.
+- [ ] VSC-067 Add concurrency/resource limits and failure isolation.
+- [ ] VSC-068 Add review checkpoint before consequential actions.
+
+## P2 — 1.0.0
+- [ ] VSC-069 Model comparison/evaluation workflow.
+- [ ] VSC-070 Prompt laboratory and versioned prompt tests.
+- [ ] VSC-071 Token, latency, reliability and budget observability.
+- [ ] VSC-072 Opt-in mission scheduling.
+- [ ] VSC-073 Extension capability/plugin contribution contract.
+- [ ] VSC-074 Stable distribution, upgrade and support policy.
+
+## Dependency order
+00 → 01 → 02 → 03 → 04 → 05 → 09. 06 depends on stable 00–05. 07 depends on stable provider/agent/mission contracts. 08 is cross-cutting and must not weaken local-core security.
+
+No task is complete without implementation reference, tests, result, acceptance evidence and report update.
