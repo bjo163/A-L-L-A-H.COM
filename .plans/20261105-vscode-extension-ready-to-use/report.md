@@ -121,6 +121,19 @@ Code, Debug, and Autopilot requests are split into bounded actions. When multipl
 
 The host tests exercise plan rejection, approval, prompt handoff, and cancellation. The native modal is tested through VS Code's extension host; a manual UI click-through was not performed.
 
+## Explicit workspace memory
+
+The `Workspace Agent: Manage Saved Notes` command supports saving and clearing workspace-scoped notes with a confirmation step. Notes expire after 30 days, are stored in extension global state, and are redacted before storage and before use. The session context picker offers saved notes only when present and only includes them after the user selects that option. Host tests verify same-workspace isolation, opt-in context inclusion, consent, and clear behavior; unit tests verify persistence, defensive snapshots, and expiry.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 55 tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, twenty-six host tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 28 commands and 8 views |
+| `pnpm --filter allah-vscode-extension check-runtime` | Passed: 28 commands |
+
 ## SecretStorage enforcement
 
 Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set API Key` command remains the supported entry point, while activation retains a one-time migration path for previously configured values and removes them from settings. Host acceptance verified that the stored value is absent from configuration and is sent only to the configured local mock gateway as `x-virtual-key`.
@@ -170,7 +183,7 @@ Host tests hydrate a persisted running session as blocked with a `mission.interr
 
 | Command | Result |
 |---|---|
-| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty-four host tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty-six host tests |
 
 ## Roadmap claim audit
 

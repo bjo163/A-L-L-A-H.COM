@@ -65,7 +65,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 09 Release 0.4.0
 - [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repository gates are blocked by unrelated dirty `packages/arsy-orm/src/migrator.ts:612` parsing and a missing `rules.md` in another plan.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 24 tests total.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 26 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.
@@ -75,7 +75,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 ## P1 — 0.5.0
 - [x] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture. The context index now derives bounded metadata without sending source contents.
 - [x] VSC-057 Dependency and documentation knowledge map. Repository DNA now indexes dependency names and bounded documentation paths from workspace metadata.
-- [ ] VSC-058 Context memory with explicit scope, retention and controls. Unit-tested helper exists, but Workspace Agent does not yet expose or consume it.
+- [x] VSC-058 Context memory with explicit scope, retention and controls. Workspace notes are opt-in, scoped to a workspace URI, stored in extension global state with a 30-day TTL, redacted before storage/use, and included only after per-session context selection. Save and clear require confirmation.
 - [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria. Deterministic helper exists, but no plan/session workflow invokes it and it is not AI decomposition.
 - [x] VSC-060 Workspace-aware mission templates. The picker filters by indexed metadata, gathers variable values, and loads or queues the resulting prompt in Workspace Agent for review before sending.
 - [ ] VSC-061 Dependency-aware scheduling and progress synchronization. Typed task-graph helper exists, but it is not connected to `.plans` tasks or mission scheduling.

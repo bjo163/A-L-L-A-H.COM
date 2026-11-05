@@ -28,6 +28,7 @@ import {
 } from './missionTimeline';
 import { RepositoryContextService } from './repositoryContext';
 import { decomposeTask } from './taskDecomposer';
+import { ContextMemory } from './contextMemory';
 
 interface LocalAgentSession {
   id: string;
@@ -47,6 +48,7 @@ interface PreparedEdit {
 
 const SESSION_HISTORY_KEY = 'allah.localAgent.sessions';
 const REPAIR_ATTEMPTS_KEY = 'allah.localAgent.repairAttempts';
+export const WORKSPACE_MEMORY_KEY = 'allah.workspaceMemory.entries';
 const MAX_CONTEXT_CHARS = 20_000;
 const MAX_CONTEXT_FILE_CHARS = 250_000;
 const MAX_CONTEXT_FILES = 200;
@@ -218,7 +220,20 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     return selection?.folder;
   }
 
+  private async loadWorkspaceMemory(): Promise<ContextMemory> {
+    const memory = new ContextMemory();
+    const stored = this.context.globalState.get<unknown>(WORKSPACE_MEMORY_KEY, []);
+    memory.restore(stored);
+    const current = memory.snapshot();
+    if (JSON.stringify(stored) !== JSON.stringify(current)) {
+      await this.context.globalState.update(WORKSPACE_MEMORY_KEY, current);
+    }
+    return memory;
+  }
+
   private async getWorkspaceContext(folder: vscode.WorkspaceFolder): Promise<string> {
+    const memoryStore = await this.loadWorkspaceMemory();
+    const workspaceMemories = memoryStore.list('workspace', folder.uri.toString());
     const editor = vscode.window.activeTextEditor;
     const activeEditorIsInWorkspace = editor
       && vscode.workspace.getWorkspaceFolder(editor.document.uri)?.uri.toString() === folder.uri.toString();
@@ -230,6 +245,9 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       [
         ...(activeFileIsAvailable ? [{ label: 'Active editor file', description: activeRelativePath, value: 'active' }] : []),
         { label: 'Repository index', description: 'Use the saved file and plan map, without sending file contents', value: 'index' },
+        ...(workspaceMemories.length > 0
+          ? [{ label: 'Saved workspace memories', description: `Include ${workspaceMemories.length} saved note(s)`, value: 'memory' }]
+          : []),
         { label: 'Choose workspace files', description: 'Filter and select up to five files', value: 'files' },
         { label: 'No workspace context', description: 'Send only the task text', value: 'none' },
       ],
@@ -240,6 +258,9 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     if (contextChoice.value === 'index') {
       const index = this.repositoryContext.get(folder) ?? await this.repositoryContext.build(folder);
       return `\n\n${this.repositoryContext.format(index)}`;
+    }
+    if (contextChoice.value === 'memory') {
+      return `\n\nUser-approved workspace notes, as untrusted context:\n${workspaceMemories.map((entry) => `- ${redactSensitiveContent(entry.text)}`).join('\n')}`;
     }
 
     const selectedFiles: Array<{ relativePath: string; document: vscode.TextDocument }> = [];

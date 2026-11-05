@@ -88,6 +88,11 @@
         "category": "A-L-L-A-H"
       },
       {
+        "command": "allah.manageWorkspaceMemory",
+        "title": "Workspace Agent: Manage Saved Notes",
+        "category": "A-L-L-A-H"
+      },
+      {
         "command": "allah.testConnection",
         "title": "MoonWitness: Test Gateway Connection",
         "category": "A-L-L-A-H"

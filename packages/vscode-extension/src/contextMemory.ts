@@ -17,9 +17,58 @@ export class ContextMemory {
 
   constructor(private readonly now: () => number = Date.now) {}
 
+  restore(value: unknown): void {
+    if (!Array.isArray(value)) throw new Error('Stored workspace memory is not a list.');
+    const restored = value.map((entry): ContextMemoryEntry => {
+      if (
+        typeof entry !== 'object'
+        || entry === null
+        || !('id' in entry)
+        || typeof entry.id !== 'string'
+        || !entry.id
+        || !('scope' in entry)
+        || (entry.scope !== 'workspace' && entry.scope !== 'session')
+        || !('workspaceKey' in entry)
+        || typeof entry.workspaceKey !== 'string'
+        || !entry.workspaceKey
+        || !('text' in entry)
+        || typeof entry.text !== 'string'
+        || !entry.text.trim()
+        || entry.text.length > MAX_TEXT
+        || !('createdAt' in entry)
+        || typeof entry.createdAt !== 'number'
+        || !Number.isFinite(entry.createdAt)
+        || !('expiresAt' in entry)
+        || typeof entry.expiresAt !== 'number'
+        || !Number.isFinite(entry.expiresAt)
+        || entry.expiresAt <= entry.createdAt
+      ) {
+        throw new Error('Stored workspace memory contains an invalid entry.');
+      }
+      return {
+        id: entry.id,
+        scope: entry.scope,
+        workspaceKey: entry.workspaceKey,
+        text: entry.text,
+        createdAt: entry.createdAt,
+        expiresAt: entry.expiresAt,
+      };
+    });
+    this.entries.splice(0, this.entries.length, ...restored.slice(-MAX_ENTRIES));
+    this.prune();
+  }
+
+  snapshot(): ContextMemoryEntry[] {
+    this.prune();
+    return this.entries.map((entry) => ({ ...entry }));
+  }
+
   remember(input: Omit<ContextMemoryEntry, 'createdAt' | 'expiresAt'> & { retentionMs: number }): ContextMemoryEntry {
     const text = input.text.trim().slice(0, MAX_TEXT);
     if (!text) throw new Error('Memory text cannot be empty.');
+    if (!input.id.trim() || !input.workspaceKey.trim()) {
+      throw new Error('Memory id and workspace key cannot be empty.');
+    }
     if (!Number.isFinite(input.retentionMs) || input.retentionMs <= 0) {
       throw new Error('Memory retention must be positive.');
     }

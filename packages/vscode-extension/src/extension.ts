@@ -1,10 +1,13 @@
-﻿import * as path from 'path';
+import { randomUUID } from 'crypto';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { MoonWitnessClient } from './client';
 import { PlanTreeDataProvider } from './planTreeProvider';
 import { PlanManager, type PlanItem, type TaskItem, type TaskStatus } from './planManager';
-import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
-export { LocalAgentWorkbenchProvider };
+import { LocalAgentWorkbenchProvider, WORKSPACE_MEMORY_KEY } from './localAgentWorkbench';
+import { ContextMemory } from './contextMemory';
+import { redactSensitiveContent } from './localAgentCore';
+export { LocalAgentWorkbenchProvider, WORKSPACE_MEMORY_KEY };
 
 // Phase 1 Providers
 import { ProviderRegistry } from './providers/ProviderRegistry';
@@ -38,6 +41,8 @@ import { RepositoryContextService } from './repositoryContext';
 import { matchMissionTemplates } from './missionTemplateMatcher';
 
 export { MoonWitnessClient };
+
+const WORKSPACE_MEMORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 
 function isTaskItem(value: unknown): value is TaskItem {
   if (typeof value !== 'object' || value === null) {
@@ -424,6 +429,93 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('allah.focusLocalAgent', async () => {
       await vscode.commands.executeCommand('workbench.action.openView', LocalAgentWorkbenchProvider.viewType);
+    }),
+    vscode.commands.registerCommand('allah.manageWorkspaceMemory', async () => {
+      if (!vscode.workspace.isTrusted) {
+        vscode.window.showWarningMessage('Workspace Trust is required before managing workspace memory.');
+        return;
+      }
+      const folder = await chooseWorkspaceFolder();
+      if (!folder) return;
+
+      const memories = new ContextMemory();
+      try {
+        memories.restore(context.globalState.get<unknown>(WORKSPACE_MEMORY_KEY, []));
+        await context.globalState.update(WORKSPACE_MEMORY_KEY, memories.snapshot());
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Could not read workspace memory: ${error instanceof Error ? error.message : String(error)}`
+        );
+        return;
+      }
+
+      const saved = memories.list('workspace', folder.uri.toString());
+      const actions = [
+        { label: 'Save a workspace note', value: 'save' },
+        ...(saved.length > 0
+          ? [{ label: 'Clear saved workspace notes', description: `${saved.length} note(s)`, value: 'clear' }]
+          : []),
+      ];
+      const action = await vscode.window.showQuickPick(actions, {
+        placeHolder: `Manage notes for ${folder.name}`,
+      });
+      if (!action) return;
+
+      if (action.value === 'save') {
+        const text = await vscode.window.showInputBox({
+          title: 'Save Workspace Memory',
+          prompt: 'Enter a short note to offer as optional context in future agent sessions.',
+          placeHolder: 'A project convention or decision worth remembering',
+          validateInput: (value) => !value.trim()
+            ? 'Memory text cannot be empty.'
+            : value.length > 2_000 ? 'Memory text cannot exceed 2,000 characters.' : undefined,
+        });
+        if (text === undefined) return;
+
+        const approval = await vscode.window.showWarningMessage(
+          'Save this note for the selected workspace?',
+          {
+            modal: true,
+            detail: `Preview: ${redactSensitiveContent(text).slice(0, 200)}\n\nIt stays in this VS Code profile for 30 days. It is sent to a model only when you select Saved workspace memories as session context. Recognized credential-like values are redacted before storage.`,
+          },
+          'Save note'
+        );
+        if (approval !== 'Save note') return;
+
+        try {
+          memories.remember({
+            id: randomUUID(),
+            scope: 'workspace',
+            workspaceKey: folder.uri.toString(),
+            text: redactSensitiveContent(text),
+            retentionMs: WORKSPACE_MEMORY_RETENTION_MS,
+          });
+          await context.globalState.update(WORKSPACE_MEMORY_KEY, memories.snapshot());
+          vscode.window.showInformationMessage('Workspace note saved for 30 days.');
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            `Could not save workspace memory: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+        return;
+      }
+
+      const approval = await vscode.window.showWarningMessage(
+        `Clear ${saved.length} saved workspace note${saved.length === 1 ? '' : 's'}?`,
+        { modal: true, detail: 'This removes the notes from this VS Code profile.' },
+        'Clear notes'
+      );
+      if (approval !== 'Clear notes') return;
+
+      try {
+        memories.clearWorkspace(folder.uri.toString());
+        await context.globalState.update(WORKSPACE_MEMORY_KEY, memories.snapshot());
+        vscode.window.showInformationMessage('Saved workspace notes cleared.');
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Could not clear workspace memory: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }),
     vscode.commands.registerCommand('allah.setApiKey', async () => {
       const apiKey = await vscode.window.showInputBox({

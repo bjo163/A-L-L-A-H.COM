@@ -50,6 +50,10 @@ service to activate or manage local projects.
 - Multi-step Code, Debug, and Autopilot requests show an implementation plan
   for approval before requesting an edit proposal. Code and Debug edits still
   require their normal separate approval.
+- Manage saved workspace notes with `Workspace Agent: Manage Saved Notes`.
+  Notes are stored in the VS Code profile for 30 days and are sent only when
+  selected as context for a session. Credential-like text is redacted before
+  storage and again before use. Do not store sensitive or personal information.
 - The Workspace Agent checks the selected provider before every session,
   discovers Ollama models from `/api/tags`, and lets you select an installed
   model. It never switches providers silently.

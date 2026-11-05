@@ -47,12 +47,89 @@ suite('A-L-L-A-H.COM extension host', () => {
       'allah.refreshPlans',
       'allah.searchWorkspace',
       'allah.runApprovedTask',
+      'allah.manageWorkspaceMemory',
     ]) {
       assert.ok(commands.includes(command), `expected registered command ${command}`);
     }
   });
 
   if (Number(process.env.ALLAH_EXPECTED_WORKSPACE_ROOTS) === 1) {
+    test('workspace memory is opt-in and saved notes are scoped to one workspace', async () => {
+      const provider = createLocalAgentProvider({});
+      const memoryKey = 'allah.workspaceMemory.entries';
+      const root = vscode.workspace.workspaceFolders[0];
+      await provider.context.globalState.update(memoryKey, [{
+        id: 'memory-for-this-workspace',
+        scope: 'workspace',
+        workspaceKey: root.uri.toString(),
+        text: 'Use pnpm for package scripts.',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 60_000,
+      }, {
+        id: 'memory-for-another-workspace',
+        scope: 'workspace',
+        workspaceKey: 'file:///unrelated-workspace',
+        text: 'Do not include this note.',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 60_000,
+      }]);
+
+      const originalQuickPick = vscode.window.showQuickPick;
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'memory');
+        const context = await provider.getWorkspaceContext(root);
+        assert.ok(context.includes('Use pnpm for package scripts.'));
+        assert.equal(context.includes('Do not include this note.'), false);
+
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        assert.equal(await provider.getWorkspaceContext(root), '');
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+      }
+    });
+
+    test('workspace memory command requires consent to save and clear notes', async () => {
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalInputBox = vscode.window.showInputBox;
+      const originalWarning = vscode.window.showWarningMessage;
+      const originalInformation = vscode.window.showInformationMessage;
+      const warningDetails = [];
+      const quickPickCalls = [];
+      const information = [];
+      try {
+        vscode.window.showQuickPick = async (items) => {
+          quickPickCalls.push(items.map((item) => item.value));
+          const target = quickPickCalls.length === 1 ? 'save' : 'clear';
+          return items.find((item) => item.value === target);
+        };
+        vscode.window.showInputBox = async () => 'Use pnpm. api_key=host-memory-secret';
+        vscode.window.showWarningMessage = async (message, options) => {
+          warningDetails.push({ message, detail: options?.detail });
+          return message.startsWith('Save this note') ? 'Save note' : 'Clear notes';
+        };
+        vscode.window.showInformationMessage = async (message) => {
+          information.push(message);
+        };
+
+        await vscode.commands.executeCommand('allah.manageWorkspaceMemory');
+        await vscode.commands.executeCommand('allah.manageWorkspaceMemory');
+
+        assert.ok(warningDetails[0].detail.includes('30 days'));
+        assert.ok(warningDetails[0].detail.includes('select Saved workspace memories'));
+        assert.ok(quickPickCalls[1].includes('clear'));
+        assert.ok(warningDetails[1].message.includes('1 saved workspace note'));
+        assert.deepEqual(information, [
+          'Workspace note saved for 30 days.',
+          'Saved workspace notes cleared.',
+        ]);
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showInputBox = originalInputBox;
+        vscode.window.showWarningMessage = originalWarning;
+        vscode.window.showInformationMessage = originalInformation;
+      }
+    });
+
     test('repository index prefers the workspace root package manifest', async () => {
       const provider = createLocalAgentProvider({});
       const index = await provider.repositoryContext.build(vscode.workspace.workspaceFolders[0]);
