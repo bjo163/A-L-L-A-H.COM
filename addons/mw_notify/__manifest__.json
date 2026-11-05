@@ -1,0 +1,12 @@
+{
+  "name": "mw_notify",
+  "version": "0.1.0",
+  "category": "Infrastructure",
+  "summary": "MW Notify - outbound notification channels, templates, and event log",
+  "depends": ["base", "project"],
+  "models": ["notify.channel", "notify.template", "notify.event"],
+  "views": ["views/notify_channel_views.json", "views/notify_event_views.json"],
+  "data": ["data/index.ts"],
+  "installable": true,
+  "application": true
+}
