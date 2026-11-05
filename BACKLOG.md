@@ -9,6 +9,14 @@ last_verified: "2026-11-03"
 
 # BACKLOG.md
 
+## VSCODE-COCKPIT-READY-TO-USE: A-L-L-A-H Developer Cockpit evolution
+- Priority: P0
+- Status: PLANNING BASELINE PUBLISHED; IMPLEMENTATION NOT STARTED
+- Outcome: Added product narrative, architecture blueprint, master specification, local-agent execution rules, 74-task roadmap, and ten phase plans for VS Code extension readiness.
+- Acceptance: Release 0.4.0 requires manifest/runtime parity, extension-host verification, local Ollama journey, optional Gateway behavior, approved edit/validation workflow, mission recovery/replay, security checks, and clean standalone VSIX installation.
+- Verification: Documentation publication only. No extension source changes or tests were performed by this plan-generation commit. Interactive extension-host verification remains a release blocker.
+- Plan: `.plans/20261105-vscode-extension-ready-to-use/`
+
 ## VSCODE-MISSION-TIMELINE: Observable and replay-safe workspace agent missions
 - Priority: P0
 - Status: IMPLEMENTED; INTERACTIVE SMOKE PENDING
