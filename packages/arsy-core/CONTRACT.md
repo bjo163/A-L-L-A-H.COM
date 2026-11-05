@@ -6,8 +6,8 @@ name: @allah/arsy-core
 owner: platform-core
 version: 1.0.0
 status: released
-last_verified: 2026-02-10
-summary: Shared kernel for response envelope errors logging and config
+last_verified: 2026-11-05
+summary: Shared kernel for app services and resolver-aware outbound HTTP
 publicSurface: [logger, AppError, resolveLocalSecret, ssrfSafeFetch, validatePublicUrlSsrf]
 depends: []
 ---

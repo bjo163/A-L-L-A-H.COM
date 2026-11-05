@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "baseUrl": ".",
     "rootDir": "../../",
-    "paths": {
-      "@allah/arsy-orm": ["../../packages/arsy-orm/dist/index.d.ts"]
-    },
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

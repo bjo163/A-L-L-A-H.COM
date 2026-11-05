@@ -6,7 +6,7 @@ name: @allah/sentinel
 owner: network
 version: 0.1.0
 status: released
-last_verified: 2026-02-10
+last_verified: 2026-11-05
 summary: RADIUS auth accounting and change-of-authorization daemon for NAS control
 routes: []
 ports: [1812, 1813, 3799, 9181]
@@ -40,4 +40,4 @@ The sync and alert throttles are configurable:
 The builder and runner must copy the complete `addons/` tree. `src/server.ts`
 loads `addons/index.ts`, whose registry imports every installable addon before
 selecting the `nexus` and `mw_notify` roots at startup. It idempotently seeds the
-notification template catalog after schema synchronization.
+base catalog and notification templates after schema synchronization.

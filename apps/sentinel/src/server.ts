@@ -20,6 +20,7 @@ import {
 } from '@allah/sentinel-radius';
 import { registerAddonsFor } from '../../../addons/index';
 import { recordNotifyEvent } from '../../../addons/mw_notify/services/events';
+import { loadDefaultData as loadBaseDefaultData } from '../../../addons/base/data/index';
 import { loadDefaultData as loadNotifyDefaultData } from '../../../addons/mw_notify/data/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
@@ -622,14 +623,16 @@ async function startSentinel() {
   const migrator = await import('@allah/arsy-orm').then(m => new m.SchemaMigrator(dbEngine));
   await migrator.sync();
   logger.info('Database schema synchronized');
-  await loadNotifyDefaultData({
-    repository: (modelName) => {
+  const seedContext = {
+    repository: (modelName: string) => {
       const model = modelRegistry.get(modelName);
-      if (!model) throw new Error(`Cannot seed Sentinel notification data: model '${modelName}' is not registered`);
+      if (!model) throw new Error(`Cannot seed Sentinel data: model '${modelName}' is not registered`);
       return new BaseRepository(model, dbEngine, dbEngine);
     },
     actor: SYSTEM_ACTOR,
-  });
+  };
+  await loadBaseDefaultData(seedContext);
+  await loadNotifyDefaultData(seedContext);
   logger.info('Notification templates synchronized');
 
   // Subscribe to the cross-app sync outbox so rotated NAS secrets drop stale

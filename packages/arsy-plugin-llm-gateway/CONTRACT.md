@@ -6,9 +6,9 @@ name: @allah/arsy-plugin-llm-gateway
 owner: ai-platform
 version: 1.0.0
 status: released
-last_verified: 2026-02-10
+last_verified: 2026-11-05
 summary: Multi-provider LLM routing gateway with caching usage and circuit breaking
-publicSurface: [SmartRouter, GatewayCache, UsageManager, deviceControlPlugin]
+publicSurface: [SmartRouter, GatewayCache, UsageManager, deviceControlPlugin, validateUrlSsrf, ssrfSafeFetch]
 depends: [@allah/arsy-core, @allah/arsy-orm, @moonwitness/types]
 ---
 
