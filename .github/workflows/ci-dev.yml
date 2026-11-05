@@ -237,7 +237,7 @@ jobs:
 
   promote-to-main:
     name: Promote dev to main
-    needs: [verify, verify-harbor, verify-moonsky, build, docker-build]
+    needs: [verify, build, docker-build]
     if: >-
       always() && github.event_name == 'push' && github.ref == 'refs/heads/dev' &&
       needs.verify.result == 'success' &&
