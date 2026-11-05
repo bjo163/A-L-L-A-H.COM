@@ -7,7 +7,7 @@ status: "planned"
 target_repo: "bjo163/A-L-L-A-H.COM"
 target_branch: "dev"
 created: "2026-11-05"
-parent_plan: "../../.plans/20261105-moon-ui-master-consolidation/spec.md"
+parent_plan: "../20261105-moon-ui-master-consolidation/spec.md"
 ---
 
 # @moonwitness/ui — Package-Core Delivery Plan
