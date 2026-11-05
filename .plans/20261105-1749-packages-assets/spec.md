@@ -1,6 +1,6 @@
 ---
 id: packages-assets
-status: in_progress
+status: completed
 owner: design-system
 last_verified: 2026-11-05
 ---

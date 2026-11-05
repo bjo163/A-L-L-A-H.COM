@@ -11,7 +11,7 @@
 - [x] Gitignore synced `public/` copies and managed favicons
 - [x] Update BLUEPRINT.md and DECISIONS.md; regenerate contract index
 - [x] Verify: `ui:test` 78/78, docker/platform/contract gates for assets pass
-- [x] Un-track the duplicated files via `git rm --cached` (index now shows `D` for 34 public/brand/favicon paths)
-- [x] Verify scoped gates in isolation: `ui:test` 78/78, `docker:contract:check` 10 apps, `platform:contract:check` 10 apps, `contract:check`/`lint:arch` clean for `packages/assets`
-- [ ] `verify:fast` full-chain green — BLOCKED by concurrent unrelated work in `addons/base` (new `ir_model_access.ts`/`ir_rule.ts` missing `company_id`, undeclared in `__manifest__.json`, stale `CONTRACT.md`); not an assets defect
-- [ ] Commit and push (paused for operator approval; working tree carries unrelated in-progress work — must not be swept into this commit)
+- [x] Un-track the duplicated files via `git rm --cached` (34 public/brand/favicon paths removed from index)
+- [x] Commit the assets-scoped paths (commit `39adafe`; concurrent arsy-orm access-control work landed in `165a641`)
+- [ ] `verify:fast` repo-wide green — blocked only by two untracked other-workstream plan dirs (`.plans/20261106-skin-laboratory-home`, `.plans/20261106-sdk-cross-app-integration`) missing `rules.md`; not an assets defect
+- [ ] Push (held; pre-push runs `verify:fast`, so it waits on the same external dirs)

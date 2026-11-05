@@ -1,7 +1,8 @@
 # Report: packages/assets
 
-Status: implementation complete and locally verified. Commit/push paused for the
-operator, because the working tree carries unrelated in-progress work.
+Status: implemented, verified, and committed locally (commit `39adafe`). Push held
+because the repo-wide `verify:fast` is blocked only by two untracked
+other-workstream plan dirs missing `rules.md` — unrelated to this package.
 
 ## Deliverables
 - `packages/assets` (`@moonwitness/assets`): 7 worlds x (png+svg), 8 canonical brand
