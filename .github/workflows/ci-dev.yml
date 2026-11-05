@@ -160,7 +160,7 @@ jobs:
       - name: Design system tests
         env:
           GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
-        run: node scripts/run-gate.mjs 'UI tests' pnpm ui:test
+        run: pnpm assets:sync && node scripts/run-gate.mjs 'UI tests' pnpm ui:test
       - name: Skin contrast
         env:
           GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl

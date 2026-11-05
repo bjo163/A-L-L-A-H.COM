@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "18b2df945721d542b47330df10cc7ab83f127be5614f9ce2dddbfbbc724d1666",
+  "source_digest": "f94ff58d1d1379d350d8f85b45b5683306c2e7efc2533e49ac4c71181e263f69",
   "units": [
     {
       "dir": "addons/base",
@@ -16,7 +16,9 @@
           "res.users",
           "ir.ui.view",
           "res.lang",
-          "ir.translation"
+          "ir.translation",
+          "ir.model.access",
+          "ir.rule"
         ],
         "data": [
           "data/index.ts"
@@ -29,10 +31,10 @@
       "id": "ADDON_BASE",
       "name": "base",
       "owner": "platform-core",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "status": "released",
-      "last_verified": "2026-02-10",
-      "summary": "Core enterprise entity registry and platform reference data",
+      "last_verified": "2026-11-05",
+      "summary": "Core enterprise entity registry, access-control models, and platform reference data",
       "manifest": {
         "name": "base",
         "models": [
@@ -43,7 +45,9 @@
           "res.users",
           "ir.ui.view",
           "res.lang",
-          "ir.translation"
+          "ir.translation",
+          "ir.model.access",
+          "ir.rule"
         ],
         "data": [
           "data/index.ts"
@@ -652,7 +656,15 @@
           "TransactionContext",
           "withTransaction",
           "ComputeHandler",
-          "OrderedMigration"
+          "OrderedMigration",
+          "assertTransactional",
+          "AclMode",
+          "resolveAclMode",
+          "AccessDeniedError",
+          "PersistedRule",
+          "composeRuleDomain",
+          "ModelConstraint",
+          "ConstraintContext"
         ],
         "depends": [
           "@allah/arsy-core"
@@ -661,10 +673,10 @@
       "id": "PKG_ARSY_ORM",
       "name": "@allah/arsy-orm",
       "owner": "platform-core",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "status": "released",
       "last_verified": "2026-11-05",
-      "summary": "ARSY query-layer ORM model registry repositories and the default-data seeder"
+      "summary": "ARSY query-layer ORM model registry repositories, access control, and the default-data seeder"
     },
     {
       "dir": "packages/arsy-plugin-auth",
@@ -854,10 +866,7 @@
       "tier": "package",
       "lists": {
         "publicSurface": [
-          "SkinRoot",
-          "SkinSelector",
-          "SkinPreferenceScope",
-          "useSkinPreference"
+          "SkinRoot"
         ],
         "depends": [
           "@moonwitness/types"
@@ -870,6 +879,21 @@
       "status": "released",
       "last_verified": "2026-02-10",
       "summary": "Design-system component library primitives blocks and skin root"
+    },
+    {
+      "dir": "packages/vscode-extension",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [],
+        "depends": []
+      },
+      "id": "PKG_VSCODE_EXTENSION",
+      "name": "allah-vscode-extension",
+      "owner": "developer-experience",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "VS Code extension surfacing missions health and usage dashboards"
     }
   ]
 }

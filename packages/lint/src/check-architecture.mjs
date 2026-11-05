@@ -1173,6 +1173,27 @@ function checkStylePurity(baseline) {
   }
 }
 
+// 12b. RULE: ASSET_PURITY
+// Copies of artwork, brand and fonts must not be tracked in git — they are
+// auto-synced from @moonwitness/assets at predev/prebuild. Any tracked copy
+// signals a drifted working tree that will eventually break ui:test on clean checkout.
+function checkAssetPurity() {
+  const assetFiles = execSync(
+    `git ls-files 'apps/*/public/artwork/*' 'apps/*/public/brand/*' 'apps/*/public/fonts/*'`,
+    { encoding: 'utf8' }
+  ).trim();
+  if (assetFiles) {
+    const files = assetFiles.split('\n').filter((f) => f.trim());
+    for (const file of files) {
+      addViolation(
+        'ASSET_PURITY',
+        file,
+        `Tracked asset copy detected: '${file}'. Asset copies must be git-rm --cached; sync.mjs regenerates them at predev/prebuild.`
+      );
+    }
+  }
+}
+
 // 12. RULE: INLINE_STYLE_PURITY
 // Colour and type must not be painted inline, because an inline style cannot be themed by a skin.
 function checkInlineStylePurity(baseline) {
