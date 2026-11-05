@@ -75,6 +75,10 @@ When the Workspace Agent view is not yet resolved, a selected template is queued
 
 The final VSIX was rebuilt and installed in the active VS Code profile. `code --list-extensions --show-versions` confirmed `a-l-l-a-h.allah-vscode-extension@0.3.0`.
 
+## Agent entry and navigation
+
+The README now identifies Workspace Agent as the primary coding entry point and maps plans, provider configuration, health, usage, and audit views. Extension-host command tests assert that exactly one Workspace Agent view is contributed. The separate remote-swarm capability inventory remains open under VSC-022.
+
 ## SecretStorage enforcement
 
 Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set API Key` command remains the supported entry point, while activation retains a one-time migration path for previously configured values and removes them from settings. Host acceptance verified that the stored value is absent from configuration and is sent only to the configured local mock gateway as `x-virtual-key`.
@@ -83,7 +87,8 @@ Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set 
 |---|---|
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm extension:test` | Passed: 46 tests |
-| `pnpm exec eslint packages/vscode-extension/src packages/vscode-extension/test --max-warnings 0` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, ten host tests |
 
 ## Roadmap claim audit

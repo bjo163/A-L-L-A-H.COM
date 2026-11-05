@@ -13,6 +13,13 @@ service to activate or manage local projects.
 - Local and gateway-generated plans contain `spec.md`, `task.md`, `design.md`, and `rules.md`.
 - Choose a workspace folder when more than one root is open.
 
+## Navigation
+
+- Start coding work in `Workspace Agent: Focus`.
+- Browse plan artifacts in `Project Manager (.plans)`.
+- Configure providers with `LLM: Configure Providers` and store a gateway key with `MoonWitness: Set API Key`.
+- Open provider health, usage, and audit tools from the MoonWitness activity bar.
+
 ## Coding workflow
 
 - The Workspace Agent supports Ask, Plan, Ideate, Code, Debug, and Autopilot

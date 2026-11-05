@@ -28,8 +28,8 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-020 Install the VSIX in isolated user-data and extension directories, then verify its installed identifier and version without a monorepo checkout.
 
 ### 02 Cockpit UX
-- [ ] VSC-021 Define one primary agent entry point and navigation map.
-- [ ] VSC-022 Consolidate duplicate agent surfaces without deleting capabilities.
+- [x] VSC-021 Define one primary agent entry point and navigation map. README names Workspace Agent as the start point and maps the plan, provider, health, usage, and audit destinations; host test asserts exactly one contributed agent view.
+- [ ] VSC-022 Consolidate duplicate agent surfaces without deleting capabilities. The extension contributes one agent view, but preservation of removed remote-swarm capabilities remains unverified.
 - [ ] VSC-023 Unify provider setup and connection status.
 - [ ] VSC-024 Integrate plans, active mission and timeline navigation.
 - [ ] VSC-025 Integrate diagnostics, usage and audit without duplicate dashboards.
@@ -64,7 +64,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-048 Add extension-host evidence for timeline/recovery.
 
 ### 09 Release 0.4.0
-- [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source/test lint, unit tests, and host tests passed; repo-wide lint remains unrun because unrelated files are dirty.
+- [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repo-wide lint remains unrun because unrelated files are dirty.
 - [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 10 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.

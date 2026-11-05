@@ -22,6 +22,8 @@ suite('A-L-L-A-H.COM extension host', () => {
     assert.ok(extension, 'extension must be discoverable by its published identifier');
     await extension.activate();
     assert.equal(extension.isActive, true);
+    const views = extension.packageJSON.contributes.views['allah-explorer'];
+    assert.equal(views.filter((view) => view.id === 'allah.localAgentWorkbench').length, 1);
 
     const commands = await vscode.commands.getCommands(true);
     for (const command of [
