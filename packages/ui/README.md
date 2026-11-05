@@ -425,3 +425,93 @@ All six worlds must implement the same semantic state contract while expressing 
 ## 12.12 Delivery principle
 
 The intended end state is a complete, documented, testable design-and-media system. Build it in coherent releases: foundations → identity → atoms → controls → compositions → asset foundries → motion/effects → sound → generators → certification. A catalog entry is not complete until it is implemented, tested, integrated, and visually verified.
+
+
+---
+
+# 13. Premium Platform Parity — Beyond a Template Library
+
+Moon UI must compete with the breadth and finish of mature premium interface systems while retaining a visual identity no purchased template can provide. The benchmark is **capability parity, not visual imitation**. Do not copy proprietary layouts, artwork, icon sets, sounds, or signature interactions.
+
+## 13.1 Product-grade coverage
+
+A premium system is not complete because it has many buttons. It must cover the real lifecycle of an application:
+
+- **Application shells:** public gateway, authenticated workspace, immersive reader, operations cockpit, community portal, archive, settings and account center.
+- **Navigation:** global, local, contextual, hierarchical, command-driven, spatial and mobile navigation.
+- **Forms:** simple, multi-step, conditional, repeatable, validated, autosaved, review-and-submit and destructive confirmation flows.
+- **Data experiences:** tables, filters, saved views, comparison, activity history, audit trail, timeline, graph, map, chart and export states.
+- **Content:** editorial index/detail, long-form reading, media gallery, chapter reader, knowledge base, changelog, release notes and discussion.
+- **Identity:** profile, avatar, membership, role, permissions, session, access request and account recovery.
+- **Communication:** inbox, notification center, comments, mentions, threads, announcements and transmission feed.
+- **Operations:** command palette, task queue, job detail, logs, system status, configuration, secrets, integration and diagnostics.
+- **Commerce-ready patterns:** plans, entitlement comparison, checkout summary, invoice, payment status and subscription history only where a real product workflow requires them.
+- **Spatial experiences:** maps, node graphs, topology, constellation, orbit, route and location detail.
+- **Media:** image, video, audio, transcript, playlist, waveform, cover, poster and fullscreen viewing.
+- **System states:** first run, loading, streaming, empty, no results, partial results, stale, offline, forbidden, expired, rate limited, failed, retrying, success and maintenance.
+
+## 13.2 Premium application archetypes
+
+Build composable archetypes rather than shipping one giant shell:
+1. **Empire Gateway:** cinematic public entry, world discovery and destination transition.
+2. **Community Dock:** member identity, activity, discussions, announcements and shared media.
+3. **Operations Cockpit:** dense, precise control surfaces for people who need information quickly.
+4. **Headquarter:** strategic overview, governance, cross-system navigation and executive context.
+5. **MoonWitness Archive:** chapters, transmissions, timelines, source notes and universe index.
+6. **Immersive Reader:** distraction-controlled long-form narrative and media.
+7. **Instrument Workspace:** diagnostics, logs, configuration and live operational tools.
+8. **Identity Center:** profile, avatar, access, sessions, preferences and security.
+9. **Knowledge Observatory:** searchable documents, taxonomy, references and linked knowledge.
+10. **Creative Foundry:** asset, skin, icon, vector, artwork, motion and sound production.
+11. **Map & Network Explorer:** grounded geographic or relationship visualization.
+12. **Settings Workbench:** grouped preferences, integrations, permissions and destructive actions.
+
+Each archetype has a layout contract, navigation model, responsive behavior, state matrix and DNA-specific presentation recipes. The archetype must not own application data or duplicate domain logic.
+
+## 13.3 Advanced component and pattern coverage
+
+The target catalog additionally includes:
+- **Data visualization:** ChartFrame, LineChart, AreaChart, BarChart, PieChart, ScatterPlot, Heatmap, Sparkline, Legend, Axis, TooltipLayer, DataTableBridge. Charts must expose accessible summaries and tabular alternatives.
+- **Rich content:** RichText, MarkdownRenderer, TableOfContents, Footnote, Citation, Callout, Quote, CodeEditorFrame, DiffViewer, SyntaxBlock, MathBlock, MediaEmbed.
+- **Communication:** Thread, Message, Composer, MentionPicker, ReactionBar, CommentAnchor, ActivityComposer, InboxRow.
+- **Workflow:** Stepper, Wizard, ReviewPanel, ApprovalRail, TaskQueue, JobStatus, AuditEvent, RetryPanel, ConflictResolver.
+- **Security and account:** PasswordField, PasskeyPrompt, SessionList, PermissionMatrix, RoleBadge, AccessRequest, RecoveryCodeList, SecretReveal, CopySecret, ExpiryNotice. Sensitive values must default to masked and never be written into logs.
+- **Navigation and command:** GlobalSearch, SearchResults, RecentItems, QuickActions, CommandGroup, KeyboardHint, BreadcrumbTrail, MobileNavigationSheet.
+- **Calendar and time:** CalendarGrid, Agenda, DateRangePicker, TimeZoneSelect, RelativeTime, EventMarker, ScheduleTimeline.
+- **File and asset:** FileCard, FileList, UploadQueue, UploadProgress, AssetPicker, AssetPreview, MetadataEditor, VersionHistory.
+- **Spatial:** MapCanvas, MapLegend, LayerControl, CoordinateReadout, RouteLine, NodeInspector, GraphLegend, Minimap, ViewportControls.
+- **Media:** VideoFrame, AudioPlayer, Waveform, Transcript, CaptionTrack, Gallery, Lightbox, FullscreenStage.
+- **Advanced feedback:** InlineValidation, FieldErrorSummary, ConnectionStatus, SyncStatus, SaveIndicator, UndoToast, ConflictBanner, MaintenanceNotice.
+
+## 13.4 Interaction recipes
+
+Document complete behavior recipes, not isolated components:
+- search → filter → sort → inspect → act;
+- create → validate → review → confirm → receipt;
+- upload → progress → processing → preview → publish;
+- invite → accept → assign role → revoke;
+- select asset → crop → preview → approve → export;
+- open archive → navigate timeline → read chapter → follow references;
+- monitor job → inspect logs → retry/cancel → verify result;
+- configure integration → test connection → reveal status → rotate/revoke credential;
+- explore map → select layer → inspect point → open detail;
+- notification → open source → mark read → manage preference.
+
+Each recipe includes success, failure, cancellation, timeout, empty and permission-denied paths.
+
+## 13.5 Premium finish standards
+
+- Optical alignment is measured by visual balance, not only equal CSS spacing.
+- Typography uses deliberate line length, rhythm, hierarchy, numeral alignment and truncation rules.
+- Surfaces have controlled contrast and material response; avoid universal glassmorphism.
+- Every interaction has immediate feedback, clear focus, stable hit target and interruptible motion.
+- Responsive layouts are composed for each viewport, not merely shrunk.
+- Loading never blocks access without a real reason.
+- Artwork and media have intentional crops, focal points, and safe areas.
+- Empty states explain what is absent and what action is possible.
+- Error states explain recovery without exposing secrets or stack traces.
+- Data-heavy interfaces support density modes without becoming generic dashboard grids.
+
+## 13.6 Quality parity rule
+
+A component catalog item is not a delivered capability. A capability is delivered only when its public API, accessibility, responsive states, skin recipes, tests, documentation, visual fixture and at least one real consuming workflow are complete.
