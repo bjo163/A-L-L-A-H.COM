@@ -1,9 +1,11 @@
-# Work Items
+# Work Items — Superseded
 
-- [/] Inventorying six-world artwork consumers, existing assets, and transfer-size baselines.
-- [ ] Defining DNA-specific visual rules and preserving one source of truth for shared/public art.
-- [ ] Producing detailed original vector scenes for all six worlds.
-- [ ] Integrating matching public artwork previews in every consuming app route.
-- [ ] Re-composing the ID login for a mobile-first primary action without changing auth behavior.
-- [ ] Verifying responsive rendering, accessibility, motion controls, UI tests, contrast, and app builds.
-- [ ] Recording exact verification results and remaining blockers.
+Execution of this predecessor plan is closed to prevent duplicate work.
+
+All unfinished tasks are transferred to [Moon UI Master Consolidation task.md](../20261105-moon-ui-master-consolidation/task.md):
+- Inventory and DNA rules: MU-0007–MU-0020, MU-0601–MU-0602.
+- Detailed six-world art and app integration: MU-0603–MU-0617.
+- Signature world compositions: MU-0414–MU-0435.
+- Mobile, accessibility, motion and build verification: MU-0901–MU-0929.
+
+Do not mark the transferred work complete here. Execute and track it only in the master plan. Preserve this file as a historical pointer.
