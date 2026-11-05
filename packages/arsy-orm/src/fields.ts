@@ -37,6 +37,9 @@ export interface FieldDefinition<T = unknown> {
   compute?: string;
   related?: string;
   store?: boolean;
+  // DECIMAL(precision, scale) wiring the migrator already reads for 'decimal'.
+  precision?: number;
+  scale?: number;
   // many2one FK behavior: ondelete controls what happens when the referenced
   // record is deleted. Defaults to 'set null' for optional fields, 'restrict'
   // for required fields.

@@ -927,7 +927,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     }, scope, actor);
 
     // Evaluate alert conditions (WATCHTOWER integration)
-    await evaluateTelemetryAlert(telemetry, actor);
+    await evaluateTelemetryAlert(telemetry as Parameters<typeof evaluateTelemetryAlert>[0], actor);
 
     return ok({ success: true, recorded_at: telemetry.recorded_at }, { totalItems: 1 });
   });
