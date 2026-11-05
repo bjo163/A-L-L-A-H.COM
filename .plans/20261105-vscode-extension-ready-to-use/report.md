@@ -39,6 +39,19 @@
 Live Ollama model execution, extension webview click-through, and persisted timeline recovery are not covered by these host tests.
 When using the already-running VS Code executable, the host runner logs a shared-storage mutex warning and falls back to in-memory storage; all extension-host suites still exit successfully.
 
+## Standalone boundary correction
+
+- Replaced the remaining `@moonwitness/types` type-only import with extension-owned contracts.
+- Removed the workspace dependency from the extension manifest and lockfile.
+- Tightened the standalone checker to reject every `@allah/*` and `@moonwitness/*` import/dependency. Plain command strings such as the approved Arsy build command are not treated as imports.
+
+| Command | Result |
+|---|---|
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm --filter allah-vscode-extension check-standalone` | Passed with no workspace imports or dependencies |
+| `pnpm extension:test` | Passed: 45 tests |
+| `pnpm --filter allah-vscode-extension build` | Passed |
+
 ## Limitations
 
 - A VS Code extension-host harness is not available in the current repository, so activation, webview click-through, multi-root, clean-profile installation, and reload/recovery acceptance remain unverified.

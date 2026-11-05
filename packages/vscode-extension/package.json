@@ -325,9 +325,6 @@
     "check-manifest": "node ../../scripts/check-vscode-extension-manifest.mjs",
     "check-package": "node ../../scripts/check-vscode-extension-package.mjs"
   },
-  "dependencies": {
-    "@moonwitness/types": "workspace:*"
-  },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.10.1",

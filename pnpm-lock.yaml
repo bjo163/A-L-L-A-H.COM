@@ -949,10 +949,6 @@ importers:
         version: 5.9.3
 
   packages/vscode-extension:
-    dependencies:
-      '@moonwitness/types':
-        specifier: workspace:*
-        version: link:../types
     devDependencies:
       '@types/mocha':
         specifier: ^10.0.10

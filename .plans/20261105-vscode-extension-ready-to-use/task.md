@@ -13,7 +13,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-007 Identify legacy/dead code and monorepo-only runtime imports.
 - [x] VSC-008 Audit Workspace Trust, paths, webviews, secrets and shell tools.
 - [x] VSC-009 Produce source-of-truth matrix and disposition decisions.
-- [x] VSC-010 Confirm package scripts, bundle entrypoints and standalone dependency graph.
+- [x] VSC-010 Confirm package scripts, bundle entrypoints and standalone dependency graph. Extension contracts are local; no workspace package dependency remains.
 
 ### 01 Runtime and extension-host
 - [x] VSC-011 Extend parity to every contributed command and view.

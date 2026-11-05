@@ -7,7 +7,6 @@ const extensionRoot = path.join(root, 'packages', 'vscode-extension');
 const manifest = JSON.parse(await readFile(path.join(extensionRoot, 'package.json'), 'utf8'));
 const sourceRoot = path.join(extensionRoot, 'src');
 
-const forbiddenImports = ['@allah/sdk'];
 const sourceFiles = [];
 const pending = [sourceRoot];
 while (pending.length > 0) {
@@ -22,15 +21,14 @@ while (pending.length > 0) {
 const violations = [];
 for (const filePath of sourceFiles) {
   const source = await readFile(filePath, 'utf8');
-  for (const forbidden of forbiddenImports) {
-    if (source.includes(forbidden)) {
-      violations.push(`${path.relative(root, filePath)} imports ${forbidden}`);
-    }
+  const importPattern = /\b(?:from\s*|import\s*\(\s*|import\s*)['"](@(?:allah|moonwitness)\/[^'"]+)['"]/g;
+  for (const match of source.matchAll(importPattern)) {
+    violations.push(`${path.relative(root, filePath)} imports ${match[1]}`);
   }
 }
 
 for (const dependency of Object.keys(manifest.dependencies ?? {})) {
-  if (dependency.startsWith('@allah/') || (dependency.startsWith('@moonwitness/') && dependency !== '@moonwitness/types')) {
+  if (dependency.startsWith('@allah/') || dependency.startsWith('@moonwitness/')) {
     violations.push(`package.json declares monorepo dependency ${dependency}`);
   }
 }
