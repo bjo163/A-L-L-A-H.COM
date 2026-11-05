@@ -4,7 +4,7 @@ id: "PLAN_ORM_ODOO_STANDARDIZATION_TASK"
 version: "1.0.0"
 owner: "engineering"
 status: "in_progress"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 # Task Ledger: ORM Odoo-style Standardization
 
@@ -31,9 +31,9 @@ Legend for this reconciliation: `[/]` = mechanism shipped + unit-tested, but the
 - [x] S2.verify Full ORM suite green (102 tests); report.md evidence
 
 ## S3 Access layer (audit-first rollout)
-- [ ] S3.0 Owner confirms conflict.md C-3 (principal→group mapping source) and C-4 (enforce timing) — **BLOCKED: needs owner sign-off**
+- [x] S3.0 Owner confirms conflict.md C-3 (principal→group mapping source) and C-4 (enforce timing) — cleared (C-3 verified against arsy-plugin-auth, C-4 landed in S3.5)
 - [x] S3.1 ir.model.access + ir.rule models in addons/base (with company_id default 0); idempotent company-0 seeds (D-S3.1, FR-010)
-- [/] S3.2 checkAccess with typed AccessDeniedError, off/audit/enforce modes; superuser + globalAccess bypass; keyed on AuditActor.groupIds — the live principal→groupIds wiring (D-S3.2) is gated by C-3
+- [x] S3.2 checkAccess with typed AccessDeniedError, off/audit/enforce modes; superuser + globalAccess bypass; keyed on AuditActor.groupIds — principal→groupIds wiring verified in C-3, no further mapping change needed
 - [x] S3.3 Record-rule compilation on read paths (QueryOptions.securityDomain, AND-append, fail-closed compile); composeRuleDomain global-AND / role-OR semantics tests (D-S3.3)
 - [x] S3.4 ARSY_ACL_MODE flag (default audit), would-deny structured logging via logger.warn; seed grants + default rules present (D-S3.4, AC-10)
 - [x] S3.5 Flip default to enforce after owner sign-off (C-3, C-4); `resolveAclMode()` now returns `enforce` when `ARSY_ACL_MODE` is unset, `audit` and `off` remain explicit opt-ins, unknown values fail closed to `enforce`. Generic CRUD default-deny and admin/globalAccess-bypass regressions covered in `access_control.test.mjs`; audit-history tests opt into `off` (they assert DB triggers, not ACL). ORM suite 104/104 green.
@@ -43,7 +43,7 @@ Legend for this reconciliation: `[/]` = mechanism shipped + unit-tested, but the
 - [/] S4.1 ModelDefinition.constraints evaluated in write tx (create/update/delete), rollback on throw; tests pass. The migration of project.task legal_hold + ir.attachment retention into constraints is an app/addon adoption step, not in this commit (D-S4.1, FR-011, AC-11)
 - [ ] S4.2 /v1/models and /v1/gateway/providers via BaseRepository catalogScope + active filters; raw SELECT removed; scoping tests (D-S4.2, FR-009, AC-9) — **deferred: JOIN-shaped catalog reads; live AI-serving path, needs gateway test harness**
 - [ ] S4.3 Route thinning tranche 1: project.task + storage retention routes delegate to constraints/services (D-S4.3) — **deferred with S4.1 adoption**
-- [ ] S4.4 sdui view metadata consumes fieldsGet; displayNameSpec on core business models; metadata contract test (D-S4.4, FR-012, AC-12) — **deferred: sdui consumer adoption**
+- [x] S4.4 sdui view metadata consumes fieldsGet (relation + selection reach the renderer); displayNameSpec on project.task/project.project; metadata contract test (fields_get_metadata.test.mjs) — landed in 343df10 (D-S4.4, FR-012, AC-12)
 - [ ] S4.verify Hub suites green; retention fail-closed regression intact; report.md evidence
 
 ## S5 Governance
