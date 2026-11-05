@@ -96,6 +96,25 @@ export interface SwarmExecutionResult {
   error?: string;
 }
 
+export interface PublicIspPlan {
+  slug: string | null;
+  name: string;
+  description: string;
+  download_mbps: number;
+  upload_mbps: number;
+  price: number;
+  currency: string;
+}
+
+export interface PublicIspCoverageArea {
+  slug: string | null;
+  area_name: string;
+  city: string;
+  district: string;
+  status: 'available' | 'coming_soon' | 'planned' | 'unavailable';
+  description: string;
+}
+
 export class MoonWitnessClient {
   private readonly baseUrl: string;
   private readonly sessionStore: SessionTokenStore | undefined;
@@ -495,6 +514,18 @@ export class MoonWitnessClient {
      },
     listInvoices: async () => {
       return this.request('/v1/works/invoices', { method: 'GET' });
+    },
+  };
+
+  // Public ISP catalog (anonymous read-only projections served by the hub).
+  // These power the e-isp top-of-funnel site and carry no tenant data.
+  readonly publicIsp = {
+    listPlans: async (): Promise<PublicIspPlan[]> => {
+      return this.request<PublicIspPlan[]>('/v1/public/isp/plans');
+    },
+    listCoverage: async (query?: string): Promise<PublicIspCoverageArea[]> => {
+      const suffix = query && query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+      return this.request<PublicIspCoverageArea[]>(`/v1/public/isp/coverage${suffix}`);
     },
   };
 
