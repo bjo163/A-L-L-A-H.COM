@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "23fd6809f05deaa202383b63ca803f10942c61727c34df1e1070d861d703641a",
+  "source_digest": "54e9b4febcdc16f9378c1f37db3b04465d1e79713bcb070378ded070b58c0af4",
   "units": [
     {
       "dir": "addons/base",

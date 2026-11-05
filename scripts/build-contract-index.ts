@@ -18,7 +18,7 @@ import {
  * without re-parsing every markdown file. It is a projection, never a source:
  * nothing here mutates a CONTRACT.md, and the gates keep reading the markdown.
  *
- * A `source_digest` (sha256 over the exact files that feed the index) is stored
+ * A `source_digest` (sha256 over line-ending-normalized source text) is stored
  * alongside the projection. `pnpm contract:index:check` re-derives that digest
  * and fails (exit 1) when the committed index no longer matches the contracts,
  * so a stale artifact is always detectable — never silently trusted.
@@ -83,13 +83,15 @@ function deriveIndex(repoRoot: string): ContractIndex {
   for (const unit of sorted) {
     const contractPath = path.join(repoRoot, unit.dir, 'CONTRACT.md');
     const content = fs.existsSync(contractPath) ? fs.readFileSync(contractPath, 'utf-8') : '';
-    hash.update(unit.dir).update('\0').update(content).update('\0');
+    const normalizedContent = content.replace(/\r\n?/g, '\n');
+    hash.update(unit.dir).update('\0').update(normalizedContent).update('\0');
     const doc = content ? parseContractMarkdown(content) : null;
     units.push(toIndexUnit(repoRoot, unit.dir, unit.tier, doc));
     if (unit.tier === 'addon') {
       const manifestPath = path.join(repoRoot, unit.dir, '__manifest__.json');
       const manifestRaw = fs.existsSync(manifestPath) ? fs.readFileSync(manifestPath, 'utf-8') : '';
-      hash.update(`${unit.dir}/__manifest__.json`).update('\0').update(manifestRaw).update('\0');
+      const normalizedManifest = manifestRaw.replace(/\r\n?/g, '\n');
+      hash.update(`${unit.dir}/__manifest__.json`).update('\0').update(normalizedManifest).update('\0');
     }
   }
   return {
