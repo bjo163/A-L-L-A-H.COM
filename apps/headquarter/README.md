@@ -68,7 +68,7 @@ pnpm ui:contrast
 Use the root lockfile. Read [app guidance](./AGENTS.md), [root AGENTS](../../AGENTS.md), and installed Next.js docs before framework changes.
 
 ## Execution plan
-Start at [master plan](../../.plans/20261105-headquarter-command-center/plan.md), then follow rules.md and task.md. First gate: inspect route tree, SDK exports/types, ARSY endpoint schemas, tests and branch state. Do not add endpoints, tables, dependencies, services or duplicate primitives until a real gap is proven.
+Start at the [active plan directory](../../.plans/), then follow the current rules and task artifacts for the Headquarter workstream. First gate: inspect route tree, SDK exports/types, ARSY endpoint schemas, tests and branch state. Do not add endpoints, tables, dependencies, services or duplicate primitives until a real gap is proven.
 
 ## Quality bar
 No fake data/live states, dead controls, unexplained metrics, duplicate navigation sources, client-side authorization, silent destructive actions, or unsupported completion claims. Consequential workflows must be tenant-safe, evidence-backed, accessible, responsive and verifiable.
