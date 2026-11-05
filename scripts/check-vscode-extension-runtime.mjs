@@ -1,12 +1,25 @@
-import { readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const extensionRoot = resolve('packages/vscode-extension');
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const extensionRoot = resolve(root, 'packages/vscode-extension');
 const manifestPath = resolve(extensionRoot, 'package.json');
-const sourcePath = resolve(extensionRoot, 'src/extension.ts');
+const sourceRoot = resolve(extensionRoot, 'src');
 const bundlePath = resolve(extensionRoot, 'dist/extension.js');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-const source = readFileSync(sourcePath, 'utf8');
+
+function collectTypeScriptFiles(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = resolve(directory, entry.name);
+    if (entry.isDirectory()) return collectTypeScriptFiles(entryPath);
+    return entry.isFile() && /\.tsx?$/.test(entry.name) ? [entryPath] : [];
+  });
+}
+
+const source = collectTypeScriptFiles(sourceRoot)
+  .map((filePath) => readFileSync(filePath, 'utf8'))
+  .join('\n');
 
 const failures = [];
 const registrationPattern = /registerCommand\(['"]([^'"]+)['"]/g;

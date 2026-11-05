@@ -101,6 +101,7 @@ The gateway request timeout now remains active until the response body has been 
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
 | `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `pnpm --filter allah-vscode-extension check-runtime` | Passed after making the checker independent of its working directory |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed on isolated rerun: three launches, ten host tests |
 
 ## Edit approval and conflict handling
@@ -127,7 +128,7 @@ The P1/P2 checklist now distinguishes tested utilities from shipped workflows. V
 
 ## Limitations
 
-- A VS Code extension-host harness is not available in the current repository, so activation, webview click-through, multi-root, clean-profile installation, and reload/recovery acceptance remain unverified.
+- Automated host coverage verifies activation, workspace roots, provider routing, edit approval, validation approval, cancellation, and repair bounds. Manual installed-webview click-through, live Ollama execution, and persisted timeline recovery remain unverified.
 - Ollama live acceptance remains environment-dependent; no running Ollama endpoint/model was available during this pass.
 - The existing Vitest-only provider service tests are not part of the extension package dependency graph and were not claimed as passed.
 - P1/P2 roadmap work remains intentionally open.
