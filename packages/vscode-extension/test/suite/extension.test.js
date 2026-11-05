@@ -67,6 +67,52 @@ suite('A-L-L-A-H.COM extension host', () => {
       assert.match(await fs.readFile(taskPath, 'utf8'), /- \[x\] Verify host plan actions/);
     });
 
+    test('loads a workspace-matched template into the agent draft for review', async () => {
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalInputBox = vscode.window.showInputBox;
+      const originalInformationMessage = vscode.window.showInformationMessage;
+      const originalErrorMessage = vscode.window.showErrorMessage;
+      const originalWithProgress = vscode.window.withProgress;
+      const quickPickCalls = [];
+      const inputValues = [];
+      const informationMessages = [];
+      const errorMessages = [];
+      vscode.window.showQuickPick = async (items) => {
+        quickPickCalls.push(items);
+        if (quickPickCalls.length === 1) return 'api';
+        if (quickPickCalls.length === 2) return items.find((item) => item.label === 'Add REST Endpoint');
+        return 'GET';
+      };
+      vscode.window.showInputBox = async (options) => {
+        inputValues.push(options.prompt);
+        return options.prompt.startsWith('Endpoint path') ? '/host-test' : 'Host acceptance test';
+      };
+      vscode.window.showInformationMessage = async (message) => {
+        informationMessages.push(message);
+      };
+      vscode.window.showErrorMessage = async (message) => {
+        errorMessages.push(message);
+      };
+      vscode.window.withProgress = async (_options, task) => task();
+
+      try {
+        await vscode.commands.executeCommand('allah.showMissionTemplates');
+        assert.ok(quickPickCalls[0].includes('api'));
+        assert.equal(inputValues.length, 2);
+        assert.deepEqual(errorMessages, []);
+        assert.ok(informationMessages.some((message) =>
+          message.includes('Loaded "Add REST Endpoint"')
+          || message.includes('Queued "Add REST Endpoint" for Workspace Agent')
+        ));
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showInputBox = originalInputBox;
+        vscode.window.showInformationMessage = originalInformationMessage;
+        vscode.window.showErrorMessage = originalErrorMessage;
+        vscode.window.withProgress = originalWithProgress;
+      }
+    });
+
     test('discovers Ollama models and does not fall back when Ollama is unavailable', async () => {
       const requests = [];
       const server = http.createServer((request, response) => {

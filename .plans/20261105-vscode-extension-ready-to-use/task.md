@@ -77,7 +77,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-057 Dependency and documentation knowledge map. Repository DNA now indexes dependency names and bounded documentation paths from workspace metadata.
 - [x] VSC-058 Context memory with explicit scope, retention and controls. Added bounded workspace/session memory with expiry, clear, forget, and workspace isolation.
 - [x] VSC-059 AI task decomposer with small tasks and acceptance criteria. Added bounded deterministic decomposition with dependency links and criteria.
-- [x] VSC-060 Workspace-aware mission templates. Added deterministic matching against indexed workspace files and framework metadata.
+- [x] VSC-060 Workspace-aware mission templates. The picker filters by indexed metadata, gathers variable values, and loads or queues the resulting prompt in Workspace Agent for review before sending.
 - [x] VSC-061 Dependency-aware scheduling and progress synchronization. Added a typed task graph readiness and progress utility.
 - [x] VSC-062 Documentation drift detection and proposed updates. Repository indexing now includes bounded metadata-only findings and exposes actionable suggestions to the agent context.
 

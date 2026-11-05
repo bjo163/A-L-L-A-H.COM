@@ -31,6 +31,10 @@ service to activate or manage local projects.
   The index records non-sensitive paths, project manifests, and `.plans`
   artifacts without sending file contents. It also suggests documentation
   updates from project metadata; suggestions do not edit project files.
+- Browse `Templates: Browse Mission Templates` to match recommendations
+  against indexed workspace metadata, fill prompt variables, and load the
+  result into Workspace Agent for review before starting a session. If the
+  view is not ready yet, the draft is queued in memory until the view opens.
 - Use `Workspace: Search and Open File` for bounded file discovery and
   `Tasks: Run Approved Validation` for the fixed, approval-gated validation
   list.

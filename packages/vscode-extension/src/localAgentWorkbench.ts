@@ -68,6 +68,9 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'allah.localAgentWorkbench';
 
   private view?: vscode.WebviewView;
+  private pendingTemplateDraft?: { mode: AgentMode; prompt: string };
+  private pendingTemplateDelivery?: Promise<boolean>;
+  private templateWorkspace?: vscode.WorkspaceFolder;
   private activeRun: AbortController | undefined;
   private readonly repairCandidates = new Map<string, {
     session: LocalAgentSession;
@@ -97,6 +100,14 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         const sessions = await this.restoreSessionHistory();
         this.post({ type: 'history', sessions });
         await this.sendProviderStatus();
+        try {
+          await this.deliverPendingTemplateDraft();
+        } catch (error) {
+          this.post({
+            type: 'failed',
+            message: `Could not restore the pending template: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        }
         const latest = sessions[0];
         if (latest?.timeline?.length) {
           this.post({ type: 'mission-restored', state: latest.state, events: latest.timeline });
@@ -124,6 +135,11 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         this.activeRun?.abort();
         return;
       }
+      if (message.command === 'clearTemplateDraft') {
+        this.pendingTemplateDraft = undefined;
+        this.templateWorkspace = undefined;
+        return;
+      }
       if (message.command === 'proposeRepair' && typeof message.sessionId === 'string') {
         await this.proposeRepair(message.sessionId);
         return;
@@ -137,7 +153,9 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         && isAgentMode(message.mode)
         && typeof message.prompt === 'string'
       ) {
-        await this.run(message.mode, message.prompt);
+        const templateWorkspace = this.templateWorkspace;
+        this.templateWorkspace = undefined;
+        await this.run(message.mode, message.prompt, undefined, undefined, templateWorkspace);
       }
     });
   }
@@ -150,6 +168,39 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     const previousState = getRemoteMissionReplayState(this.getSessionHistory(), mission.id);
     if (previousState) return previousState;
     return this.run(mission.mode, mission.goal, signal, mission.id);
+  }
+
+  async loadTemplateDraft(
+    mode: AgentMode,
+    prompt: string,
+    workspace: vscode.WorkspaceFolder
+  ): Promise<boolean> {
+    this.pendingTemplateDraft = { mode, prompt };
+    this.templateWorkspace = workspace;
+    await vscode.commands.executeCommand('allah.focusLocalAgent');
+    const view = this.view;
+    if (!view) return false;
+    view.show(true);
+    return (await this.deliverPendingTemplateDraft()) || this.pendingTemplateDraft === undefined;
+  }
+
+  private async deliverPendingTemplateDraft(): Promise<boolean> {
+    if (this.pendingTemplateDelivery) return this.pendingTemplateDelivery;
+    const view = this.view;
+    const draft = this.pendingTemplateDraft;
+    if (!view || !draft) return false;
+
+    this.pendingTemplateDelivery = (async () => {
+      const delivered = await view.webview.postMessage({ type: 'template-draft', ...draft });
+      if (!delivered) return false;
+      this.pendingTemplateDraft = undefined;
+      return true;
+    })();
+    try {
+      return await this.pendingTemplateDelivery;
+    } finally {
+      this.pendingTemplateDelivery = undefined;
+    }
   }
 
   private async chooseWorkspace(): Promise<vscode.WorkspaceFolder | undefined> {
@@ -269,7 +320,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     mode: AgentMode,
     prompt: string,
     externalSignal?: AbortSignal,
-    remoteMissionId?: string
+    remoteMissionId?: string,
+    preferredWorkspace?: vscode.WorkspaceFolder
   ): Promise<LocalAgentSession['state'] | undefined> {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || this.activeRun || externalSignal?.aborted) return 'cancelled';
@@ -284,7 +336,12 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       return 'blocked';
     }
 
-    const folder = await this.chooseWorkspace();
+    const folders = vscode.workspace.workspaceFolders ?? [];
+    if (preferredWorkspace && !folders.some((folder) => folder.uri.toString() === preferredWorkspace.uri.toString())) {
+      this.post({ type: 'blocked', message: 'The workspace selected for this template is no longer open. Load the template again.' });
+      return 'blocked';
+    }
+    const folder = preferredWorkspace ?? await this.chooseWorkspace();
     if (!folder) return 'blocked';
 
     const controller = new AbortController();
@@ -962,6 +1019,12 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         const data = message.data;
         if (data.type === 'history') {
           renderHistory(data.sessions);
+        } else if (data.type === 'template-draft') {
+          if (!['ask', 'plan', 'code', 'debug', 'ideate'].includes(data.mode) || typeof data.prompt !== 'string') return;
+          mode.value = data.mode;
+          prompt.value = data.prompt;
+          prompt.focus();
+          status.textContent = 'Template loaded. Review the task before starting the session.';
         } else if (data.type === 'provider-status') {
           renderProviderStatus(data);
         } else if (data.type === 'mission-restored') {
@@ -1048,6 +1111,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       });
       resetDraft.addEventListener('click', () => {
         prompt.value = '';
+        vscode.postMessage({ command: 'clearTemplateDraft' });
         output.replaceChildren();
         renderTimeline([]);
         status.textContent = 'Ready';

@@ -34,6 +34,7 @@ import { TimelineReplayProvider } from './TimelineReplayProvider';
 import { TursoClient } from './tursoClient';
 import { registerOfflineWorkbench } from './offlineWorkbench';
 import { RepositoryContextService } from './repositoryContext';
+import { matchMissionTemplates } from './missionTemplateMatcher';
 
 
 function isTaskItem(value: unknown): value is TaskItem {
@@ -420,7 +421,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       );
     }),
     vscode.commands.registerCommand('allah.focusLocalAgent', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+      await vscode.commands.executeCommand('workbench.action.openView', LocalAgentWorkbenchProvider.viewType);
     }),
     vscode.commands.registerCommand('allah.setApiKey', async () => {
       const apiKey = await vscode.window.showInputBox({
@@ -651,23 +652,77 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.window.showInformationMessage(message);
     }),
     vscode.commands.registerCommand('allah.showMissionTemplates', async () => {
-      const categories = missionTemplates.getCategories();
-      const selected = await vscode.window.showQuickPick(
-        categories,
-        { placeHolder: 'Choose a template category' }
-      );
-      if (!selected) return;
+      if (!vscode.workspace.isTrusted) {
+        vscode.window.showWarningMessage('Workspace Trust is required before browsing workspace-aware templates.');
+        return;
+      }
+      const folder = await chooseWorkspaceFolder();
+      if (!folder) return;
 
-      const templates = missionTemplates.getTemplatesByCategory(selected);
-      const selectedTemplate = await vscode.window.showQuickPick(
-        templates.map((template) => ({ label: template.title, description: template.description, template })),
-        { placeHolder: 'Choose a template' }
-      );
-      if (!selectedTemplate) return;
+      try {
+        const index = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: 'Matching mission templates to workspace metadata' },
+          () => repositoryContext.build(folder)
+        );
+        const allTemplates = missionTemplates.getAllTemplates();
+        const matchingTemplates = matchMissionTemplates(allTemplates, {
+          files: index.files,
+          frameworks: index.dna.frameworks,
+        });
+        const templates = matchingTemplates.length > 0 ? matchingTemplates : allTemplates;
+        if (matchingTemplates.length === 0) {
+          vscode.window.showInformationMessage('No workspace-specific templates matched. Showing all templates.');
+        }
 
-      vscode.window.showInformationMessage(
-        `Template: ${selectedTemplate.template.title}\n${selectedTemplate.template.description}`
-      );
+        const category = await vscode.window.showQuickPick(
+          [...new Set(templates.map((template) => template.category))].sort(),
+          { placeHolder: 'Choose a template category' }
+        );
+        if (!category) return;
+
+        const selected = await vscode.window.showQuickPick(
+          templates
+            .filter((template) => template.category === category)
+            .map((template) => ({
+              label: template.title,
+              description: template.description,
+              detail: `Mode: ${template.mode}`,
+              template,
+            })),
+          { placeHolder: 'Choose a template for this workspace' }
+        );
+        if (!selected) return;
+
+        const values: Record<string, string> = {};
+        for (const variable of selected.template.variables) {
+          const value = variable.type === 'select' && variable.options?.length
+            ? await vscode.window.showQuickPick(variable.options, { placeHolder: variable.prompt })
+            : await vscode.window.showInputBox({
+                prompt: variable.prompt,
+                value: variable.default,
+                placeHolder: variable.type === 'multiline'
+                  ? 'Enter a starting value. You can edit the full prompt afterward.'
+                  : variable.required
+                    ? 'Required'
+                    : 'Optional',
+                validateInput: (input) => variable.required && !input.trim()
+                  ? 'This value is required.'
+                  : undefined,
+              });
+          if (value === undefined) return;
+          values[variable.name] = value.trim() || variable.default || '';
+        }
+
+        const prompt = missionTemplates.substituteVariables(selected.template, values);
+        const delivered = await localAgentProvider.loadTemplateDraft(selected.template.mode, prompt, folder);
+        vscode.window.showInformationMessage(delivered
+          ? `Loaded "${selected.template.title}" into Workspace Agent. Review the prompt before starting.`
+          : `Queued "${selected.template.title}" for Workspace Agent. It will appear when the view opens.`);
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Could not load a mission template: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }),
     vscode.commands.registerCommand('allah.exportMissionTimeline', async () => {
       const timeline = missionTimeline.getCurrentTimeline() ?? missionTimeline.getAllTimelines().at(-1);

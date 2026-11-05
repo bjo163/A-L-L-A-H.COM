@@ -61,6 +61,20 @@ Repository indexing now runs the metadata-only documentation drift detector and 
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm extension:test -- --test-name-pattern='documentation drift\|repository DNA'` | Passed: 45 tests (runner invokes the full extension unit list) |
 
+## Workspace-aware mission templates
+
+The template picker now uses the selected workspace's metadata to recommend templates, honors include/exclude rules, collects required inputs, and loads the rendered prompt into Workspace Agent for review. Starting the session uses that same selected workspace. Clearing the draft also clears the pending workspace selection. Matching sends no file contents, and the prompt is not submitted automatically.
+
+| Command | Result |
+|---|---|
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm extension:test` | Passed: 46 tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, nine host tests, including the workspace-matched template draft flow |
+
+When the Workspace Agent view is not yet resolved, a selected template is queued in extension memory and delivered when the webview sends its ready event. Prompt contents are not persisted to disk by this queue. The test host verifies the queued-draft path; full manual click-through in the installed desktop remains a separate acceptance item.
+
+The final VSIX was rebuilt and installed in the active VS Code profile. `code --list-extensions --show-versions` confirmed `a-l-l-a-h.allah-vscode-extension@0.3.0`.
+
 ## Limitations
 
 - A VS Code extension-host harness is not available in the current repository, so activation, webview click-through, multi-root, clean-profile installation, and reload/recovery acceptance remain unverified.
