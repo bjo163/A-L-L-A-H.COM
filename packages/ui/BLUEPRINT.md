@@ -2145,3 +2145,16 @@ Do not turn every paper or GitHub trend into a feature. A proposal is accepted o
 Moon UI's next frontier is achieved when it can express six distinct world grammars over one engine; translate tasks into predictable, inspectable, user-controlled compositions; surface AI evidence and authority at the right level; render spatial and narrative experiences with non-spatial fallback; produce original governed assets with provenance; certify actual browser output; support complete product workflows; and report maturity honestly.
 
 **The defining advantage:** Moon UI provides the grammar, intelligence, creative tools, spatial language, and evidence system required to build six coherent digital worlds—and keep them usable, trustworthy, and technically excellent.
+
+
+---
+
+## 68. Canonical execution and overlap control
+
+The implementation baseline, predecessor-plan reconciliation, task-level delivery sequence, autonomous execution rules and requirement traceability live in the [Moon UI Master Consolidation Plan](../.plans/20261105-moon-ui-master-consolidation/spec.md).
+
+This blueprint remains the product/architecture target; the master plan is the execution queue. Before implementing any blueprint item, inspect the current source and active plans. Reuse existing SkinRoot/SkinScope, six skin definitions, six original vector scenes, shared components/blocks/primitives, Skin Laboratory and procedural SFX engine. Do not rebuild them merely because the target blueprint describes their complete future role.
+
+The predecessor six-world artwork plan is superseded by the master plan. The earlier premium-skin implementation remains baseline evidence; only fresh verification or a source-backed residual defect may reopen its work. The old platform-standardization skin mapping is not authoritative where it conflicts with accepted DNA and current DESIGN.md.
+
+Plan task states and evidence must remain separate from blueprint aspirations. A section is not implemented because it is documented, and a task is not certified because source exists.
