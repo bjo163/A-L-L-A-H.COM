@@ -88,9 +88,9 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 ## Phase 2 — Six-world skin and token engine
 
 ### P2.1 Skin runtime contract
-- [ ] **PUI-0201** Audit `SkinId`, registry schema and all six registered values.
-- [ ] **PUI-0202** Verify `SkinRoot` selection, fallback and invalid-ID behavior.
-- [ ] **PUI-0203** Verify `SkinScope` isolation and nested-scope semantics.
+- [x] **PUI-0201** Audit `SkinId`, registry schema and all six registered values.
+- [x] **PUI-0202** Verify `SkinRoot` selection, fallback and invalid-ID behavior.
+- [x] **PUI-0203** Verify `SkinScope` isolation and nested-scope semantics.
 - [ ] **PUI-0204** Verify server-rendered skin selection matches first client render.
 - [ ] **PUI-0205** Add regression coverage for hydration stability and deterministic fallback.
 - [ ] **PUI-0206** Verify changing skin cannot alter component behavior, permissions or business logic.
