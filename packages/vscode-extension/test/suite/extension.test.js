@@ -254,10 +254,6 @@ suite('A-L-L-A-H.COM extension host', () => {
       } finally {
         vscode.window.showQuickPick = originalQuickPick;
         vscode.window.showWarningMessage = originalWarning;
-        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
-        await document.save();
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await fs.rm(filePath, { force: true });
       }
     });
 
@@ -290,8 +286,6 @@ suite('A-L-L-A-H.COM extension host', () => {
       } finally {
         vscode.window.showQuickPick = originalQuickPick;
         vscode.window.showWarningMessage = originalWarning;
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await fs.rm(filePath, { force: true });
       }
     });
 
@@ -336,10 +330,118 @@ suite('A-L-L-A-H.COM extension host', () => {
       } finally {
         vscode.window.showQuickPick = originalQuickPick;
         vscode.window.showWarningMessage = originalWarning;
-        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
-        await document.save();
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await fs.rm(filePath, { force: true });
+      }
+    });
+
+    test('rejects validation commands that are not approved', async () => {
+      const originalWarning = vscode.window.showWarningMessage;
+      const events = [];
+      const provider = createLocalAgentProvider({});
+      provider.post = (message) => events.push(message);
+
+      try {
+        vscode.window.showWarningMessage = async () => undefined;
+        await provider.runValidation('code', 'git-status');
+        assert.ok(events.some((event) => event.type === 'validation-blocked'));
+        assert.equal(events.some((event) => event.type === 'validation-started'), false);
+      } finally {
+        vscode.window.showWarningMessage = originalWarning;
+      }
+    });
+
+    test('does not start validation when approval is cancelled', async () => {
+      const originalWarning = vscode.window.showWarningMessage;
+      const events = [];
+      let releaseApproval;
+      let notifyApprovalRequested;
+      const approvalRequested = new Promise((resolve) => {
+        notifyApprovalRequested = resolve;
+      });
+      const approval = new Promise((resolve) => {
+        releaseApproval = resolve;
+      });
+      const provider = createLocalAgentProvider({});
+      provider.post = (message) => events.push(message);
+
+      try {
+        vscode.window.showWarningMessage = () => {
+          notifyApprovalRequested();
+          return approval;
+        };
+        const validation = provider.runValidation('code', 'git-status');
+        await approvalRequested;
+        provider.activeRun.abort();
+        releaseApproval('Run command');
+        await validation;
+        assert.ok(events.some((event) => event.type === 'validation-blocked'));
+        assert.equal(events.some((event) => event.type === 'validation-started'), false);
+      } finally {
+        vscode.window.showWarningMessage = originalWarning;
+      }
+    });
+
+    test('cancels an approved validation process without reporting success', async () => {
+      const originalWarning = vscode.window.showWarningMessage;
+      const events = [];
+      const provider = createLocalAgentProvider({});
+      provider.post = (message) => {
+        events.push(message);
+        if (message.type === 'validation-started') {
+          setTimeout(() => provider.activeRun?.abort(), 80);
+        }
+      };
+
+      try {
+        vscode.window.showWarningMessage = async () => 'Run command';
+        await provider.runValidation('code', 'extension-tests');
+        assert.ok(events.some((event) => event.type === 'validation-started'));
+        assert.ok(events.some((event) => event.type === 'cancelled'));
+        assert.equal(events.some((event) => event.type === 'validation-result'), false);
+      } finally {
+        vscode.window.showWarningMessage = originalWarning;
+      }
+    });
+
+    test('limits each repeated validation failure to one repair proposal', async () => {
+      const originalQuickPick = vscode.window.showQuickPick;
+      const events = [];
+      let completionCount = 0;
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent() {
+          completionCount += 1;
+          return JSON.stringify({ response: 'No repair needed.', edits: [] });
+        },
+      };
+      const provider = createLocalAgentProvider(client);
+      provider.post = (message) => events.push(message);
+      const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const failureOutput = 'TypeError: fixture failure at line 12\n';
+      const createSession = (id) => ({
+        id,
+        mode: 'code',
+        state: 'failed',
+        startedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        timeline: [],
+      });
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        const firstSession = createSession('repair-first');
+        await provider.offerRepair(firstSession, 'pnpm typecheck', failureOutput, root);
+        await provider.requestRepairProposal(firstSession.id);
+        assert.equal(completionCount, 1);
+
+        const repeatedSession = createSession('repair-repeat');
+        await provider.offerRepair(repeatedSession, 'pnpm typecheck', failureOutput, root);
+        await provider.requestRepairProposal(repeatedSession.id);
+        assert.equal(completionCount, 1);
+        assert.ok(events.some((event) => event.type === 'repair-blocked'));
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
       }
     });
   }

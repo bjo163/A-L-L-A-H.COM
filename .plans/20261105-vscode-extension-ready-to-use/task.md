@@ -23,7 +23,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-015 Test plan Explorer refresh, opening spec/task artifacts, and task progress updates in the host.
 - [x] VSC-016 Test provider setup/discovery/failure/timeout/offline/cancellation. Host acceptance covers SecretStorage setup, Ollama model discovery, unavailable-provider messaging, and no Gateway fallback; unit tests cover body-read timeout, caller cancellation, and malformed success responses.
 - [x] VSC-017 Test diff review, approval/rejection, conflicts and safe apply. Host tests verify approved edits apply, rejected edits remain unchanged, and external edits made during review are not overwritten.
-- [ ] VSC-018 Test validation approval/cancellation and bounded repair.
+- [x] VSC-018 Test validation approval/cancellation and bounded repair. Host acceptance verifies rejection prevents execution, cancellation during approval prevents execution, active process cancellation is reported without success, and repeated identical failures allow only one repair proposal.
 - [ ] VSC-019 Test timeline, reload, interruption, explicit resume and replay.
 - [x] VSC-020 Install the VSIX in isolated user-data and extension directories, then verify its installed identifier and version without a monorepo checkout.
 

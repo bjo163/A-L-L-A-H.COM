@@ -112,6 +112,15 @@ Extension-host tests run the Workspace Agent's real edit flow against fixture fi
 | `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, thirteen host tests |
 
+## Validation approval, cancellation, and repair bounds
+
+The extension host verifies that rejected or cancelled approval never starts a command, cancelling an approved running command reports cancellation rather than success, and a repeated identical validation failure cannot request a second repair. Existing unit coverage verifies the repair-attempt policy.
+
+| Command | Result |
+|---|---|
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, seventeen host tests |
+| `pnpm extension:test` | Passed: 49 tests, including the bounded repair policy |
+
 ## Roadmap claim audit
 
 The P1/P2 checklist now distinguishes tested utilities from shipped workflows. VSC-058, 059, 061, 063-067, and 069-074 remain pending because their helpers are not consumed by a user-facing or runtime workflow. Their unit tests remain useful, but they are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.
