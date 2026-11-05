@@ -27,23 +27,23 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 ## Phase 0 — Baseline, authority and overlap elimination
 
 ### P0.1 Repository and worktree safety
-- [ ] **MU-0001** Verify repository identity is `bjo163/A-L-L-A-H.COM`; record remote URL.
-- [ ] **MU-0002** Verify current branch is `dev`; do not create or switch to a new branch.
-- [ ] **MU-0003** Record current `dev` HEAD and timestamp in `report.md`.
-- [ ] **MU-0004** Inspect `git status --short`; preserve every pre-existing local change.
+- [x] **MU-0001** Verify repository identity is `bjo163/A-L-L-A-H.COM`; record remote URL.
+- [x] **MU-0002** Verify current branch is `dev`; do not create or switch to a new branch.
+- [x] **MU-0003** Record current `dev` HEAD and timestamp in `report.md`.
+- [x] **MU-0004** Inspect `git status --short`; preserve every pre-existing local change.
 - [ ] **MU-0005** Verify `main` is not checked out and will not be modified.
 - [ ] **MU-0006** Read `AGENTS.md`, `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `QUALITY.md`, `DESIGN.md`, `DECISIONS.md` and relevant DNA contracts.
 - [ ] **MU-0007** Read all four Moon UI source documents and extract every requirement into `coverage-matrix.md`.
-- [ ] **MU-0008** Enumerate all package source files, exports, tests, app consumers, fonts, image/audio assets and scripts from the live tree.
+- [x] **MU-0008** Enumerate all package source files, exports, tests, app consumers, fonts, image/audio assets and scripts from the live tree.
 - [ ] **MU-0009** Search all frontend apps for direct icon-library imports, app-local design tokens, duplicate controls and private `mw-*` selectors.
-- [ ] **MU-0010** Record the current root build/test/lint/typecheck/docs commands from `package.json`; do not invent scripts.
-- [ ] **MU-0011** Run baseline `pnpm ui:test` and record exact output.
-- [ ] **MU-0012** Run baseline `pnpm ui:contrast` and record exact output.
-- [ ] **MU-0013** Run baseline `pnpm lint:arch` and record exact output.
-- [ ] **MU-0014** Run baseline `pnpm typecheck` and record exact output.
-- [ ] **MU-0015** Run baseline `pnpm lint` and `pnpm docs:check`; record failures independently.
-- [ ] **MU-0016** Run every existing frontend app build script and record each result independently.
-- [ ] **MU-0017** Capture baseline asset counts, sizes, duplicate hashes, font presence and SVG validation results.
+- [x] **MU-0010** Record the current root build/test/lint/typecheck/docs commands from `package.json`; do not invent scripts.
+- [x] **MU-0011** Run baseline `pnpm ui:test` and record exact output.
+- [x] **MU-0012** Run baseline `pnpm ui:contrast` and record exact output.
+- [x] **MU-0013** Run baseline `pnpm lint:arch` and record exact output.
+- [x] **MU-0014** Run baseline `pnpm typecheck` and record exact output.
+- [x] **MU-0015** Run baseline `pnpm lint` and `pnpm docs:check`; record failures independently.
+- [x] **MU-0016** Run every existing frontend app build script and record each result independently.
+- [x] **MU-0017** Capture baseline asset counts, sizes, duplicate hashes, font presence and SVG validation results.
 - [ ] **MU-0018** Capture baseline route/consumer map for GATE, DOCK, ID, HARBOR, HEADQUARTER, MOONSKY and JIZZ.
 - [ ] **MU-0019** Verify current six root skin assignments against `DESIGN.md`, DNA docs and actual `SkinRoot`/route scopes; record conflicts without changing them yet.
 - [ ] **MU-0020** Produce a source-backed baseline report distinguishing implemented, tested, visually verified, proposed and blocked.

@@ -3,7 +3,7 @@ contract: "DOCUMENTATION_CONTRACT.md"
 id: "PACKAGE-UI-CORE-TASKS"
 version: "1.0.0"
 owner: "engineering"
-status: "planned"
+status: "in_progress"
 target_branch: "dev"
 parent_task_ledger: "../20261105-moon-ui-master-consolidation/task.md"
 ---
@@ -28,20 +28,20 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 ## Phase 0 — Live baseline and package ownership
 
 ### P0.1 Repository and package baseline
-- [ ] **PUI-0001** Verify repository is `bjo163/A-L-L-A-H.COM` and record remote URL.
-- [ ] **PUI-0002** Verify current branch is the existing `dev`; do not create or switch branches.
-- [ ] **PUI-0003** Record remote `dev` HEAD and timestamp in `report.md`.
-- [ ] **PUI-0004** Inspect worktree status and preserve all existing modifications.
+- [x] **PUI-0001** Verify repository is `bjo163/A-L-L-A-H.COM` and record remote URL.
+- [x] **PUI-0002** Verify current branch is the existing `dev`; do not create or switch branches.
+- [x] **PUI-0003** Record remote `dev` HEAD and timestamp in `report.md`.
+- [x] **PUI-0004** Inspect worktree status and preserve all existing modifications.
 - [ ] **PUI-0005** Read root engineering instructions, design decisions, quality contract and all six DNA references relevant to package work.
 - [ ] **PUI-0006** Read `packages/ui/README.md`, `BLUEPRINT.md`, `RESEARCH-AND-DIRECTION.md` and this plan; extract package requirements into the coverage matrix.
-- [ ] **PUI-0007** Enumerate every file under `packages/ui/src`, `packages/ui/test` and package asset directories from the live tree.
-- [ ] **PUI-0008** Enumerate package exports and compare them with every real application import.
-- [ ] **PUI-0009** Record actual package scripts, root quality commands and CI jobs; do not invent commands.
-- [ ] **PUI-0010** Run the existing baseline `pnpm ui:test` and record exact result.
-- [ ] **PUI-0011** Run the existing baseline `pnpm ui:contrast` and record exact result.
-- [ ] **PUI-0012** Run relevant baseline typecheck, lint and architecture checks; record each independently.
-- [ ] **PUI-0013** Record baseline package build/consumer build results using scripts that actually exist.
-- [ ] **PUI-0014** Record baseline source, test, asset, font, audio and export counts.
+- [x] **PUI-0007** Enumerate every file under `packages/ui/src`, `packages/ui/test` and package asset directories from the live tree.
+- [x] **PUI-0008** Enumerate package exports and compare them with every real application import.
+- [x] **PUI-0009** Record actual package scripts, root quality commands and CI jobs; do not invent commands.
+- [x] **PUI-0010** Run the existing baseline `pnpm ui:test` and record exact result.
+- [x] **PUI-0011** Run the existing baseline `pnpm ui:contrast` and record exact result.
+- [x] **PUI-0012** Run relevant baseline typecheck, lint and architecture checks; record each independently.
+- [x] **PUI-0013** Record baseline package build/consumer build results using scripts that actually exist.
+- [x] **PUI-0014** Record baseline source, test, asset, font, audio and export counts.
 - [ ] **PUI-0015** Classify each package capability as implemented, partial, proposed, tested, visually verified, integrated or blocked.
 
 ### P0.2 Ownership and overlap
