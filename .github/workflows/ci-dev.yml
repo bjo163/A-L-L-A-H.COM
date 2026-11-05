@@ -258,6 +258,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared type contracts
+        run: pnpm --filter @moonwitness/types build
+
       - name: Build Jizz App
         run: pnpm jizz:build
 
@@ -284,6 +287,30 @@ jobs:
 
       - name: Build Gate App
         run: pnpm gate:build
+
+  verify-esp:
+    name: Verify E-ISP (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build E-ISP App
+        run: pnpm esp:build
 
   verify-arsy:
     name: Verify Arsy Fastify Hub
@@ -417,7 +444,7 @@ jobs:
     permissions:
       contents: write
       actions: write
-    needs: [verify-scaffolds, verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-harbor, verify-moonsky, verify-gate, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
+    needs: [verify-scaffolds, verify-lint-arch, verify-typecheck, verify-lint, verify-dock, verify-headquarter, verify-id, verify-jizz, verify-harbor, verify-moonsky, verify-gate, verify-esp, verify-arsy, verify-sentinel, verify-extension, verify-tests, verify-docs]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - name: Check out dev branch
