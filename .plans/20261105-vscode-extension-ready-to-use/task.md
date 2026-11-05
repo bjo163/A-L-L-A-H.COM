@@ -76,15 +76,15 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture. The context index now derives bounded metadata without sending source contents.
 - [x] VSC-057 Dependency and documentation knowledge map. Repository DNA now indexes dependency names and bounded documentation paths from workspace metadata.
 - [x] VSC-058 Context memory with explicit scope, retention and controls. Added bounded workspace/session memory with expiry, clear, forget, and workspace isolation.
-- [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria.
+- [x] VSC-059 AI task decomposer with small tasks and acceptance criteria. Added bounded deterministic decomposition with dependency links and criteria.
 - [x] VSC-060 Workspace-aware mission templates. Added deterministic matching against indexed workspace files and framework metadata.
 - [x] VSC-061 Dependency-aware scheduling and progress synchronization. Added a typed task graph readiness and progress utility.
 - [x] VSC-062 Documentation drift detection and proposed updates. Added metadata-only drift findings with actionable suggestions.
 
 ## P1 — 0.6.0
 - [x] VSC-063 Define agent roles, tools, inputs, outputs and capabilities. Added typed supervisor, researcher, builder, and reviewer definitions with approval requirements.
-- [ ] VSC-064 Add supervisor and bounded delegation.
-- [ ] VSC-065 Add researcher, builder and reviewer roles.
+- [x] VSC-064 Add supervisor and bounded delegation. Added coordinator enforcing concurrency, depth, message, and review boundaries.
+- [x] VSC-065 Add researcher, builder and reviewer roles. Role definitions and coordinator routing use explicit role contracts.
 - [x] VSC-066 Add inter-agent message schema and trace correlation. Messages require IDs, source/target roles, bounded payloads, and correlation IDs.
 - [x] VSC-067 Add concurrency/resource limits and failure isolation. Added bounded concurrency, depth, and message limits as delegation policy contracts.
 - [x] VSC-068 Add review checkpoint before consequential actions. Consequential actions require an explicit approved checkpoint.

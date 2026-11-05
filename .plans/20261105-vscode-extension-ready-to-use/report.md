@@ -30,6 +30,25 @@
 
 The extension has stronger automated parity and trust boundaries, but this evidence does not justify declaring the full 0.4.0 acceptance matrix complete.
 
+## Latest verified batch
+
+- Added bounded task decomposition with acceptance criteria and dependency links.
+- Added supervisor delegation coordinator using explicit researcher, builder, and reviewer role contracts.
+- Added concurrency, depth, message-count, correlation, and review approval enforcement.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 39 tests |
+| `pnpm --filter allah-vscode-extension build` | Passed |
+| `git diff --check -- packages/vscode-extension package.json .plans/20261105-vscode-extension-ready-to-use` | Passed |
+
+Latest pushed commits:
+
+- `0f37099` workspace-aware mission template matching.
+- `1ee4259` dependency-aware task graph and documentation drift diagnostics.
+- `175a973` agent role and correlated message contracts.
+- `9983784` delegation safety limits and review checkpoints.
+
 ## Recent pushed commits
 
 - `2c32e9c` manifest contract coverage and architecture trace.
