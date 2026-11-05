@@ -70,6 +70,8 @@ export class RepositoryContextService {
       `- Frameworks: ${index.dna.frameworks.join(', ') || 'none detected'}`,
       `- Languages: ${index.dna.languages.join(', ') || 'none detected'}`,
       `- Scripts: ${index.dna.scripts.slice(0, 40).join(', ') || 'none detected'}`,
+      `- Dependencies: ${index.dna.dependencies.slice(0, 80).join(', ') || 'none detected'}`,
+      `- Documentation: ${index.dna.documentation.slice(0, 80).join(', ') || 'none detected'}`,
     ].join('\n');
   }
 

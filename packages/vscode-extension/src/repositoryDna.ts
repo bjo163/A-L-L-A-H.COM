@@ -4,6 +4,8 @@ export interface RepositoryDna {
   languages: string[];
   scripts: string[];
   manifests: string[];
+  dependencies: string[];
+  documentation: string[];
 }
 
 interface PackageManifest {
@@ -61,6 +63,10 @@ export function buildRepositoryDna(files: string[], packageManifest?: PackageMan
           ? 'npm'
           : undefined;
   const scripts = Object.keys(packageManifest?.scripts ?? {}).sort();
+  const dependencyNames = Object.keys({
+    ...(packageManifest?.dependencies ?? {}),
+    ...(packageManifest?.devDependencies ?? {}),
+  }).sort();
 
   return {
     packageManager,
@@ -68,5 +74,7 @@ export function buildRepositoryDna(files: string[], packageManifest?: PackageMan
     languages,
     scripts,
     manifests: files.filter((file) => /(^|[\\/])(?:package\.json|tsconfig(?:\..+)?\.json|pyproject\.toml|go\.mod|Cargo\.toml)$/.test(file)).sort(),
+    dependencies: dependencyNames,
+    documentation: files.filter((file) => /(^|[\\/])(?:README(?:\.[^\\/]+)?|CHANGELOG(?:\.[^\\/]+)?|CONTRIBUTING(?:\.[^\\/]+)?|docs[\\/].+)/i.test(file)).sort(),
   };
 }

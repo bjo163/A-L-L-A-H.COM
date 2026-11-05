@@ -16,4 +16,6 @@ test('builds bounded repository DNA from metadata', () => {
   assert.deepEqual(dna.frameworks, ['Next.js', 'React']);
   assert.deepEqual(dna.languages, ['Python', 'TypeScript']);
   assert.deepEqual(dna.scripts, ['build', 'test']);
+  assert.deepEqual(dna.dependencies, ['next', 'react']);
+  assert.deepEqual(dna.documentation, []);
 });

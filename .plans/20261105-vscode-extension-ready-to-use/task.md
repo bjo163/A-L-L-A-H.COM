@@ -74,7 +74,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ## P1 — 0.5.0
 - [x] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture. The context index now derives bounded metadata without sending source contents.
-- [ ] VSC-057 Dependency and documentation knowledge map.
+- [x] VSC-057 Dependency and documentation knowledge map. Repository DNA now indexes dependency names and bounded documentation paths from workspace metadata.
 - [ ] VSC-058 Context memory with explicit scope, retention and controls.
 - [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria.
 - [ ] VSC-060 Workspace-aware mission templates.
