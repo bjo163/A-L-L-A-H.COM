@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "9244727f0c4f3e8166ee5455d8c08dd75f02a569b3db1d0d9c1fa78aff5075f6",
+  "source_digest": "58f6ffce9e8402ee454b75df6e57584535e5fcf430f8587ca72c8e1497644d21",
   "units": [
     {
       "dir": "addons/base",
@@ -52,6 +52,44 @@
           "res_partner_views.json",
           "res_company_views.json"
         ]
+      }
+    },
+    {
+      "dir": "addons/heliogrid",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "nexus"
+        ],
+        "models": [
+          "heliogrid.site",
+          "heliogrid.inverter",
+          "heliogrid.battery",
+          "heliogrid.telemetry"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_HELIOGRID",
+      "name": "heliogrid",
+      "owner": "engineering",
+      "version": "1.0.0",
+      "status": "implemented",
+      "last_verified": "2026-11-05",
+      "summary": "Solar/Power Inverters, Battery Energy Storage Systems, and Physical Utility Infrastructure",
+      "manifest": {
+        "name": "heliogrid",
+        "models": [
+          "heliogrid.site",
+          "heliogrid.inverter",
+          "heliogrid.battery",
+          "heliogrid.telemetry"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
       }
     },
     {
