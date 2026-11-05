@@ -4,29 +4,30 @@
 
 ## Overview
 This feature addresses the incomplete platform capabilities across the A-L-L-A.H.COM monorepo, specifically:
-1. Standardizing and completing the UI skin system integration across all applications
-2. Implementing the 11 "new-platform-capability" entries currently marked DISCOVERED with no real code
-3. Adding guardrails to prevent falsely VERIFIED capabilities without concrete implementation evidence
+1. Implementing the platform capability entries that remain valid after evidence-based backlog reconciliation
+2. Adding guardrails to prevent falsely VERIFIED capabilities without concrete implementation evidence
+
+UI skin integration has been transferred out of this plan to `.plans/20261105-moon-ui-master-consolidation/`.
 
 ## Problem Statement
-The monorepo contains 11 "new-platform-capability" entries (capabilities 4-13 plus capability 12) in the BACKLOG.md all marked as DISCOVERED with status VERIFIED without actual code implementation. Additionally, the UI skin system, while well-designed with 6 skin definitions in `@moonwitness/ui`, has incomplete integration across applications - only some apps have proper skin directory structures and route assignments.
+The monorepo contains legacy capability entries whose actual implementation status must be verified against source and evidence before work is scheduled. UI skin assignments and integration are owned exclusively by the Moon UI Master Consolidation plan; this plan does not reopen or duplicate that work.
 
 The `evolve-loop-guard` plan (20261104-175034) specifically identifies this problem: AUTONONOUS.md section 8 must carry guards preventing EVOLVE from creating plans without concrete specs and marking VERIFIED without report.md containing real evidence.
 
 ## Objectives
 - Complete implementation of all DISCOVERED platform capabilities with real code and verification
-- Standardize skin system integration across all 10 applications in the monorepo
+- Reconcile the platform capability backlog against actual implementation evidence
 - Add architectural guardrails preventing future falsely VERIFIED capabilities
 - Ensure all quality gates pass (typecheck, lint:arch, docs:check, builds)
 - Document each capability with proper acceptance criteria and verification
 
 ## Functional Requirements
 
-### FR-001: Skin System Integration
-- All applications must support skin system via `@moonwitness/ui` SkinRoot component
-- Each application must declare a valid SkinRoot with a valid skin ID from the skin registry
-- Skin tokens must flow correctly from SkinRoot through to rendered CSS variables
-- Default skin (`imperium-lumen`) must be the fallback when no skin is specified
+### FR-001: UI Skin Integration — TRANSFERRED / OUT OF SCOPE
+- Do not execute skin integration work from this plan.
+- Canonical frontend mapping and implementation tasks are maintained in `.plans/20261105-moon-ui-master-consolidation/`.
+- Backend/service runtimes must not receive frontend SkinRoot wrappers.
+- This plan may consume the shared UI package but must not change its skin ownership or duplicate its implementation.
 
 ### FR-002: Platform Capability Implementation
 - Capability 4 (Simulated new platform capability): Implement actual feature from brainstorming, not empty template
@@ -56,7 +57,6 @@ The `evolve-loop-guard` plan (20261104-175034) specifically identifies this prob
 ## Scope
 ### In-Scope
 - Implement 11 platform capabilities with real code and verification evidence
-- Standardize skin system integration across all applications
 - Update BACKLOG.md statuses from DISCOVERED/VERIFIED to appropriate states
 - Add evolve-loop-guard guardrails to AUTONOMOUS.md
 - Create proper plan directories with spec.md, design.md, task.md, rule.md for each capability
@@ -92,9 +92,9 @@ As an automation guard, I want the system to prevent creating plans without conc
 - `@moonwitness/ui` package (v0.1.0) - provides SkinRoot and skin registry
 - `@allah/sdk` package - client↔hub communications
 - `@moonwitness/types` package - shared contracts
-- All 10 applications must have Next.js 16+ and React 19+
 
 ### Constraints
+- UI skin mapping is governed by the Moon UI Master Consolidation plan; do not change or duplicate it.
 - Must use existing skin registry (6 skins: imperium-lumen, lunar-chronicles, rocksoul, nexus-paradox, riot-anarchy, mycelium)
 - Must preserve existing package boundaries and dependency rules
 - Must not break existing quality gates
@@ -102,18 +102,15 @@ As an automation guard, I want the system to prevent creating plans without conc
 - Skin IDs must come from the registered skinIds array
 
 ## Acceptance Criteria
-- [ ] All 10 applications have SkinRoot with valid skin ID
 - [ ] All 11 platform capabilities have real code implementation
 - [ ] All quality gates pass: typecheck, lint:arch, docs:check, all builds
 - [ ] BACKLOG.md updated: no VERIFIED capability without code
 - [ ] AUTONOMOUS.md section 8 has three evolve-loop-guard guards
 - [ ] Each capability directory has spec.md, design.md, task.md, rule.md
 - [ ] No duplicate functionality across capabilities
-- [ ] Skin tokens flow correctly through all applications
 
 ## Success Metrics
-- 100% of applications have SkinRoot integration
 - 100% of DISCOVERED capabilities implemented with real code
 - 0 falsely VERIFIED capabilities in BACKLOG.md
-- All 5 quality gates pass (typecheck, lint:arch, docs:check, and 5 app builds)
+- All applicable quality gates pass for the actual capability scope
 - Evolve loop guardrails prevent future empty plan creation
