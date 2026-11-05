@@ -5,11 +5,11 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 ## P0 — Release 0.4.0
 ### 00 Architecture reconciliation
 - [x] VSC-001 Inventory extension source, exports and entrypoints.
-- [ ] VSC-002 Map every manifest command to registration, implementation and test.
+- [x] VSC-002 Map every manifest command to registration, implementation and test. Manifest parity test covers all 27 registrations; behavior-specific tests cover plan, policy, provider contracts, and mission timeline.
 - [x] VSC-003 Map activation events, views, menus and status items.
-- [ ] VSC-004 Trace AgentWorkbenchProvider and LocalAgentWorkbenchProvider responsibilities.
-- [ ] VSC-005 Trace ProviderRegistry, ProviderIntegration, Ollama and Gateway ownership.
-- [ ] VSC-006 Trace MissionTimeline, remote mission service and persistence.
+- [x] VSC-004 Trace AgentWorkbenchProvider and LocalAgentWorkbenchProvider responsibilities.
+- [x] VSC-005 Trace ProviderRegistry, ProviderIntegration, Ollama and Gateway ownership.
+- [x] VSC-006 Trace MissionTimeline, remote mission service and persistence.
 - [x] VSC-007 Identify legacy/dead code and monorepo-only runtime imports.
 - [x] VSC-008 Audit Workspace Trust, paths, webviews, secrets and shell tools.
 - [x] VSC-009 Produce source-of-truth matrix and disposition decisions.
@@ -17,7 +17,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 01 Runtime and extension-host
 - [x] VSC-011 Extend parity to every contributed command and view.
-- [ ] VSC-012 Add VS Code extension-host harness using existing supported tooling.
+- [!] VSC-012 Add VS Code extension-host harness using existing supported tooling. No `@vscode/test-electron` or supported host harness exists in the current dependency graph; deterministic manifest contract coverage is implemented instead.
 - [ ] VSC-013 Test activation/deactivation, missing optional providers and no workspace.
 - [ ] VSC-014 Test single-root and multi-root workspaces.
 - [ ] VSC-015 Test plan Explorer create/read/update and task progress.

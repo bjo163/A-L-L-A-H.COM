@@ -17,3 +17,11 @@
 `scripts/check-vscode-extension-manifest.mjs` is the authoritative parity guard for
 contributed commands, views, and `onView` activation events. `scripts/check-vscode-extension-standalone.mjs`
 remains the dependency boundary guard.
+
+## Architecture trace
+
+- `extension.ts` owns activation, command registration, plan Explorer wiring, service lifecycle, and disposal.
+- `localAgentWorkbench.ts` is the primary user-facing agent flow. `agentWorkbench.ts` is a legacy swarm surface and is not registered by the current manifest.
+- `ProviderRegistry` owns legacy provider identity and configured credentials. `ProviderIntegration` bridges SecretStorage-backed credentials into that registry. `MoonWitnessClient` owns the explicit Gateway/Ollama transport used by the primary agent flow.
+- `MissionTimelineService` owns local mission event history and redacted export. `TimelineReplayService` owns replay sessions and audit views. `missionTimeline.ts` owns local-agent session ordering, interruption normalization, and bounded repair.
+- `TursoClient` and remote mission handlers are optional integration paths and are not activation prerequisites for the local-first workflow.
