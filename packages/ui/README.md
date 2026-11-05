@@ -544,3 +544,12 @@ The next evolution of Moon UI is not simply “more components”. It is a gover
 See [RESEARCH-AND-DIRECTION.md](./RESEARCH-AND-DIRECTION.md) for sources, limitations, and adoption policy. The expanded implementation contract is in [BLUEPRINT.md](./BLUEPRINT.md).
 
 **The new ambition:** one functional engine, six authored worlds, adaptive task experiences, evidence-led AI collaboration, original media foundries, and measurable experience quality.
+
+
+---
+
+## 15. Canonical execution plan
+
+The complete source-to-implementation reconciliation, current implementation baseline, duplicate-plan disposition, atomic autonomous tasks, agent guardrails, coverage matrix and evidence log are maintained in the repository's [Moon UI Master Consolidation Plan](../../.plans/20261105-moon-ui-master-consolidation/spec.md).
+
+Use that master plan as the **single execution queue** for Moon UI. Do not create parallel plans for skins, artwork, components, foundries or visual certification. Before implementing a listed capability, verify its current source and tests; reuse existing foundations and record evidence instead of rebuilding them.
