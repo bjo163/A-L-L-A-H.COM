@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "c4510595561de91bc0d25f41fe47cd0af82e92c93bd8a99cca308c2082ec5004",
+  "source_digest": "70dee261f46206288f6b873894af99df5c79ef3ae3f62c018abbcd31cca894e9",
   "units": [
     {
       "dir": "addons/base",
@@ -570,7 +570,9 @@
           "KeysetCursor",
           "GroupAggregate",
           "TransactionContext",
-          "withTransaction"
+          "withTransaction",
+          "ComputeHandler",
+          "OrderedMigration"
         ],
         "depends": [
           "@allah/arsy-core"
@@ -579,7 +581,7 @@
       "id": "PKG_ARSY_ORM",
       "name": "@allah/arsy-orm",
       "owner": "platform-core",
-      "version": "1.2.0",
+      "version": "1.4.0",
       "status": "released",
       "last_verified": "2026-11-05",
       "summary": "ARSY query-layer ORM model registry repositories and the default-data seeder"
