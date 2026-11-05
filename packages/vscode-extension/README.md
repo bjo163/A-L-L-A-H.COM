@@ -75,3 +75,17 @@ pnpm --filter allah-vscode-extension typecheck
 pnpm extension:build
 pnpm --filter allah-vscode-extension check-standalone
 ```
+
+
+## Product roadmap and execution plan
+
+The canonical evolution plan for the standalone Developer Cockpit lives at:
+
+- `.plans/20261105-vscode-extension-ready-to-use/README.md` — product narrative and roadmap.
+- `.plans/20261105-vscode-extension-ready-to-use/spec.md` — functional requirements and release gates.
+- `.plans/20261105-vscode-extension-ready-to-use/blueprint.md` — target architecture and ownership.
+- `.plans/20261105-vscode-extension-ready-to-use/task.md` — master task index and dependencies.
+- `.plans/20261105-vscode-extension-ready-to-use/rules.md` — execution rules for local coding agents.
+- `.plans/20261105-vscode-extension-ready-to-use/packages/` — ten executable phase plans.
+
+The plan is intentionally evidence-first: historical build/package reports do not replace current extension-host and clean-install acceptance tests. Release 0.4.0 focuses on a reliable local-first user journey before advanced multi-agent capabilities.
