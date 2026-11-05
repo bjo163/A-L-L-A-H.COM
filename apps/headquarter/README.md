@@ -1,36 +1,74 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "APP_HEADQUARTER_README"
-version: "0.1.0"
+version: "1.0.0"
 owner: "frontend"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-05"
 ---
-# Headquarter — Command Center
+# HEADQUARTER — NEXUS PARADOX
 
-The Headquarter is a Next.js command center for the A-L-L-A-H.COM platform. It runs on port 3002 and uses shared shadcn/ui components from `@moonwitness/ui`.
+**Strategic command center for A-L-L-A-H.COM.** Headquarter turns applications, services, projects, AI agents, knowledge, risks, and decisions into one trustworthy executive operating picture.
 
-Check `package.json` and source for the current routes, dependencies, and features.
+It is where leaders understand what matters, review evidence, make accountable decisions, and follow through. It is neither a generic admin dashboard nor the real-time NOC console.
 
-## Remote agent operations
+**One trustworthy strategic picture. One accountable decision path. One traceable record of execution.**
 
-The Agent page supports pairing and revoking Windows VS Code devices, submitting missions, requesting cancellation, and viewing persisted mission events. Device and mission access is tenant-scoped: newly registered users receive isolated personal tenants, while members assigned to the same organization tenant can share its devices and missions. Headquarter does not select local workspace paths or bypass the extension's execution policy.
+See [blueprint.md](./blueprint.md) for the complete product narrative, boundaries, architecture, workflows, data ownership, security, visual doctrine and release stages.
 
-## Commands
+## Ownership and boundaries
+- Owns executive overview, governance, project/portfolio oversight, AI/agent governance, and knowledge-backed review.
+- GATE owns public discovery; DOCK owns community participation; COCKPIT owns live NOC dispatch.
+- MoonWitness ID / ARSY own identity, sessions, credentials, authorization, persistence and audit.
+- Domain services remain authoritative for project, agent, provider, tool, telemetry and knowledge records.
+- VS Code extension owns local workspace consent, file review and command execution policy.
 
-Run these from the repository root:
+ARSY is the server-side authority. UI visibility is never a security boundary.
 
-| Command | Purpose |
-|---|---|
-| `pnpm headquarter:dev` | Start the development server on port 3002 |
-| `pnpm headquarter:build` | Create a production build |
-| `pnpm --filter @moonwitness/headquarter typecheck` | Type-check the Headquarter package |
+## Current implementation inventory
+Documentation baseline only; planned capabilities are not claims of completion. App uses Next.js 16.4.3, React 19.3.0, TypeScript, @moonwitness/ui and @allah/sdk; port 3002.
 
-Use root `pnpm dev` to start both Dock (3001) and Headquarter (3002) development servers.
+| Surface | Source evidence | Audit caveat |
+|---|---|---|
+| Overview | src/app/page.tsx | Hero and module index; not yet the strategic briefing in blueprint |
+| AI Gateway | src/app/ai-gateway/ | Verify API contracts and configured provider state |
+| Agent Studio | src/app/agent/page.tsx | Streaming UI and remote controls exist; audit cancellation, event lifecycle and permissions |
+| Swarm Ops | src/app/swarm/ | Verify history, review, cancellation and persisted outcomes |
+| Tool Registry | src/app/tools/ | Verify registry ownership and invocation permissions |
+| Knowledge | src/app/knowledge/ | Verify citations, freshness and tenant visibility |
+| Projects | src/lib/nav-registry.ts | Declared in navigation; reconcile route and navigation consumers |
+| Skin Laboratory | src/app/skin-lab/ | Utility route, not a strategic module |
 
-## Project guidance
+**Known drift:** nav-registry.ts declares Projects, but headquarter-shell.tsx and src/app/page.tsx maintain separate lists that omit it. Make HQ_NAV the single source. Classify Skin Laboratory separately.
 
-- [Root README](../../README.md) covers workspace setup and production deployment.
-- [Root quality standards](../../QUALITY.md) define shared verification requirements.
+## Architecture
+- Next.js App Router / React / TypeScript, port 3002.
+- NEXUS PARADOX skin through @moonwitness/ui.
+- Typed contracts through @allah/sdk and @moonwitness/types.
+- ARSY Fastify Hub, port 5150, is the backend authority.
+- No direct database access, duplicated auth, or invented endpoint.
 
-Use the workspace package manager and lockfile. Do not assume routes, pages, or integrations exist unless they are present in the source.
+## Run locally
+From repository root:
+```bash
+pnpm install
+pnpm headquarter:dev
+```
+Open http://127.0.0.1:3002.
+
+Useful checks:
+```bash
+pnpm --filter @moonwitness/headquarter typecheck
+pnpm headquarter:build
+pnpm docs:check
+pnpm lint:arch
+pnpm ui:test
+pnpm ui:contrast
+```
+Use the root lockfile. Read [app guidance](./AGENTS.md), [root AGENTS](../../AGENTS.md), and installed Next.js docs before framework changes.
+
+## Execution plan
+Start at [master plan](../../.plans/20261105-headquarter-command-center/plan.md), then follow rules.md and task.md. First gate: inspect route tree, SDK exports/types, ARSY endpoint schemas, tests and branch state. Do not add endpoints, tables, dependencies, services or duplicate primitives until a real gap is proven.
+
+## Quality bar
+No fake data/live states, dead controls, unexplained metrics, duplicate navigation sources, client-side authorization, silent destructive actions, or unsupported completion claims. Consequential workflows must be tenant-safe, evidence-backed, accessible, responsive and verifiable.
