@@ -176,3 +176,12 @@ Before adopting an external library or pattern: verify maintenance, license, sec
 - Browser capabilities vary; test target devices.
 
 **Conclusion:** Moon UI's defensible advantage should be the integration of six authored world grammars, task-aware composition, user-agency controls, evidence-led AI surfaces, original media production, and rigorous experience certification—not the number of components or amount of 3D.
+
+
+---
+
+## Execution mapping and adoption status
+
+Research-derived concepts are proposals until implemented and verified. Their bounded implementation tasks, existing-code overlap checks and adoption/defer decisions are tracked in the [Moon UI Master Consolidation Plan](../.plans/20261105-moon-ui-master-consolidation/spec.md), especially its coverage matrix and task list.
+
+Do not add a library, runtime AI service, WebGL/WebGPU renderer or generative pipeline solely because it appears in a paper, Dribbble study or GitHub trend. The master plan requires a real workflow, current-source gap, license/maintenance/security review, accessible fallback and measurable verification before adoption.
