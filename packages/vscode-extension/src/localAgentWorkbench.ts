@@ -273,6 +273,10 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   ): Promise<LocalAgentSession['state'] | undefined> {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || this.activeRun || externalSignal?.aborted) return 'cancelled';
+    if (!vscode.workspace.isTrusted) {
+      this.post({ type: 'blocked', message: 'Workspace Trust is required before the agent can inspect or edit files.' });
+      return 'blocked';
+    }
 
     const providerStatus = await this.client.checkAgentProvider();
     if (!providerStatus.ok) {

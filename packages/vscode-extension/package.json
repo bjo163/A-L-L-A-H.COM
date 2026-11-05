@@ -315,7 +315,8 @@
     "typecheck": "tsc --noEmit",
     "package": "vsce package --no-dependencies",
     "check-runtime": "node ../../scripts/check-vscode-extension-runtime.mjs",
-    "check-standalone": "node ../../scripts/check-vscode-extension-standalone.mjs"
+    "check-standalone": "node ../../scripts/check-vscode-extension-standalone.mjs",
+    "check-manifest": "node ../../scripts/check-vscode-extension-manifest.mjs"
   },
   "dependencies": {
     "@moonwitness/types": "workspace:*"

@@ -1,30 +1,30 @@
-# Execution Report
+# Ready-to-use implementation report
 
-## Current status
-- Planning documentation generated.
-- No extension source code changed by this plan.
-- No tests were run while generating planning documents.
-- No runtime or VSIX readiness claim is made.
+## Completed in this pass
 
-## Baseline observations
-- Extension package and runtime services are present.
-- Existing plan history reports earlier unit/build/package checks.
-- Mission Timeline interactive extension-host verification was explicitly pending in inspected plan/backlog.
-- Workspace-aware mission templates were explicitly deferred.
-- Historical reports must be revalidated on current checkout.
+- Added a manifest parity guard covering all 27 contributed commands, 8 views, and view activation events.
+- Kept the extension test command deterministic and added the parity guard to the package-level validation surface.
+- Added Workspace Trust gates before workspace search, Git terminals, validation commands, plan creation, plan generation, and agent sessions.
+- Added a bounded provider request timeout and propagated caller cancellation for gateway HTTP requests.
+- Preserved explicit provider selection and the no-silent-fallback boundary.
 
-## Release gate ledger
-| Gate | Status | Evidence |
-|---|---|---|
-| Architecture reconciliation | Pending | — |
-| Manifest/runtime parity | Pending | — |
-| Extension-host smoke tests | Pending | — |
-| Local Ollama journey | Pending | — |
-| Gateway optionality | Pending | — |
-| Plan-to-validated-edit journey | Pending | — |
-| Mission recovery/replay | Pending | — |
-| Security review | Pending | — |
-| Clean VSIX installation | Pending | — |
-| Documentation parity | Pending | — |
+## Evidence
 
-For each gate record date/time, OS, VS Code version, Node/pnpm versions, exact command/manual steps, exit code/result, log/artifact, limitations and issue references.
+| Command | Result |
+|---|---|
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 27 commands and 8 views |
+| `pnpm extension:test` | Passed: 26 tests |
+| `pnpm --filter allah-vscode-extension check-standalone` | Passed |
+| `pnpm --filter allah-vscode-extension build` | Passed |
+| `git diff --check` | Passed |
+
+## Limitations
+
+- A VS Code extension-host harness is not available in the current repository, so activation, webview click-through, multi-root, clean-profile installation, and reload/recovery acceptance remain unverified.
+- Ollama live acceptance remains environment-dependent; no running Ollama endpoint/model was available during this pass.
+- The existing Vitest-only provider service tests are not part of the extension package dependency graph and were not claimed as passed.
+- P1/P2 roadmap work remains intentionally open.
+
+## Release status
+
+The extension has stronger automated parity and trust boundaries, but this evidence does not justify declaring the full 0.4.0 acceptance matrix complete.

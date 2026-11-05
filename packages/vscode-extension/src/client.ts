@@ -27,6 +27,8 @@ interface SwarmEvent {
   data: Record<string, unknown>;
 }
 
+const PROVIDER_TIMEOUT_MS = 30_000;
+
 class StandaloneHttpClient {
   constructor(
     private readonly baseUrl: string,
@@ -34,14 +36,25 @@ class StandaloneHttpClient {
   ) {}
 
   private async request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        ...this.headers,
-        ...(init.headers as Record<string, string> | undefined),
-      },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+    const abort = () => controller.abort();
+    init.signal?.addEventListener('abort', abort, { once: true });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...init,
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+          ...this.headers,
+          ...(init.headers as Record<string, string> | undefined),
+        },
+      });
+    } finally {
+      clearTimeout(timeout);
+      init.signal?.removeEventListener('abort', abort);
+    }
     const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
     if (!response.ok) {
       const error = isRecord(payload.error) && typeof payload.error.message === 'string'
@@ -386,7 +399,7 @@ export class MoonWitnessClient {
             { role: 'user', content: prompt },
           ],
         }),
-        signal,
+        signal: AbortSignal.any([signal ?? new AbortController().signal, AbortSignal.timeout(PROVIDER_TIMEOUT_MS)]),
       });
     } catch (error) {
       throw new Error(`Ollama is unavailable at ${baseUrl}: ${errorMessage(error)}`);

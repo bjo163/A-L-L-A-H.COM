@@ -4,19 +4,19 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ## P0 — Release 0.4.0
 ### 00 Architecture reconciliation
-- [ ] VSC-001 Inventory extension source, exports and entrypoints.
+- [x] VSC-001 Inventory extension source, exports and entrypoints.
 - [ ] VSC-002 Map every manifest command to registration, implementation and test.
-- [ ] VSC-003 Map activation events, views, menus and status items.
+- [x] VSC-003 Map activation events, views, menus and status items.
 - [ ] VSC-004 Trace AgentWorkbenchProvider and LocalAgentWorkbenchProvider responsibilities.
 - [ ] VSC-005 Trace ProviderRegistry, ProviderIntegration, Ollama and Gateway ownership.
 - [ ] VSC-006 Trace MissionTimeline, remote mission service and persistence.
-- [ ] VSC-007 Identify legacy/dead code and monorepo-only runtime imports.
-- [ ] VSC-008 Audit Workspace Trust, paths, webviews, secrets and shell tools.
-- [ ] VSC-009 Produce source-of-truth matrix and disposition decisions.
-- [ ] VSC-010 Confirm package scripts, bundle entrypoints and standalone dependency graph.
+- [x] VSC-007 Identify legacy/dead code and monorepo-only runtime imports.
+- [x] VSC-008 Audit Workspace Trust, paths, webviews, secrets and shell tools.
+- [x] VSC-009 Produce source-of-truth matrix and disposition decisions.
+- [x] VSC-010 Confirm package scripts, bundle entrypoints and standalone dependency graph.
 
 ### 01 Runtime and extension-host
-- [ ] VSC-011 Extend parity to every contributed command and view.
+- [x] VSC-011 Extend parity to every contributed command and view.
 - [ ] VSC-012 Add VS Code extension-host harness using existing supported tooling.
 - [ ] VSC-013 Test activation/deactivation, missing optional providers and no workspace.
 - [ ] VSC-014 Test single-root and multi-root workspaces.
@@ -48,25 +48,25 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 04 Agent execution
 - [ ] VSC-036 Document/test Ask, Plan, Ideate, Code, Debug and Autopilot boundaries.
-- [ ] VSC-037 Verify bounded context and sensitive-file exclusions.
+- [x] VSC-037 Verify bounded context and sensitive-file exclusions.
 - [ ] VSC-038 Enforce plan-first execution for multi-step changes.
-- [ ] VSC-039 Enforce proposed diff, approval and conflict detection.
+- [x] VSC-039 Enforce proposed diff, approval and conflict detection.
 - [ ] VSC-040 Propagate cancellation through provider and tools.
-- [ ] VSC-041 Restrict tools/terminal commands through policy engine.
+- [x] VSC-041 Restrict tools/terminal commands through policy engine.
 - [ ] VSC-042 Produce completion summary with changed files and evidence.
 
 ### 05 Mission reliability
-- [ ] VSC-043 Finalize typed mission transitions and invariants.
-- [ ] VSC-044 Verify redacted persistence and schema versioning.
-- [ ] VSC-045 Verify interrupted recovery without automatic replay.
-- [ ] VSC-046 Verify explicit resume, cancellation and idempotency.
-- [ ] VSC-047 Verify remote replay protection and bounded repair.
+- [x] VSC-043 Finalize typed mission transitions and invariants.
+- [x] VSC-044 Verify redacted persistence and schema versioning.
+- [x] VSC-045 Verify interrupted recovery without automatic replay.
+- [x] VSC-046 Verify explicit resume, cancellation and idempotency.
+- [x] VSC-047 Verify remote replay protection and bounded repair.
 - [ ] VSC-048 Add extension-host evidence for timeline/recovery.
 
 ### 09 Release 0.4.0
-- [ ] VSC-049 Run build, typecheck, lint and focused tests.
+- [!] VSC-049 Run build, typecheck, lint and focused tests. Build and focused tests passed; full lint was not run because the repository contains unrelated dirty changes.
 - [ ] VSC-050 Run extension-host suite and record environment/results.
-- [ ] VSC-051 Run security and standalone checks.
+- [x] VSC-051 Run security and standalone checks.
 - [ ] VSC-052 Inspect VSIX contents and monorepo imports.
 - [ ] VSC-053 Install VSIX in clean profile and complete user journey.
 - [ ] VSC-054 Finalize README/setup/provider/troubleshooting/security docs.

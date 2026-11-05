@@ -313,6 +313,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('allah.createPlan', async () => {
+      if (!vscode.workspace.isTrusted) {
+        vscode.window.showWarningMessage('Workspace Trust is required before creating a plan.');
+        return;
+      }
       const title = await vscode.window.showInputBox({
         prompt: 'Enter a feature or task title for the new plan.',
         placeHolder: 'A specific feature or problem',
@@ -337,6 +341,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }),
     vscode.commands.registerCommand('allah.generatePlanWithAI', async () => {
+      if (!vscode.workspace.isTrusted) {
+        vscode.window.showWarningMessage('Workspace Trust is required before generating a plan.');
+        return;
+      }
       const title = await vscode.window.showInputBox({
         prompt: 'Describe the feature or problem for the plan.',
         placeHolder: 'A specific feature or problem',

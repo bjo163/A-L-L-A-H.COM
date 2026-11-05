@@ -18,6 +18,10 @@ async function chooseWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefin
 export function registerOfflineWorkbench(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('allah.searchWorkspace', async () => {
+      if (!vscode.workspace.isTrusted) {
+        void vscode.window.showWarningMessage('Workspace Trust is required before searching files.');
+        return;
+      }
       const folder = await chooseWorkspaceFolder();
       if (!folder) return;
       const query = await vscode.window.showInputBox({
@@ -43,6 +47,10 @@ export function registerOfflineWorkbench(context: vscode.ExtensionContext): void
       }
     }),
     vscode.commands.registerCommand('allah.showGitStatus', async () => {
+      if (!vscode.workspace.isTrusted) {
+        void vscode.window.showWarningMessage('Workspace Trust is required before opening a Git terminal.');
+        return;
+      }
       const folder = await chooseWorkspaceFolder();
       if (!folder) return;
       const terminal = vscode.window.createTerminal({ name: 'A-L-L-A-H Git', cwd: folder.uri });
@@ -51,6 +59,10 @@ export function registerOfflineWorkbench(context: vscode.ExtensionContext): void
       terminal.sendText('git status --short', true);
     }),
     vscode.commands.registerCommand('allah.runApprovedTask', async () => {
+      if (!vscode.workspace.isTrusted) {
+        void vscode.window.showWarningMessage('Workspace Trust is required before running validation.');
+        return;
+      }
       const folder = await chooseWorkspaceFolder();
       if (!folder) return;
       const selected = await vscode.window.showQuickPick(
