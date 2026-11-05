@@ -31,9 +31,9 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [x] **MU-0002** Verify current branch is `dev`; do not create or switch to a new branch.
 - [x] **MU-0003** Record current `dev` HEAD and timestamp in `report.md`.
 - [x] **MU-0004** Inspect `git status --short`; preserve every pre-existing local change.
-- [ ] **MU-0005** Verify `main` is not checked out and will not be modified.
-- [ ] **MU-0006** Read `AGENTS.md`, `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `QUALITY.md`, `DESIGN.md`, `DECISIONS.md` and relevant DNA contracts.
-- [ ] **MU-0007** Read all four Moon UI source documents and extract every requirement into `coverage-matrix.md`.
+- [x] **MU-0005** Verify `main` is not checked out and will not be modified.
+- [x] **MU-0006** Read `AGENTS.md`, `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `QUALITY.md`, `DESIGN.md`, `DECISIONS.md` and relevant DNA contracts.
+- [x] **MU-0007** Read all four Moon UI source documents and extract every requirement into `coverage-matrix.md`.
 - [x] **MU-0008** Enumerate all package source files, exports, tests, app consumers, fonts, image/audio assets and scripts from the live tree.
 - [x] **MU-0009** Search all frontend apps for direct icon-library imports, app-local design tokens, duplicate controls and private `mw-*` selectors.
 - [x] **MU-0010** Record the current root build/test/lint/typecheck/docs commands from `package.json`; do not invent scripts.

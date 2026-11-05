@@ -32,8 +32,8 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [x] **PUI-0002** Verify current branch is the existing `dev`; do not create or switch branches.
 - [x] **PUI-0003** Record remote `dev` HEAD and timestamp in `report.md`.
 - [x] **PUI-0004** Inspect worktree status and preserve all existing modifications.
-- [ ] **PUI-0005** Read root engineering instructions, design decisions, quality contract and all six DNA references relevant to package work.
-- [ ] **PUI-0006** Read `packages/ui/README.md`, `BLUEPRINT.md`, `RESEARCH-AND-DIRECTION.md` and this plan; extract package requirements into the coverage matrix.
+- [x] **PUI-0005** Read root engineering instructions, design decisions, quality contract and all six DNA references relevant to package work.
+- [x] **PUI-0006** Read `packages/ui/README.md`, `BLUEPRINT.md`, `RESEARCH-AND-DIRECTION.md` and this plan; extract package requirements into the coverage matrix.
 - [x] **PUI-0007** Enumerate every file under `packages/ui/src`, `packages/ui/test` and package asset directories from the live tree.
 - [x] **PUI-0008** Enumerate package exports and compare them with every real application import.
 - [x] **PUI-0009** Record actual package scripts, root quality commands and CI jobs; do not invent commands.
@@ -42,15 +42,15 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [x] **PUI-0012** Run relevant baseline typecheck, lint and architecture checks; record each independently.
 - [x] **PUI-0013** Record baseline package build/consumer build results using scripts that actually exist.
 - [x] **PUI-0014** Record baseline source, test, asset, font, audio and export counts.
-- [ ] **PUI-0015** Classify each package capability as implemented, partial, proposed, tested, visually verified, integrated or blocked.
+- [x] **PUI-0015** Classify each package capability as implemented, partial, proposed, tested, visually verified, integrated or blocked.
 
 ### P0.2 Ownership and overlap
 - [x] **PUI-0016** Confirm `@moonwitness/ui` is the sole shared visual and interaction package.
 - [x] **PUI-0017** Search for duplicate token registries, icon systems, motion providers, SFX engines and asset registries before proposing changes.
-- [ ] **PUI-0018** Map each current component/block/primitive to its package owner and public export.
-- [ ] **PUI-0019** Verify app-specific routes, fetching, authorization, persistence and business logic remain outside the package.
-- [ ] **PUI-0020** Map package tasks to canonical parent MU task IDs; identify overlap and defer any item already fully satisfied.
-- [ ] **PUI-0021** Record baseline findings and the first verified implementation gaps in `report.md`.
+- [x] **PUI-0018** Map each current component/block/primitive to its package owner and public export.
+- [x] **PUI-0019** Verify app-specific routes, fetching, authorization, persistence and business logic remain outside the package.
+- [x] **PUI-0020** Map package tasks to canonical parent MU task IDs; identify overlap and defer any item already fully satisfied.
+- [x] **PUI-0021** Record baseline findings and the first verified implementation gaps in `report.md`.
 
 **Phase 0 exit gate:** current source and tests have been inspected; package ownership and task overlap are explicit; no implementation begins from assumptions.
 
@@ -59,18 +59,18 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 ## Phase 1 — Package API, exports and architecture
 
 ### P1.1 Public contract
-- [ ] **PUI-0101** Audit root export `src/index.ts` for completeness, accidental internals and duplicate names.
-- [ ] **PUI-0102** Audit `./components`, `./blocks`, `./primitives`, `./raw`, `./sfx` and `./tokens` subpath exports.
-- [ ] **PUI-0103** Audit CSS exports `./skins.css` and `./theme.css` against actual package files.
-- [ ] **PUI-0104** Verify every public export resolves in a real consumer context.
-- [ ] **PUI-0105** Identify consumer imports that bypass public exports through private source paths.
+- [x] **PUI-0101** Audit root export `src/index.ts` for completeness, accidental internals and duplicate names.
+- [x] **PUI-0102** Audit `./components`, `./blocks`, `./primitives`, `./raw`, `./sfx` and `./tokens` subpath exports.
+- [x] **PUI-0103** Audit CSS exports `./skins.css` and `./theme.css` against actual package files.
+- [x] **PUI-0104** Verify every public export resolves in a real consumer context.
+- [x] **PUI-0105** Identify consumer imports that bypass public exports through private source paths.
 - [ ] **PUI-0106** Replace private imports only where the package API already provides an equivalent stable export; coordinate consumer changes under parent task ownership.
 - [ ] **PUI-0107** Document public API stability and the policy for adding, deprecating and removing exports.
-- [ ] **PUI-0108** Verify package metadata, React 19 peer dependencies and workspace dependency boundaries.
-- [ ] **PUI-0109** Verify package source format remains TypeScript/TSX and ESM as currently contracted.
+- [x] **PUI-0108** Verify package metadata, React 19 peer dependencies and workspace dependency boundaries.
+- [x] **PUI-0109** Verify package source format remains TypeScript/TSX and ESM as currently contracted.
 - [ ] **PUI-0110** Detect circular dependencies and unintended imports from app/backend packages.
 - [ ] **PUI-0111** Verify tree-shaking and CSS import behavior using the actual consumer build pipeline.
-- [ ] **PUI-0112** Add export-contract tests for every supported public entrypoint.
+- [~] **PUI-0112** Add export-contract tests for every supported public entrypoint.
 
 ### P1.2 Layer boundaries
 - [ ] **PUI-0113** Verify tokens/skins own presentation values only and contain no business data.
