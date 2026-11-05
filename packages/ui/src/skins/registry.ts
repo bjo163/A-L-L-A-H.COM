@@ -80,18 +80,18 @@ export const skinRegistry = {
     id: 'imperium-lumen',
     name: 'IMPERIUM LUMEN',
     signature: 'Monumental frames, axial order, and restrained warm light.',
-    identity: { hero: '/artwork/imperium-lumen.png', emblem: '/brand/imperium-emblem.svg', themeColor: '#090A0D' },
+    identity: { hero: '/artwork/imperium-lumen.png', emblem: '/brand/emblem.svg', themeColor: '#090A0D' },
     tokens: {
       colors: {
         canvas: '#090A0D',
         surface: '#20242B',
-        elevatedSurface: '#C5A15A',
+        elevatedSurface: '#2A2F37',
         text: '#F4F1E8',
         mutedText: '#C4C0B5',
         border: '#908B7D',
         accent: '#C5A15A',
         accentText: '#17150F',
-        accentLabel: '#F4F1E8',
+        accentLabel: '#E0D9D0',
         focus: '#F3D996',
         success: '#6EC39A',
         danger: '#FF938B',
@@ -132,7 +132,7 @@ export const skinRegistry = {
     id: 'lunar-chronicles',
     name: 'LUNAR CHRONICLES',
     signature: 'Layered atlas surfaces and observatory-grade alignment.',
-    identity: { hero: '/artwork/lunar-chronicles.png', emblem: '/brand/lunar-emblem.svg', themeColor: '#101923' },
+    identity: { hero: '/artwork/lunar-chronicles.png', emblem: '/brand/emblem.svg', themeColor: '#101923' },
     tokens: {
       colors: {
         canvas: '#101923',
@@ -184,7 +184,7 @@ export const skinRegistry = {
     id: 'rocksoul',
     name: 'ROCKSOUL',
     signature: 'Cinematic framing, tactile edges, and selective crimson.',
-    identity: { hero: '/artwork/rocksoul.png', emblem: '/brand/rocksoul-emblem.svg', themeColor: '#141516' },
+    identity: { hero: '/artwork/rocksoul.png', emblem: '/brand/emblem.svg', themeColor: '#141516' },
     tokens: {
       colors: {
         canvas: '#141516',
@@ -236,7 +236,7 @@ export const skinRegistry = {
     id: 'nexus-paradox',
     name: 'NEXUS PARADOX',
     signature: 'Instrument planes, clipped coordinates, and precise signals.',
-    identity: { hero: '/artwork/nexus-paradox.png', emblem: '/brand/nexus-emblem.svg', themeColor: '#0c171c' },
+    identity: { hero: '/artwork/nexus-paradox.png', emblem: '/brand/emblem.svg', themeColor: '#0c171c' },
     tokens: {
       colors: {
         canvas: '#0c171c',
@@ -288,7 +288,7 @@ export const skinRegistry = {
     id: 'riot-anarchy',
     name: 'RIOT ANARCHY',
     signature: 'Hard print edges, poster contrast, and controlled disruption.',
-    identity: { hero: '/artwork/riot-anarchy.png', emblem: '/brand/riot-emblem.svg', themeColor: '#e9e3d3' },
+    identity: { hero: '/artwork/riot-anarchy.png', emblem: '/brand/emblem.svg', themeColor: '#e9e3d3' },
     tokens: {
       colors: {
         canvas: '#e9e3d3',
@@ -340,7 +340,7 @@ export const skinRegistry = {
     id: 'mycelium',
     name: 'MYCELIUM',
     signature: 'Connected organic surfaces and quiet mineral color.',
-    identity: { hero: '/artwork/mycelium.png', emblem: '/brand/mycelium-emblem.svg', themeColor: '#10201b' },
+    identity: { hero: '/artwork/mycelium.png', emblem: '/brand/emblem.svg', themeColor: '#10201b' },
     tokens: {
       colors: {
         canvas: '#10201b',

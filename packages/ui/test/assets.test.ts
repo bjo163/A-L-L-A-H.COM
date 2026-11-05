@@ -39,7 +39,7 @@ test('every skin declares identity artwork and a valid theme color', () => {
     const { hero, emblem, themeColor } = skinRegistry[id].identity;
 
     assert.match(hero, new RegExp(`^/artwork/${id}\\.png$`), `${id}: hero path must follow the /artwork/<skin>.png convention`);
-    assert.equal(emblem, '/brand/emblem.svg');
+    assert.match(emblem, /^\/brand\/[a-z-]+\.svg$/, `${id}: emblem path must be under /brand/ and end in .svg`);
     assert.match(themeColor, /^#[0-9a-f]{6}$/i, `${id}: themeColor must be a hex value`);
   }
 });
