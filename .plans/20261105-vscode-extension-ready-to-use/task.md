@@ -37,11 +37,11 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-027 Verify keyboard accessibility, themes and narrow panels.
 
 ### 03 Providers and local-first
-- [ ] VSC-028 Finalize one provider adapter contract and registry.
+- [!] VSC-028 Finalize one provider adapter contract and registry. The primary Workspace Agent uses explicit Gateway/Ollama routing; legacy registry and fallback services remain isolated pending a larger adapter consolidation.
 - [ ] VSC-029 Verify Ollama endpoint setup and connection test.
 - [ ] VSC-030 Verify model discovery and capability metadata.
-- [ ] VSC-031 Make provider/model selection explicit and observable.
-- [ ] VSC-032 Normalize streaming, timeout, cancellation, retry and errors.
+- [x] VSC-031 Make provider/model selection explicit and observable. Provider selection is explicit, model readiness is checked before sessions, and fallback is opt-in only.
+- [x] VSC-032 Normalize streaming, timeout, cancellation, retry and errors. HTTP requests have bounded timeout/cancellation and provider failures are surfaced without silent fallback.
 - [ ] VSC-033 Store credentials only in SecretStorage.
 - [ ] VSC-034 Verify full local workflow with network disabled.
 - [ ] VSC-035 Verify Gateway optionality and visible failure behavior.

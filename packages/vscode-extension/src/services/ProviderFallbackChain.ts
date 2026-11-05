@@ -8,12 +8,14 @@ import { ProviderRegistry, type ILLMProvider } from '../providers';
 export interface FallbackChainOptions {
   primaryProvider?: string;
   fallbackOrder?: string[];
+  allowFallback?: boolean;
 }
 
 export class ProviderFallbackChain {
   private static instance: ProviderFallbackChain;
   private primaryProvider: string = 'moonwitness';
   private fallbackOrder: string[] = ['openai', 'anthropic', 'gemini', 'ollama'];
+  private allowFallback = false;
   private isOfflineMode = false;
 
   private constructor(private readonly registry: ProviderRegistry) {}
@@ -35,17 +37,18 @@ export class ProviderFallbackChain {
     if (options.fallbackOrder) {
       this.fallbackOrder = options.fallbackOrder;
     }
+    if (options.allowFallback !== undefined) {
+      this.allowFallback = options.allowFallback;
+    }
   }
 
   /**
    * Get first available provider in fallback chain
    */
   async getFirstAvailableProvider(): Promise<ILLMProvider | null> {
-    // Build chain: primary → other configured → ollama fallback
-    const chain = [
-      this.primaryProvider,
-      ...this.fallbackOrder.filter((p) => p !== this.primaryProvider),
-    ];
+    const chain = this.allowFallback
+      ? [this.primaryProvider, ...this.fallbackOrder.filter((p) => p !== this.primaryProvider)]
+      : [this.primaryProvider];
 
     for (const providerId of chain) {
       const provider = this.registry.getProvider(providerId as any);
@@ -53,17 +56,6 @@ export class ProviderFallbackChain {
         this.isOfflineMode = false;
         return provider;
       }
-    }
-
-    // Last resort: Ollama if available
-    try {
-      const ollamaProvider = this.registry.getProvider('ollama');
-      if (ollamaProvider && (await ollamaProvider.validateCredentials())) {
-        this.isOfflineMode = true;
-        return ollamaProvider;
-      }
-    } catch {
-      // Ollama not available
     }
 
     this.isOfflineMode = true;
@@ -100,6 +92,8 @@ export class ProviderFallbackChain {
    * Get current fallback chain order
    */
   getChainOrder(): string[] {
-    return [this.primaryProvider, ...this.fallbackOrder];
+    return this.allowFallback
+      ? [this.primaryProvider, ...this.fallbackOrder]
+      : [this.primaryProvider];
   }
 }
