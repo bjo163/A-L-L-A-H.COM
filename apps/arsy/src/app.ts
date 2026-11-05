@@ -36,6 +36,14 @@ export interface BuildAppOptions {
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+function nasResponse<T extends { secret_encrypted?: unknown }>(record: T) {
+  const { secret_encrypted, ...metadata } = record;
+  return {
+    ...metadata,
+    secret: redactSecret(String(secret_encrypted ?? '')),
+  };
+}
+
 // Exact `METHOD path` rules: a prefix rule would authorise every future route that
 // happens to share the segment.
 const PUBLIC_ROUTES: PublicRouteRule[] = [
@@ -635,7 +643,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
 
   app.get('/v1/nexus/nas', async (request) => {
     const nas = await repository('nexus.nas').find({ scope: tenantOf(request), limit: 100 });
-    return ok(nas.map((record) => ({ ...record, secret: redactSecret(String(record.secret_encrypted)) })), { totalItems: nas.length });
+    return ok(nas.map(nasResponse), { totalItems: nas.length });
   });
 
   app.post('/v1/nexus/nas', async (request, reply) => {
@@ -653,7 +661,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       device_id: body.device_id ?? null,
     }, scope, actorOf(request));
     reply.status(201);
-    return ok({ ...nas, secret: redactSecret(String(nas.secret_encrypted)) });
+    return ok(nasResponse(nas));
   });
 
   const nasById = async (request: FastifyRequest<{ Params: { id: string } }>) => {
@@ -665,7 +673,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
 
   app.get<{ Params: { id: string } }>('/v1/nexus/nas/:id', async (request) => {
     const { nas } = await nasById(request);
-    return ok({ ...nas, secret: redactSecret(String(nas.secret_encrypted)) });
+    return ok(nasResponse(nas));
   });
 
   app.put<{ Params: { id: string } }>('/v1/nexus/nas/:id/secret', async (request) => {
@@ -691,7 +699,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
       metadata: {},
     }, scope, actorOf(request));
 
-    return ok({ ...(updated ?? nas), secret: redactSecret(encrypted) });
+    return ok(nasResponse(updated ?? nas));
   });
 
   app.get('/v1/nexus/pools', async (request) => {

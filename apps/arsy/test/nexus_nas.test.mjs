@@ -28,6 +28,7 @@ test('NEXUS NAS API Endpoints', async (t) => {
     assert.equal(body.data.vendor, 'mikrotik');
     assert.deepEqual(body.data.source_allowlist, ['192.168.88.0/24']);
     assert.equal(body.data.secret, '[REDACTED]', 'Secret must never be echoed, plaintext or ciphertext');
+    assert.equal('secret_encrypted' in body.data, false);
     assert.ok(!res.payload.includes('s3cure-sh4red-k3y'));
   });
 
@@ -39,6 +40,7 @@ test('NEXUS NAS API Endpoints', async (t) => {
     assert.ok(Array.isArray(body.data));
     for (const nas of body.data) {
       assert.equal(nas.secret, '[REDACTED]');
+      assert.equal('secret_encrypted' in nas, false);
     }
   });
 
@@ -55,6 +57,7 @@ test('NEXUS NAS API Endpoints', async (t) => {
     assert.equal(getRes.statusCode, 200);
     const body = JSON.parse(getRes.payload);
     assert.equal(body.data.secret, '[REDACTED]');
+    assert.equal('secret_encrypted' in body.data, false);
     assert.equal(body.data.nas_identifier, 'mikrotik-test');
     assert.equal(body.data.ip_address, '10.0.0.1');
   });
@@ -76,7 +79,9 @@ test('NEXUS NAS API Endpoints', async (t) => {
     });
 
     assert.equal(rotateRes.statusCode, 200, rotateRes.payload);
-    assert.equal(JSON.parse(rotateRes.payload).data.secret, '[REDACTED]');
+    const body = JSON.parse(rotateRes.payload);
+    assert.equal(body.data.secret, '[REDACTED]');
+    assert.equal('secret_encrypted' in body.data, false);
   });
 
   await t.test('GET /v1/nexus/pools lists IP pools', async () => {
