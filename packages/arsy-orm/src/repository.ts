@@ -1,5 +1,5 @@
 import { PGliteEngine, QueryExecutor, dbEngine } from './engine';
-import { AuditActor, ModelDefinition } from './model';
+import { AuditActor, ConstraintContext, ModelDefinition } from './model';
 import { FieldDefinition } from './fields';
 import { modelRegistry } from './registry';
 import {
@@ -11,7 +11,10 @@ import {
   KeysetCursor,
   GroupAggregate,
   UnknownFieldError,
+  SelectionValueError,
+  DomainNode,
 } from './query_builder';
+import { AccessDeniedError, AclMode, composeRuleDomain, PersistedRule, resolveAclMode } from './access';
 import { logger } from '@allah/arsy-core';
 
 /**
@@ -73,6 +76,132 @@ export class BaseRepository<T = Record<string, unknown>> {
     }
   }
 
+  /**
+   * Current ACL rollout mode. `off` skips model checks entirely; `audit` runs
+   * them and logs would-denies without blocking; `enforce` blocks. Defaults to
+   * `audit` (ADR-3), flipped to `enforce` only by the owner after reviewing the
+   * audit log — never implicitly.
+   */
+  aclMode(): AclMode {
+    return resolveAclMode();
+  }
+
+  /**
+   * Model-level permission check (ir.model.access). System actors and explicit
+   * global-access actors (server-authorized admin, reason + target tenant
+   * recorded elsewhere) bypass. In enforce mode a model with no matching grant
+   * row is default-deny; in audit mode the operation proceeds and the denial is
+   * only logged, never written to the append-only CRUD event table.
+   */
+  private async checkAccess(
+    actor: AuditActor,
+    mode: AclMode,
+    operation: 'create' | 'read' | 'update' | 'delete',
+    data?: Record<string, unknown>,
+    recordId?: number
+  ): Promise<void> {
+    if (mode === 'off') return;
+    // System and server-authorized global-access actors bypass ACL.
+    if (actor.type === 'system' || actor.globalAccess === true) return;
+
+    const permColumn = {
+      create: 'perm_create',
+      read: 'perm_read',
+      update: 'perm_write',
+      delete: 'perm_unlink',
+    }[operation];
+
+    // Grants are one row per (model, group). group_id 0 is the platform-wide base
+    // grant that applies to every authenticated principal; any other row applies
+    // only when the principal holds that group.
+    const grants = await this.executor.query<{ perm: boolean; group_id: number }>(`
+      SELECT ${permColumn} AS perm, "group_id"
+      FROM "ir_model_access"
+      WHERE "model_name" = $1
+    `, [this.model.name]);
+
+    if (grants.length === 0) {
+      // Default-deny only bites in enforce mode; audit mode records the gap.
+      if (mode === 'enforce') {
+        throw new AccessDeniedError(this.model.name, operation, 'no access grant exists for this model');
+      }
+      logger.warn({ msg: 'acl_would_deny', model: this.model.name, operation, userId: actor.userId, reason: 'no_grant' });
+      return;
+    }
+
+    const principalGroups = new Set((actor.groupIds ?? []).map(Number));
+    const allowed = grants.some((grant) => {
+      if (!grant.perm) return false;
+      const group = Number(grant.group_id);
+      // group_id 0 = base grant for all authenticated principals.
+      return group === 0 || principalGroups.has(group);
+    });
+
+    if (!allowed) {
+      if (mode === 'enforce') {
+        throw new AccessDeniedError(this.model.name, operation, `no grant permits '${operation}'`);
+      }
+      logger.warn({
+        msg: 'acl_would_deny',
+        model: this.model.name,
+        operation,
+        userId: actor.userId,
+        recordId,
+        reason: 'insufficient_grant',
+      });
+    }
+    // `data` is accepted for signature stability (future per-value rules) but is
+    // never logged, keeping audit free of row values.
+    void data;
+  }
+
+  /**
+   * Compile the ir.rule predicate that narrows reads/writes for this model and
+   * operation, given the acting principal. Returns a DomainNode to AND onto the
+   * query (never a widening), or null when no rule applies. Fails closed: a rule
+   * whose domain_force cannot be parsed throws so the caller rejects the query
+   * instead of returning rows the policy should hide.
+   */
+  async resolveSecurityDomain(
+    operation: 'read' | 'write' | 'create' | 'unlink',
+    actor: AuditActor
+  ): Promise<DomainNode | null> {
+    if (actor.type === 'system' || actor.globalAccess === true) return null;
+    const permColumn = {
+      read: 'perm_read',
+      write: 'perm_write',
+      create: 'perm_create',
+      unlink: 'perm_unlink',
+    }[operation];
+    const rows = await this.executor.query<{
+      name: string;
+      domain_force: string;
+      group_ids: unknown;
+      global: boolean;
+    }>(`
+      SELECT name, domain_force, group_ids, global
+      FROM "ir_rule"
+      WHERE model_name = $1 AND ${permColumn} = true
+    `, [this.model.name]);
+
+    const rules: PersistedRule[] = rows.map((r) => ({
+      name: r.name,
+      domain_force: r.domain_force,
+      group_ids: r.group_ids,
+      global: r.global,
+    }));
+    return composeRuleDomain(rules, actor.groupIds ?? []);
+  }
+
+  // Evaluate the model's single-row constraints before SQL emission. A throw
+  // here aborts the enclosing transaction, so the invariant cannot be bypassed
+  // by a caller that skips the route layer.
+  private async runConstraints(row: Record<string, unknown>, ctx: ConstraintContext): Promise<void> {
+    for (const constraint of this.model.constraints) {
+      await constraint(row, ctx);
+    }
+  }
+
   private async withAuditContext<R>(
     actor: AuditActor,
     actorId: number,
@@ -92,16 +221,29 @@ export class BaseRepository<T = Record<string, unknown>> {
           actor.globalAccess === true ? 'true' : 'false',
         ]
       );
+      let operationError: Error | undefined;
       try {
         return await operation(executor);
+      } catch (error) {
+        operationError = error instanceof Error ? error : new Error(String(error));
+        throw error;
       } finally {
-        await executor.query(
-          `SELECT
-             set_config('arsy.audit_actor_id', '', true),
-             set_config('arsy.audit_reason_hash', '', true),
-             set_config('arsy.audit_request_id', '', true),
-             set_config('arsy.audit_global_access', 'false', true);`
-        );
+        try {
+          await executor.query(
+            `SELECT
+               set_config('arsy.audit_actor_id', '', true),
+               set_config('arsy.audit_reason_hash', '', true),
+               set_config('arsy.audit_request_id', '', true),
+               set_config('arsy.audit_global_access', 'false', true);`
+          );
+        } catch (cleanupError) {
+          // Cleanup failure must never mask the original operation error. If the
+          // transaction is already aborted, the cleanup queries fail with "current
+          // transaction is aborted", which would otherwise hide the real error.
+          if (operationError) {
+            (operationError as any).cause = cleanupError;
+          }
+        }
       }
     };
 
@@ -118,26 +260,8 @@ export class BaseRepository<T = Record<string, unknown>> {
 
   async find(options: QueryOptions): Promise<T[]> {
     const { sql, params } = this.queryBuilder.buildSelect(options);
-    let rows = await this.executor.query<T>(sql, params);
-
-    // Apply transparent field translation if context.lang is provided
-    if (options.lang && rows.length > 0) {
-      const companyId = isSystemScope(options.scope) ? null : tenantCompanyId(options.scope);
-      rows = await this._applyTranslations(rows, options.lang, companyId);
-    }
-
-    // Batched relation traversal (roadmap T2.2): m2o inline, o2m/m2m resolved via
-    // one scoped IN query per relation. Related rows use the same tenant scope as
-    // the parent — never a caller-supplied id — so cross-tenant leaks are closed.
-    if (options.expand && options.expand.length > 0) {
-      rows = await this.applyExpand(rows, options.expand, options.scope);
-    }
-
-    // Computed / related fields (roadmap T2.3). Non-stored compute and single-hop
-    // `related` are resolved at read; `store: true` compute is persisted at write.
-    await this.applyComputed(rows as unknown as Array<Record<string, unknown>>, options.scope);
-
-    return rows;
+    const rows = await this.executor.query<T>(sql, params);
+    return this.applyPostReadPipeline(rows, options);
   }
 
   // Keyset (seek) page: stable `(column, id)` ordering, no O(offset) scan. The
@@ -148,11 +272,34 @@ export class BaseRepository<T = Record<string, unknown>> {
   ): Promise<T[]> {
     const { sql, params } = this.queryBuilder.buildKeyset(options, keyset);
     const rows = await this.executor.query<T>(sql, params);
-    if (options.lang && rows.length > 0) {
+    return this.applyPostReadPipeline(rows, options);
+  }
+
+  private async applyPostReadPipeline(rows: T[], options: QueryOptions): Promise<T[]> {
+    let result = rows;
+    if (options.lang && result.length > 0) {
       const companyId = isSystemScope(options.scope) ? null : tenantCompanyId(options.scope);
-      return this._applyTranslations(rows, options.lang, companyId);
+      result = await this._applyTranslations(result, options.lang, companyId);
     }
-    return rows;
+    if (options.expand && options.expand.length > 0) {
+      result = await this.applyExpand(result, options.expand, options.scope);
+    }
+    await this.applyComputed(result as unknown as Array<Record<string, unknown>>, options.scope);
+    return result;
+  }
+
+  private validateSelectionFields(data: Record<string, unknown>): void {
+    for (const [fieldName, fieldValue] of Object.entries(data)) {
+      const fieldDef = this.model.fields[fieldName];
+      if (!fieldDef || fieldDef.type !== 'selection' || !fieldDef.selection || fieldValue === null || fieldValue === undefined) {
+        continue;
+      }
+      const valueStr = String(fieldValue);
+      if (!(valueStr in fieldDef.selection)) {
+        const allowed = Object.keys(fieldDef.selection);
+        throw new SelectionValueError(this.model.name, fieldName, fieldValue, allowed);
+      }
+    }
   }
 
   async count(options: QueryOptions): Promise<number> {
@@ -176,10 +323,24 @@ export class BaseRepository<T = Record<string, unknown>> {
     return rows[0] || null;
   }
 
+  private scopeCompanyId(scope: TenantScope): number | null {
+    return isSystemScope(scope) ? null : tenantCompanyId(scope);
+  }
+
   async create(data: Record<string, unknown>, scope: TenantScope, actor: AuditActor): Promise<T> {
+    this.validateSelectionFields(data);
+    // Check access before creating
+    await this.checkAccess(actor, this.aclMode(), 'create', data);
     const actorId = await this.resolveActor(actor);
+    const companyId = this.scopeCompanyId(scope);
     const { sql, params } = this.queryBuilder.buildInsert(data, scope, actorId);
     const created = await this.withAuditContext(actor, actorId, async (executor) => {
+      // Single-row invariants run inside the transaction, before SQL emission,
+      // so a violation aborts the write and cannot be bypassed by a caller that
+      // reaches the repository directly instead of the route layer.
+      if (this.model.constraints.length > 0) {
+        await this.runConstraints({ ...data, company_id: companyId }, { operation: 'create', companyId });
+      }
       const rows = await executor.query<T>(sql, params);
       const row = rows[0];
       if (!row) throw new Error(`Failed to create a record in '${this.model.tableName}'.`);
@@ -212,6 +373,11 @@ export class BaseRepository<T = Record<string, unknown>> {
     actor: AuditActor
   ): Promise<T[]> {
     if (rows.length === 0) return [];
+    for (const row of rows) {
+      this.validateSelectionFields(row);
+    }
+    // Check access before creating
+    await this.checkAccess(actor, this.aclMode(), 'create', rows[0]);
     const actorId = await this.resolveActor(actor);
     const { sql, params } = this.queryBuilder.buildInsertMany(rows, scope, actorId);
     const created = await this.withAuditContext(actor, actorId, async (executor) => {
@@ -236,9 +402,22 @@ export class BaseRepository<T = Record<string, unknown>> {
     actor: AuditActor,
     expected: Record<string, unknown> = {}
   ): Promise<T | null> {
+    this.validateSelectionFields(data);
+    // Check access before updating
+    await this.checkAccess(actor, this.aclMode(), 'update', data, Number(id));
     const actorId = await this.resolveActor(actor);
+    const companyId = this.scopeCompanyId(scope);
     const { sql, params } = this.queryBuilder.buildUpdate(id, data, scope, actorId, expected);
     return this.withAuditContext(actor, actorId, async (executor) => {
+      if (this.model.constraints.length > 0) {
+        const [existing] = await this.readWithinTx(executor, [Number(id)], scope);
+        const merged = { ...(existing as Record<string, unknown> | undefined), ...data };
+        await this.runConstraints(merged, {
+          operation: 'write',
+          existing: existing as Record<string, unknown> | undefined,
+          companyId,
+        });
+      }
       const rows = await executor.query<T>(sql, params);
       const updated = rows[0] || null;
       if (updated && this.hasStoredCompute()) {
@@ -260,6 +439,11 @@ export class BaseRepository<T = Record<string, unknown>> {
     actor: AuditActor
   ): Promise<T[]> {
     if (updates.length === 0) return [];
+    for (const update of updates) {
+      this.validateSelectionFields(update.data);
+    }
+    // Check access before updating - using first update as representative
+    await this.checkAccess(actor, this.aclMode(), 'update', updates[0].data, Number(updates[0].id));
     const actorId = await this.resolveActor(actor);
     const statements = this.queryBuilder.buildUpdateMany(updates, scope, actorId);
     return this.withAuditContext(actor, actorId, async (executor) => {
@@ -297,14 +481,34 @@ export class BaseRepository<T = Record<string, unknown>> {
     );
     return this.withAuditContext(actor, actorId, async (executor) => {
       const rows = await executor.query<T>(sql, params);
-      return rows[0] || null;
+      const updated = rows[0] || null;
+      if (updated && this.hasStoredCompute()) {
+        const idNum = Number((updated as unknown as Record<string, unknown>).id);
+        await this.recomputeWithinTx(executor, [idNum], scope, actorId);
+        const refreshed = await this.readWithinTx(executor, [idNum], scope);
+        return refreshed[0] || null;
+      }
+      return updated;
     });
   }
 
   async deleteById(id: string | number, scope: TenantScope, actor: AuditActor): Promise<boolean> {
+    // Check access before deleting
+    await this.checkAccess(actor, this.aclMode(), 'delete', undefined, Number(id));
     const actorId = await this.resolveActor(actor);
+    const companyId = this.scopeCompanyId(scope);
     const { sql, params } = this.queryBuilder.buildDelete(id, scope);
     return this.withAuditContext(actor, actorId, async (executor) => {
+      if (this.model.constraints.length > 0) {
+        const [existing] = await this.readWithinTx(executor, [Number(id)], scope);
+        if (existing) {
+          await this.runConstraints(existing as Record<string, unknown>, {
+            operation: 'unlink',
+            existing: existing as Record<string, unknown>,
+            companyId,
+          });
+        }
+      }
       const rows = await executor.query<{ id: number }>(sql, params);
       return rows.length > 0;
     });
@@ -327,6 +531,8 @@ export class BaseRepository<T = Record<string, unknown>> {
     actor: AuditActor
   ): Promise<number> {
     if (ids.length === 0) return 0;
+    // Check access before archiving/unarchiving (treat as update)
+    await this.checkAccess(actor, this.aclMode(), 'update', undefined, Number(ids[0]));
     const actorId = await this.resolveActor(actor);
     const { sql, params } = this.queryBuilder.buildArchive(ids, active, scope, actorId);
     return this.withAuditContext(actor, actorId, async (executor) => {
@@ -367,14 +573,22 @@ export class BaseRepository<T = Record<string, unknown>> {
 
   // name_search: id + display name for records whose display field matches the
   // term. The match value is fully parameterized (wildcards added here), so the
-  // term itself never reaches the SQL text.
+  // term itself never reaches the SQL text. ILIKE wildcards (%, _) in the term
+  // are escaped so they match literally.
   async nameSearch(
     term: string,
     options: { scope: TenantScope; limit?: number; operator?: 'ILIKE' | '=' }
   ): Promise<Array<{ id: number; name: string }>> {
     const displayField = this.resolveDisplayField();
     const operator = options.operator ?? 'ILIKE';
-    const value = operator === 'ILIKE' ? `%${term}%` : term;
+    let value: string;
+    if (operator === 'ILIKE') {
+      // Escape ILIKE wildcards so user input matches literally
+      const escaped = term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+      value = `%${escaped}%`;
+    } else {
+      value = term;
+    }
     const rows = await this.find({
       scope: options.scope,
       fields: ['id', displayField],
@@ -668,19 +882,19 @@ export class BaseRepository<T = Record<string, unknown>> {
     const modelName = this.model.name;
 
     // Postgres binds numbered parameters; the previous '?' form was never a valid placeholder.
-    const idPlaceholders = recordIds.map((_: unknown, index: number) => '$' + (index + 3));
+    const idPlaceholders = recordIds.map((_: unknown, index: number) => '$' + (index + 4));
     const namePlaceholders = translatableFields.map(
-      (_: unknown, index: number) => '$' + (index + 3 + recordIds.length)
+      (_: unknown, index: number) => '$' + (index + 4 + recordIds.length)
     );
 
     const translationQuery =
-      'SELECT res_id, name, value\n      FROM ir_translation\n      WHERE (company_id = 0 OR company_id = $1)\n        AND lang = $2\n        AND type = \'model\'\n        AND res_id IN (' +
+      'SELECT res_id, name, value\n      FROM ir_translation\n      WHERE (company_id = 0 OR company_id = $1)\n        AND lang = $2\n        AND type = \'model\'\n        AND (model_name = $3 OR model_name IS NULL)\n        AND res_id IN (' +
       idPlaceholders.join(',') +
       ')\n        AND name IN (' +
       namePlaceholders.join(',') +
       ')';
 
-    const translationParams = [companyId ?? 0, lang, ...recordIds, ...translatableFields];
+    const translationParams = [companyId ?? 0, lang, modelName, ...recordIds, ...translatableFields];
     const translations = await this.executor.query<{
       res_id: number;
       name: string;

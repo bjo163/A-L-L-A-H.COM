@@ -4,6 +4,7 @@ export * from './fields';
 export * from './model';
 export * from './registry';
 export * from './query_builder';
+export * from './access';
 export * from './repository';
 export * from './default_data';
 export * from './migrator';

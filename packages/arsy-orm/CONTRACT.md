@@ -4,11 +4,11 @@ id: PKG_ARSY_ORM
 tier: package
 name: @allah/arsy-orm
 owner: platform-core
-version: 1.4.0
+version: 1.5.0
 status: released
 last_verified: 2026-11-05
-summary: ARSY query-layer ORM model registry repositories and the default-data seeder
-publicSurface: [defineModel, fields, modelRegistry, BaseRepository, dbEngine, decryptSecret, seedDatasets, seedIdempotent, SeedContext, PLATFORM_COMPANY_ID, SYSTEM_ACTOR, DomainNode, KeysetCursor, GroupAggregate, TransactionContext, withTransaction, ComputeHandler, OrderedMigration]
+summary: ARSY query-layer ORM model registry repositories, access control, and the default-data seeder
+publicSurface: [defineModel, fields, modelRegistry, BaseRepository, dbEngine, decryptSecret, seedDatasets, seedIdempotent, SeedContext, PLATFORM_COMPANY_ID, SYSTEM_ACTOR, DomainNode, KeysetCursor, GroupAggregate, TransactionContext, withTransaction, ComputeHandler, OrderedMigration, assertTransactional, AclMode, resolveAclMode, AccessDeniedError, PersistedRule, composeRuleDomain, ModelConstraint, ConstraintContext]
 depends: [@allah/arsy-core]
 ---
 
@@ -82,6 +82,47 @@ idempotently.
 exact composite key, and batch-inserts only the missing rows via `createMany` —
 always through the repository, never raw SQL. `seedDatasets` runs a list of
 datasets, stamping `PLATFORM_COMPANY_ID` on rows that omit `company_id`.
+
+## Field integrity (roadmap S2)
+
+Selection values are validated at the repository on every write (a value
+outside the declared set throws `SelectionValueError`) and mirrored by a
+generated `CHECK` constraint in the schema, so a raw write cannot bypass the
+set. A `FieldDefinition` may opt into `uniqueScope: 'company'`, which the
+migrator emits as a partial-unique index on `(company_id, <field>)` instead of
+the global index — the same natural key may repeat across tenants but not
+within one. `fields.many2one` validates its relation target and emits a foreign
+key with a declared `ondelete` (`cascade` / `set null` / `restrict`). The sync
+outbox strips credential-bearing columns (`api_key`, `secret`, `password`,
+`token`, `private_key`, `credential`) by fail-closed regex patterns plus a
+per-model `MODEL_SYNC_EXCLUDE` list, so a new secret-shaped column is stripped
+rather than leaked.
+
+## Access control (roadmap S3)
+
+`BaseRepository` carries a model-permission check and a record-rule engine
+modelled on Odoo's `ir.model.access` / `ir.rule`. `resolveAclMode()` reads
+`ARSY_ACL_MODE` and defaults to `audit` — checks run and would-denies are
+logged (never written to the append-only CRUD event table); `enforce` blocks
+with `AccessDeniedError`; `off` short-circuits. Enforcement only flips after the
+owner reviews the audit log (ADR-3). System actors and explicit `globalAccess`
+actors bypass. `resolveSecurityDomain(operation, actor)` compiles the applicable
+`ir.rule` rows into a `DomainNode` (global rules AND, the principal's group
+rules OR, then AND-narrowed) via `composeRuleDomain`; the caller passes it as
+`QueryOptions.securityDomain`, which `buildWhere` ANDs onto the query — a
+predicate that can only narrow visibility, never widen it, and that fails closed
+when a `domain_force` cannot be parsed. The principal→group mapping (how a live
+auth session populates `AuditActor.groupIds`) is a consumer concern gated on
+owner confirmation (conflict C-3); the mechanism keys off the ids it is given.
+
+## Model constraints (roadmap S4.1)
+
+A model may declare `constraints?: ModelConstraint[]`. `BaseRepository`
+evaluates each one inside the write transaction before SQL emission for
+`create`, `updateById`, and `deleteById` (`ConstraintContext` reports the
+operation, the pre-image row, and the tenant). A throwing constraint aborts the
+transaction, so a business invariant cannot be bypassed by a caller that skips
+the route layer. Functions are excluded from `modelSignature` (not serializable).
 
 ## Depends
 

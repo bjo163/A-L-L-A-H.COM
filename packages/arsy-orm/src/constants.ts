@@ -37,6 +37,16 @@ export function sqlQuotedColumnList(columns: readonly string[]): string {
 }
 
 /**
+ * Identifier guard for SQL interpolation: table/column/alias names are interpolated
+ * directly (they cannot be parameterized in DDL or query compilation), so restrict
+ * them to a conservative safe set before emitting any SQL statement. Single owner
+ * for the whole ORM (roadmap S1.1, audit R01).
+ */
+export function isSafeIdentifier(name: string): boolean {
+  return /^[a-z][a-z0-9_]{0,62}$/.test(name);
+}
+
+/**
  * One SHA-256 helper for the whole platform. Replaces the ~11 independent
  * `crypto.createHash('sha256')...digest('hex')` reimplementations across the
  * addons and packages (roadmap T9). Accepts text or raw bytes.

@@ -1,5 +1,5 @@
 import { ModelDefinition } from './model';
-import { RESERVED_COLUMN_SET } from './constants';
+import { RESERVED_COLUMN_SET, isSafeIdentifier } from './constants';
 
 const SUPPORTED_OPERATORS = new Set([
   '=',
@@ -57,6 +57,13 @@ export interface QueryOptions {
   filters?: QueryFilter[];
   /** Nested prefix domain, AND-combined with any flat `filters`. */
   domain?: DomainNode;
+  /**
+   * Pre-composed record-rule predicate (ir.rule). Resolved by the caller from the
+   * acting principal's groups and AND-narrowed onto every read, so a rule can only
+   * ever reduce visibility, never widen it. Compiled through the same allowlisted
+   * domain compiler, so an unparseable rule fails closed rather than leaking rows.
+   */
+  securityDomain?: DomainNode;
   /** Column projection; validated against reserved + model fields. Default `*`. */
   fields?: string[];
   /** Relation fields resolved after fetch (m2o inline, o2m/m2m batched); read by the repository. */
@@ -96,6 +103,20 @@ export class UnsupportedOperatorError extends Error {
   constructor(operator: string) {
     super(`Unsupported filter operator '${operator}'.`);
     this.name = 'UnsupportedOperatorError';
+  }
+}
+
+export class UnsafeIdentifierError extends Error {
+  constructor(identifier: string, context: string) {
+    super(`Unsafe SQL identifier '${identifier}' in ${context}. Identifiers must match /^[a-z][a-z0-9_]{0,62}$/.`);
+    this.name = 'UnsafeIdentifierError';
+  }
+}
+
+export class SelectionValueError extends Error {
+  constructor(model: string, field: string, value: unknown, allowed: string[]) {
+    super(`Invalid selection value '${String(value)}' for field '${field}' on model '${model}'. Allowed: ${allowed.join(', ')}.`);
+    this.name = 'SelectionValueError';
   }
 }
 
@@ -192,6 +213,13 @@ export class QueryBuilder {
       whereClauses.push(this.compileDomain(options.domain, params));
     }
 
+    // Record rules narrow visibility: AND the resolved rule predicate after the
+    // caller's own domain. A rule that references an unknown column throws here
+    // (fail closed) instead of silently returning rows the policy should hide.
+    if (options.securityDomain) {
+      whereClauses.push(`(${this.compileDomain(options.securityDomain, params)})`);
+    }
+
     if (options.filters) {
       const filterClauses = options.filters.map((filter) =>
         this.compileLeaf(filter.field, filter.operator, filter.value, params),
@@ -267,11 +295,15 @@ export class QueryBuilder {
       scope: options.scope,
       filters: options.filters,
       domain: options.domain,
+      securityDomain: options.securityDomain,
       includeArchived: options.includeArchived,
     });
 
     const selectParts: string[] = spec.groupBy.map((field) => this.column(field));
     for (const aggregate of spec.aggregates) {
+      if (!isSafeIdentifier(aggregate.alias)) {
+        throw new UnsafeIdentifierError(aggregate.alias, 'readGroup aggregate alias');
+      }
       if (aggregate.fn === 'count') {
         selectParts.push(`COUNT(*)::integer AS "${aggregate.alias}"`);
         continue;

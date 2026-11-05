@@ -17,9 +17,31 @@ export type AuditActor = (
   reasonHash?: string;
   requestId?: string;
   globalAccess?: boolean;
+  // Security groups the principal holds, used to match role-scoped ir.rule rows.
+  // Empty/undefined means only global rules apply; the caller resolves membership.
+  groupIds?: number[];
 };
 
 export const SYSTEM_ACTOR: AuditActor = { type: 'system' };
+
+/**
+ * The write-transaction context a model constraint receives: the triggering
+ * operation, the stored row before the write (for `write`/`unlink`), and the
+ * resolved tenant. Constraints may only read these to guard an invariant; they
+ * run after the payload is resolved and before SQL emission, so a throw rolls
+ * the whole transaction back.
+ */
+export interface ConstraintContext {
+  operation: 'create' | 'write' | 'unlink';
+  existing?: Record<string, unknown>;
+  companyId: number | null;
+}
+
+/** A single-row business invariant, the Odoo `@api.constrains` equivalent. */
+export type ModelConstraint = (
+  row: Record<string, unknown>,
+  ctx: ConstraintContext
+) => void | Promise<void>;
 
 export interface ModelIndex {
   name?: string;
@@ -44,6 +66,9 @@ export interface ModelConfig<TFields extends Record<string, FieldDefinition>> {
   displayNameSpec?: string;
   fields: TFields;
   indexes?: ModelIndex[];
+  // Single-row invariants evaluated inside the write transaction (Odoo
+  // `@api.constrains`). Multi-model workflows belong in addon services, not here.
+  constraints?: ModelConstraint[];
 }
 
 export class ModelDefinition<TFields extends Record<string, FieldDefinition> = Record<string, FieldDefinition>> {
@@ -53,6 +78,7 @@ export class ModelDefinition<TFields extends Record<string, FieldDefinition> = R
   public readonly displayNameSpec?: string;
   public readonly fields: TFields;
   public readonly indexes: ModelIndex[];
+  public readonly constraints: ModelConstraint[];
   private readonly computeHandlers = new Map<string, ComputeHandler>();
 
   constructor(config: ModelConfig<TFields>) {
@@ -62,6 +88,9 @@ export class ModelDefinition<TFields extends Record<string, FieldDefinition> = R
     this.displayNameSpec = config.displayNameSpec;
     this.fields = config.fields;
     this.indexes = config.indexes || [];
+    // Functions are not serializable, so constraints stay out of modelSignature
+    // (registry collision detection compares declarative shape, not handlers).
+    this.constraints = config.constraints || [];
   }
 
   // Register a compute handler under a name; a field opts in by setting

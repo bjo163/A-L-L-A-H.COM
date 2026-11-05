@@ -19,6 +19,9 @@ const [
   import('../src/auth_models.ts'),
 ]);
 
+const { IrModelAccess } = await import('../../../addons/base/models/ir_model_access.ts');
+const { IrRule } = await import('../../../addons/base/models/ir_rule.ts');
+
 const TenantRecord = defineModel({
   name: 'audit.test',
   tableName: 'audit_test',
@@ -33,7 +36,35 @@ async function createAuditedDatabase() {
   const engine = new PGliteEngine();
   await engine.connect();
   const registry = new ModelRegistry();
-  for (const model of [ResUsers, AuthUser, AuthSession, AuthVerification, AuthSetup, AuditEvent, TenantRecord]) {
+  const TenantRecord = defineModel({
+    name: 'audit.test',
+    tableName: 'audit_test',
+    fields: {
+      name: fields.char({ required: true }),
+      password: fields.char(),
+      note: fields.text(),
+    },
+  });
+  const ResGroups = defineModel({
+    name: 'res.groups',
+    tableName: 'res_groups',
+    displayName: 'Groups',
+    fields: {
+      id: fields.integer({ label: 'ID', primary: true }),
+      name: fields.char({ label: 'Group Name', required: true }),
+    },
+  });
+  const ResGroupsUsersRel = defineModel({
+    name: 'res.groups.users.rel',
+    tableName: 'res_groups_users_rel',
+    displayName: 'Groups Users Relation',
+    fields: {
+      id: fields.integer({ label: 'ID', primary: true }),
+      user_id: fields.many2one('res.users', { label: 'User', required: true }),
+      group_id: fields.many2one('res.groups', { label: 'Group', required: true }),
+    },
+  });
+  for (const model of [ResUsers, AuthUser, AuthSession, AuthVerification, AuthSetup, AuditEvent, TenantRecord, IrModelAccess, IrRule, ResGroups, ResGroupsUsersRel]) {
     registry.register(model);
   }
   const migrator = new SchemaMigrator(engine, registry);

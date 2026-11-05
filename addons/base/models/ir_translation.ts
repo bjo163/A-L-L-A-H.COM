@@ -25,6 +25,7 @@ export const IrTranslation = defineModel({
       { label: 'Translation Type', required: true }
     ),
     name: fields.char({ label: 'Term Key', size: 512, required: true }),
+    model_name: fields.char({ label: 'Model Name', size: 255 }),
     res_id: fields.integer({ label: 'Record ID', default: 0 }),
     src: fields.text({ label: 'Source Text' }),
     value: fields.text({ label: 'Translated Text' }),
@@ -38,8 +39,8 @@ export const IrTranslation = defineModel({
     ),
   },
   indexes: [
-    { fields: ['company_id', 'lang', 'name', 'res_id'] },
-    { fields: ['lang', 'name'] },
+    { fields: ['company_id', 'lang', 'model_name', 'name', 'res_id'] },
+    { fields: ['lang', 'model_name', 'name'] },
     { fields: ['state'] },
   ],
 });

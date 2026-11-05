@@ -26,11 +26,19 @@ function modelSignature(model: ModelDefinition): string {
   const fieldSig = Object.entries(model.fields)
     .map(([name, def]) => {
       const selection = def.selection ? Object.keys(def.selection).sort().join('|') : '';
-      return `${name}:${def.type}:${def.relation ?? ''}:${def.required ? 1 : 0}:${def.unique ? 1 : 0}:${selection}`;
+      const compute = def.compute ?? '';
+      const related = def.related ?? '';
+      return `${name}:${def.type}:${def.relation ?? ''}:${def.required ? 1 : 0}:${def.unique ? 1 : 0}:${selection}:${compute}:${related}`;
     })
     .sort()
     .join(',');
-  return `${model.name}#${model.tableName}#${fieldSig}`;
+  const indexSig = model.indexes
+    .map((idx) => `${idx.name ?? ''}:${idx.fields.sort().join(',')}:${idx.unique ? 1 : 0}`)
+    .sort()
+    .join(';');
+  const computeNames = Array.from((model as any).computeHandlers?.keys() ?? []).sort().join(',');
+  const displayNameSpec = model.displayNameSpec ?? '';
+  return `${model.name}#${model.tableName}#${fieldSig}#${indexSig}#${computeNames}#${displayNameSpec}`;
 }
 
 export class ModelRegistry {

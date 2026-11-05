@@ -3,7 +3,7 @@ import test from 'node:test';
 
 // Import the built package so these run against the shipped artifact.
 process.env.NODE_ENV = 'test';
-const { QueryBuilder, defineModel, fields, TenantScopeRequiredError, UnknownFieldError, UnsupportedOperatorError } =
+const { QueryBuilder, defineModel, fields, TenantScopeRequiredError, UnknownFieldError, UnsupportedOperatorError, UnsafeIdentifierError } =
   await import('../dist/index.js');
 
 const Model = defineModel({
@@ -110,6 +110,13 @@ test('read_group and archive stay inside the identifier allowlist', async (t) =>
     assert.throws(
       () => qb.buildReadGroup({ scope: tenant }, { groupBy: ['name; DROP TABLE demo_thing'], aggregates: [] }),
       UnknownFieldError
+    );
+  });
+
+  await t.test('a SQL fragment in an aggregate alias is rejected, not interpolated', () => {
+    assert.throws(
+      () => qb.buildReadGroup({ scope: tenant }, { groupBy: ['amount'], aggregates: [{ fn: 'count', alias: 'x" FROM demo_thing; DROP TABLE demo_thing;--' }] }),
+      UnsafeIdentifierError
     );
   });
 

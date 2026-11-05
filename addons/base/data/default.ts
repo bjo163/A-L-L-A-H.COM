@@ -130,3 +130,197 @@ export const DEFAULT_UI_TRANSLATIONS: DefaultUiTranslation[] = [
   { lang: 'ar_001', name: 'nav.dashboard', src: 'Dashboard', value: 'لوحة القيادة' },
   { lang: 'ar_001', name: 'nav.settings', src: 'Settings', value: 'الإعدادات' },
 ];
+
+// Default model access control records (company_id 0).
+// Key on (model_name, group_id) for idempotent seeding.
+export interface DefaultModelAccess {
+  model_name: string;
+  group_id: number;
+  perm_read: boolean;
+  perm_write: boolean;
+  perm_create: boolean;
+  perm_unlink: boolean;
+}
+
+export const DEFAULT_MODEL_ACCESS: DefaultModelAccess[] = [
+  {
+    model_name: 'res.company',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.currency',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.country',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.lang',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.partner',
+    group_id: 0,
+    perm_read: true,
+    perm_write: true,
+    perm_create: true,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.users',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'ir.ui.view',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'ir.translation',
+    group_id: 0,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'ir.model.access',
+    group_id: 0,
+    perm_read: true,
+    perm_write: true,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'ir.rule',
+    group_id: 0,
+    perm_read: true,
+    perm_write: true,
+    perm_create: false,
+    perm_unlink: false,
+  },
+];
+
+// Default record rule entries (company_id 0).
+// Key on (model_name, global) for idempotent seeding.
+// `domain_force` is a JSON-encoded Polish-notation DomainNode (the same shape
+// `search()` compiles), never raw SQL: the ORM parses and parameterizes it
+// through the shared domain compiler, so a rule can only ever narrow rows.
+export interface DefaultRule {
+  model_name: string;
+  name: string;
+  domain_force: string;
+  group_ids: number[];
+  global: boolean;
+  perm_read: boolean;
+  perm_write: boolean;
+  perm_create: boolean;
+  perm_unlink: boolean;
+}
+
+// Platform-owned catalogs live on the shared tenant (company_id 0), so a global
+// rule pins their visibility to company 0. Each value is a DomainNode leaf
+// serialized to JSON; the compiler rejects anything it cannot parse (fail closed).
+export const DEFAULT_RULE: DefaultRule[] = [
+  {
+    model_name: 'res.company',
+    name: 'Company access',
+    domain_force: '["company_id","=",0]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.currency',
+    name: 'Currency access',
+    domain_force: '["company_id","=",0]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.country',
+    name: 'Country access',
+    domain_force: '["company_id","=",0]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.lang',
+    name: 'Language access',
+    domain_force: '["company_id","=",0]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.partner',
+    name: 'Partner active only',
+    domain_force: '["active","=",true]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: true,
+    perm_create: true,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'res.users',
+    name: 'User active only',
+    domain_force: '["active","=",true]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+  {
+    model_name: 'ir.translation',
+    name: 'Translation completed only',
+    domain_force: '["state","=","translated"]',
+    group_ids: [],
+    global: true,
+    perm_read: true,
+    perm_write: false,
+    perm_create: false,
+    perm_unlink: false,
+  },
+];

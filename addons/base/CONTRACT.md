@@ -4,12 +4,12 @@ id: ADDON_BASE
 tier: addon
 name: base
 owner: platform-core
-version: 1.0.0
+version: 1.1.0
 status: released
-last_verified: 2026-02-10
-summary: Core enterprise entity registry and platform reference data
+last_verified: 2026-11-05
+summary: Core enterprise entity registry, access-control models, and platform reference data
 depends: []
-models: [res.company, res.currency, res.country, res.partner, res.users, ir.ui.view, res.lang, ir.translation]
+models: [res.company, res.currency, res.country, res.partner, res.users, ir.ui.view, res.lang, ir.translation, ir.model.access, ir.rule]
 data: [data/index.ts]
 views: [views/res_partner_views.json, views/res_company_views.json]
 installable: true
@@ -37,6 +37,8 @@ ORM query layer (`seedDatasets`), never raw SQL.
 
 ## Models
 
-Eight models registered by `registerBaseAddon`; the `models` frontmatter mirrors
+Ten models registered by `registerBaseAddon`; the `models` frontmatter mirrors
 `__manifest__.json` exactly and is enforced by `lint:arch` (ADDON_MANIFEST_CONSISTENCY)
-and `contract:check` (UNIT_CONTRACT_CONSISTENCY).
+and `contract:check` (UNIT_CONTRACT_CONSISTENCY). `ir.model.access` and `ir.rule`
+are the Odoo-style access-control stores the ORM repository reads for model
+permissions and record rules (roadmap S3).

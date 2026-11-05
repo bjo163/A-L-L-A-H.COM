@@ -8,6 +8,43 @@ import { logger } from '@allah/arsy-core';
 // idempotent: a re-delivery after a partial failure resolves to the same single ack row,
 // and consumers dedupe on the seq — mirroring the audit-event pattern.
 
+// Credential-bearing column patterns that must never reach the sync outbox payload.
+// Fail-closed: any new column matching these patterns is stripped automatically.
+const CREDENTIAL_PATTERNS = [
+  /api_key/i,
+  /secret/i,
+  /password/i,
+  /token/i,
+  /private_key/i,
+  /credential/i,
+];
+
+// Per-model sync exclusion lists. Models can declare additional fields to strip
+// beyond the credential denylist (e.g. internal notes, debug flags).
+const MODEL_SYNC_EXCLUDE: Record<string, string[]> = {
+  // Example: 'res.users': ['debug_flags', 'internal_notes'],
+};
+
+export function redactPayload(modelName: string, payload: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!payload) return payload;
+
+  const excludeFields = new Set(MODEL_SYNC_EXCLUDE[modelName] || []);
+  const redacted: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(payload)) {
+    // Skip fields in the per-model exclusion list
+    if (excludeFields.has(key)) continue;
+
+    // Skip fields matching credential patterns (fail-closed)
+    const isCredential = CREDENTIAL_PATTERNS.some((pattern) => pattern.test(key));
+    if (isCredential) continue;
+
+    redacted[key] = value;
+  }
+
+  return redacted;
+}
+
 export interface SyncOutboxRow {
   id: number;
   company_id: number;
@@ -102,7 +139,8 @@ export async function drainOutbox(
   const pending = await pendingOutbox(consumer, limit);
   let delivered = 0;
   for (const row of pending) {
-    await publisher(row);
+    const redactedRow = { ...row, payload: redactPayload(row.model_name, row.payload) };
+    await publisher(redactedRow);
     if (await ackDelivery(row.id, consumer)) {
       delivered += 1;
     }
@@ -138,7 +176,8 @@ export async function drainOutboxBatch(
 
   try {
     for (const row of pending) {
-      await publisher(row);
+      const redactedRow = { ...row, payload: redactPayload(row.model_name, row.payload) };
+      await publisher(redactedRow);
       published.push(row.id);
       if (published.length >= ackChunk) await flush();
     }
