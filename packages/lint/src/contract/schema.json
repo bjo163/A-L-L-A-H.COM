@@ -1,0 +1,39 @@
+{
+  "contract": "unit-contract-schema",
+  "version": "1.0.0",
+  "tiers": ["addon", "package", "app"],
+  "statuses": ["discovered", "ready", "in_progress", "implemented", "verified", "released"],
+  "scalarPatterns": {
+    "id": "^[A-Z][A-Z0-9_]*$",
+    "version": "^\\d+\\.\\d+\\.\\d+$",
+    "last_verified": "^\\d{4}-\\d{2}-\\d{2}$"
+  },
+  "requiredScalars": [
+    "contract",
+    "id",
+    "tier",
+    "name",
+    "owner",
+    "version",
+    "status",
+    "last_verified",
+    "summary"
+  ],
+  "tierSchema": {
+    "addon": {
+      "requiredLists": ["depends", "models", "data"],
+      "optionalLists": ["views", "demo"],
+      "optionalScalars": ["installable"]
+    },
+    "package": {
+      "requiredLists": ["publicSurface"],
+      "optionalLists": ["depends"],
+      "optionalScalars": []
+    },
+    "app": {
+      "requiredLists": [],
+      "optionalLists": ["routes", "ports"],
+      "optionalScalars": ["skin"]
+    }
+  }
+}

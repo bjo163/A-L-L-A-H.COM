@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { components } from './affected-builds.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const failures = [];
@@ -223,10 +222,15 @@ function checkEnvironmentContract() {
 function checkCiAndRelease() {
   const publish = read(join(root, '.github/workflows/publish-deploy.yml'));
   const ci = read(join(root, '.github/workflows/platform-contracts.yml'));
+  const appCi = read(join(root, '.github/workflows/ci-dev.yml'));
   const sbom = read(join(root, '.github/workflows/sbom.yml'));
-  const componentNames = components.filter(([name]) => apps.includes(name)).map(([name]) => name).sort();
-  if (JSON.stringify(componentNames) !== JSON.stringify(apps)) {
-    failures.push(`affected-builds.mjs: app components do not match apps/: ${componentNames.join(', ')}`);
+  const packageScripts = readJson(join(root, 'package.json')).scripts;
+  for (const app of apps) {
+    const buildScript = app === 'arsy' ? null : app === 'e-isp' ? 'esp:build' : `${app}:build`;
+    const buildCommand = app === 'arsy' ? 'pnpm --filter @allah/arsy build' : `pnpm ${buildScript}`;
+    if ((buildScript && !packageScripts[buildScript]) || !appCi.includes(`run: ${buildCommand}`)) {
+      failures.push(`ci-dev.yml: missing build gate for app '${app}' (${buildCommand})`);
+    }
   }
   const publishedApps = [...publish.matchAll(/dockerfile: apps\/([^/]+)\/Dockerfile/g)].map((match) => match[1]).sort();
   if (JSON.stringify(publishedApps) !== JSON.stringify(apps)) {
