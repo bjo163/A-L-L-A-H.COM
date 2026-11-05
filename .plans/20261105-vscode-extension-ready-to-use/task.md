@@ -67,7 +67,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [!] VSC-049 Run build, typecheck, lint and focused tests. Build and focused tests passed; full lint was not run because the repository contains unrelated dirty changes.
 - [ ] VSC-050 Run extension-host suite and record environment/results.
 - [x] VSC-051 Run security and standalone checks.
-- [ ] VSC-052 Inspect VSIX contents and monorepo imports.
+- [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, CONTRACT, and bundled dist are shipped, with no monorepo runtime markers.
 - [ ] VSC-053 Install VSIX in clean profile and complete user journey.
 - [ ] VSC-054 Finalize README/setup/provider/troubleshooting/security docs.
 - [ ] VSC-055 Update changelog and release report with evidence/limitations.

@@ -15,6 +15,7 @@
 | `pnpm --filter allah-vscode-extension check-manifest` | Passed: 27 commands and 8 views |
 | `pnpm extension:test` | Passed: 26 tests |
 | `pnpm --filter allah-vscode-extension check-standalone` | Passed |
+| `pnpm --filter allah-vscode-extension check-package` | Passed: package list and bundled runtime markers checked |
 | `pnpm --filter allah-vscode-extension build` | Passed |
 | `git diff --check` | Passed |
 
