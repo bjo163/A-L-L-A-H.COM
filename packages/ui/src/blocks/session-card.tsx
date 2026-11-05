@@ -68,6 +68,7 @@ export function SessionCard({
           variant="destructive"
           size="sm"
           disabled={isLoading}
+          aria-label={`Revoke session for ${deviceName?.trim() || 'unnamed device'}`}
           onClick={() => onRevoke(id)}
         >
           {isLoading ? 'Revoking...' : 'Revoke'}

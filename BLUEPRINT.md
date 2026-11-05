@@ -18,7 +18,7 @@ Monorepo map → [AGENTS.md](AGENTS.md). Invariants → [AGENTS.md](AGENTS.md). 
 | Arsy Hub | `apps/arsy/` | 5150 | Backend authority: PGlite ORM · AI Gateway · CAS storage · SDUI · auth |
 | Dock | `apps/dock/` | 3001 | Public ecosystem homepage |
 | Headquarter | `apps/headquarter/` | 3002 | Command center · AI Gateway control · knowledge explorer |
-| MoonWitness ID | `apps/id/` | 3003 | Auth · first-run superuser onboarding · registration · SSO |
+| MoonWitness ID | `apps/id/` | 3003 | Identity entry · first-run superuser onboarding · registration · account and session governance |
 | World Observatory | `apps/jizz/` | 3004 | Public intelligence observatory, ROCKSOUL JIZZ API |
 
 ## Platform Packages

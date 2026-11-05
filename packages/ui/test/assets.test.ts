@@ -156,3 +156,16 @@ test('shared components expose their data-slot hooks in rendered markup', () => 
     assert.match(markup, pattern);
   }
 });
+
+test('session revocation buttons identify the device they affect', () => {
+  const markup = renderToStaticMarkup(
+    h(SessionCard, {
+      id: 1,
+      deviceName: 'Workstation Chrome',
+      expiresAt: '2026-11-04T00:00:00Z',
+      onRevoke: () => {},
+    })
+  );
+
+  assert.match(markup, /aria-label="Revoke session for Workstation Chrome"/);
+});

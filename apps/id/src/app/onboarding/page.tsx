@@ -1,10 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../../lib/auth-client';
 import { mwClient } from '@allah/sdk';
-import { Button, Card, CardContent, Form, Input, Link, PageHero, RouteShell, StatusMessage, WorldArtwork, sfx } from '@moonwitness/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  Form,
+  Input,
+  Link,
+  PageHero,
+  RouteShell,
+  StatusMessage,
+  WorldArtwork,
+  sfx,
+} from '@moonwitness/ui';
+import {
+  getUserFacingAuthError,
+  resolveOnboardingFailureState,
+  signInAfterOnboarding,
+  validatePasswordPair,
+} from '../../lib/identity-ui';
+
+type OnboardingFieldErrors = {
+  name?: string;
+  password?: string;
+  confirmPassword?: string;
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -13,49 +37,75 @@ export default function OnboardingPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<OnboardingFieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [setupState, setSetupState] = useState<'checking' | 'available' | 'closed' | 'created' | 'error'>('checking');
+  const requestInFlight = useRef(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
+
+  const checkSetupStatus = useCallback(async () => {
+    setSetupState('checking');
+    setError(null);
+    const state = await resolveOnboardingFailureState(() => mwClient.auth.getOnboardingStatus());
+    setSetupState(state === 'unavailable' ? 'error' : state);
+  }, []);
 
   useEffect(() => {
-    document.title = 'Initial Setup | MoonWitness ID';
-    mwClient.auth.getOnboardingStatus()
-      .then(({ available }) => setSetupState(available ? 'available' : 'closed'))
-      .catch(() => setSetupState('error'));
-  }, []);
+    void checkSetupStatus();
+  }, [checkSetupStatus]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (password !== confirmPassword) {
-      setError('The passwords do not match.');
-      return;
-    }
-    if (password.length < 12) {
-      setError('Use at least 12 characters for the password.');
+    setFieldErrors({});
+    if (setupState !== 'available' || requestInFlight.current) return;
+
+    if (!name.trim()) {
+      setFieldErrors({ name: 'Enter your name.' });
+      nameInputRef.current?.focus();
       return;
     }
 
+    const validationError = validatePasswordPair(password, confirmPassword, 12);
+    if (validationError) {
+      if (password !== confirmPassword) {
+        setFieldErrors({ confirmPassword: validationError });
+        confirmPasswordInputRef.current?.focus();
+      } else {
+        setFieldErrors({ password: validationError });
+        passwordInputRef.current?.focus();
+      }
+      return;
+    }
+
+    requestInFlight.current = true;
     setIsLoading(true);
     try {
-      await mwClient.auth.onboard({ name, email, password });
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Initial setup failed.');
-      if (requestError instanceof Error && requestError.message.includes('already been completed')) {
-        setSetupState('closed');
-      }
+      await mwClient.auth.onboard({ name: name.trim(), email: email.trim(), password });
+    } catch {
+      const state = await resolveOnboardingFailureState(() => mwClient.auth.getOnboardingStatus());
+      setSetupState(state === 'unavailable' ? 'error' : state);
+      if (state === 'available') setError(getUserFacingAuthError('onboarding'));
+      requestInFlight.current = false;
       setIsLoading(false);
       return;
     }
 
     try {
-      const { error: authError } = await authClient.signIn.email({ email, password });
-      if (authError) throw new Error(authError.message);
-      sfx.success();
-      router.push('/account');
-    } catch {
-      setSetupState('created');
-      setError(null);
+      const signInResult = await signInAfterOnboarding(
+        () => authClient.signIn.email({ email: email.trim(), password })
+      );
+      if (signInResult === 'signed-in') {
+        sfx.success();
+        router.replace('/account');
+      } else {
+        setSetupState('created');
+        setError(null);
+      }
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
@@ -63,20 +113,10 @@ export default function OnboardingPage() {
   return (
     <RouteShell as="main" className="id-auth-page">
       <div className="id-auth-layout">
-        <PageHero
-          as="h2"
-          kicker="MOONWITNESS / IDENTITY ARCHIVE"
-          title="Set up the first administrator."
-          summary="Create the first superuser for this hub. This setup closes after the account is created."
-          mediaLayout="backdrop"
-          media={<WorldArtwork skin="lunar-chronicles" />}
-          captionRight="L / 02 / INITIAL SETUP"
-        />
-
         <div className="id-auth-form">
           <h1 className="id-auth-form__title">Initial hub setup</h1>
           <p className="id-auth-form__note">
-            This form creates the first superuser. Later registrations receive a regular account.
+            This one-time form creates the first administrator. ARSY closes setup after the account is created.
           </p>
 
           <Card as="section">
@@ -88,21 +128,25 @@ export default function OnboardingPage() {
               )}
               {setupState === 'closed' && (
                 <StatusMessage tone="warning" title="Initial setup is closed">
-                  This hub already has its first superuser. Sign in with an existing account.
+                  This hub no longer accepts first-account setup. Sign in with an existing account.
                 </StatusMessage>
               )}
               {setupState === 'created' && (
                 <StatusMessage tone="warning" title="Account created, sign-in needed">
-                  The account exists, but automatic sign-in did not complete. Use the sign-in page to continue; do not submit onboarding again.
+                  The account was created, but automatic sign-in did not complete. Continue from the sign-in page; do not submit onboarding again.
                 </StatusMessage>
               )}
               {setupState === 'error' && (
                 <StatusMessage tone="danger" title="Setup status unavailable">
-                  The hub could not confirm whether initial setup is available. Reconnect and try again.
+                  The hub could not confirm whether setup is open. The form stays hidden until its status can be checked.
+                  {' '}
+                  <Button variant="ghost" size="sm" onClick={() => void checkSetupStatus()}>
+                    Check again
+                  </Button>
                 </StatusMessage>
               )}
               {error && (
-                <StatusMessage tone="danger" title="Setup failed">
+                <StatusMessage tone="danger" title="Setup could not continue">
                   {error}
                 </StatusMessage>
               )}
@@ -114,6 +158,8 @@ export default function OnboardingPage() {
                     type="text"
                     required
                     autoComplete="name"
+                    ref={nameInputRef}
+                    error={fieldErrors.name}
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     placeholder="Your name"
@@ -133,9 +179,12 @@ export default function OnboardingPage() {
                     required
                     minLength={12}
                     autoComplete="new-password"
+                    ref={passwordInputRef}
+                    error={fieldErrors.password}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="At least 12 characters"
+                    hint="Use at least 12 characters for the first account."
                   />
                   <Input
                     label="Confirm password"
@@ -143,12 +192,14 @@ export default function OnboardingPage() {
                     required
                     minLength={12}
                     autoComplete="new-password"
+                    ref={confirmPasswordInputRef}
+                    error={fieldErrors.confirmPassword}
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     placeholder="Repeat the password"
                   />
                   <Button type="submit" disabled={isLoading} className="id-auth-form__submit">
-                    {isLoading ? 'Creating the first account' : 'Create the first superuser'}
+                    {isLoading ? 'Creating the first account' : 'Create the first account'}
                   </Button>
                 </Form>
               )}
@@ -159,6 +210,17 @@ export default function OnboardingPage() {
             </CardContent>
           </Card>
         </div>
+
+        <PageHero
+          as="h2"
+          className="id-auth-hero"
+          kicker="MOONWITNESS / IDENTITY ARCHIVE"
+          title="Open the observatory."
+          summary="Initial setup is available only while ARSY confirms that no first account has been created."
+          mediaLayout="backdrop"
+          media={<WorldArtwork skin="lunar-chronicles" />}
+          captionRight="L / 02 / INITIAL SETUP"
+        />
       </div>
     </RouteShell>
   );

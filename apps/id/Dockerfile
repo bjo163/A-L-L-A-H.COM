@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for MoonWitness ID (account & SSO center)
+# Multi-stage Dockerfile for MoonWitness ID account center
 FROM node:22-alpine AS base
 
 ENV PNPM_HOME="/pnpm"

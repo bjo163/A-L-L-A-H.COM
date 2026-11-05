@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { mwClient } from '@allah/sdk';
 import {
   Badge,
@@ -10,75 +10,92 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DestinationCard,
-  DestinationGrid,
   LinkButton,
   MotionFrame,
   PageHero,
   RouteShell,
   SectionHeading,
+  StatePanel,
   StatusMessage,
+  WorldArtwork,
 } from '@moonwitness/ui';
+import { authClient } from '../lib/auth-client';
+import { resolveIdentityHomeState, type IdentityHomeState } from '../lib/identity-ui';
 
-const managedRoutes = [
-  {
-    role: 'profile',
-    title: 'Account center',
-    description: 'Name, subject identifier, and the sessions that carry them.',
-    href: '/account',
-  },
-  {
-    role: 'access',
-    title: 'Sign in',
-    description: 'Open a session on a device you can revoke later.',
-    href: '/login',
-  },
-  {
-    role: 'new identity',
-    title: 'Create an ID',
-    description: 'Register the profile the rest of the ecosystem reads.',
-    href: '/register',
-  },
-];
+type HomeViewState = IdentityHomeState | { kind: 'checking' };
 
 export default function IdHomePage() {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [homeState, setHomeState] = useState<HomeViewState>({ kind: 'checking' });
+
+  const loadHomeState = useCallback(async () => {
+    setHomeState({ kind: 'checking' });
+    const state = await resolveIdentityHomeState({
+      getSession: () => authClient.getSession(),
+      getCurrentUser: () => mwClient.auth.getCurrentUser(),
+      getOnboardingStatus: () => mwClient.auth.getOnboardingStatus(),
+    });
+    setHomeState(state);
+  }, []);
 
   useEffect(() => {
-    mwClient.auth
-      .getCurrentUser()
-      .then((res) => {
-        if (res?.user) {
-          setUser(res.user);
-        }
-      })
-      .catch((error: unknown) => {
-        setAuthNotice(error instanceof Error ? error.message : 'Session status is unavailable.');
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+    void loadHomeState();
+  }, [loadHomeState]);
+
+  if (homeState.kind === 'checking') {
+    return (
+      <RouteShell as="main">
+        <StatePanel kind="loading" title="Identity status" cause="Checking the current session with the identity service." />
+      </RouteShell>
+    );
+  }
+
+  if (homeState.kind === 'unavailable') {
+    return (
+      <RouteShell as="main">
+        <StatePanel
+          kind="offline"
+          title="Identity status unavailable"
+          cause="The current session could not be confirmed, so this page will not guess whether you are signed in."
+          nextAction="Reconnect to the identity service and check again."
+          action={
+            <>
+              <Button variant="outline" onClick={() => void loadHomeState()}>Check again</Button>
+              <LinkButton href="/login">Sign in</LinkButton>
+            </>
+          }
+        />
+      </RouteShell>
+    );
+  }
+
+  const authenticated = homeState.kind === 'authenticated';
 
   return (
     <RouteShell as="main">
       <MotionFrame effect="enter">
         <PageHero
-          kicker="LUNAR CHRONICLES / IDENTITY / SSO"
-          title="MoonWitness ID"
-          summary="Unified authentication and session center for MoonWitness and Empire of the Light, with observable session governance."
+          kicker="THE LUNAR IDENTITY ARCHIVE"
+          title="One identity. A connected universe."
+          summary="Manage the account and sessions used to enter MoonWitness products. Each destination decides what your account can access."
+          media={<WorldArtwork skin="lunar-chronicles" />}
+          captionRight="LUNAR / IDENTITY"
           actions={
-            isLoading ? (
-              <Button disabled>Checking session</Button>
-            ) : user ? (
+            authenticated ? (
               <>
                 <LinkButton href="/account">Open account center</LinkButton>
-                <LinkButton href="/login" variant="outline">Sign in elsewhere</LinkButton>
+                <LinkButton href="/login" variant="outline">Switch account</LinkButton>
+              </>
+            ) : homeState.onboarding === 'available' ? (
+              <>
+                <LinkButton href="/onboarding">Set up the first account</LinkButton>
+                <LinkButton href="/login" variant="outline">Sign in</LinkButton>
               </>
             ) : (
               <>
                 <LinkButton href="/login">Sign in</LinkButton>
-                <LinkButton href="/register" variant="outline">Create ID</LinkButton>
+                {homeState.onboarding === 'closed' && (
+                  <LinkButton href="/register" variant="outline">Create an account</LinkButton>
+                )}
               </>
             )
           }
@@ -87,49 +104,48 @@ export default function IdHomePage() {
 
       <section className="id-console" aria-labelledby="id-console-title">
         <SectionHeading
-          title="Session governance"
+          title="Identity at a glance"
           titleId="id-console-title"
-          description="Every read below comes from the connected identity service."
-          trailing={<Badge variant="default">Observable</Badge>}
+          description="The account shown here comes from the current identity session."
         />
 
-        {authNotice && (
-          <StatusMessage tone="warning" title="Session status">
-            {authNotice}
+        {homeState.kind === 'guest' && homeState.onboarding === 'unavailable' && (
+          <StatusMessage tone="warning" title="First-run setup status unavailable">
+            Sign-in remains available. The initial account link is hidden until the hub confirms setup is open.
+            {' '}
+            <Button variant="ghost" size="sm" onClick={() => void loadHomeState()}>Check again</Button>
           </StatusMessage>
         )}
 
         <Card as="section" className="id-console__panel">
           <CardHeader>
             <div className="id-console__header-row">
-              <CardTitle>Identity console</CardTitle>
-              <Badge variant="gold">{user ? 'Signed in' : 'Guest'}</Badge>
+              <CardTitle>Current identity</CardTitle>
+              <Badge variant={authenticated ? 'active' : 'default'}>
+                {authenticated ? 'Signed in' : 'Signed out'}
+              </Badge>
             </div>
-            <CardDescription>The account, the world it renders in, and whether SSO is active.</CardDescription>
+            <CardDescription>
+              {authenticated
+                ? 'This identity is active in the current browser.'
+                : 'Sign in to review the account and its active sessions.'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <dl className="id-console__facts">
               <div>
                 <dt>Account</dt>
-                <dd>{user?.name || user?.email || 'No active session'}</dd>
+                <dd>{authenticated ? homeState.user.name || homeState.user.email : 'No active session'}</dd>
               </div>
-              <div>
-                <dt>Skin</dt>
-                <dd>Lunar Chronicles</dd>
-              </div>
-              <div>
-                <dt>SSO</dt>
-                <dd>Enabled</dd>
-              </div>
+              {authenticated && (
+                <div>
+                  <dt>Email</dt>
+                  <dd>{homeState.user.email}</dd>
+                </div>
+              )}
             </dl>
           </CardContent>
         </Card>
-
-        <DestinationGrid label="Identity routes">
-          {managedRoutes.map((route) => (
-            <DestinationCard key={route.href} role={route.role} title={route.title} description={route.description} href={route.href} />
-          ))}
-        </DestinationGrid>
       </section>
     </RouteShell>
   );

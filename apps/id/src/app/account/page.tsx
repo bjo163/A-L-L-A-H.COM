@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../../lib/auth-client';
 import { mwClient } from '@allah/sdk';
@@ -18,86 +18,138 @@ import {
   SessionCard,
   StatePanel,
   StatusMessage,
-  resolveEcosystemEndpoints,
-  sfx,
   type StatusTone,
 } from '@moonwitness/ui';
+import { getIdEcosystemEndpoints } from '../../lib/endpoints';
+import {
+  canStartSessionAction,
+  getSafeDestinationUrl,
+  getUserFacingAuthError,
+  readAccountData,
+  revokeSessionAndSignOut,
+} from '../../lib/identity-ui';
+
+const endpoints = getIdEcosystemEndpoints();
+const isProduction = process.env.NODE_ENV === 'production';
+
+const destinationCandidates = [
+  {
+    key: 'dock',
+    role: 'discovery',
+    title: 'MoonWitness Dock',
+    description: 'Public discovery and client presentation.',
+    href: endpoints.dock,
+  },
+  {
+    key: 'headquarter',
+    role: 'operations',
+    title: 'MoonWitness HQ',
+    description: 'Enterprise operations and command center.',
+    href: endpoints.headquarter,
+  },
+  {
+    key: 'jizz',
+    role: 'research',
+    title: 'World Observatory',
+    description: 'Source-grounded observation workspace.',
+    href: endpoints.jizz,
+  },
+];
+
+const destinations = destinationCandidates.flatMap(({ href, ...destination }) => {
+  const safeUrl = getSafeDestinationUrl(href, isProduction);
+  return safeUrl ? [{ ...destination, href: safeUrl }] : [];
+});
 
 export default function AccountCenterPage() {
   const router = useRouter();
-  const endpoints = resolveEcosystemEndpoints(process.env);
   const [user, setUser] = useState<UserSubject | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<number | null>(null);
-  const [status, setStatus] = useState<{ tone: StatusTone; text: string } | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [status, setStatus] = useState<{ tone: StatusTone; text: string; showLogin?: boolean } | null>(null);
+  const sessionActionInFlight = useRef(false);
+  const signOutInFlight = useRef(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
-    try {
-      const res = await mwClient.auth.getCurrentUser();
-      if (!res?.user) {
-        router.replace('/login');
-        return;
-      }
-      setUser(res.user);
-
-      const sessList = await mwClient.auth.getSessions();
-      setSessions(sessList);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Unable to load account data.');
-    } finally {
-      setIsLoading(false);
+    const result = await readAccountData(
+      () => mwClient.auth.getCurrentUser(),
+      () => mwClient.auth.getSessions()
+    );
+    if (result.kind === 'signed-out') {
+      router.replace('/login');
+    } else if (result.kind === 'unavailable') {
+      setLoadError(getUserFacingAuthError('account'));
+    } else {
+      setUser(result.user);
+      setSessions(result.sessions);
     }
-  };
+    setIsLoading(false);
+  }, [router]);
 
   useEffect(() => {
-    document.title = 'Account | MoonWitness ID';
-    loadData();
-  }, []);
+    void loadData();
+  }, [loadData]);
 
   const handleRevoke = async (sessionId: number) => {
+    if (!canStartSessionAction(sessionActionInFlight.current, signOutInFlight.current)) return;
+    sessionActionInFlight.current = true;
     setRevokingId(sessionId);
+    setStatus(null);
+    const targetSession = sessions.find((session) => session.id === sessionId);
+
     try {
-      await mwClient.auth.revokeSession(sessionId);
-      sfx.revoke();
-      setStatus({ tone: 'success', text: 'Session terminated on the hub.' });
-      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
-      const targetSession = sessions.find((session) => session.id === sessionId);
-      if (targetSession?.isCurrent) {
-        await authClient.signOut();
-        router.push('/login');
+      const outcome = await revokeSessionAndSignOut(
+        () => mwClient.auth.revokeSession(sessionId),
+        () => authClient.signOut(),
+        targetSession?.isCurrent === true
+      );
+      setSessions((previous) => previous.filter((session) => session.id !== sessionId));
+
+      if (outcome === 'current-session-revoked') {
+        router.replace('/login');
+      } else if (outcome === 'current-session-signout-failed') {
+        setStatus({
+          tone: 'warning',
+          text: 'The hub confirmed revocation, but the browser could not clear its sign-in state.',
+          showLogin: true,
+        });
+      } else {
+        setStatus({ tone: 'success', text: 'The hub confirmed session revocation.' });
       }
-    } catch (error) {
-      setStatus({
-        tone: 'danger',
-        text: error instanceof Error ? `Unable to revoke session: ${error.message}` : 'Unable to revoke session.',
-      });
+    } catch {
+      setStatus({ tone: 'danger', text: getUserFacingAuthError('revoke') });
     } finally {
+      sessionActionInFlight.current = false;
       setRevokingId(null);
-      setTimeout(() => setStatus(null), 6000);
     }
   };
 
   const handleSignOut = async () => {
+    if (!canStartSessionAction(signOutInFlight.current, sessionActionInFlight.current)) return;
+    signOutInFlight.current = true;
+    setIsSigningOut(true);
+    setStatus(null);
     try {
       const { error: authError } = await authClient.signOut();
-      if (authError) throw new Error(authError.message);
-      router.push('/login');
-    } catch (error) {
-      setStatus({
-        tone: 'danger',
-        text: error instanceof Error ? `Unable to sign out: ${error.message}` : 'Unable to sign out.',
-      });
+      if (authError) throw new Error('Sign-out was not confirmed');
+      router.replace('/login');
+    } catch {
+      setStatus({ tone: 'danger', text: getUserFacingAuthError('signout') });
+    } finally {
+      signOutInFlight.current = false;
+      setIsSigningOut(false);
     }
   };
 
   if (isLoading) {
     return (
       <RouteShell as="main" className="id-account-shell">
-        <StatePanel kind="loading" title="Account" cause="Reading the profile and its active sessions." />
+        <StatePanel kind="loading" title="Account" cause="Reading the profile and active sessions." />
       </RouteShell>
     );
   }
@@ -126,8 +178,29 @@ export default function AccountCenterPage() {
   return (
     <RouteShell as="main" className="id-account-shell">
       {status && (
-        <StatusMessage tone={status.tone} title={status.tone === 'danger' ? 'Action failed' : 'Action confirmed'}>
+        <StatusMessage
+          tone={status.tone}
+          title={
+            status.tone === 'danger'
+              ? 'Action not confirmed'
+              : status.tone === 'warning'
+                ? 'Session revoked'
+                : 'Action confirmed'
+          }
+        >
           {status.text}
+          {status.showLogin && (
+            <>
+              {' '}
+              <LinkButton href="/login" variant="outline">Return to sign in</LinkButton>
+            </>
+          )}
+        </StatusMessage>
+      )}
+
+      {revokingId !== null && (
+        <StatusMessage tone="info" title="Revoking session">
+          Waiting for the identity service to confirm this action.
         </StatusMessage>
       )}
 
@@ -140,40 +213,29 @@ export default function AccountCenterPage() {
               <Badge variant="active" dot>Active ID</Badge>
             </div>
             <p className="id-account-profile__email">{user?.email}</p>
-            <p className="id-account-profile__subject">Universal Subject #{user?.id}</p>
+            <p className="id-account-profile__subject">Identity details supplied by the account service</p>
           </div>
         </div>
 
-        <dl className="id-account-facts">
-          <div>
-            <dt>Authority</dt>
-            <dd>Fastify Hub</dd>
-          </div>
-          <div>
-            <dt>Client SDK</dt>
-            <dd>@allah/sdk</dd>
-          </div>
-        </dl>
-
-        <Button variant="outline" onClick={handleSignOut}>
-          Sign out
+        <Button variant="outline" disabled={isSigningOut || revokingId !== null} onClick={handleSignOut}>
+          {isSigningOut ? 'Signing out...' : 'Sign out'}
         </Button>
       </Card>
 
       <div className="id-account-columns">
         <section className="id-account-sessions" aria-labelledby="id-sessions-title">
           <SectionHeading
-            title="Active sessions and device grants"
+            title="Active sessions"
             titleId="id-sessions-title"
-            description="Revocation is applied on the hub, so a terminated device stops working on every destination."
+            description="The identity service reports these sessions. Expiry dates use UTC."
             trailing={<Badge variant="default">{sessions.length} active</Badge>}
           />
 
           {sessions.length === 0 ? (
             <StatePanel
               kind="empty"
-              cause="No device is holding a session for this account."
-              nextAction="Signing in from a new device adds it here, where you can revoke it again."
+              cause="The identity service reports no active sessions for this account."
+              nextAction="A new sign-in will appear here, where it can be reviewed or revoked."
             />
           ) : (
             <div className="id-account-sessions__list">
@@ -186,7 +248,7 @@ export default function AccountCenterPage() {
                   expiresAt={session.expiresAt}
                   isCurrent={session.isCurrent}
                   isLoading={revokingId === session.id}
-                  onRevoke={handleRevoke}
+                  onRevoke={revokingId === null && !isSigningOut ? handleRevoke : undefined}
                 />
               ))}
             </div>
@@ -195,35 +257,32 @@ export default function AccountCenterPage() {
 
         <section className="id-account-consumers" aria-labelledby="id-consumers-title">
           <SectionHeading
-            title="Ecosystem destinations"
+            title="Connected destinations"
             titleId="id-consumers-title"
-            description="Federated endpoints that accept this identity."
+            description="Only configured addresses are listed. Each product decides what your account can access."
             as="h2"
           />
 
-          <DestinationGrid label="Ecosystem destinations">
-            <DestinationCard
-              role="discovery"
-              title="MoonWitness Dock"
-              description="Public discovery and client presentation."
-              href={endpoints.dock}
-              external
+          {destinations.length > 0 ? (
+            <DestinationGrid label="Connected destinations">
+              {destinations.map((destination) => (
+                <DestinationCard
+                  key={destination.key}
+                  role={destination.role}
+                  title={destination.title}
+                  description={destination.description}
+                  href={destination.href}
+                  external
+                />
+              ))}
+            </DestinationGrid>
+          ) : (
+            <StatePanel
+              kind="empty"
+              cause="No safe destination address is configured for this environment."
+              nextAction="Use the address supplied by your administrator when one is available."
             />
-            <DestinationCard
-              role="operations"
-              title="MoonWitness HQ"
-              description="Enterprise operations and command center."
-              href={endpoints.headquarter}
-              external
-            />
-            <DestinationCard
-              role="research"
-              title="World Observatory"
-              description="Source-grounded observation workspace."
-              href={endpoints.jizz}
-              external
-            />
-          </DestinationGrid>
+          )}
         </section>
       </div>
     </RouteShell>

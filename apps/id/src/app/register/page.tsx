@@ -1,9 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../../lib/auth-client';
-import { Button, Card, CardContent, Form, Input, Link, PageHero, RouteShell, StatusMessage, WorldArtwork, sfx } from '@moonwitness/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  Form,
+  Input,
+  Link,
+  PageHero,
+  RouteShell,
+  StatusMessage,
+  WorldArtwork,
+  sfx,
+} from '@moonwitness/ui';
+import { getUserFacingAuthError, validatePasswordPair } from '../../lib/identity-ui';
+
+type RegistrationFieldErrors = {
+  name?: string;
+  password?: string;
+  confirmPassword?: string;
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,36 +31,52 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    document.title = 'Register | MoonWitness ID';
-  }, []);
+  const requestInFlight = useRef(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (password !== confirmPassword) {
-      setError('The two passwords do not match.');
+    if (!name.trim()) {
+      setFieldErrors({ name: 'Enter your name.' });
+      nameInputRef.current?.focus();
       return;
     }
 
-    if (password.length < 8) {
-      setError('Use at least 8 characters for the password.');
+    const validationError = validatePasswordPair(password, confirmPassword, 8);
+    if (validationError) {
+      if (password !== confirmPassword) {
+        setFieldErrors({ confirmPassword: validationError });
+        confirmPasswordInputRef.current?.focus();
+      } else {
+        setFieldErrors({ password: validationError });
+        passwordInputRef.current?.focus();
+      }
       return;
     }
+    if (requestInFlight.current) return;
 
+    requestInFlight.current = true;
     setIsLoading(true);
-
     try {
-      const { error: authError } = await authClient.signUp.email({ name, email, password });
-      if (authError) throw new Error(authError.message);
+      const { error: authError } = await authClient.signUp.email({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+      if (authError) throw new Error('Registration rejected');
       sfx.success();
       router.push('/account');
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Registration failed.');
+    } catch {
+      setError(getUserFacingAuthError('registration'));
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
@@ -49,26 +84,16 @@ export default function RegisterPage() {
   return (
     <RouteShell as="main" className="id-auth-page">
       <div className="id-auth-layout">
-        <PageHero
-          as="h2"
-          kicker="MOONWITNESS / IDENTITY ARCHIVE"
-          title="Begin with a secure account."
-          summary="Create the identity used to access your MoonWitness destinations."
-          mediaLayout="backdrop"
-          media={<WorldArtwork skin="lunar-chronicles" />}
-          captionRight="L / 02 / ARCHIVE"
-        />
-
         <div className="id-auth-form">
           <h1 className="id-auth-form__title">Create MoonWitness ID</h1>
           <p className="id-auth-form__note">
-            One profile opens Dock, Headquarter, and the rest of the ecosystem.
+            Create an account for the identity service. Each connected product decides what your account can access.
           </p>
 
           <Card as="section">
             <CardContent>
               {error && (
-                <StatusMessage tone="danger" title="Registration failed">
+                <StatusMessage tone="danger" title="Registration could not continue">
                   {error}
                 </StatusMessage>
               )}
@@ -79,6 +104,8 @@ export default function RegisterPage() {
                   type="text"
                   required
                   autoComplete="name"
+                  ref={nameInputRef}
+                  error={fieldErrors.name}
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="Your name"
@@ -100,17 +127,22 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   autoComplete="new-password"
+                  ref={passwordInputRef}
+                  error={fieldErrors.password}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="At least 8 characters"
-                  hint="Eight characters is the minimum the identity service accepts."
+                  hint="Use at least 8 characters. The identity service validates the account request."
                 />
 
                 <Input
                   label="Confirm password"
                   type="password"
                   required
+                  minLength={8}
                   autoComplete="new-password"
+                  ref={confirmPasswordInputRef}
+                  error={fieldErrors.confirmPassword}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Repeat the password"
@@ -128,6 +160,17 @@ export default function RegisterPage() {
             </CardContent>
           </Card>
         </div>
+
+        <PageHero
+          as="h2"
+          className="id-auth-hero"
+          kicker="MOONWITNESS / IDENTITY ARCHIVE"
+          title="Begin with your own account."
+          summary="A clear identity anchor for your account and its active sessions."
+          mediaLayout="backdrop"
+          media={<WorldArtwork skin="lunar-chronicles" />}
+          captionRight="L / 02 / ARCHIVE"
+        />
       </div>
     </RouteShell>
   );

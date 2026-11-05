@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../../lib/auth-client';
 import { mwClient } from '@allah/sdk';
 import { Button, Card, CardContent, Form, Input, Link, PageHero, RouteShell, StatusMessage, WorldArtwork, sfx } from '@moonwitness/ui';
+import { getUserFacingAuthError } from '../../lib/identity-ui';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,29 +15,40 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [onboardingStatus, setOnboardingStatus] = useState<'loading' | 'available' | 'closed' | 'error'>('loading');
+  const requestInFlight = useRef(false);
+
+  const checkOnboardingStatus = useCallback(async () => {
+    setOnboardingStatus('loading');
+    try {
+      const { available } = await mwClient.auth.getOnboardingStatus();
+      setOnboardingStatus(available ? 'available' : 'closed');
+    } catch {
+      setOnboardingStatus('error');
+    }
+  }, []);
 
   useEffect(() => {
-    document.title = 'Sign In | MoonWitness ID';
-    mwClient.auth.getOnboardingStatus()
-      .then(({ available }) => setOnboardingStatus(available ? 'available' : 'closed'))
-      .catch(() => setOnboardingStatus('error'));
-  }, []);
+    void checkOnboardingStatus();
+  }, [checkOnboardingStatus]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     setError(null);
     setIsLoading(true);
 
     try {
       const { error: authError } = await authClient.signIn.email(
-        { email, password, fetchOptions: { headers: { 'x-device-name': deviceName } } }
+        { email: email.trim(), password, fetchOptions: { headers: { 'x-device-name': deviceName.trim() } } }
       );
-      if (authError) throw new Error(authError.message);
+      if (authError) throw new Error('Sign-in rejected');
       sfx.success();
       router.push('/account');
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Invalid credentials or connection error.');
+    } catch {
+      setError(getUserFacingAuthError('login'));
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
@@ -47,7 +59,7 @@ export default function LoginPage() {
         <div className="id-auth-form">
           <h1 className="id-auth-form__title">MoonWitness ID</h1>
           <p className="id-auth-form__note">
-            Single sign-on and account authority for MoonWitness and Empire of the Light.
+            Sign in to manage your account and review the sessions linked to it.
           </p>
 
           <Card as="section">
@@ -111,14 +123,17 @@ export default function LoginPage() {
               )}
               {onboardingStatus === 'error' && (
                 <StatusMessage tone="warning" title="Setup status unavailable">
-                  The hub could not confirm first-run setup. Try again after reconnecting.
+                  The hub could not confirm first-run setup.{' '}
+                  <Button variant="ghost" size="sm" onClick={() => void checkOnboardingStatus()}>
+                    Check again
+                  </Button>
                 </StatusMessage>
               )}
             </CardContent>
           </Card>
 
           <p className="id-auth-form__foot">
-            Sessions are issued by the Fastify hub and stored in its embedded PGlite engine.
+            Your sign-in establishes a session managed by the identity service.
           </p>
         </div>
 

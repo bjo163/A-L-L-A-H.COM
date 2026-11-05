@@ -29,13 +29,34 @@ function hostFrom(env: EnvRecord, fallbackHost: string): string {
   const origin = env.NEXT_PUBLIC_ECOSYSTEM_ORIGIN;
   if (origin) {
     try {
-      return new URL(origin).hostname;
+      const parsedOrigin = new URL(origin);
+      if (
+        parsedOrigin.hostname &&
+        (parsedOrigin.protocol === 'http:' || parsedOrigin.protocol === 'https:')
+      ) {
+        return parsedOrigin.hostname;
+      }
     } catch {
       return fallbackHost;
     }
   }
   return fallbackHost;
 }
+
+function protocolFrom(env: EnvRecord): string {
+  if (env.NEXT_PUBLIC_ECOSYSTEM_PROTOCOL) return env.NEXT_PUBLIC_ECOSYSTEM_PROTOCOL;
+  const origin = env.NEXT_PUBLIC_ECOSYSTEM_ORIGIN;
+  if (origin) {
+    try {
+      const protocol = new URL(origin).protocol;
+      if (protocol === 'http:' || protocol === 'https:') return protocol;
+    } catch {
+      return 'http:';
+    }
+  }
+  return 'http:';
+}
+
 function appUrl(env: EnvRecord, app: keyof typeof DEV_PORTS, host: string, protocol: string): string {
   const explicit = env[`NEXT_PUBLIC_${app.toUpperCase()}_URL`];
   if (explicit) return explicit;
@@ -49,7 +70,7 @@ function appUrl(env: EnvRecord, app: keyof typeof DEV_PORTS, host: string, proto
  */
 export function resolveEcosystemEndpoints(env: EnvRecord = {}): EcosystemAppEndpoints {
   const host = hostFrom(env, env.NEXT_PUBLIC_ECOSYSTEM_DEV_HOSTNAME ?? 'localhost');
-  const protocol = env.NEXT_PUBLIC_ECOSYSTEM_PROTOCOL ?? 'http:';
+  const protocol = protocolFrom(env);
 
   return {
     dock: appUrl(env, 'dock', host, protocol),
