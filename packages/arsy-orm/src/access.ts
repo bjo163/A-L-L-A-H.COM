@@ -3,17 +3,17 @@ import type { DomainNode } from './query_builder';
 /**
  * ACL rollout mode (roadmap T3, ADR-3). `audit` runs the checks and logs
  * would-denies without blocking, `enforce` blocks, `off` short-circuits. The
- * default is `audit`: enforcement only flips after the owner reviews the audit
- * log across the live route surface, so a misconfigured grant cannot silently
- * lock a working flow.
+ * default is `enforce`: the audit review across the live route surface is done,
+ * so a model without a matching grant is now default-deny. Operators who need
+ * the non-blocking rollout behavior pass `ARSY_ACL_MODE=audit` explicitly.
  */
 export type AclMode = 'off' | 'audit' | 'enforce';
 
 export function resolveAclMode(env: Record<string, string | undefined> = process.env): AclMode {
-  const raw = (env.ARSY_ACL_MODE ?? 'audit').trim().toLowerCase();
-  if (raw === 'off' || raw === 'enforce') return raw;
-  // Unknown or unset values fall back to the safe default, never to `enforce`.
-  return 'audit';
+  const raw = (env.ARSY_ACL_MODE ?? 'enforce').trim().toLowerCase();
+  if (raw === 'off' || raw === 'audit' || raw === 'enforce') return raw;
+  // Unknown values fail closed to `enforce`; opt out explicitly with `off` or `audit`.
+  return 'enforce';
 }
 
 /** A policy denial. Carries only identifiers, never row values. */

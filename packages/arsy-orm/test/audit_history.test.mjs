@@ -22,6 +22,12 @@ const [
 const { IrModelAccess } = await import('../../../addons/base/models/ir_model_access.ts');
 const { IrRule } = await import('../../../addons/base/models/ir_rule.ts');
 
+// These tests assert on audit-event triggers, not on access control. The
+// default enforce mode would reject the user-actor writes (no grants exist for
+// `audit.test`), so ACL is short-circuited here; audit events are written by the
+// DB trigger and are unaffected by this flag.
+process.env.ARSY_ACL_MODE = 'off';
+
 const TenantRecord = defineModel({
   name: 'audit.test',
   tableName: 'audit_test',

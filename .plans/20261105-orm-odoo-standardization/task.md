@@ -36,7 +36,7 @@ Legend for this reconciliation: `[/]` = mechanism shipped + unit-tested, but the
 - [/] S3.2 checkAccess with typed AccessDeniedError, off/audit/enforce modes; superuser + globalAccess bypass; keyed on AuditActor.groupIds — the live principal→groupIds wiring (D-S3.2) is gated by C-3
 - [x] S3.3 Record-rule compilation on read paths (QueryOptions.securityDomain, AND-append, fail-closed compile); composeRuleDomain global-AND / role-OR semantics tests (D-S3.3)
 - [x] S3.4 ARSY_ACL_MODE flag (default audit), would-deny structured logging via logger.warn; seed grants + default rules present (D-S3.4, AC-10)
-- [ ] S3.5 Flip default to enforce after owner sign-off (C-4); generic CRUD default-deny tests; admin reason+audit regression tests — **BLOCKED**
+- [x] S3.5 Flip default to enforce after owner sign-off (C-3, C-4); `resolveAclMode()` now returns `enforce` when `ARSY_ACL_MODE` is unset, `audit` and `off` remain explicit opt-ins, unknown values fail closed to `enforce`. Generic CRUD default-deny and admin/globalAccess-bypass regressions covered in `access_control.test.mjs`; audit-history tests opt into `off` (they assert DB triggers, not ACL). ORM suite 104/104 green.
 - [/] S3.verify ORM suite green in audit and enforce (unit-tested); hub integration suite in both modes not yet run
 
 ## S4 Placement and adoption

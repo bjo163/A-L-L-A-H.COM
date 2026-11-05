@@ -4,19 +4,19 @@ id: "PLAN_ORM_ODOO_STANDARDIZATION_REPORT"
 version: "1.0.0"
 owner: "engineering"
 status: "in_progress"
-last_verified: "2026-11-05"
+last_verified: "2026-11-06"
 ---
 # Report: ORM Odoo-style Standardization
 
 Verified deliverables and honest deviations for the S1–S5 roadmap. Scope of the shipped code is the ORM
-package (`packages/arsy-orm`) and the `base` addon (`addons/base`); cross-package *adoption* and *enforcement
-flip* are logged as deferred with their owners' gates.
+package (`packages/arsy-orm`) and the `base` addon (`addons/base`); the ACL enforcement flip (S3.5) has landed,
+while cross-package *adoption* steps remain logged as deferred with their owners' gates.
 
 ## Verification evidence
 
 | Command | Result |
 |---|---|
-| `pnpm --filter @allah/arsy-orm test` | **102 pass / 0 fail** (exit 0) — includes `access_control.test.mjs` (ACL modes, record-rule compilation, model constraints) plus the S1/S2 suites (query_safety, selection_validation, unique_scope, many2one_fk, sync_redaction, audit_history, relational, computed, registry_vector, secret_encryption) |
+| `pnpm --filter @allah/arsy-orm test` | **104 pass / 0 fail** (exit 0) — includes `access_control.test.mjs` (ACL modes incl. the enforce default, record-rule compilation, model constraints) plus the S1/S2 suites (query_safety, selection_validation, unique_scope, many2one_fk, sync_redaction, audit_history, relational, computed, registry_vector, secret_encryption) |
 | `npx tsc --noEmit` (packages/arsy-orm) | exit 0 |
 | `npx tsc --noEmit` (addons/base) | exit 0 |
 | `pnpm contract:check` | **PASS** — addons/base now declares `ir.model.access` + `ir.rule`; arsy-orm publicSurface lists the new access/constraint symbols |
@@ -36,7 +36,7 @@ flip* are logged as deferred with their owners' gates.
 | AC-7 translation model key | met | `ir.translation.model_name` column + model-filtered lookup with legacy fallback |
 | AC-8 increment/keyset parity | met | incrementById recomputes stored computes; findKeyset shares the post-read pipeline |
 | AC-9 gateway catalog via repo | **deferred** | see Deviations — JOIN-shaped catalog reads on the live AI-serving path |
-| AC-10 audit vs enforce + superuser | met (mechanism) | `resolveAclMode` default audit; `AccessDeniedError` in enforce; `logger.warn{acl_would_deny}` in audit; system + `globalAccess` bypass — covered by access_control tests |
+| AC-10 audit vs enforce + superuser | met | `resolveAclMode` default `enforce` (unset fails closed; `audit`/`off` explicit opt-ins); `AccessDeniedError` in enforce; `logger.warn{acl_would_deny}` in audit; system + `globalAccess` bypass — covered by access_control tests (S3.5 landed) |
 | AC-11 retention as one constraint | **partial** | the `constraints` mechanism + rollback tests ship; migrating `legal_hold`/retention into `project.task`/`ir.attachment` and deleting route duplicates is an adoption step |
 | AC-12 fieldsGet → sdui | **deferred** | sdui consumer adoption not in this commit |
 | AC-13 signature drift | met | modelSignature covers indexes/displayNameSpec/related/compute names |
@@ -63,8 +63,9 @@ flip* are logged as deferred with their owners' gates.
 
 ## Deferred work and its gates
 
-1. **S3.5 enforce flip** — blocked on conflict.md C-4. Default stays `audit`; flipping risks locking flows the audit
-   log has not yet observed across the live route surface.
+1. ~~**S3.5 enforce flip**~~ — **landed**. Owner cleared the C-3/C-4 gate; `resolveAclMode()` now defaults to
+   `enforce` (unset fails closed, `audit`/`off` remain explicit opt-ins). The base seed grants (group_id 0) cover the
+   core route surface; models lacking any grant are now default-deny by design.
 2. **S4.2 gateway catalog** — `/v1/models` and `/v1/gateway/providers` (`llm-gateway/src/index.ts:81,636,654`) use
    JOINs and non-ORM columns (`model_id`, `alias`) that `BaseRepository.find` cannot express in one call. Moving
    them needs an expand+filter rewrite and the gateway test harness; it is a live AI-serving path, so it was not

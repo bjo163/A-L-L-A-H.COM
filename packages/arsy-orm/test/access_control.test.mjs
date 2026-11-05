@@ -80,12 +80,15 @@ async function setup(registered) {
 
 // ---- Pure record-rule compilation (no DB) --------------------------------
 
-test('resolveAclMode reads the env flag and fails safe', () => {
-  assert.equal(resolveAclMode({}), 'audit');
+test('resolveAclMode reads the env flag', () => {
+  // Default is now `enforce`; callers needing the safe audit‑only default
+  // must explicitly set ARSY_ACL_MODE=audit.
+  assert.equal(resolveAclMode({}), 'enforce');
   assert.equal(resolveAclMode({ ARSY_ACL_MODE: 'off' }), 'off');
+  assert.equal(resolveAclMode({ ARSY_ACL_MODE: 'audit' }), 'audit');
   assert.equal(resolveAclMode({ ARSY_ACL_MODE: 'ENFORCE' }), 'enforce');
-  // Unknown values never escalate to enforce.
-  assert.equal(resolveAclMode({ ARSY_ACL_MODE: 'garbage' }), 'audit');
+  // Previously garbage fell back to 'audit'; now it falls back to 'enforce'.
+  assert.equal(resolveAclMode({ ARSY_ACL_MODE: 'garbage' }), 'enforce');
 });
 
 test('composeRuleDomain applies Odoo global/role semantics', () => {

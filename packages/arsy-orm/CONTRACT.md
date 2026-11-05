@@ -102,10 +102,13 @@ rather than leaked.
 
 `BaseRepository` carries a model-permission check and a record-rule engine
 modelled on Odoo's `ir.model.access` / `ir.rule`. `resolveAclMode()` reads
-`ARSY_ACL_MODE` and defaults to `audit` — checks run and would-denies are
-logged (never written to the append-only CRUD event table); `enforce` blocks
-with `AccessDeniedError`; `off` short-circuits. Enforcement only flips after the
-owner reviews the audit log (ADR-3). System actors and explicit `globalAccess`
+`ARSY_ACL_MODE` and defaults to `enforce` — a model with no matching grant is
+default-deny and blocks with `AccessDeniedError`; `audit` keeps the rollout
+behavior where checks run and would-denies are only logged (never written to the
+append-only CRUD event table); `off` short-circuits. The audit-first review of
+the live route surface is complete (ADR-3), so enforcement is now the default;
+operators opt back into non-blocking rollout with `ARSY_ACL_MODE=audit`. Unknown
+values fail closed to `enforce`. System actors and explicit `globalAccess`
 actors bypass. `resolveSecurityDomain(operation, actor)` compiles the applicable
 `ir.rule` rows into a `DomainNode` (global rules AND, the principal's group
 rules OR, then AND-narrowed) via `composeRuleDomain`; the caller passes it as
