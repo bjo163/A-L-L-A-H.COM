@@ -14,6 +14,7 @@ COPY apps/harbor/package.json ./apps/harbor/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/types/package.json ./packages/types/
+COPY packages/assets/package.json ./packages/assets/
 
 RUN pnpm install --frozen-lockfile
 
@@ -21,6 +22,7 @@ COPY apps/harbor ./apps/harbor
 COPY packages/ui ./packages/ui
 COPY packages/sdk ./packages/sdk
 COPY packages/types ./packages/types
+COPY packages/assets ./packages/assets
 RUN pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/harbor build
 
 FROM base AS runner

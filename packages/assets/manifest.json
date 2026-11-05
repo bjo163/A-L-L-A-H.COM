@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "comment": "Canonical single source of public assets. sync.mjs copies each app's subset into apps/<app>/public and src/app/favicon.ico. Artwork keys are world skin ids; emblem/favicon resolve from brand/ and favicon/. Fonts are shared by every app.",
+  "fonts": [
+    "Inter.woff2",
+    "Inter.woff",
+    "CormorantGaramond.woff2",
+    "CormorantGaramond.woff",
+    "CascadiaCode.woff2",
+    "CascadiaCode.woff"
+  ],
+  "apps": {
+    "dock": {
+      "artwork": ["imperium-lumen"],
+      "emblem": "dock.svg",
+      "favicon": "favicon.ico"
+    },
+    "e-isp": {
+      "artwork": ["rocksoul", "simpul-nusantara"],
+      "emblem": "e-isp.svg"
+    },
+    "gate": {
+      "artwork": ["imperium-lumen", "rocksoul"],
+      "emblem": "gate.svg"
+    },
+    "harbor": {
+      "artwork": ["rocksoul"],
+      "emblem": "harbor.svg"
+    },
+    "headquarter": {
+      "artwork": ["nexus-paradox"],
+      "emblem": "headquarter.svg",
+      "favicon": "favicon.ico"
+    },
+    "id": {
+      "artwork": ["lunar-chronicles"],
+      "emblem": "id.svg"
+    },
+    "jizz": {
+      "artwork": ["mycelium", "riot-anarchy", "rocksoul"],
+      "emblem": "jizz.svg"
+    },
+    "moonsky": {
+      "artwork": ["riot-anarchy"],
+      "emblem": "moonsky.svg"
+    }
+  }
+}

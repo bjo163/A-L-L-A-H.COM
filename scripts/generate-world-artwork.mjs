@@ -51,6 +51,13 @@ function encodePng(pixels) {
   ]);
 }
 
+// Writes a hero PNG into the canonical assets package; sync.mjs distributes it.
+function writeHero(skin, pixels) {
+  const out = join('packages/assets/artwork', `${skin}.png`);
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, encodePng(pixels));
+}
+
 function canvas(top, bottom) {
   const px = Buffer.alloc(W * H * 3);
   for (let y = 0; y < H; y++) {
@@ -112,8 +119,7 @@ const hex = (v) => [parseInt(v.slice(1, 3), 16), parseInt(v.slice(3, 5), 16), pa
   for (const rx of [194, 314, 526, 742, 906, 1074, 1238, 1366, 82, 642, 1202, 980, 420, 1350]) {
     c.rect(rx, 96 + (rx % 7) * 28, 3, 56, hex('#c7c0b8'), 0.14);
   }
-  writeFileSync(join('apps/gate/public/artwork/rocksoul.png'), encodePng(c.px));
-  writeFileSync(join('apps/jizz/public/artwork/rocksoul.png'), encodePng(c.px));
+  writeHero('rocksoul', c.px);
 }
 
 // RIOT ANARCHY: cream newsprint, hard ink rules, crimson/cobalt blocks.
@@ -143,7 +149,7 @@ const hex = (v) => [parseInt(v.slice(1, 3), 16), parseInt(v.slice(3, 5), 16), pa
   const m = 16;
   c.rect(96 - m / 2, 96 - m / 2, m, m, hex('#a5282d'));
   c.rect(1504 - m / 2, 96 - m / 2, m, m, hex('#a5282d'));
-  writeFileSync(join('apps/jizz/public/artwork/riot-anarchy.png'), encodePng(c.px));
+  writeHero('riot-anarchy', c.px);
 }
 
 console.log('world heroes written');

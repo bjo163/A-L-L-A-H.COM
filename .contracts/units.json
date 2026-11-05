@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/build-contract-index.ts",
   "schema_version": "1.0.0",
-  "source_digest": "58f6ffce9e8402ee454b75df6e57584535e5fcf430f8587ca72c8e1497644d21",
+  "source_digest": "18b2df945721d542b47330df10cc7ab83f127be5614f9ce2dddbfbbc724d1666",
   "units": [
     {
       "dir": "addons/base",
@@ -758,6 +758,20 @@
       "summary": "Content-addressed storage Fastify plugin and hashing store"
     },
     {
+      "dir": "packages/assets",
+      "tier": "package",
+      "lists": {
+        "publicSurface": []
+      },
+      "id": "PKG_ASSETS",
+      "name": "@moonwitness/assets",
+      "owner": "design-system",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-11-05",
+      "summary": "Canonical single source for public assets synced into each app's public directory"
+    },
+    {
       "dir": "packages/lint",
       "tier": "package",
       "lists": {
@@ -840,7 +854,10 @@
       "tier": "package",
       "lists": {
         "publicSurface": [
-          "SkinRoot"
+          "SkinRoot",
+          "SkinSelector",
+          "SkinPreferenceScope",
+          "useSkinPreference"
         ],
         "depends": [
           "@moonwitness/types"
@@ -853,21 +870,6 @@
       "status": "released",
       "last_verified": "2026-02-10",
       "summary": "Design-system component library primitives blocks and skin root"
-    },
-    {
-      "dir": "packages/vscode-extension",
-      "tier": "package",
-      "lists": {
-        "publicSurface": [],
-        "depends": []
-      },
-      "id": "PKG_VSCODE_EXTENSION",
-      "name": "allah-vscode-extension",
-      "owner": "developer-experience",
-      "version": "1.0.0",
-      "status": "released",
-      "last_verified": "2026-02-10",
-      "summary": "VS Code extension surfacing missions health and usage dashboards"
     }
   ]
 }

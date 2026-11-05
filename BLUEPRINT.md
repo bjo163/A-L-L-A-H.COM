@@ -27,6 +27,7 @@ Monorepo map → [AGENTS.md](AGENTS.md). Invariants → [AGENTS.md](AGENTS.md). 
 |---|---|---|
 | `packages/arsy-orm/` | `@allah/arsy-orm` | Embedded PGlite WASM ORM · schema sync · tenant isolation |
 | `packages/arsy-plugin-llm-gateway/` | — | Multi-provider AI routing · SSE streaming · virtual keys · ReAct agent loop · SDUI tool registry |
+| `packages/assets/` | `@moonwitness/assets` | Canonical single source for public assets (world artwork, brand emblems, favicon, font binaries); syncs per-app copies into `apps/*/public` at predev/prebuild |
 | `addons/mw_qorpus/` | — | Vector embeddings · SHA-256 dedup · hybrid retrieval |
 
 ## Layer Stack

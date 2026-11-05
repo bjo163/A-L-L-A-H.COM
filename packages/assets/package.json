@@ -1,0 +1,11 @@
+{
+  "name": "@moonwitness/assets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Canonical single source for public assets (world artwork, brand emblems, favicons, font binaries) synced into each app's public directory.",
+  "scripts": {
+    "sync": "node sync.mjs"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

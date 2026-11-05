@@ -73,7 +73,6 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - alternatives: Block registration until admin assigns org tenant · central tenant registry before personal tenants.
 - rationale: Existing integer `company_id` + user sequence provides distinct per-account IDs without collisions.
 - consequences: New accounts isolated by default. Org sharing requires explicit admin assignment. Tenant-scoped queries must treat ID as opaque non-zero key.
-- related: WINDOWS-VSCODE-LOCAL-AGENT
 
 ### D-009 — Retire the Rust/Loco Server
 - status: ACCEPTED — 2026-11-04
@@ -165,3 +164,12 @@ Accepted ADRs only. Proposals / unresolved → [BACKLOG.md](BACKLOG.md). Arch co
 - rationale: A rule that cannot fail is not enforcement; the previous gate reported 100% compliance over 24 violations, and the same class of bug hid the hex pattern. Absorbing the vocabulary into the package is what lets the six worlds differ in composition while sharing behaviour, accessibility, and state.
 - consequences: Adding a world-level visual change now means editing one `[data-moonframe-skin]` block instead of five apps. Applications cannot introduce a one-off hero, an unstyled state, or a palette colour without a failing gate. Measured contrast for every skin pair is available with `pnpm ui:contrast`; the tightest ratio in the set is 4.99:1 (ROCKSOUL accent text on accent), which clears WCAG AA for normal text.
 - related: D-007, D-012, [DNA/07-COMPONENT-MAPPING.md](DNA/07-COMPONENT-MAPPING.md), [DESIGN.md](DESIGN.md), [QUALITY.md](QUALITY.md)
+
+### D-018 — Public Assets Have One Canonical Home
+- status: ACCEPTED — 2026-11-05
+- context: Forty-plus static files (seven world hero PNG+SVG pairs, eight brand emblems, two favicons) were duplicated byte-for-byte across the eight apps' `public/` directories, and the three font families declared in `packages/ui/src/fonts/fonts.css` had no binaries at all, so every page silently fell back to a `local()` font. The registry in `packages/ui/src/skins/registry.ts` already names each asset by a public string path, so the duplication was pure copy, not a dependency.
+- decision: `packages/assets` (`@moonwitness/assets`) becomes the single tracked source for artwork, brand emblems, the shared favicon, and vendored font binaries. `sync.mjs` reads `manifest.json` and copies each app's subset into `apps/<app>/public` (and `src/app/favicon.ico` for dock and headquarter) on `predev` and `prebuild`; those copies are gitignored. Emblems are canonicalized per app so the existing byte drift is preserved rather than silently redesigned. `@moonwitness/ui` must never depend on the package, because it references files by runtime public path.
+- alternatives: Import assets as modules through the package (breaks the registry string paths, OG metadata, the favicon factory, and the `assets.test.ts` contract); a CDN or object store (deferred, the operator already runs an S3 endpoint to connect later); designating one app's copy canonical and deleting the rest (would change the apps whose emblems differ).
+- rationale: Path-based references plus a build-time sync keep every existing consumer intact while collapsing 40 tracked duplicates into one source of truth, and the copies regenerate identically in local dev, CI, and the Docker builders.
+- consequences: The Dockerfile and workspace dependency graph for all eight apps now include `packages/assets`; `docker:contract:check` and `pnpm assets:sync` must pass, and `verify:release` runs the sync before `ui:test`. The committed hero PNGs remain authoritative because the legacy `generate-world-artwork.mjs` rasterizer no longer reproduces their byte-for-byte detail; it is retained retargeted to the package for manual regeneration only.
+- related: D-015, `packages/assets/CONTRACT.md`, `packages/ui/test/assets.test.ts`, `packages/ui/src/fonts/fonts.css`

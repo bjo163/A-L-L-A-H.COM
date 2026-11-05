@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../packages/assets/sync.mjs headquarter",
     "dev": "next dev -p 3002",
+    "prebuild": "node ../../packages/assets/sync.mjs headquarter",
     "build": "next build",
     "start": "next start -p 3002",
     "typecheck": "tsc --noEmit"
@@ -15,7 +17,8 @@
     "@moonwitness/ui": "workspace:*",
     "next": "16.4.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "@moonwitness/assets": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
