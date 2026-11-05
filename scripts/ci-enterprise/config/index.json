@@ -132,7 +132,7 @@
       },
       "github": {
         "enabled": true,
-        "createIssueOnUnfixable": true,
+        "createIssueOnUnfixable": false,
         "issueLabels": [
           "ci-failure",
           "needs-manual-fix"

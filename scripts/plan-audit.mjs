@@ -8,6 +8,7 @@
 //   --dry-run   Do not create/close issues, delete dirs, commit, or push.
 //   --verbose   Echo log lines to stdout.
 //   --limit=N   Stop after N valid plans (safety cap for a single run).
+// Issue filing and plan archival require PLAN_AUDIT_CREATE_ISSUES=1.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -180,6 +181,11 @@ function saveState(state) {
 function main() {
   log('=== Plan audit start ===');
   log(`repo=${REPO_ROOT} plans=${PLANS_DIR} branch=${BRANCH} dryRun=${DRY_RUN} log=${LOG_FILE}`);
+
+  if (process.env.PLAN_AUDIT_CREATE_ISSUES !== '1') {
+    log('issue filing and plan archival are disabled; set PLAN_AUDIT_CREATE_ISSUES=1 to enable', 'WARN');
+    return;
+  }
 
   if (!fs.existsSync(PLANS_DIR)) {
     log('no .plans directory found', 'ERROR');
