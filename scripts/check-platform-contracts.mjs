@@ -66,11 +66,34 @@ function integerList(path, key) {
   return contractList(path, key).map(Number);
 }
 
-function portMappings(lines) {
-  return lines.flatMap((line) => {
-    const match = line.match(/^\s+- ["']?(\d+):(\d+)(?:\/(udp|tcp))?["']?$/);
-    return match ? [{ host: Number(match[1]), container: Number(match[2]), protocol: match[3] ?? 'tcp' }] : [];
+function listBlock(lines, key) {
+  const start = lines.findIndex((line) => line.trim() === `${key}:`);
+  if (start < 0) return [];
+  const values = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^    [a-zA-Z0-9_-]+:/.test(line)) break;
+    const entry = line.match(/^\s+- ["']?([^"'\s]+)["']?$/);
+    if (entry) values.push(entry[1]);
+  }
+  return values;
+}
+
+/**
+ * Container ports a service declares. `ports:` publishes a host port, which is
+ * only correct for traffic the deployment proxy cannot carry (raw UDP such as
+ * RADIUS). `expose:` keeps the port inside the isolated Compose network, where
+ * the proxy routes a domain to `<service>:<port>` and no host port is claimed.
+ */
+function servicePortEntries(lines) {
+  const published = listBlock(lines, 'ports').flatMap((entry) => {
+    const match = entry.match(/^(\d+):(\d+)(?:\/(udp|tcp))?$/);
+    return match ? [{ port: Number(match[2]), host: Number(match[1]), protocol: match[3] ?? 'tcp', published: true }] : [];
   });
+  const internal = listBlock(lines, 'expose').flatMap((entry) => {
+    const match = entry.match(/^(\d+)(?:\/(udp|tcp))?$/);
+    return match ? [{ port: Number(match[1]), protocol: match[2] ?? 'tcp', published: false }] : [];
+  });
+  return [...published, ...internal];
 }
 
 function dockerExposedPorts(app) {
@@ -117,19 +140,28 @@ function checkComposeTopology() {
       failures.push(`docker-compose.yml: ${name} build context must be the repository root`);
     }
     const declaredPorts = integerList(join(root, 'apps', name, 'CONTRACT.md'), 'ports').sort((a, b) => a - b);
-    const mappings = portMappings(lines);
-    const composePorts = [...new Set(mappings.map((port) => port.container))].sort((a, b) => a - b);
+    const entries = servicePortEntries(lines);
+    const composePorts = [...new Set(entries.map((entry) => entry.port))].sort((a, b) => a - b);
     if (JSON.stringify(composePorts) !== JSON.stringify(declaredPorts)) {
       failures.push(`docker-compose.yml: ${name} ports [${composePorts}] differ from app contract [${declaredPorts}]`);
+    }
+    for (const entry of entries) {
+      if (entry.published && entry.protocol === 'tcp') {
+        failures.push(`docker-compose.yml: ${name} publishes tcp port ${entry.port} on the host; declare it under expose: so requests reach the service through the proxy`);
+      }
     }
     const exposedPorts = dockerExposedPorts(name);
     if (JSON.stringify(exposedPorts.map(({ port }) => port)) !== JSON.stringify(declaredPorts)) {
       failures.push(`apps/${name}/Dockerfile: EXPOSE ports [${exposedPorts.map(({ port }) => port)}] differ from app contract [${declaredPorts}]`);
     }
     for (const exposed of exposedPorts) {
-      const mapping = mappings.find(({ container }) => container === exposed.port);
-      if (mapping && mapping.protocol !== exposed.protocol) {
-        failures.push(`docker-compose.yml: ${name} port ${exposed.port} protocol '${mapping.protocol}' differs from Dockerfile '${exposed.protocol}'`);
+      const entry = entries.find(({ port }) => port === exposed.port);
+      if (!entry) {
+        failures.push(`docker-compose.yml: ${name} must declare container port ${exposed.port} under expose: (or ports: for non-HTTP traffic)`);
+        continue;
+      }
+      if (entry.protocol !== exposed.protocol) {
+        failures.push(`docker-compose.yml: ${name} port ${exposed.port} protocol '${entry.protocol}' differs from Dockerfile '${exposed.protocol}'`);
       }
     }
     for (const volumeLine of lines.filter((line) => /^\s+- [a-z0-9_-]+:\/.+/.test(line))) {
@@ -173,9 +205,9 @@ function checkRuntimeHealth() {
   }
   for (const name of apps.filter((app) => !expectedPaths[app])) {
     const lines = services.get(name) ?? [];
-    const port = lines.find((line) => line.trim().startsWith('- "'))?.match(/:(\d+)/)?.[1];
-    if (!port || !lines.some((line) => line.includes(`127.0.0.1:${port}`))) {
-      failures.push(`docker-compose.yml: ${name} healthcheck must probe its published port ${port ?? '(unknown)'}`);
+    const [http] = servicePortEntries(lines).filter((entry) => entry.protocol === 'tcp');
+    if (!http || !lines.some((line) => line.includes(`127.0.0.1:${http.port}`))) {
+      failures.push(`docker-compose.yml: ${name} healthcheck must probe its container port ${http?.port ?? '(unknown)'}`);
     }
   }
 }
