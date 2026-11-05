@@ -49,6 +49,16 @@ Latest pushed commits:
 - `175a973` agent role and correlated message contracts.
 - `9983784` delegation safety limits and review checkpoints.
 
+The 1.0 contracts are now implemented as default-deny, deterministic core
+utilities. They do not claim live provider comparison, automatic scheduling,
+or marketplace publication until those external environments are exercised.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 45 tests |
+| `pnpm --filter allah-vscode-extension build` | Passed |
+| `git diff --check -- packages/vscode-extension package.json .plans/20261105-vscode-extension-ready-to-use` | Passed |
+
 ## Recent pushed commits
 
 - `2c32e9c` manifest contract coverage and architecture trace.

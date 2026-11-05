@@ -90,12 +90,12 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-068 Add review checkpoint before consequential actions. Consequential actions require an explicit approved checkpoint.
 
 ## P2 — 1.0.0
-- [ ] VSC-069 Model comparison/evaluation workflow.
-- [ ] VSC-070 Prompt laboratory and versioned prompt tests.
-- [ ] VSC-071 Token, latency, reliability and budget observability.
-- [ ] VSC-072 Opt-in mission scheduling.
-- [ ] VSC-073 Extension capability/plugin contribution contract.
-- [ ] VSC-074 Stable distribution, upgrade and support policy.
+- [x] VSC-069 Model comparison/evaluation workflow. Added explicit expected-signal evaluation cases.
+- [x] VSC-070 Prompt laboratory and versioned prompt tests. Added bounded, timestamped prompt versions.
+- [x] VSC-071 Token, latency, reliability and budget observability. Added deterministic metric aggregation.
+- [x] VSC-072 Opt-in mission scheduling. Scheduler only selects enabled missions whose due time has passed.
+- [x] VSC-073 Extension capability/plugin contribution contract. Added validated contribution identity, semver, commands, and capabilities.
+- [x] VSC-074 Stable distribution, upgrade and support policy. Added explicit stable channel and support metadata.
 
 ## Dependency order
 00 → 01 → 02 → 03 → 04 → 05 → 09. 06 depends on stable 00–05. 07 depends on stable provider/agent/mission contracts. 08 is cross-cutting and must not weaken local-core security.
