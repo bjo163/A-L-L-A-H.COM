@@ -1,6 +1,6 @@
 # Report: packages/assets
 
-Status: implemented, verified, and pushed. Initial package landed in `39adafe`; durability enforcement (auto-sync in CI + `ASSET_PURITY` gate + un-track re-drifted copies + `.font` stub cleanup + `generate-world-artwork.mjs` removal + contract index regen) landed in `719692b` and pushed to `origin/dev`.
+Status: implemented and pushed; awaiting clean-checkout CI confirmation. Initial package landed in `39adafe`. The first durability push `719692b` was INEFFECTIVE — `ASSET_PURITY` shipped as dead code (missing `child_process` import, rule never called), so `lint:arch` falsely passed and 19 copies stayed tracked. The real durability landing is `a1982d2`: gate wired (`git ls-files -- apps` + precise regex, cmd.exe-immune, catches deep and shallow copies), 19 copies re-un-tracked, `.font` stubs removed, `generate-world-artwork.mjs` deleted, contract index regenerated. Local gates green on `a1982d2`; clean-checkout `ci-dev.yml` still pending.
 
 ## Deliverables
 - `packages/assets` (`@moonwitness/assets`): 7 worlds x (png+svg), 8 canonical brand
@@ -11,7 +11,7 @@ Status: implemented, verified, and pushed. Initial package landed in `39adafe`; 
 - Eight app `package.json`: `@moonwitness/assets` workspace dep + `predev`/`prebuild`
   hooks calling the sync for that app.
 - Eight Dockerfiles: `COPY packages/assets/package.json` + `COPY packages/assets`.
-- `generate-world-artwork.mjs` retargeted to write into `packages/assets/artwork`.
+- `generate-world-artwork.mjs`: first retargeted to write into `packages/assets/artwork`, then deleted per User confirmation (stale rasterizer no longer reproducing the committed hero PNGs).
 - Root `package.json`: added `assets:sync`; `verify:release` now syncs before `ui:test`.
 - `.gitignore`: synced `public/{artwork,brand,fonts}` and dock/headquarter favicon ignored.
 - `BLUEPRINT.md` package row and `DECISIONS.md` D-018 recorded; contract index regenerated.
