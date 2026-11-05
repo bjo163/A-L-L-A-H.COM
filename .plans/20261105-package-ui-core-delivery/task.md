@@ -5,7 +5,7 @@ version: "1.0.0"
 owner: "engineering"
 status: "planned"
 target_branch: "dev"
-parent_task_ledger: "../../.plans/20261105-moon-ui-master-consolidation/task.md"
+parent_task_ledger: "../20261105-moon-ui-master-consolidation/task.md"
 ---
 
 # @moonwitness/ui — Atomic Execution Tasks
