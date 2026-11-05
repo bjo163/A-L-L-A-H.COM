@@ -28,6 +28,102 @@ MoonWitness ID is the human-facing identity surface. **ARSY remains the sole aut
 2. **Trust control** — show the sessions that the authority reports and send revocation to that authority.
 3. **Continuity** — provide safe, explicit paths into connected products without implying that authentication grants every permission.
 
+## Expanded product direction — IDENTITY, TRUST & SECRETS CONTROL PLANE
+
+MoonWitness ID evolves into the human-facing **Identity & Secrets Control Plane** for A-L-L-A-H.COM. The user sees one coherent place to manage who they are, which applications/services act for them, which credentials those services use, and which environments receive approved configuration.
+
+This is an approved product direction; it does not assert that the capabilities below already exist.
+
+### Product pillars
+
+1. **Human Identity** — canonical account, profile, login, session and recovery journeys.
+2. **Service Identity** — non-human principals for apps, agents, integrations, and automation; ownership, lifecycle, scopes, expiry, disable/revoke.
+3. **Personal API Keys** — named keys for an individual, narrow scopes, project/environment binding, expiry, last-used metadata, one-time issuance display, rotation and revocation.
+4. **Secrets Vault** — recoverable provider credentials and application secrets encrypted server-side, versioned, masked, audited, and accessed only by authorized runtime services.
+5. **Environment Manager** — development/staging/production configuration, variable classification, secret references, version history, redacted diffs, approvals, and deployment hand-off.
+6. **Access & Policy** — project membership, service-to-service permissions, scopes, approvals, step-up authentication, and least privilege.
+7. **Audit & Security** — credential lifecycle events, access decisions, rotation status, suspicious activity signals backed by actual evidence, and exportable audit records subject to policy.
+
+### Mental model
+
+- **Identity** answers: who or what is acting?
+- **Credential** answers: what proof is presented?
+- **Secret** answers: what sensitive value must a trusted runtime retrieve?
+- **Environment** answers: where may a configuration apply?
+- **Policy** answers: who may perform which action, on which resource, under what conditions?
+- **Audit** answers: what happened, who/what initiated it, and what authority confirmed it?
+
+These are separate resource types with separate lifecycle and authorization rules. Do not collapse them into a generic “key” table.
+
+### Proposed navigation
+
+- **My Identity** — profile, sessions, security and recovery.
+- **Service Identities** — applications, agents, integrations and automation principals.
+- **API Keys** — personal/service keys, scopes, expiry, rotation and revocation.
+- **Vault** — secret records, versions, access policies and rotation history.
+- **Environments** — projects, dev/staging/production, variables and redacted version diffs.
+- **Access Policies** — memberships, scopes, approval rules and access requests.
+- **Audit Ledger** — searchable, redacted lifecycle and access events.
+
+Expose only sections whose backend contracts and policy gates are implemented. Empty or unavailable capabilities must not masquerade as active management surfaces.
+
+### Authority and custody contract
+
+**ARSY remains the sole authority and secret custody backend.** ID is a UI and orchestration layer, never a second vault.
+
+- ARSY owns schemas, tenant isolation, principal validation, policy evaluation, encryption/decryption, key generation/verification, revocation, rate limits, audit, and retention.
+- ID uses typed `@allah/sdk` contracts and `@moonwitness/types`; it never connects directly to the database or secret storage.
+- Runtime consumers receive secrets through narrowly scoped server-side injection or retrieval, not through ID browser responses.
+- Destination apps validate their own authorization on every protected operation.
+- Human credentials, service credentials, personal API keys, provider secrets, environment variables, and cryptographic key material remain distinct classes.
+
+### Secret lifecycle
+
+`DRAFT → CREATED → ACTIVE → ROTATION_DUE → ROTATING → ACTIVE (new version) → REVOKED/EXPIRED`
+
+- Plaintext is displayed only once at creation/rotation if policy explicitly allows it.
+- Later reads return metadata, masked fingerprints, version status, and last-used data—not plaintext.
+- Rotation creates a new version, validates consumers, allows a bounded overlap where safe, then revokes the old version.
+- Revocation is immediate at the authority; cached runtime credentials have bounded TTL and documented invalidation.
+- Deleted records follow retention/legal-hold rules; deletion is not a way to erase audit obligations.
+
+### Environment lifecycle
+
+`DRAFT → VALIDATED → REVIEW_REQUIRED → APPROVED → DEPLOY_REQUESTED → DEPLOYED`
+
+- Variables are classified as public, sensitive, or secret; secret is the default.
+- Public browser variables are explicitly allowlisted and never contain credentials.
+- Values are write-only after submission; diffs show changed names and metadata, never values.
+- Environment promotion is explicit and auditable. Production changes may require approval and step-up authentication.
+- Deployment adapters receive secret references or short-lived scoped access, never a dump of the whole vault.
+- No arbitrary shell execution, uncontrolled file download, or unrestricted environment export.
+
+### Security invariants
+
+- No secret plaintext in browser state, local storage, cookies, URLs, client props, logs, analytics, telemetry, error messages, AI prompts, or agent context.
+- No generic CRUD for credential-bearing models.
+- Tenant/project ownership is resolved server-side; never trust client-supplied tenant IDs.
+- Recoverable secrets use authenticated envelope encryption with managed key-encryption keys and versioned metadata.
+- API keys use high-entropy random generation, scoped authorization, expiry, one-time display, secure verifier storage, and constant-time verification where applicable.
+- Key encryption material is separated from encrypted data; master keys are not stored in the application database.
+- Sensitive actions require explicit confirmation and, when available, step-up authentication.
+- Audit events are append-only, redacted, actor/resource/action/outcome tagged, and governed by retention/legal hold.
+- AI agents may manage metadata and submit approved workflows, but never receive raw secret values in their context or tool output.
+
+### Existing foundations vs proposed capabilities
+
+| Capability | Repository evidence | Status |
+|---|---|---|
+| Human auth and account sessions | Better Auth endpoints hosted by ARSY | Existing baseline |
+| NAS shared-secret encryption | ARSY master-key encryption; Sentinel decrypts | Existing narrow use |
+| AI virtual-key verifier | Changelog reports SHA-256-only persisted verifier | Existing narrow use; review before generalization |
+| General-purpose secret vault | No complete end-to-end capability verified | Proposed |
+| Personal/service API-key center | No complete ID workflow verified | Proposed |
+| Environment versioning and approvals | No complete end-to-end capability verified | Proposed |
+| KMS/HSM-backed key hierarchy | Not established by current evidence | Architecture decision required |
+
+The existing NAS encryption mechanism and AI virtual-key hashing must not be copied blindly into a universal vault. Select algorithms and key custody only after threat modeling, implementation inspection, migration design, and operational recovery planning.
+
 ## Product boundaries
 
 | ID owns | ARSY / destination services own |
