@@ -94,7 +94,7 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [ ] **PUI-0204** Verify server-rendered skin selection matches first client render.
 - [ ] **PUI-0205** Add regression coverage for hydration stability and deterministic fallback.
 - [ ] **PUI-0206** Verify changing skin cannot alter component behavior, permissions or business logic.
-- [ ] **PUI-0207** Verify there is one token authority and no app-level competing palette.
+- [x] **PUI-0207** Verify there is one token authority and no app-level competing palette.
 - [ ] **PUI-0208** Audit all `SkinTokens` fields and CSS variables consumed by package components and app consumers.
 
 ### P2.2 Semantic token completeness
