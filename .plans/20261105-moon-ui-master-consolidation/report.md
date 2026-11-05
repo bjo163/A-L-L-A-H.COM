@@ -151,3 +151,10 @@ The final `dev` HEAD after report update is recorded by the final verification s
 - The recursive GitHub tree is complete (`truncated=false`) and confirms all seven master-plan artifacts.
 - README, BLUEPRINT and RESEARCH each contain a working relative link to the master spec.
 - The remote `dev` ref was verified at `18d1f4e57ecbaa6b8d80c76c548e1a4990a530eb` before this report-only update.
+
+
+## 12. Additional legacy-plan cleanup
+
+A deeper scan found duplicate detailed T-001–T-010 SkinRoot instructions later in the platform-standardization task document, beyond its original Phase 1 section. Those duplicate subtasks, old all-app parallelization and old acceptance scope have now been removed or transferred. The legacy plan retains only a clear supersession pointer to MU-0801–MU-0822 and MU-0930–MU-0942. Its non-UI platform capability work remains in place.
+
+Latest verified `dev` HEAD before this report update: `e1e9bffd142739b783c2b38e978f989b16a17721`.
