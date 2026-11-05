@@ -1,0 +1,789 @@
+{
+  "generated_by": "scripts/build-contract-index.ts",
+  "schema_version": "1.0.0",
+  "source_digest": "c4510595561de91bc0d25f41fe47cd0af82e92c93bd8a99cca308c2082ec5004",
+  "units": [
+    {
+      "dir": "addons/base",
+      "tier": "addon",
+      "lists": {
+        "depends": [],
+        "models": [
+          "res.company",
+          "res.currency",
+          "res.country",
+          "res.partner",
+          "res.users",
+          "ir.ui.view",
+          "res.lang",
+          "ir.translation"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": [
+          "views/res_partner_views.json",
+          "views/res_company_views.json"
+        ]
+      },
+      "id": "ADDON_BASE",
+      "name": "base",
+      "owner": "platform-core",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Core enterprise entity registry and platform reference data",
+      "manifest": {
+        "name": "base",
+        "models": [
+          "res.company",
+          "res.currency",
+          "res.country",
+          "res.partner",
+          "res.users",
+          "ir.ui.view",
+          "res.lang",
+          "ir.translation"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": [
+          "res_partner_views.json",
+          "res_company_views.json"
+        ]
+      }
+    },
+    {
+      "dir": "addons/mw_llm_router",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "ai.provider",
+          "ai.model",
+          "ai.route",
+          "ai.virtual_key",
+          "ai.usage_log",
+          "ai.usage_daily",
+          "ai.semantic_cache",
+          "ai.thread",
+          "ai.message"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_MW_LLM_ROUTER",
+      "name": "mw_llm_router",
+      "owner": "ai-platform",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Multi-provider AI routing virtual keys and usage analytics",
+      "manifest": {
+        "name": "mw_llm_router",
+        "models": [
+          "ai.provider",
+          "ai.model",
+          "ai.route",
+          "ai.virtual_key",
+          "ai.usage_log",
+          "ai.usage_daily",
+          "ai.semantic_cache",
+          "ai.thread",
+          "ai.message"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "addons/mw_qorpus",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "qorpus.document",
+          "qorpus.chunk"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_MW_QORPUS",
+      "name": "mw_qorpus",
+      "owner": "knowledge",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Qorpus knowledge ingestion and RAG engine",
+      "manifest": {
+        "name": "mw_qorpus",
+        "models": [
+          "qorpus.document",
+          "qorpus.chunk"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "addons/mw_storage",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "mw.storage.backend",
+          "ir.attachment",
+          "ir.legal.hold"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_MW_STORAGE",
+      "name": "mw_storage",
+      "owner": "platform-core",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "MoonWitness content-addressed storage models and legal retention hold",
+      "manifest": {
+        "name": "mw_storage",
+        "models": [
+          "mw.storage.backend",
+          "ir.attachment",
+          "ir.legal.hold"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "addons/nexus",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "nexus.site",
+          "nexus.device",
+          "nexus.nas",
+          "nexus.ip_pool",
+          "nexus.nas_secret_log"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_NEXUS",
+      "name": "nexus",
+      "owner": "network",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Network inventory and MikroTik NAS registry foundation",
+      "manifest": {
+        "name": "nexus",
+        "models": [
+          "nexus.site",
+          "nexus.device",
+          "nexus.nas",
+          "nexus.ip_pool",
+          "nexus.nas_secret_log"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "addons/orbit",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "orbit.instance",
+          "orbit.template",
+          "orbit.volume"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_ORBIT",
+      "name": "orbit",
+      "owner": "cloud",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "ORBIT cloud compute and hosting customer experience",
+      "manifest": {
+        "name": "orbit",
+        "models": [
+          "orbit.instance",
+          "orbit.template",
+          "orbit.volume"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "addons/project",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "project.project",
+          "project.task.stage",
+          "project.task",
+          "ir.cron"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_PROJECT",
+      "name": "project",
+      "owner": "platform-core",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Odoo-style project and task manager with plans sync and cron worker",
+      "manifest": {
+        "name": "project",
+        "models": [
+          "project.project",
+          "project.task.stage",
+          "project.task",
+          "ir.cron"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "addons/works",
+      "tier": "addon",
+      "lists": {
+        "depends": [
+          "base"
+        ],
+        "models": [
+          "isp.plan",
+          "isp.subscription",
+          "isp.invoice",
+          "isp.coverage"
+        ],
+        "data": [
+          "data/index.ts"
+        ]
+      },
+      "id": "ADDON_WORKS",
+      "name": "works",
+      "owner": "commerce",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "WORKS ISP commercial foundation and billing lifecycle",
+      "manifest": {
+        "name": "works",
+        "models": [
+          "isp.plan",
+          "isp.subscription",
+          "isp.invoice",
+          "isp.coverage"
+        ],
+        "data": [
+          "data/index.ts"
+        ],
+        "views": []
+      }
+    },
+    {
+      "dir": "apps/arsy",
+      "tier": "app",
+      "lists": {
+        "routes": [],
+        "ports": [
+          "5150"
+        ]
+      },
+      "id": "APP_ARSY",
+      "name": "@allah/arsy",
+      "owner": "platform-core",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Fastify API hub that boots addons migrates schema and seeds default data"
+    },
+    {
+      "dir": "apps/dock",
+      "tier": "app",
+      "lists": {
+        "routes": [],
+        "ports": [
+          "3001"
+        ]
+      },
+      "id": "APP_DOCK",
+      "name": "@moonwitness/dock",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Dock launcher front-end mounting the imperium-lumen skin"
+    },
+    {
+      "dir": "apps/e-isp",
+      "tier": "app",
+      "lists": {
+        "routes": [
+          "api",
+          "coverage",
+          "plans"
+        ],
+        "ports": [
+          "3007"
+        ]
+      },
+      "id": "APP_E_ISP",
+      "name": "@moonwitness/e-isp",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Public ISP storefront for the works catalog with a coverage checker"
+    },
+    {
+      "dir": "apps/gate",
+      "tier": "app",
+      "lists": {
+        "routes": [
+          "about",
+          "community",
+          "discover",
+          "explore",
+          "journey",
+          "privacy",
+          "sources",
+          "transmissions",
+          "universe"
+        ],
+        "ports": [
+          "3000"
+        ]
+      },
+      "id": "APP_GATE",
+      "name": "@moonwitness/gate",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Public imperium-lumen marketing and content portal"
+    },
+    {
+      "dir": "apps/harbor",
+      "tier": "app",
+      "lists": {
+        "routes": [],
+        "ports": [
+          "3006"
+        ]
+      },
+      "id": "APP_HARBOR",
+      "name": "@moonwitness/harbor",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Harbor console front-end on the rocksoul skin"
+    },
+    {
+      "dir": "apps/headquarter",
+      "tier": "app",
+      "lists": {
+        "routes": [
+          "agent",
+          "ai-gateway",
+          "api",
+          "knowledge",
+          "projects",
+          "skin-lab",
+          "swarm",
+          "tools"
+        ],
+        "ports": [
+          "3002"
+        ]
+      },
+      "id": "APP_HEADQUARTER",
+      "name": "@moonwitness/headquarter",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Agent operations console on the nexus-paradox skin"
+    },
+    {
+      "dir": "apps/id",
+      "tier": "app",
+      "lists": {
+        "routes": [
+          "account",
+          "login",
+          "onboarding",
+          "register"
+        ],
+        "ports": [
+          "3003"
+        ]
+      },
+      "id": "APP_ID",
+      "name": "@moonwitness/id",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Identity and account front-end on the lunar-chronicles skin"
+    },
+    {
+      "dir": "apps/jizz",
+      "tier": "app",
+      "lists": {
+        "routes": [
+          "api",
+          "phenomena",
+          "riot-anarchy",
+          "rocksoul",
+          "signals"
+        ],
+        "ports": [
+          "3004"
+        ]
+      },
+      "id": "APP_JIZZ",
+      "name": "@moonwitness/jizz",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Riot-anarchy media and phenomena front-end with skin previews"
+    },
+    {
+      "dir": "apps/moonsky",
+      "tier": "app",
+      "lists": {
+        "routes": [],
+        "ports": [
+          "3005"
+        ]
+      },
+      "id": "APP_MOONSKY",
+      "name": "@moonwitness/moonsky",
+      "owner": "frontend",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Moonsky front-end on the riot-anarchy skin"
+    },
+    {
+      "dir": "apps/sentinel",
+      "tier": "app",
+      "lists": {
+        "routes": [],
+        "ports": [
+          "1812",
+          "1813",
+          "3799",
+          "9181"
+        ]
+      },
+      "id": "APP_SENTINEL",
+      "name": "@allah/sentinel",
+      "owner": "network",
+      "version": "0.1.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "RADIUS auth accounting and change-of-authorization daemon for NAS control"
+    },
+    {
+      "dir": "packages/arsy-core",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "logger",
+          "AppError",
+          "resolveLocalSecret"
+        ],
+        "depends": []
+      },
+      "id": "PKG_ARSY_CORE",
+      "name": "@allah/arsy-core",
+      "owner": "platform-core",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Shared kernel for response envelope errors logging and config"
+    },
+    {
+      "dir": "packages/arsy-orm",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "defineModel",
+          "fields",
+          "modelRegistry",
+          "BaseRepository",
+          "dbEngine",
+          "decryptSecret",
+          "seedDatasets",
+          "seedIdempotent",
+          "SeedContext",
+          "PLATFORM_COMPANY_ID",
+          "SYSTEM_ACTOR",
+          "DomainNode",
+          "KeysetCursor",
+          "GroupAggregate",
+          "TransactionContext",
+          "withTransaction"
+        ],
+        "depends": [
+          "@allah/arsy-core"
+        ]
+      },
+      "id": "PKG_ARSY_ORM",
+      "name": "@allah/arsy-orm",
+      "owner": "platform-core",
+      "version": "1.2.0",
+      "status": "released",
+      "last_verified": "2026-11-05",
+      "summary": "ARSY query-layer ORM model registry repositories and the default-data seeder"
+    },
+    {
+      "dir": "packages/arsy-plugin-auth",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "authPlugin",
+          "createPrincipalGuard",
+          "AuthPluginOptions"
+        ],
+        "depends": [
+          "@allah/arsy-core",
+          "@allah/arsy-orm"
+        ]
+      },
+      "id": "PKG_ARSY_PLUGIN_AUTH",
+      "name": "@allah/arsy-plugin-auth",
+      "owner": "security",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Fastify authentication principal-guard and JWT plugin"
+    },
+    {
+      "dir": "packages/arsy-plugin-llm-gateway",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "SmartRouter",
+          "GatewayCache",
+          "UsageManager",
+          "deviceControlPlugin"
+        ],
+        "depends": [
+          "@allah/arsy-core",
+          "@allah/arsy-orm",
+          "@moonwitness/types"
+        ]
+      },
+      "id": "PKG_ARSY_PLUGIN_LLM_GATEWAY",
+      "name": "@allah/arsy-plugin-llm-gateway",
+      "owner": "ai-platform",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Multi-provider LLM routing gateway with caching usage and circuit breaking"
+    },
+    {
+      "dir": "packages/arsy-plugin-sdui",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "sduiPlugin",
+          "SduiPluginOptions"
+        ],
+        "depends": [
+          "@allah/arsy-core",
+          "@allah/arsy-orm"
+        ]
+      },
+      "id": "PKG_ARSY_PLUGIN_SDUI",
+      "name": "@allah/arsy-plugin-sdui",
+      "owner": "product-design",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Server-driven UI plugin emitting skin-aware component trees"
+    },
+    {
+      "dir": "packages/arsy-plugin-storage",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "storagePlugin",
+          "ContentAddressedStorage",
+          "StoragePluginOptions"
+        ],
+        "depends": [
+          "@allah/arsy-core",
+          "@allah/arsy-orm"
+        ]
+      },
+      "id": "PKG_ARSY_PLUGIN_STORAGE",
+      "name": "@allah/arsy-plugin-storage",
+      "owner": "platform-core",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Content-addressed storage Fastify plugin and hashing store"
+    },
+    {
+      "dir": "packages/lint",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [],
+        "depends": []
+      },
+      "id": "PKG_LINT",
+      "name": "@moonwitness/lint",
+      "owner": "qa",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Architecture and style gate tooling run as pnpm lint:arch"
+    },
+    {
+      "dir": "packages/sdk",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "MoonWitnessClient",
+          "createClient",
+          "mwClient",
+          "SdkOptions"
+        ],
+        "depends": [
+          "@moonwitness/types"
+        ]
+      },
+      "id": "PKG_SDK",
+      "name": "@allah/sdk",
+      "owner": "developer-experience",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Typed client SDK for the Arsy hub API used by every front-end app"
+    },
+    {
+      "dir": "packages/sentinel-radius",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "RadiusServer",
+          "RadiusCodec",
+          "RadiusCode"
+        ],
+        "depends": [
+          "@allah/arsy-core",
+          "@allah/arsy-orm"
+        ]
+      },
+      "id": "PKG_SENTINEL_RADIUS",
+      "name": "@allah/sentinel-radius",
+      "owner": "network",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "RADIUS protocol codec server and subscriber password helpers"
+    },
+    {
+      "dir": "packages/types",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "UserSubject",
+          "AuthResponse",
+          "AgentMode"
+        ],
+        "depends": []
+      },
+      "id": "PKG_TYPES",
+      "name": "@moonwitness/types",
+      "owner": "platform-core",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Shared TypeScript contracts for auth agent and ISP domain shapes"
+    },
+    {
+      "dir": "packages/ui",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [
+          "SkinRoot"
+        ],
+        "depends": [
+          "@moonwitness/types"
+        ]
+      },
+      "id": "PKG_UI",
+      "name": "@moonwitness/ui",
+      "owner": "product-design",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "Design-system component library primitives blocks and skin root"
+    },
+    {
+      "dir": "packages/vscode-extension",
+      "tier": "package",
+      "lists": {
+        "publicSurface": [],
+        "depends": []
+      },
+      "id": "PKG_VSCODE_EXTENSION",
+      "name": "allah-vscode-extension",
+      "owner": "developer-experience",
+      "version": "1.0.0",
+      "status": "released",
+      "last_verified": "2026-02-10",
+      "summary": "VS Code extension surfacing missions health and usage dashboards"
+    }
+  ]
+}
