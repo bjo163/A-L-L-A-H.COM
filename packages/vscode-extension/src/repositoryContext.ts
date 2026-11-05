@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import * as vscode from 'vscode';
 import { isSensitiveWorkspacePath } from './localAgentCore';
+import { buildRepositoryDna, type RepositoryDna } from './repositoryDna';
 
 export interface RepositoryContextIndex {
   workspacePath: string;
@@ -9,6 +10,7 @@ export interface RepositoryContextIndex {
   files: string[];
   plans: string[];
   manifests: string[];
+  dna: RepositoryDna;
   summary: string;
 }
 
@@ -31,14 +33,17 @@ export class RepositoryContextService {
       .sort((left, right) => left.localeCompare(right));
     const plans = files.filter((file) => file.startsWith('.plans' + path.sep) && /(?:spec|task|design|rules)\.md$/i.test(file));
     const manifests = files.filter((file) => /(?:^|[\\/])(?:package\.json|tsconfig(?:\..+)?\.json|pnpm-workspace\.yaml|Cargo\.toml|pyproject\.toml|go\.mod)$/.test(file));
+    const packageManifest = await this.readPackageManifest(root, files);
+    const dna = buildRepositoryDna(files, packageManifest);
     const summary = [
       `Workspace: ${folder.name}`,
       `Files indexed: ${files.length}`,
       `Plans artifacts: ${plans.length}`,
       `Project manifests: ${manifests.length}`,
+      `Detected: ${[dna.packageManager, ...dna.frameworks].filter(Boolean).join(', ') || 'no known framework metadata'}.`,
       'Excluded: .git, dependencies, build output, and sensitive paths.',
     ].join('\n');
-    const index = { workspacePath: root, generatedAt: new Date().toISOString(), files, plans, manifests, summary };
+    const index = { workspacePath: root, generatedAt: new Date().toISOString(), files, plans, manifests, dna, summary };
     await this.context.workspaceState.update(INDEX_KEY, index);
     return index;
   }
@@ -59,6 +64,26 @@ export class RepositoryContextService {
       '',
       'Plans artifacts:',
       ...index.plans.slice(0, 120).map((file) => `- ${file}`),
+      '',
+      'Repository DNA:',
+      `- Package manager: ${index.dna.packageManager ?? 'not detected'}`,
+      `- Frameworks: ${index.dna.frameworks.join(', ') || 'none detected'}`,
+      `- Languages: ${index.dna.languages.join(', ') || 'none detected'}`,
+      `- Scripts: ${index.dna.scripts.slice(0, 40).join(', ') || 'none detected'}`,
     ].join('\n');
+  }
+
+  private async readPackageManifest(root: string, files: string[]): Promise<Record<string, unknown> | undefined> {
+    const packageFile = files.find((file) => /(^|[\\/])package\.json$/.test(file));
+    if (!packageFile) return undefined;
+    try {
+      const raw = await fs.readFile(path.join(root, packageFile), 'utf8');
+      const parsed: unknown = JSON.parse(raw);
+      return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+        ? parsed as Record<string, unknown>
+        : undefined;
+    } catch {
+      return undefined;
+    }
   }
 }

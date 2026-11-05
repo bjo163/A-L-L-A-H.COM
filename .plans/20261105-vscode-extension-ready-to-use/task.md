@@ -73,7 +73,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-055 Update changelog and release report with evidence/limitations.
 
 ## P1 — 0.5.0
-- [ ] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture.
+- [x] VSC-056 Repository DNA scanner for framework, package manager, scripts and architecture. The context index now derives bounded metadata without sending source contents.
 - [ ] VSC-057 Dependency and documentation knowledge map.
 - [ ] VSC-058 Context memory with explicit scope, retention and controls.
 - [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria.
