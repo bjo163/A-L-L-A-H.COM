@@ -7,14 +7,14 @@ const idBaseUrl = () => process.env.NEXT_PUBLIC_ID_URL ?? 'http://localhost:3003
 export const metadata: Metadata = {
   title: "E-ISP | Internet cepat & stabil untuk rumah dan bisnis",
   description: "Lihat paket internet dan cek jangkauan E-ISP di daerahmu, lalu daftar langsung.",
-  icons: buildAppIcons("rocksoul"),
+  icons: buildAppIcons("simpul-nusantara"),
   openGraph: {
-    images: [{ url: skinRegistry["rocksoul"].identity.hero, width: 1600, height: 900 }],
+    images: [{ url: skinRegistry["simpul-nusantara"].identity.hero, width: 1600, height: 900 }],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: skinRegistry["rocksoul"].identity.themeColor,
+  themeColor: skinRegistry["simpul-nusantara"].identity.themeColor,
   width: "device-width",
   initialScale: 1,
 };
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <SkinRoot skin="rocksoul">
+        <SkinRoot skin="simpul-nusantara">
           <SkipLink />
           <header className="esp-header">
             <div className="esp-brand">

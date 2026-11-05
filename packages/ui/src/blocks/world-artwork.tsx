@@ -93,6 +93,7 @@ const artworkSignatures: Record<SkinId, string> = {
   'nexus-paradox': 'diegetic-instrument',
   'riot-anarchy': 'xerox-cutup-wall',
   mycelium: 'connected-living-network',
+  'simpul-nusantara': 'abstract-service-topology',
 };
 
 interface ArtworkPalette {
@@ -159,6 +160,15 @@ const artworkPalette: Record<SkinId, ArtworkPalette> = {
     ink: '#0a1712',
     accent: '#d5dfad',
     paper: '#f1f4e8',
+  },
+  'simpul-nusantara': {
+    fieldStart: '#f1ecdf',
+    fieldEnd: '#e5ddcc',
+    light: '#8d560c',
+    line: '#64766b',
+    ink: '#182722',
+    accent: '#8d560c',
+    paper: '#fbf8f0',
   },
 };
 
@@ -364,6 +374,25 @@ const artworkLayers: Record<SkinId, (id: string, palette: ArtworkPalette) => Rea
       </g>
       <path d="M106 790c233-82 405-7 610 34 248 50 434-87 778-64" stroke={p.line} strokeOpacity=".12" strokeWidth="2" fill="none" />
       <path className="mw-world-artwork__growth" d="M218 752C370 690 410 538 566 554c118 12 111 156 264 122 138-31 93-194 247-228 109-25 160 42 307-146" stroke={p.paper} strokeOpacity=".35" strokeWidth="2" strokeDasharray="1 18" fill="none" />
+    </>
+  ),
+  'simpul-nusantara': (_id, p) => (
+    <>
+      <path d="M944 156c-110 54-177 134-194 238-18 113 40 177 124 220 70 36 96 79 82 158" fill="none" stroke={p.line} strokeOpacity=".72" strokeWidth="5" strokeLinecap="round" />
+      <path d="M944 156c-110 54-177 134-194 238-18 113 40 177 124 220 70 36 96 79 82 158" fill="none" stroke={p.paper} strokeOpacity=".68" strokeWidth="2" strokeLinecap="round" />
+      <path d="M750 394c-132-48-245-34-338 43-82 68-171 74-268 18m730-61c133-66 253-66 358 0 83 52 159 56 260 7m-430 213c-103 91-215 118-335 80-78-25-152-14-226 38m524-119c108 30 217 18 327-34 74-34 145-38 222-15" fill="none" stroke={p.line} strokeOpacity=".8" strokeWidth="4" strokeLinecap="round" />
+      <path d="M748 396c-94-35-181-34-260 4m620 6c94-44 181-51 272-25M738 686c-78-24-145-20-204 15m617-104c78 19 153 13 228-17" fill="none" stroke={p.accent} strokeOpacity=".92" strokeWidth="7" strokeLinecap="round" />
+      <path d="M110 455h94m-94 14h58m1197-40h94m-94 14h58M362 747h104m-104 14h68m752-475h96m-96 14h60" fill="none" stroke={p.line} strokeOpacity=".52" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="944" cy="156" r="13" fill={p.paper} stroke={p.line} strokeWidth="4" />
+      <circle cx="750" cy="394" r="15" fill={p.accent} stroke={p.paper} strokeWidth="5" />
+      <circle cx="1104" cy="394" r="11" fill={p.paper} stroke={p.line} strokeWidth="4" />
+      <circle cx="956" cy="614" r="20" fill={p.accent} stroke={p.paper} strokeWidth="6" />
+      <circle cx="956" cy="614" r="38" fill="none" stroke={p.accent} strokeOpacity=".55" strokeWidth="2" />
+      <circle cx="534" cy="701" r="12" fill={p.paper} stroke={p.line} strokeWidth="4" />
+      <circle cx="1151" cy="582" r="13" fill={p.paper} stroke={p.line} strokeWidth="4" />
+      <circle cx="1290" cy="406" r="12" fill={p.paper} stroke={p.line} strokeWidth="4" />
+      <path d="M224 220h280m-280 18h172m694 457h252m-252 18h164" fill="none" stroke={p.line} strokeOpacity=".34" strokeWidth="2" />
+      <path d="M226 196h122m-122 64h208m817 405h144m-144 64h222" fill="none" stroke={p.accent} strokeOpacity=".7" strokeWidth="3" />
     </>
   ),
 };

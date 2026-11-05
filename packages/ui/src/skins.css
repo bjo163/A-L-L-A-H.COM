@@ -93,6 +93,10 @@
   animation: mw-ambient-mycelium var(--mw-motion-ambient) var(--mw-motion-easing) infinite alternate;
 }
 
+.mw-skin-root[data-moonframe-skin='simpul-nusantara'] .mw-ambient-layer {
+  background-image: radial-gradient(ellipse at 66% 38%, rgb(141 86 12 / 0.08), transparent 34rem);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .mw-motion-root:not([data-effects-paused='true']) .mw-world-artwork__orbit {
     transform-box: view-box;
@@ -1862,6 +1866,31 @@
 
 .mw-skin-root[data-moonframe-skin='mycelium'] .mw-card {
   border-radius: 1.5rem 0.9rem 1.5rem 0.9rem;
+}
+
+.mw-skin-root[data-moonframe-skin='simpul-nusantara'] .mw-card {
+  border-radius: 0.35rem;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--mw-border) 28%, transparent);
+}
+
+.mw-skin-root[data-moonframe-skin='simpul-nusantara'] .mw-button--default {
+  font-variant-numeric: tabular-nums;
+}
+
+.mw-skin-root[data-moonframe-skin='simpul-nusantara'] .mw-hero:has([data-world-artwork='simpul-nusantara']) {
+  grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr);
+  gap: clamp(2rem, 5vw, 5rem);
+}
+
+.mw-skin-root[data-moonframe-skin='simpul-nusantara'] .mw-hero__art:has([data-world-artwork='simpul-nusantara']) {
+  border-radius: 0.35rem;
+  padding: 0.625rem;
+  background: var(--mw-surface);
+}
+
+.mw-skin-root[data-moonframe-skin='simpul-nusantara'] :is(.mw-kicker, .mw-state__label, .mw-table__th) {
+  font-family: var(--mw-font-numeric);
+  letter-spacing: 0.075em;
 }
 
 .mw-skin-root[data-moonframe-skin='mycelium'] .mw-hero:has([data-world-artwork='mycelium']) {

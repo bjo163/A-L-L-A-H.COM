@@ -836,7 +836,7 @@ function checkStateParity(baseline) {
 // Each app renders the shared skin root, with a valid and unclaimed world.
 function checkSkinRoot(baseline) {
   const allowedDuplicates = baseline.SKIN_ROOT_DUPLICATES || [];
-  const validSkinIds = ['imperium-lumen', 'lunar-chronicles', 'rocksoul', 'nexus-paradox', 'riot-anarchy', 'mycelium'];
+  const validSkinIds = ['imperium-lumen', 'lunar-chronicles', 'rocksoul', 'nexus-paradox', 'riot-anarchy', 'mycelium', 'simpul-nusantara'];
   const used = new Map();
 
   for (const appName of listAppDirs()) {

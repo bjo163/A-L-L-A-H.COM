@@ -1,33 +1,33 @@
 ---
-title: "MoonFrame Six Master DNA"
+title: "MoonFrame Seven Master DNA"
 version: "1.0.0"
 status: "approved"
 last_verified: "2026-11-03"
 owner: "product-design"
 ---
 
-# MOONFRAME — SIX MASTER DESIGN DNA
+# MOONFRAME: SEVEN MASTER DESIGN DNA
 
 ## Purpose
 
-This directory defines the approved creative and interaction direction for six radically distinct visual worlds used by A-L-L-A-H.COM, MoonWitness, ROCKSOUL, and future MoonFrame experiences.
+This directory defines the approved creative and interaction direction for seven distinct visual worlds used by A-L-L-A-H.COM, MoonWitness, ROCKSOUL, E-ISP, and future MoonFrame experiences.
 
-These are not six color themes. Each Master DNA defines a world model, visual grammar, spatial composition, typography, material language, motion behavior, navigation metaphor, component recipes, and exclusions.
+These are not color themes. Each Master DNA defines a world model, visual grammar, spatial composition, typography, material language, motion behavior, navigation metaphor, component recipes, and exclusions.
 
 ## Canonical status
 
 - **Creative direction:** APPROVED.
 - **Specification:** DOCUMENTED in this directory.
 - **Shared UI foundation:** EXISTS at `../packages/ui/`; inspect its actual source before extending it.
-- **Shared skin engine and semantic recipes:** IMPLEMENTED in `../packages/ui/` for all six DNA IDs.
-- **Application root assignments:** Gate and Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, and WORLD OBSERVATORY / Mycelium.
+- **Shared skin engine and semantic recipes:** IMPLEMENTED in `../packages/ui/` for all seven DNA IDs.
+- **Application root assignments:** Gate and Dock / Imperium Lumen, Headquarter / Nexus Paradox, ID / Lunar Chronicles, E-ISP / Simpul Nusantara, and WORLD OBSERVATORY / Mycelium.
 - **Route-specific world scopes:** ROCKSOUL and RIOT ANARCHY use `SkinScope` within WORLD OBSERVATORY; the app retains MYCELIUM as its root world.
-- **Six runtime worlds:** shared vector artwork and world-specific component recipes are implemented; the full cross-app experience remains subject to visual and accessibility verification.
+- **Seven runtime worlds:** shared vector artwork and world-specific component recipes are implemented; the full cross-app experience remains subject to visual and accessibility verification.
 - **Showcase / Skin Laboratory:** implemented in Headquarter at `/skin-lab`; visual, responsive, and interaction verification remains an explicit release gate.
 
 A documented direction must never be reported as a shipped feature.
 
-## The six worlds
+## The seven worlds
 
 | ID | Master DNA | World metaphor | Primary ecosystem identity |
 |---|---|---|---|
@@ -37,6 +37,7 @@ A documented direction must never be reported as a shipped feature.
 | 04 | NEXUS PARADOX | An interface from another reality; diegetic spatial technology | Future-game / experimental products |
 | 05 | RIOT ANARCHY | An underground wall of manga, punk, xerox, and anti-design | Gen-Z grunge / manga / poster experiences |
 | 06 | MYCELIUM | A digital ecosystem behaving like a living organism | Organic / generative / network experiences |
+| 07 | SIMPUL NUSANTARA | A service atlas showing abstract neighborhood network routes | E-ISP storefront |
 
 ## Canonical documents
 
@@ -47,12 +48,13 @@ A documented direction must never be reported as a shipped feature.
 - [04 — Nexus Paradox](04-NEXUS-PARADOX.md)
 - [05 — Riot Anarchy](05-RIOT-ANARCHY.md)
 - [06 — Mycelium](06-MYCELIUM.md)
+- [Simpul Nusantara](09-SIMPUL-NUSANTARA.md)
 - [07 — Component Mapping](07-COMPONENT-MAPPING.md): how shared primitives receive different world-specific recipes.
 - [08 — Quality Gates](08-QUALITY-GATES.md): acceptance criteria and anti-slop review.
 
 ## Non-negotiable design doctrine
 
-1. One functional component engine; six distinct visual and interaction languages.
+1. One functional component engine; seven distinct visual and interaction languages.
 2. No skin may be reduced to recoloring the same generic dashboard.
 3. World-specific layout, navigation, hierarchy, composition, surfaces, typography, and motion are allowed when they preserve the underlying task and semantics.
 4. Shared components must remain keyboard-operable, screen-reader understandable, responsive, and testable.
@@ -65,11 +67,11 @@ A documented direction must never be reported as a shipped feature.
 
 ## Relationship to Moon UI
 
-The shared UI package is the functional foundation. The six DNA specifications are the visual and experiential layer. Before implementation, inspect current component exports, tokens, Tailwind integration, and the actual primitive library in `../packages/ui/`. Current repository code uses Base UI primitives in its shared package; do not assume Radix is installed or migrate the primitive layer as part of skin implementation.
+The shared UI package is the functional foundation. The seven DNA specifications are the visual and experiential layer. Before implementation, inspect current component exports, tokens, Tailwind integration, and the actual primitive library in `../packages/ui/`. Current repository code uses Base UI primitives in its shared package; do not assume Radix is installed or migrate the primitive layer as part of skin implementation.
 
 ## Delivery sequence
 
-1. Keep the Skin Laboratory task equivalent across all six worlds.
+1. Keep the Skin Laboratory task equivalent across all seven worlds.
 2. Implement token contracts, shared vector scenes, and world-specific layout recipes.
 3. Apply each DNA to its app root or explicitly scoped route.
 4. Extend the component catalogue in controlled batches.

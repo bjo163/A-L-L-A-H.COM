@@ -286,7 +286,7 @@ test('StatePanel marks loading busy and keeps the heading out of the alert path'
 
 test('DestinationCard routes through Link and keeps its label out of the ARIA role', () => {
   const card = renderToStaticMarkup(
-    <DestinationCard index="02" role="observatory" title="World Observatory" description="Six worlds." href="/obs" />
+    <DestinationCard index="02" role="observatory" title="World Observatory" description="Seven worlds." href="/obs" />
   );
   const external = renderToStaticMarkup(<DestinationCard title="Archive" href="https://example.com" external />);
 

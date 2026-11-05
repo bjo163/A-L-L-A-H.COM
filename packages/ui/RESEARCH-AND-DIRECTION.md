@@ -13,7 +13,7 @@ last_verified: "2026-11-05"
 
 ## Research question
 
-How can Moon UI evolve from a premium UI package into a governed creative-interface platform supporting six distinct worlds, adaptive task experiences, AI-assisted work, spatial storytelling, original media, and production-grade interaction without sacrificing agency, accessibility, truth, or performance?
+How can Moon UI evolve from a premium UI package into a governed creative-interface platform supporting seven distinct worlds, adaptive task experiences, AI-assisted work, spatial storytelling, original media, and production-grade interaction without sacrificing agency, accessibility, truth, or performance?
 
 ## Evidence classes
 
@@ -139,7 +139,7 @@ MDN currently marks WebGPU as limited availability and not Baseline, and notes i
 ## Strategic concepts worth owning
 
 1. **Intent-to-Interface Compiler:** user intent → task model → semantic design brief → approved recipe → UI composition → evaluation → approval.
-2. **World Grammar Engine:** six versioned grammars for composition, geometry, materials, light, typography, motion, sound, iconography, media, and fallback.
+2. **World Grammar Engine:** seven versioned grammars for composition, geometry, materials, light, typography, motion, sound, iconography, media, and fallback.
 3. **Intent Lens:** temporary task-focused arrangement of approved blocks, with visible objective, user correction, pinning, and reset.
 4. **Evidence Surface:** concise AI outcome first; sources, freshness, actions, uncertainty, disagreement, and audit details on demand. Never expose private chain-of-thought.
 5. **Scene Graph:** data-first model of worlds, passages, destinations, timelines, media, and relationships; render as spatial map, orbit, archive, graph, or linear view.
@@ -175,7 +175,7 @@ Before adopting an external library or pattern: verify maintenance, license, sec
 - Library READMEs describe capabilities, not proof of repository fit.
 - Browser capabilities vary; test target devices.
 
-**Conclusion:** Moon UI's defensible advantage should be the integration of six authored world grammars, task-aware composition, user-agency controls, evidence-led AI surfaces, original media production, and rigorous experience certification—not the number of components or amount of 3D.
+**Conclusion:** Moon UI's defensible advantage should be the integration of seven authored world grammars, task-aware composition, user-agency controls, evidence-led AI surfaces, original media production, and rigorous experience certification, not the number of components or amount of 3D.
 
 
 ---

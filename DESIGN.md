@@ -22,7 +22,7 @@ Product experience + Moon UI doctrine. DNA canonical specs: [DNA/README.md](DNA/
 | Responsive | desktop → tablet → mobile |
 | Asset canon | Preserve provenance. No discard without documented decision. Never depict ALLAH. |
 
-## Six Master DNA
+## Seven Master DNA
 
 Canonical specs: [DNA/README.md](DNA/README.md). ADR: [DECISIONS.md](DECISIONS.md) D-006.
 One shared functional UI engine. No behavioral or accessibility forking across DNAs.
@@ -32,6 +32,7 @@ One shared functional UI engine. No behavioral or accessibility forking across D
 | IMPERIUM LUMEN | A-L-L-A-H.COM / Empire of the Light | `apps/gate/` · `apps/dock/` |
 | LUNAR CHRONICLES | MoonWitness Universe | `apps/id/` |
 | ROCKSOUL | Silent-storyteller poster identity | `apps/harbor/` |
+| SIMPUL NUSANTARA | Neighborhood network atlas | `apps/e-isp/` |
 | NEXUS PARADOX | Diegetic future-game HUD, spatial technology | `apps/headquarter/` |
 | RIOT ANARCHY | Manga · xerox punk · underground poster · controlled anti-design | `apps/moonsky/` |
 | MYCELIUM | Biomorphic · generative · organic interconnected systems | `apps/jizz/` |
@@ -43,7 +44,7 @@ One shared functional UI engine. No behavioral or accessibility forking across D
 - Token source: `packages/ui/src/theme.css` maps Tailwind colour and font utilities onto the skin tokens published by `SkinRoot`. Applications define no colour, type, or theme variables and paint no colour inline (`STYLE_PURITY`, `INLINE_STYLE_PURITY`).
 - Markup colour: a Tailwind palette hue in app JSX is blocked by `PALETTE_PURITY`. Use a component variant, a composition block, or a mapped utility such as `text-muted-foreground`, so the world keeps authority over colour.
 - Composition blocks: `Kicker`, `PageHero`, `SectionHeading`, `RouteShell`, `StatusMessage`, `DestinationCard`, `DestinationGrid`, `StatePanel`, and `SkipLink` live in `packages/ui/src/blocks/` and are styled in `skins.css` with a variant per world. They take props only: no fetching, no business logic.
-- One world per application: gate and dock both present IMPERIUM LUMEN as the shared public entrance · headquarter NEXUS PARADOX · id LUNAR CHRONICLES · jizz MYCELIUM · moonsky RIOT ANARCHY · harbor ROCKSOUL. The lint gate permits the gate/dock duplicate through an explicit exception rather than silent re-declaration.
+- One world per application: gate and dock both present IMPERIUM LUMEN as the shared public entrance · headquarter NEXUS PARADOX · id LUNAR CHRONICLES · jizz MYCELIUM · moonsky RIOT ANARCHY · harbor ROCKSOUL · e-isp SIMPUL NUSANTARA. The lint gate permits the gate/dock duplicate through an explicit exception rather than silent re-declaration.
 - Product-specific variants: only when behavior genuinely differs from shared.
 - Inspect existing UI package before extending.
 - Skin Laboratory comparison: shipped at `/skin-lab` in headquarter; it renders the shared blocks, not a private copy of them.

@@ -1,12 +1,12 @@
 ---
-title: "Six DNA Quality Gates"
+title: "Seven DNA Quality Gates"
 version: "1.1.0"
 status: "approved"
 last_verified: "2026-11-04"
 owner: "quality"
 ---
 
-# SIX DNA — QUALITY GATES
+# SEVEN DNA: QUALITY GATES
 
 ## Completion states
 
@@ -34,7 +34,7 @@ A Master DNA can be marked SPECIFIED only when it has:
 - hard exclusions and anti-slop rules;
 - clear relationship to its parent product or experience.
 
-All six DNA specifications in this directory meet the documentation-level target. Runtime skins are implemented as token sets in `packages/ui/src/skins/registry.ts`, scalable vector scenes in `packages/ui/src/blocks/world-artwork.tsx`, and recipes rendered through `SkinRoot` or route-level `SkinScope`; they reach VERIFIED only when the engineering gates below pass for every consuming app.
+All seven DNA specifications in this directory meet the documentation-level target. Runtime skins are implemented as token sets in `packages/ui/src/skins/registry.ts`, scalable vector scenes in `packages/ui/src/blocks/world-artwork.tsx`, and recipes rendered through `SkinRoot` or route-level `SkinScope`; they reach VERIFIED only when the engineering gates below pass for every consuming app.
 
 ## Runtime implementation acceptance criteria
 

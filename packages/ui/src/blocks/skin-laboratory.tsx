@@ -51,14 +51,14 @@ export function SkinLaboratory({ className }: SkinLaboratoryProps) {
     <section className={cn("mw-skin-lab", className)} aria-labelledby="skin-lab-title">
       <header className="mw-skin-lab__header">
         <div>
-          <Kicker>MOONFRAME / SIX WORLD LABORATORY</Kicker>
+          <Kicker>MOONFRAME / SEVEN WORLD LABORATORY</Kicker>
           <h1 id="skin-lab-title">Canonical representative task parity</h1>
           <p>
-            The same navigation, content, form, status, and empty-state task rendered across all six approved DNA worlds,
+            The same navigation, content, form, status, and empty-state task rendered across all seven approved DNA worlds,
             built from the composition blocks the applications use.
           </p>
         </div>
-        <Badge variant="gold">Six worlds • one engine</Badge>
+        <Badge variant="gold">Seven worlds, one engine</Badge>
       </header>
 
       <nav className="mw-skin-lab__nav" aria-label="Select DNA world">

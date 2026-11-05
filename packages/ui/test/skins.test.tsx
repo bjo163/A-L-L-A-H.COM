@@ -33,7 +33,7 @@ function contrast(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-test('skin registry contains the six approved worlds and a deterministic fallback', () => {
+test('skin registry contains the seven approved worlds and a deterministic fallback', () => {
   assert.deepEqual(Object.keys(skinRegistry).sort(), [...skinIds].sort());
   assert.equal(resolveSkinId(undefined), defaultSkinId);
   assert.equal(resolveSkinId('nexus-paradox'), 'nexus-paradox');
@@ -92,7 +92,7 @@ test('world artwork is vector-based and route skin scopes reuse the app motion p
   assert.equal((markup.match(/class="mw-motion-root"/g) ?? []).length, 1);
 });
 
-test('all six skins have distinct geometry, typography, and motion recipes', () => {
+test('all seven skins have distinct geometry, typography, and motion recipes', () => {
   const recipes = skinIds.map((id) => {
     const { geometry, typography, motion } = skinRegistry[id].tokens;
     return JSON.stringify({

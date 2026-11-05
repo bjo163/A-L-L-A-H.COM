@@ -9,7 +9,7 @@ last_verified: "2026-11-05"
 
 # Moon UI — The Living Interface System
 
-> One functional engine. Six unmistakable worlds. A cinematic interface that feels crafted, tactile, spatial, and alive — without sacrificing truth, speed, accessibility, or usability.
+> One functional engine. Seven unmistakable worlds. A cinematic interface that feels crafted, tactile, spatial, and alive, without sacrificing truth, speed, accessibility, or usability.
 
 **Package:** `@moonwitness/ui`  
 **Location:** `packages/ui/`  
@@ -22,7 +22,7 @@ This README is the package-level product and contributor entrypoint. The full ta
 
 ## 1. Mission
 
-Moon UI is the single visual, interaction, and composition authority for the A-L-L-A-H.COM ecosystem. It translates the approved narrative and six Master Design DNA into interfaces that feel like entering distinct places rather than opening interchangeable SaaS dashboards.
+Moon UI is the single visual, interaction, and composition authority for the A-L-L-A-H.COM ecosystem. It translates the approved narrative and seven Master Design DNA into interfaces that feel like entering distinct places rather than opening interchangeable SaaS dashboards.
 
 The experience should evoke the craft of a premium console game: deliberate composition, convincing scale, layered atmosphere, material contrast, controlled light, responsive camera-like transitions, crisp typography, and meaningful interaction feedback. It must remain a real web product: fast to load, readable, navigable, accessible, responsive, secure, and honest about live data.
 
@@ -32,7 +32,7 @@ The experience should evoke the craft of a premium console game: deliberate comp
 
 These agreements are non-negotiable unless a recorded decision explicitly supersedes them.
 
-1. **Six DNA are six worlds, not six recolors.** Each world has its own visual grammar, spatial metaphor, typography, materials, composition, navigation language, artwork, and motion character.
+1. **Seven DNA are seven worlds, not seven recolors.** Each world has its own visual grammar, spatial metaphor, typography, materials, composition, navigation language, artwork, and motion character.
 2. **One functional engine.** Shared semantics, accessibility, keyboard behavior, validation, state handling, and data contracts remain consistent. World-specific presentation must not fork business logic.
 3. **No generic dashboard template.** Avoid repetitive equal-card grids, default SaaS hero layouts, template-like sidebars, generic glassmorphism, arbitrary gradients, and decorative charts without meaning.
 4. **No visible “HUD” label.** A diegetic instrument-like interface may use spatial cues and contextual indicators, but must not print the word “HUD” as a product label or pretend decorative elements are real telemetry.
@@ -45,7 +45,7 @@ These agreements are non-negotiable unless a recorded decision explicitly supers
 
 See [repository DESIGN.md](../../DESIGN.md), [DNA canon](../../DNA/README.md), [component mapping](../../DNA/07-COMPONENT-MAPPING.md), and [DECISIONS.md](../../DECISIONS.md).
 
-## 3. The six Master DNA
+## 3. The seven Master DNA
 
 | # | DNA | World identity | Visual signature | Canonical app usage |
 |---|---|---|---|---|
@@ -55,6 +55,7 @@ See [repository DESIGN.md](../../DESIGN.md), [DNA canon](../../DNA/README.md), [
 | 04 | **NEXUS PARADOX** | Future-game / experimental command environment | Spatial instruments, impossible geometry, technical precision, diegetic controls, signal cyan | HEADQUARTER |
 | 05 | **RIOT ANARCHY** | Underground manga / punk / xerox culture | Collage, halftone, torn print, hard ink edges, kinetic typography, controlled disorder | MOONSKY and approved RIOT scopes |
 | 06 | **MYCELIUM** | Living interconnected ecosystem | Biomorphic membranes, branching relationships, organic nodes, mineral greens, generative growth | WORLD OBSERVATORY / JIZZ |
+| 07 | **SIMPUL NUSANTARA** | Neighborhood network atlas | Warm paper, precise route lines, service-first hierarchy, restrained amber | E-ISP |
 
 The current app assignments are grounded in [DESIGN.md](../../DESIGN.md) and [DNA/README.md](../../DNA/README.md). Route-specific `SkinScope` usage must not silently change an app's root identity.
 
@@ -156,7 +157,7 @@ This is a point-in-time inventory; verify exports and source before extending.
 - **Blocks:** EcosystemNavbar, Endpoints, SessionCard, SoundToggle, VisualEffectsToggle, useEcosystemSession, WorldArtwork, DestinationCard, Kicker, PageHero, RouteShell, SectionHeading, SkipLink, StatePanel, StatusMessage, SkinLaboratory.
 - **Raw layout:** RawContainer, RawSection, RawStack, RawCluster, RawGrid.
 - **Primitives:** VisualEffectsProvider, useVisualEffects, MotionFrame.
-- **Skins:** six IDs in `src/skins/registry.ts`.
+- **Skins:** seven IDs in `src/skins/registry.ts`.
 - **Tokens:** exported through `src/tokens/index.ts`; Tailwind mapping lives in `src/theme.css`; visual recipes in `src/skins.css`.
 
 Do not create a component merely because it appears on a generic component checklist. First map it to a real workflow, semantic need, and DNA composition. The blueprint includes a prioritized gap map.
@@ -199,7 +200,7 @@ This is an API illustration only. Check the exported prop signatures before copy
 1. Read [BLUEPRINT.md](./BLUEPRINT.md), [DESIGN.md](../../DESIGN.md), the relevant DNA spec, and [DECISIONS.md](../../DECISIONS.md).
 2. Inspect the existing package source, exports, tests, app consumers, and current CI before changing anything.
 3. Identify whether the change belongs in a token, raw primitive, component, block, skin recipe, or app composition.
-4. Preserve semantic behavior and parity across all six skins.
+4. Preserve semantic behavior and parity across all seven skins.
 5. Add or update tests for behavior, accessibility contracts, token integrity, and asset provenance as appropriate.
 6. Verify all consuming app builds and visual states; never infer success from a unit test alone.
 7. Update documentation and status based on evidence.
@@ -227,7 +228,7 @@ A passing UI test does not imply every app builds. Report each gate separately, 
 ## 11. Canonical references
 
 - [Full package blueprint](./BLUEPRINT.md)
-- [Six Master DNA](../../DNA/README.md)
+- [Seven Master DNA](../../DNA/README.md)
 - [DNA component mapping](../../DNA/07-COMPONENT-MAPPING.md)
 - [DNA quality gates](../../DNA/08-QUALITY-GATES.md)
 - [Product design doctrine](../../DESIGN.md)
@@ -240,7 +241,7 @@ A passing UI test does not imply every app builds. Report each gate separately, 
 
 # 12. Moon UI Creative Engine — Complete Capability Map
 
-Moon UI is not only a component library. It is the ecosystem's **Creative Interface Engine**: a governed system for producing, composing, rendering, and verifying interface identity and media across six worlds.
+Moon UI is not only a component library. It is the ecosystem's **Creative Interface Engine**: a governed system for producing, composing, rendering, and verifying interface identity and media across seven worlds.
 
 The complete capability contract is defined in [BLUEPRINT.md](./BLUEPRINT.md). The following catalog establishes the intended breadth. Items not present in source remain **proposed**, not implemented.
 
@@ -254,7 +255,7 @@ The complete capability contract is defined in [BLUEPRINT.md](./BLUEPRINT.md). T
 | **Components** | Accessible controls and visual objects | buttons, fields, menus, tabs, switches, tables, dialogs |
 | **Blocks** | Task-level compositions | hero, route shell, state panel, navigation, timeline |
 | **World compositions** | Signature layouts for each DNA | gate, orbit, filmstrip, instrument bay, poster wall, living graph |
-| **Skins** | Six complete visual grammars | tokens, shapes, materials, typography, density, motion, sound |
+| **Skins** | Seven complete visual grammars | tokens, shapes, materials, typography, density, motion, sound |
 | **Effects** | Governed visual effects | atmosphere, depth, light, grain, halftone, parallax |
 | **Lines & geometry** | A proprietary visual line language | orbital arcs, architectural axes, signal paths, print rules, organic branches |
 | **Iconography** | Semantic and expressive symbols | action glyphs, status glyphs, world sigils, custom vector marks |
@@ -310,7 +311,7 @@ Shared blocks include:
 - PosterWall, ComicSpread, StickerBoard;
 - LivingNetwork, GrowthPath, RelationshipMap.
 
-Each block must declare whether it is shared semantic structure or a DNA-specific composition. Do not make one universal block with six superficial variants.
+Each block must declare whether it is shared semantic structure or a DNA-specific composition. Do not make one universal block with seven superficial variants.
 
 ## 12.5 The MoonWitness Avatar Studio
 
@@ -331,7 +332,7 @@ Avatar generation is an optional production workflow. Runtime rendering must use
 ## 12.6 Logo, icon and vector foundry
 
 The Foundry must provide:
-- six independent DNA emblem families;
+- seven independent DNA emblem families;
 - parent brand and app-level lockups;
 - wordmark, horizontal lockup, stacked lockup, compact mark and monogram;
 - monochrome, inverse, small-size and high-contrast variants;
@@ -420,7 +421,7 @@ A skin is a full world definition, not a color theme. It includes:
 - hero/artwork/cover references;
 - exclusions and anti-patterns.
 
-All six worlds must implement the same semantic state contract while expressing different visual identities. See the full matrix in BLUEPRINT.md.
+All seven worlds must implement the same semantic state contract while expressing different visual identities. See the full matrix in BLUEPRINT.md.
 
 ## 12.12 Delivery principle
 
@@ -543,7 +544,7 @@ The next evolution of Moon UI is not simply “more components”. It is a gover
 
 See [RESEARCH-AND-DIRECTION.md](./RESEARCH-AND-DIRECTION.md) for sources, limitations, and adoption policy. The expanded implementation contract is in [BLUEPRINT.md](./BLUEPRINT.md).
 
-**The new ambition:** one functional engine, six authored worlds, adaptive task experiences, evidence-led AI collaboration, original media foundries, and measurable experience quality.
+**The new ambition:** one functional engine, seven authored worlds, adaptive task experiences, evidence-led AI collaboration, original media foundries, and measurable experience quality.
 
 
 ---

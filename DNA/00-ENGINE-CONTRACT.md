@@ -10,7 +10,7 @@ owner: "architecture"
 
 ## 1. Objective
 
-Provide one reliable functional foundation that can express six independent visual worlds without multiplying business logic, breaking application behavior, or reducing accessibility.
+Provide one reliable functional foundation that can express seven independent visual worlds without multiplying business logic, breaking application behavior, or reducing accessibility.
 
 A skin is a complete design language, not a theme-color switch.
 
@@ -72,7 +72,7 @@ Minimum runtime requirements:
 - preference persistence only after the application has an agreed settings and consent model;
 - SSR and initial render must agree on the selected skin.
 
-Do not hard-code six unrelated copies of the same page. Do not force all six worlds into one shared layout either. Share primitives; specialize compositions.
+Do not hard-code seven unrelated copies of the same page. Do not force all seven worlds into one shared layout either. Share primitives; specialize compositions.
 
 ## 5. Token domains
 
@@ -107,7 +107,7 @@ Critical content must remain available when WebGL, canvas, animation, audio, or 
 
 ## 8. Explicit exclusions
 
-- No generic dashboard grid copied across all six skins.
+- No generic dashboard grid copied across all seven skins.
 - No universal glassmorphism, neon, gradient, blur, round-card, or glow treatment.
 - No decorative HUD around ordinary forms without a task reason.
 - No intentional illegibility for primary labels, data, or controls.
@@ -126,4 +126,4 @@ Any change to a Master DNA requires:
 5. an update to the owning DNA document;
 6. evidence in the implementation report.
 
-Shared behavior changes require review of all six skins. A product may not silently redefine a Master DNA locally.
+Shared behavior changes require review of all seven skins. A product may not silently redefine a Master DNA locally.

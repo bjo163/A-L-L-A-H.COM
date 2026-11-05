@@ -30,9 +30,10 @@ const artworkOwners: Record<SkinId, string[]> = {
   'nexus-paradox': ['headquarter'],
   'riot-anarchy': ['jizz', 'moonsky'],
   mycelium: ['jizz'],
+  'simpul-nusantara': ['e-isp'],
 };
 
-const brandApps = ['dock', 'gate', 'harbor', 'headquarter', 'id', 'jizz', 'moonsky'];
+const brandApps = ['dock', 'e-isp', 'gate', 'harbor', 'headquarter', 'id', 'jizz', 'moonsky'];
 
 test('every skin declares identity artwork and a valid theme color', () => {
   for (const id of skinIds) {

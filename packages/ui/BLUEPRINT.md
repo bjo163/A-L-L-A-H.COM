@@ -9,7 +9,7 @@ last_verified: "2026-11-05"
 
 # Moon UI — Complete Package Blueprint
 
-> **Design target:** a web-native, console-grade visual experience built from six radically distinct worlds, one coherent functional engine, and a disciplined high-fidelity asset and motion pipeline.
+> **Design target:** a web-native, console-grade visual experience built from seven distinct worlds, one coherent functional engine, and a disciplined high-fidelity asset and motion pipeline.
 
 This is the complete target blueprint for `packages/ui`. It is not a claim that every proposed component, asset, font, interaction, or 3D scene is already implemented. Current implementation and gaps are explicitly separated below.
 
@@ -21,7 +21,7 @@ This is the complete target blueprint for `packages/ui`. It is not a claim that 
 
 This blueprint governs the shared UI package. Its canonical upstream design references are:
 
-1. `DNA/README.md` and the six individual DNA specifications — creative canon.
+1. `DNA/README.md` and the seven individual DNA specifications, the creative canon.
 2. `DNA/00-ENGINE-CONTRACT.md` — shared functional invariants.
 3. `DNA/07-COMPONENT-MAPPING.md` — semantic task-to-world composition mapping.
 4. `DNA/08-QUALITY-GATES.md` — design quality and anti-slop checks.
@@ -39,7 +39,7 @@ The package owns:
 - layout-only raw primitives;
 - shared interaction and motion primitives;
 - reusable experience blocks and compositions;
-- six-skin token contracts and visual recipes;
+- seven-skin token contracts and visual recipes;
 - world artwork rendering primitives and asset metadata contracts;
 - typography, icon, emblem, and brand asset integration;
 - accessibility, responsive behavior, state parity, and visual quality tests.
@@ -150,7 +150,7 @@ Motion rules:
 
 ## 2. Approved visual canon
 
-### 2.1 Six Master DNA
+### 2.1 Seven Master DNA
 
 | DNA | World metaphor | Geometry and composition | Material / light | Motion signature | Exclusions |
 |---|---|---|---|---|---|
@@ -160,6 +160,7 @@ Motion rules:
 | **04 NEXUS PARADOX** | Diegetic future-game instruments and spatial command environment | Floating instrument planes, clipped geometry, spatial selector, nested scopes, precise alignment | Graphite, dark teal, signal cyan, restrained technical highlights | Scan/focus/calibration only when meaningful; crisp short transitions | No fake telemetry; no random numbers; no decorative technical labels masquerading as live status |
 | **05 RIOT ANARCHY** | Manga, xerox punk, underground print wall | Torn collage, layered posters, halftone fields, asymmetrical cuts, kinetic type | Paper ivory, ink black, selective red/blue, rough print texture | Hard cuts, offset shifts, stamped reveals; short and deliberate | No generic cyberpunk neon; no copyrighted characters or copied manga panels; chaos must retain hierarchy |
 | **06 MYCELIUM** | Living, branching, interconnected organism | Organic branching, node clusters, membranes, growth paths, relational maps | Mineral green, deep forest, translucent membrane, soft bioluminescent accents | Growth, connection, gentle propagation; avoid idle pulsation | No random network lines; every relationship must map to real data or be clearly illustrative |
+| **07 SIMPUL NUSANTARA** | Neighborhood network atlas for E-ISP | Service-first routes, editorial linework, clear coverage and plan hierarchy | Warm chalk, deep ink, restrained amber | Static artwork and brief interaction feedback | No fictional map, coverage claim, telemetry, or decorative network grid |
 
 ### 2.2 Imperium Lumen accepted palette and typography
 
@@ -184,7 +185,7 @@ Typography target:
 3. define font-face loading and fallback stacks;
 4. map accepted palette values to semantic token roles;
 5. preserve success/danger/focus semantics and WCAG contrast;
-6. run screenshots and contrast tests across all six worlds;
+6. run screenshots and contrast tests across all seven worlds;
 7. update this section only when the runtime is verified.
 
 Do not force Imperium's palette onto the other five DNAs. Each world keeps its own approved palette.
@@ -344,19 +345,21 @@ The following reflects the audited `dev` source and is a snapshot, not a permane
 
 ### 4.5 Skin engine
 
-Six skin IDs are registered:
+Seven skin IDs are registered:
 - `imperium-lumen`
 - `lunar-chronicles`
 - `rocksoul`
 - `nexus-paradox`
 - `riot-anarchy`
 - `mycelium`
+- `simpul-nusantara`
+- `simpul-nusantara`
 
 The registry currently contains semantic colors, typography stacks, spacing, geometry, shadows, and motion tokens. `theme.css` maps Tailwind v4 semantic names to the skin variables. `skins.css` already includes per-world geometry and composition selectors; therefore it is incorrect to describe the current skins as color-only. The remaining gap is depth and breadth of world-specific compositions, brand identity, production art, and verified experience parity.
 
 ### 4.6 Current art pipeline evidence
 
-- `WorldArtwork` provides original vector-based 1600×900 scenes for six worlds.
+- `WorldArtwork` provides original vector-based 1600×900 scenes for seven worlds.
 - App public directories serve skin hero PNGs and brand emblem SVGs.
 - Asset tests check registry paths, SVG/PNG properties, and rendering parity.
 - The earlier audit inventory found 10 PNGs and 10 SVGs across seven app asset folders.
@@ -370,7 +373,7 @@ The registry currently contains semantic colors, typography stacks, spacing, geo
 | UI-001 | P1 | Multiple app emblem SVGs were byte-identical despite different DNA identities | Unique, approved emblem for every brand/world; tests must detect accidental duplicates |
 | UI-002 | P1 | Approved Cormorant Garamond / Inter / Cascadia Code direction is not bundled; generic system stacks remain | Licensed font assets, font-face setup, fallbacks, font loading strategy, contrast and layout verification |
 | UI-003 | P1 | No complete cover / chapter / transmission / world-map asset family | Typed asset catalogue, templates, responsive variants, provenance, safe fallback |
-| UI-004 | P1 | Six worlds lack a complete set of signature compositions | Build the DNA-specific composition families in Section 7 |
+| UI-004 | P1 | Seven worlds lack a complete set of signature compositions | Build the DNA-specific composition families in Section 7 |
 | UI-005 | P1 | Current Imperium registry differs from previously accepted palette/type target | Reconcile and migrate without losing semantic contrast |
 | UI-006 | P2 | Skin Laboratory's shared generic mark does not prove each world identity | Show the real world emblem/wordmark and signature composition for every DNA |
 | UI-007 | P2 | Temporary artwork/quantizer files were found in the package root | Move reproducible tools into scripts/tooling or remove; keep generated temp files out of source root |
@@ -522,9 +525,9 @@ A performance budget must be recorded per route and asset class before a new 3D 
 
 ---
 
-## 7. Six world-specific composition systems
+## 7. Seven world-specific composition systems
 
-These are the missing signature composition families to build on top of shared semantic atoms. They are not six forks of the same page template.
+These are the missing signature composition families to build on top of shared semantic atoms. They are not seven forks of the same page template.
 
 ### 7.1 IMPERIUM LUMEN — Monumental Architecture
 
@@ -774,7 +777,7 @@ Every signature composition must have a deliberate mobile layout.
 
 The Skin Laboratory at Headquarter `/skin-lab` is the canonical comparison environment.
 
-It must compare the same content and task across all six DNA, including:
+It must compare the same content and task across all seven DNA, including:
 1. hero / establishing scene;
 2. primary and secondary action;
 3. navigation;
@@ -786,7 +789,7 @@ It must compare the same content and task across all six DNA, including:
 9. keyboard/focus and reduced-motion;
 10. real emblem/wordmark and signature art.
 
-The shared generic `MW` mark is not sufficient to validate six independent identities. The lab must show the correct brand identity per world.
+The shared generic `MW` mark is not sufficient to validate seven independent identities. The lab must show the correct brand identity per world.
 
 Parity means same task and semantic outcome, not identical appearance. Every DNA should feel unmistakably different without losing usability.
 
@@ -843,8 +846,8 @@ Keep screenshots and reports in a predictable test/evidence location, not as und
 | UI-001 | P1 | Brand identity correction | Unique approved emblem and lockups per brand; duplicate regression test |
 | UI-002 | P1 | Typography assets | Licensed fonts, self-hosted loading, fallbacks, token integration, layout/contrast verified |
 | UI-003 | P1 | Asset catalogue | Manifest, provenance, cover families, spatial maps, OG and app icon variants |
-| UI-004 | P1 | Six signature compositions | At least one high-quality task composition per DNA, plus loading/error/mobile/reduced-motion variants |
-| UI-005 | P1 | Accepted palette reconciliation | Imperium palette/type migration or explicit superseding ADR; all six skins pass contrast |
+| UI-004 | P1 | Seven signature compositions | At least one high-quality task composition per DNA, plus loading/error/mobile/reduced-motion variants |
+| UI-005 | P1 | Accepted palette reconciliation | Imperium palette/type migration or explicit superseding ADR; all seven skins pass contrast |
 | UI-006 | P2 | Skin Laboratory identity | Correct emblem/wordmark and unique world composition for each skin |
 | UI-007 | P2 | Temporary files cleanup | No transient renderer/quantizer artifacts in package root; tooling is reproducible |
 | UI-008 | P2 | Workflow-backed primitives | Implement only required Switch, RadioGroup, Tabs, Tooltip, Popover, Menu, Progress, etc. with tests |
@@ -869,7 +872,7 @@ Keep screenshots and reports in a predictable test/evidence location, not as und
 A package release is not visually complete until:
 
 ### Creative
-- [ ] Six DNA are unmistakable without relying only on color.
+- [ ] Seven DNA are unmistakable without relying only on color.
 - [ ] Each world has a unique emblem/wordmark system and signature composition.
 - [ ] Imperium Lumen follows the accepted monumental architecture direction and approved palette/type target, or a superseding decision is recorded.
 - [ ] No generic dashboard/card-wall composition dominates.
@@ -912,9 +915,9 @@ A package release is not visually complete until:
 ## 17. Non-goals and anti-patterns
 
 Do not:
-- build six separate component libraries;
+- build seven separate component libraries;
 - make every section a card;
-- use the same hero and page grid for all six worlds;
+- use the same hero and page grid for all seven worlds;
 - apply a universal gold/blue/purple glow treatment;
 - add random stars, particles, scanlines, coordinates, meters, or charts;
 - invent live data to make a page look active;
@@ -953,7 +956,7 @@ Moon UI is the **Creative Interface Engine** for A-L-L-A-H.COM and the MoonWitne
 
 It must provide more than reusable React components. It must provide:
 1. a semantic visual grammar;
-2. six world-specific art directions;
+2. seven world-specific art directions;
 3. a complete atomic-to-composition hierarchy;
 4. identity, logo, icon and vector systems;
 5. artwork, cover, avatar and media production contracts;
@@ -998,7 +1001,7 @@ WORLD / APP EXPERIENCE
 | `blocks` | Reusable task-level sections | hero, route shell, inspector, timeline, state panels |
 | `compositions` | Signature multi-block world scenes | gate, orbit, filmstrip, instrument bay, poster wall, network |
 | `templates` | Complete repeatable page archetypes | archive detail, chapter reader, world entry, operator workspace |
-| `skins` | Six complete world grammars | tokens, identity, type, shape, materials, motion, SFX |
+| `skins` | Seven complete world grammars | tokens, identity, type, shape, materials, motion, SFX |
 | `effects` | Visual atmosphere and scene effects | depth, grain, light, parallax, reveal |
 | `motion` | Named transition and choreography contracts | enter, focus, settle, route transition |
 | `sfx` | Original interface audio | interaction and ambient cues |
@@ -1111,7 +1114,7 @@ Every public component must specify:
 - touch/pointer interaction;
 - state matrix and validation behavior;
 - responsive behavior;
-- all six skin recipes or an explicit skin exclusion;
+- all seven skin recipes or an explicit skin exclusion;
 - reduced-motion and sound behavior if relevant;
 - test coverage and visual fixture;
 - package export and API documentation;
@@ -1174,7 +1177,7 @@ Templates are page-level archetypes assembled from blocks and compositions:
 
 A template is not a route and must not fetch application data. Apps supply content, state, permissions and actions.
 
-## 23. The six skin systems — full contract
+## 23. The seven skin systems: full contract
 
 A skin is a complete world definition, not a palette switch. Each registry entry must eventually provide:
 
@@ -1209,7 +1212,7 @@ The sound character is a creative target, not permission to imitate a known game
 
 ### 23.2 Skin parity contract
 
-The same task has the same semantics and outcome in all six skins. Its appearance, composition, density, navigation metaphor and motion may differ. Skin Laboratory must prove that difference using real world identities, not a generic mark.
+The same task has the same semantics and outcome in all seven skins. Its appearance, composition, density, navigation metaphor and motion may differ. Skin Laboratory must prove that difference using real world identities, not a generic mark.
 
 ## 24. MoonWitness Avatar Studio
 
@@ -1257,7 +1260,7 @@ Output package:
 
 Build identity families for:
 - parent ecosystem brand;
-- each of the six DNA worlds;
+- each of the seven DNA worlds;
 - each application/product where a distinct product identity is approved;
 - MoonWitness universe and its narrative sub-series where canonical.
 
@@ -1494,7 +1497,7 @@ Each generator has a preview, explicit input contract, constraints, output speci
 
 The current Skin Laboratory should evolve into a unified **Creative Foundry** with dedicated workbenches:
 
-1. **Skin Lab:** compare all six worlds on the same task and states.
+1. **Skin Lab:** compare all seven worlds on the same task and states.
 2. **Component Lab:** inspect every component variant, state and keyboard path.
 3. **Atom Lab:** typography, lines, geometry, surfaces and signal marks.
 4. **Brand Lab:** emblem, logo lockup, favicon and app icon previews.
@@ -1574,7 +1577,7 @@ This is a target vocabulary, not an instruction to move every current file immed
 
 - Public component names are PascalCase; hooks begin with `use`; CSS/data slots are stable and namespaced.
 - Asset IDs are stable, descriptive and independent of file paths.
-- Skin IDs remain the six canonical kebab-case IDs.
+- Skin IDs remain the seven canonical kebab-case IDs.
 - Generator outputs are immutable versions; never silently overwrite a released identity asset.
 - Public exports are explicit; no deep imports into private implementation paths.
 - Props are semantic and typed; avoid boolean-prop explosions and arbitrary style escape hatches.
@@ -1591,7 +1594,7 @@ This is a target vocabulary, not an instruction to move every current file immed
 - Resolve current duplicate emblem, font, palette and temporary-file defects.
 
 ### Wave 1 — Identity and visual atoms
-- Complete six world identity systems and application lockups.
+- Complete seven world identity systems and application lockups.
 - Build icon/sigil library and vector line grammar.
 - Implement typography, metadata, status, frame, divider, marker and focus atoms.
 - Build Brand Lab and Atom Lab.
@@ -1601,11 +1604,11 @@ This is a target vocabulary, not an instruction to move every current file immed
 - Establish keyboard, screen-reader, touch, reduced-motion and state parity.
 - Build Component Lab and public API docs.
 
-### Wave 3 — Blocks and six world compositions
+### Wave 3 — Blocks and seven world compositions
 - Complete shared task blocks and state scenes.
 - Build at least two high-value signature compositions per world.
 - Build responsive templates and route-state fixtures.
-- Certify all six worlds in Skin Lab.
+- Certify all seven worlds in Skin Lab.
 
 ### Wave 4 — Asset and generator foundries
 - Ship asset manifest, resolver, provenance, licensing and variant pipeline.
@@ -1631,7 +1634,7 @@ This is a target vocabulary, not an instruction to move every current file immed
 Moon UI is considered complete only when all of the following are true:
 
 **Identity**
-- Six independent world identities have emblem, wordmark, lockups, app icons and social variants.
+- Seven independent world identities have emblem, wordmark, lockups, app icons and social variants.
 - No accidental duplicate identity asset exists.
 - Every app has an approved brand-to-DNA mapping.
 
@@ -1673,7 +1676,7 @@ Moon UI is considered complete only when all of the following are true:
 ## 37. Explicit non-goals
 
 - A single universal component that tries to express every world through dozens of booleans.
-- Six duplicated component libraries.
+- Seven duplicated component libraries.
 - Runtime AI generation for every avatar, icon or artwork request.
 - An asset dump with no provenance, manifest or review.
 - Sound imitation of proprietary games or copyrighted music.
@@ -1683,7 +1686,7 @@ Moon UI is considered complete only when all of the following are true:
 - A new dependency when native browser semantics already solve the task.
 - Moving all package files in one disruptive refactor just to match a proposed folder tree.
 
-**Final doctrine:** Moon UI is a world-building and interface-production engine. Its atoms provide precision; its primitives provide reliable behavior; its components provide semantics; its blocks provide tasks; its compositions provide identity; its skins provide complete worlds; its foundries provide original media; its effects and sound provide atmosphere; and its verification system protects quality. One engine, six worlds, one unmistakable creative language.
+**Final doctrine:** Moon UI is a world-building and interface-production engine. Its atoms provide precision; its primitives provide reliable behavior; its components provide semantics; its blocks provide tasks; its compositions provide identity; its skins provide complete worlds; its foundries provide original media; its effects and sound provide atmosphere; and its verification system protects quality. One engine, seven worlds, one unmistakable creative language.
 
 
 ---
@@ -1700,7 +1703,7 @@ The quality target combines:
 - exceptional visual craft;
 - dependable accessibility and responsive behavior;
 - real operational workflows;
-- coherent identity across all six worlds;
+- coherent identity across all seven worlds;
 - disciplined performance and maintainability.
 
 A visually spectacular landing page cannot compensate for missing form states, weak keyboard behavior, absent data patterns, or broken mobile navigation.
@@ -1946,7 +1949,7 @@ Separate independent axes: DNA skin; color mode; density (comfortable, compact, 
 
 ## 48. Quality engineering and release certification
 
-Test unit/interaction, keyboard/accessibility, automated and manual a11y, six-skin visual regression, responsive screenshots, reduced-motion/no-audio, light/dark/contrast, asset integrity/provenance, SSR/hydration, performance, app builds/typechecks and public exports.
+Test unit/interaction, keyboard/accessibility, automated and manual a11y, seven-skin visual regression, responsive screenshots, reduced-motion/no-audio, light/dark/contrast, asset integrity/provenance, SSR/hydration, performance, app builds/typechecks and public exports.
 
 Every catalog item carries a truthful maturity state:
 - **Proposed:** documented idea, no implementation claim.
@@ -1970,7 +1973,7 @@ A release cannot be certified with broken exports, missing/duplicated critical a
 
 ## 50. Final premium acceptance standard
 
-Moon UI must support complete applications across public entry, navigation, forms, data, content, identity, community, operations, settings, media and spatial exploration. It must combine mature platform breadth with a coherent six-world identity, cinematic fidelity where appropriate, original governed assets, robust accessibility, responsive behavior, localization, performance and evidence-backed maturity.
+Moon UI must support complete applications across public entry, navigation, forms, data, content, identity, community, operations, settings, media and spatial exploration. It must combine mature platform breadth with a coherent seven-world identity, cinematic fidelity where appropriate, original governed assets, robust accessibility, responsive behavior, localization, performance and evidence-backed maturity.
 
 **The distinction:** premium templates sell finished screens. Moon UI provides the engine, language, tools, assets and standards to create an entire family of coherent products and worlds.
 
@@ -1987,7 +1990,7 @@ Moon UI should own the complete path:
 
 **Intent → Task Model → Semantic Brief → World Grammar → Composition → Interaction → Evaluation → Approval**
 
-Five cooperating systems: **World System** (six authored DNA grammars), **Intent System** (task models and adaptive views), **Experience System** (components, blocks, scenes, transitions, media and sound), **Foundry System** (governed original assets), and **Certification System** (accessibility, performance, truth, visual quality, and release evidence).
+Five cooperating systems: **World System** (seven authored DNA grammars), **Intent System** (task models and adaptive views), **Experience System** (components, blocks, scenes, transitions, media and sound), **Foundry System** (governed original assets), and **Certification System** (accessibility, performance, truth, visual quality, and release evidence).
 
 This is not permission for an LLM to generate arbitrary application code at runtime. Generated composition resolves to approved components, recipes, data contracts, and permission-checked actions.
 
@@ -2069,13 +2072,13 @@ Every asset stores stable ID/version, DNA/routes, purpose, source/master, deriva
 
 ## 60. Experience Quality Observatory
 
-Maintainer-only workbench for component/block coverage, six-skin conformance, route/state coverage, accessibility and keyboard paths, contrast, responsive screenshot diffs, visual hierarchy/complexity, LCP/CLS/INP, JS/image/GPU cost, asset integrity/provenance, build/typecheck/lint/test, consumer integration, maturity, and release evidence.
+Maintainer-only workbench for component/block coverage, seven-skin conformance, route/state coverage, accessibility and keyboard paths, contrast, responsive screenshot diffs, visual hierarchy/complexity, LCP/CLS/INP, JS/image/GPU cost, asset integrity/provenance, build/typecheck/lint/test, consumer integration, maturity, and release evidence.
 
 All values come from actual evidence. Distinguish current, historical, sampled, and simulated data. No fake green indicators or fabricated telemetry.
 
 ## 61. Design Intelligence and anti-slop pipeline
 
-Own a design constitution covering six grammars, tokens, typography, approved compositions, prohibited patterns, accessibility, responsive behavior, asset rules, motion, sound, archetypes, examples, and counterexamples.
+Own a design constitution covering seven grammars, tokens, typography, approved compositions, prohibited patterns, accessibility, responsive behavior, asset rules, motion, sound, archetypes, examples, and counterexamples.
 
 **Brief → Direction proposals → Compare → Select → Compose → Browser render → Screenshot critique → Accessibility/performance audit → Refine → Certify**
 
@@ -2124,7 +2127,7 @@ These are candidates, not an instruction to create every component. Promote one 
 ## 65. Research-led roadmap
 
 - **R0 — Evidence and decisions:** research ledger, source limitations, decision records.
-- **R1 — World Grammar:** schema, six conformance profiles, unique identity tests, compositions.
+- **R1 — World Grammar:** schema, seven conformance profiles, unique identity tests, compositions.
 - **R2 — Intent foundation:** task model, semantic brief, recipe resolver, preview, correction.
 - **R3 — Trust and agency:** action authority, evidence surface, approval, undo, delegation, audit.
 - **R4 — Scene system:** data-first scene graph, vector/2D renderer, spatial navigation, fallback.
@@ -2142,9 +2145,9 @@ Do not turn every paper or GitHub trend into a feature. A proposal is accepted o
 
 ## 67. Updated final acceptance standard
 
-Moon UI's next frontier is achieved when it can express six distinct world grammars over one engine; translate tasks into predictable, inspectable, user-controlled compositions; surface AI evidence and authority at the right level; render spatial and narrative experiences with non-spatial fallback; produce original governed assets with provenance; certify actual browser output; support complete product workflows; and report maturity honestly.
+Moon UI's next frontier is achieved when it can express seven distinct world grammars over one engine; translate tasks into predictable, inspectable, user-controlled compositions; surface AI evidence and authority at the right level; render spatial and narrative experiences with non-spatial fallback; produce original governed assets with provenance; certify actual browser output; support complete product workflows; and report maturity honestly.
 
-**The defining advantage:** Moon UI provides the grammar, intelligence, creative tools, spatial language, and evidence system required to build six coherent digital worlds—and keep them usable, trustworthy, and technically excellent.
+**The defining advantage:** Moon UI provides the grammar, intelligence, creative tools, spatial language, and evidence system required to build seven coherent digital worlds and keep them usable, trustworthy, and technically excellent.
 
 
 ---
@@ -2153,7 +2156,7 @@ Moon UI's next frontier is achieved when it can express six distinct world gramm
 
 The implementation baseline, predecessor-plan reconciliation, task-level delivery sequence, autonomous execution rules and requirement traceability live in the [Moon UI Master Consolidation Plan](../../.plans/20261105-moon-ui-master-consolidation/spec.md).
 
-This blueprint remains the product/architecture target; the master plan is the execution queue. Before implementing any blueprint item, inspect the current source and active plans. Reuse existing SkinRoot/SkinScope, six skin definitions, six original vector scenes, shared components/blocks/primitives, Skin Laboratory and procedural SFX engine. Do not rebuild them merely because the target blueprint describes their complete future role.
+This blueprint remains the product/architecture target; the master plan is the execution queue. Before implementing any blueprint item, inspect the current source and active plans. Reuse existing SkinRoot/SkinScope, seven skin definitions, seven original vector scenes, shared components/blocks/primitives, Skin Laboratory and procedural SFX engine. Do not rebuild them merely because the target blueprint describes their complete future role.
 
 The predecessor six-world artwork plan is superseded by the master plan. The earlier premium-skin implementation remains baseline evidence; only fresh verification or a source-backed residual defect may reopen its work. The old platform-standardization skin mapping is not authoritative where it conflicts with accepted DNA and current DESIGN.md.
 

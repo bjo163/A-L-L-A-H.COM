@@ -7,6 +7,7 @@ export const skinIds = [
   'nexus-paradox',
   'riot-anarchy',
   'mycelium',
+  'simpul-nusantara',
 ] as const;
 
 export type SkinId = (typeof skinIds)[number];
@@ -385,6 +386,58 @@ export const skinRegistry = {
         standardDuration: '260ms',
         ambientDuration: '46s',
         easing: 'cubic-bezier(0.22, 0.7, 0.25, 1)',
+      },
+    },
+  },
+  'simpul-nusantara': {
+    id: 'simpul-nusantara',
+    name: 'SIMPUL NUSANTARA',
+    signature: 'Neighborhood route lines, warm paper, and service-first labels.',
+    identity: { hero: '/artwork/simpul-nusantara.png', emblem: '/brand/emblem.svg', themeColor: '#F1ECDF' },
+    tokens: {
+      colors: {
+        canvas: '#F1ECDF',
+        surface: '#FBF8F0',
+        elevatedSurface: '#E5DDCC',
+        text: '#182722',
+        mutedText: '#4D5C54',
+        border: '#64766B',
+        accent: '#8D560C',
+        accentText: '#FFF9ED',
+        accentLabel: '#182722',
+        focus: '#0D5D57',
+        success: '#246447',
+        danger: '#A2322A',
+        dangerText: '#FFF9ED',
+      },
+      typography: {
+        display: 'Inter, Helvetica, sans-serif',
+        heading: 'Inter, Helvetica, sans-serif',
+        body: 'Inter, Helvetica, sans-serif',
+        label: 'Inter, Helvetica, sans-serif',
+        numeric: '"Cascadia Code", monospace',
+        tracking: '0.015em',
+      },
+      spacing: {
+        density: 'comfortable',
+        controlGap: '0.625rem',
+        cardPadding: '1.25rem',
+        sectionGap: '2.25rem',
+      },
+      geometry: {
+        controlRadius: '0.2rem',
+        surfaceRadius: '0.35rem',
+        borderWidth: '1px',
+      },
+      material: {
+        surfaceShadow: '0 8px 18px rgb(24 39 34 / 0.12)',
+        controlShadow: 'inset 0 0 0 1px rgb(24 39 34 / 0.08)',
+      },
+      motion: {
+        fastDuration: '120ms',
+        standardDuration: '200ms',
+        ambientDuration: '40s',
+        easing: 'cubic-bezier(0.2, 0.65, 0.3, 1)',
       },
     },
   },
