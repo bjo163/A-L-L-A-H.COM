@@ -86,8 +86,8 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-064 Add supervisor and bounded delegation.
 - [ ] VSC-065 Add researcher, builder and reviewer roles.
 - [x] VSC-066 Add inter-agent message schema and trace correlation. Messages require IDs, source/target roles, bounded payloads, and correlation IDs.
-- [ ] VSC-067 Add concurrency/resource limits and failure isolation.
-- [ ] VSC-068 Add review checkpoint before consequential actions.
+- [x] VSC-067 Add concurrency/resource limits and failure isolation. Added bounded concurrency, depth, and message limits as delegation policy contracts.
+- [x] VSC-068 Add review checkpoint before consequential actions. Consequential actions require an explicit approved checkpoint.
 
 ## P2 — 1.0.0
 - [ ] VSC-069 Model comparison/evaluation workflow.
