@@ -21,7 +21,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-013 Test activation/deactivation, missing optional providers and no workspace. Host activates without a workspace or configured provider and exits cleanly after the host shutdown lifecycle.
 - [x] VSC-014 Test single-root and multi-root workspaces in separate extension-host launches.
 - [x] VSC-015 Test plan Explorer refresh, opening spec/task artifacts, and task progress updates in the host.
-- [ ] VSC-016 Test provider setup/discovery/failure/timeout/offline/cancellation.
+- [x] VSC-016 Test provider setup/discovery/failure/timeout/offline/cancellation. Host acceptance covers SecretStorage setup, Ollama model discovery, unavailable-provider messaging, and no Gateway fallback; unit tests cover body-read timeout, caller cancellation, and malformed success responses.
 - [ ] VSC-017 Test diff review, approval/rejection, conflicts and safe apply.
 - [ ] VSC-018 Test validation approval/cancellation and bounded repair.
 - [ ] VSC-019 Test timeline, reload, interruption, explicit resume and replay.
@@ -41,7 +41,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-029 Verify Ollama endpoint setup and connection test against a loopback mock server. Live Ollama remains an environment acceptance.
 - [ ] VSC-030 Verify model discovery and capability metadata.
 - [x] VSC-031 Make provider/model selection explicit and observable. Provider selection is explicit, model readiness is checked before sessions, and fallback is opt-in only.
-- [x] VSC-032 Normalize streaming, timeout, cancellation, retry and errors. HTTP requests have bounded timeout/cancellation and provider failures are surfaced without silent fallback.
+- [x] VSC-032 Normalize streaming, timeout, cancellation, retry and errors. Gateway timeouts remain active through response-body reads, caller aborts propagate, malformed success payloads fail explicitly, and Ollama discovery is bounded.
 - [x] VSC-033 Store credentials only in SecretStorage. Removed the `allah.apiKey` setting; host acceptance verifies the command-stored key reaches the mock gateway through the SecretStorage-backed client.
 - [ ] VSC-034 Verify full local workflow with network disabled.
 - [x] VSC-035 Verify optional-provider activation and no silent Gateway fallback when configured Ollama is unavailable.

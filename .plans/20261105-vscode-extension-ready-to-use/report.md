@@ -91,6 +91,18 @@ Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set 
 | `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, ten host tests |
 
+## Provider timeout, cancellation, and offline behavior
+
+The gateway request timeout now remains active until the response body has been consumed. Caller cancellation reaches body reads, malformed successful JSON is surfaced as an error, and Ollama discovery uses the same bounded timeout. Host acceptance verifies provider setup, local-model discovery, visible offline failure, and no silent Gateway fallback.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 49 tests, including stalled-body timeout, cancellation during body read, and invalid JSON |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed on isolated rerun: three launches, ten host tests |
+
 ## Roadmap claim audit
 
 The P1/P2 checklist now distinguishes tested utilities from shipped workflows. VSC-058, 059, 061, 063-067, and 069-074 remain pending because their helpers are not consumed by a user-facing or runtime workflow. Their unit tests remain useful, but they are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.

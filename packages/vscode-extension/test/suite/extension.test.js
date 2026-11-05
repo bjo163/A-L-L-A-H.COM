@@ -168,6 +168,8 @@ suite('A-L-L-A-H.COM extension host', () => {
 
     test('discovers Ollama models and does not fall back when Ollama is unavailable', async () => {
       const requests = [];
+      const warnings = [];
+      const originalWarningMessage = vscode.window.showWarningMessage;
       const server = http.createServer((request, response) => {
         requests.push(request.url);
         response.writeHead(200, { 'Content-Type': 'application/json' });
@@ -181,6 +183,9 @@ suite('A-L-L-A-H.COM extension host', () => {
       const address = server.address();
       const configuration = vscode.workspace.getConfiguration('allah');
       try {
+        vscode.window.showWarningMessage = async (message) => {
+          warnings.push(message);
+        };
         await configuration.update('agentProvider', 'ollama', vscode.ConfigurationTarget.Global);
         await configuration.update('agentModel', undefined, vscode.ConfigurationTarget.Global);
         await configuration.update('ollamaUrl', `http://127.0.0.1:${address.port}`, vscode.ConfigurationTarget.Global);
@@ -197,7 +202,9 @@ suite('A-L-L-A-H.COM extension host', () => {
         );
         await vscode.commands.executeCommand('allah.testConnection');
         assert.deepEqual(requests, ['/api/tags']);
+        assert.ok(warnings.some((message) => message.includes('Ollama is unavailable')));
       } finally {
+        vscode.window.showWarningMessage = originalWarningMessage;
         await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
       }
     });

@@ -7,6 +7,7 @@
 - VS Code extension-host tests for activation, workspace roots, plan task actions, and Ollama provider discovery.
 - Workspace-aware mission templates that load or queue a reviewable Workspace Agent prompt.
 - Gateway credentials use SecretStorage without a user-editable API key setting.
+- Provider timeouts cover response-body reads, caller cancellation remains active through parsing, and Ollama discovery is bounded.
 - Setup, security, and troubleshooting guidance for local Ollama and optional Gateway use.
 - MIT license and repository metadata in the extension package.
 
