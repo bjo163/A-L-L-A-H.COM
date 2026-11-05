@@ -1,10 +1,10 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "DOCUMENTATION_CONTRACT"
-version: "1.2.0"
+version: "1.3.0"
 owner: "engineering"
 status: "implemented"
-last_verified: "2026-11-04"
+last_verified: "2026-11-05"
 ---
 # Documentation Contract
 
@@ -26,6 +26,7 @@ One canonical source per topic. Link — never copy rules across files. Read wit
 | `CHANGELOG.md` | Changes that actually happened |
 | `DECISIONS.md` | Accepted ADRs · rationale · consequences |
 | `QUALITY.md` | Definition of done · verification baseline |
+| `docs/architecture/PLATFORM_CONTRACT.md` | Cross-unit topology, health, environment, CI, API, model, and release contract |
 | `LEGACY_RECONCILIATION.md` | Source inventory · provenance · disposition |
 | `apps/*/README.md` | App-specific purpose + verified commands |
 | `apps/*/AGENTS.md` | App-specific rules extending root |
@@ -62,6 +63,13 @@ Source-of-truth priority: `source code + manifests + tests + runtime > DECISIONS
 3. Check links · commands · names · statuses · branch refs still match repo.
 4. Review rendered Markdown. Run `git diff --check`.
 5. Changelog: actual changes only. Backlog: update when tracked task affected.
+
+## Platform Contract
+
+Cross-unit deployment and release invariants are owned by
+`docs/architecture/PLATFORM_CONTRACT.md` and enforced by
+`pnpm platform:contract:check`. CI and production publication also run unit,
+architecture, Arsy API, and ORM persistence gates before image publication.
 
 ## Generated Docs
 

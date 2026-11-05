@@ -44,10 +44,44 @@ jobs:
       - name: Validate every app Docker contract
         run: node scripts/check-docker-contracts.mjs
 
+  validate-platform-contracts:
+    name: Validate platform contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate topology, runtime, CI, API, and release contracts
+        run: pnpm platform:contract:check
+
+      - name: Validate unit API and model contracts
+        run: pnpm contract:check
+
+      - name: Validate documentation contracts
+        run: pnpm docs:check
+
+      - name: Validate architecture invariants
+        run: pnpm lint:arch
+
+      - name: Validate ORM model and persistence contracts
+        run: pnpm --filter @allah/arsy-orm test
+
   publish:
     name: Publish ${{ matrix.component }} image
     runs-on: ubuntu-latest
-    needs: [validate-compose, validate-docker-contracts]
+    needs: [validate-compose, validate-docker-contracts, validate-platform-contracts]
     strategy:
       fail-fast: false
       matrix:

@@ -1,14 +1,14 @@
 ---
 contract: "DOCUMENTATION_CONTRACT.md"
 id: "AGENTS"
-version: "1.7.0"
+version: "1.8.0"
 owner: "engineering"
 status: "implemented"
-last_verified: "2026-11-04"
+last_verified: "2026-11-05"
 ---
 # AGENTS.md
 
-Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMENTATION_CONTRACT.md) · [GOAL.md](GOAL.md) · [QUALITY.md](QUALITY.md) · [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md) · [BLUEPRINT.md](BLUEPRINT.md)
+Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMENTATION_CONTRACT.md) · [PLATFORM_CONTRACT.md](docs/architecture/PLATFORM_CONTRACT.md) · [GOAL.md](GOAL.md) · [QUALITY.md](QUALITY.md) · [LEGACY_RECONCILIATION.md](LEGACY_RECONCILIATION.md) · [BLUEPRINT.md](BLUEPRINT.md)
 
 ## Exec
 
@@ -68,6 +68,9 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 
 ```
 pnpm docs:check          # 100/100 required
+pnpm contract:check      # per-unit CONTRACT.md presence + code cross-check
+pnpm docker:contract:check   # every app Docker image and runtime dependency
+pnpm platform:contract:check # Compose, health, env, CI/API/model and release alignment
 pnpm lint:arch           # arch invariants
 pnpm lint                # eslint, --max-warnings 0
 pnpm typecheck           # TS strict in packages/ui, dock, headquarter, id, jizz, gate

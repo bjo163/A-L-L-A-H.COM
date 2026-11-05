@@ -1,0 +1,55 @@
+name: Platform Contracts
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Validate cross-app contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Docker build contracts
+        run: pnpm docker:contract:check
+
+      - name: Validate platform topology and release contracts
+        run: pnpm platform:contract:check
+
+      - name: Validate unit contracts
+        run: pnpm contract:check
+
+      - name: Validate documentation contracts
+        run: pnpm docs:check
+
+      - name: Validate architecture invariants
+        run: pnpm lint:arch
+
+      - name: Validate Arsy API and trust boundaries
+        run: pnpm --filter @allah/arsy test
+
+      - name: Validate ORM models and persistence
+        run: pnpm --filter @allah/arsy-orm test

@@ -43,6 +43,6 @@ COPY --from=builder /app/apps/sentinel ./apps/sentinel
 
 WORKDIR /app/apps/sentinel
 
-EXPOSE 1812/udp 1813/udp 9181
+EXPOSE 1812/udp 1813/udp 3799/udp 9181
 
 CMD ["pnpm", "start"]

@@ -27,8 +27,18 @@ services:
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET (32+ chars, distinct from JWT_SECRET) is required}
       - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS must list trusted browser origins}
       - GENERIC_MODEL_ALLOWLIST=${GENERIC_MODEL_ALLOWLIST:-}
+      - ARSY_SEED_DEMO=${ARSY_SEED_DEMO:-false}
     volumes:
       - arsy_data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:5150/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   gate:
     build:
@@ -42,8 +52,18 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
 
   dock:
     build:
@@ -57,8 +77,18 @@ services:
       - PORT=3001
       - NODE_ENV=production
       - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
 
   headquarter:
     build:
@@ -72,8 +102,18 @@ services:
       - PORT=3002
       - NODE_ENV=production
       - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3002').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
 
   id:
     build:
@@ -91,8 +131,18 @@ services:
       # HTTPS URL in real deployments; the container hostname is unreachable
       # from the user's browser).
       - NEXT_PUBLIC_AUTH_API_URL=${NEXT_PUBLIC_AUTH_API_URL:-http://localhost:5150}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3003').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
 
   jizz:
     build:
@@ -110,8 +160,18 @@ services:
       # proxy (apps/jizz/src/app/api/jizz/[...path]). Never prefixed NEXT_PUBLIC_.
       - JIZZ_API_URL=${JIZZ_API_URL:-http://host.docker.internal:4000}
       - JIZZ_API_KEY=${JIZZ_API_KEY:-}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3004').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
 
   harbor:
     build:
@@ -125,8 +185,18 @@ services:
       - PORT=3006
       - NODE_ENV=production
       - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3006').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
 
   moonsky:
     build:
@@ -140,8 +210,46 @@ services:
       - PORT=3005
       - NODE_ENV=production
       - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3005').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - arsy
+      arsy:
+        condition: service_healthy
+
+  e-isp:
+    build:
+      context: .
+      dockerfile: apps/e-isp/Dockerfile
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "3007:3007"
+    environment:
+      - PORT=3007
+      - NODE_ENV=production
+      - NEXT_PUBLIC_ECOSYSTEM_ORIGIN=${NEXT_PUBLIC_ECOSYSTEM_ORIGIN:-http://localhost}
+      - NEXT_PUBLIC_ID_URL=${NEXT_PUBLIC_ID_URL:-http://localhost:3003}
+      # Server-side hub origin for the /api/isp proxy and RSC data reads.
+      - ARSY_INTERNAL_URL=${ARSY_INTERNAL_URL:-http://arsy:5150}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3007').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      arsy:
+        condition: service_healthy
 
   sentinel:
     build:
@@ -152,12 +260,14 @@ services:
     ports:
       - "1812:1812/udp"
       - "1813:1813/udp"
+      - "3799:3799/udp"
       - "9181:9181"
     environment:
       - NODE_ENV=production
       - SENTINEL_AUTH_PORT=1812
       - SENTINEL_ACCT_PORT=1813
       - SENTINEL_HTTP_PORT=9181
+      - SENTINEL_COA_PORT=3799
       - PG_DATA_DIR=/app/data
       - ARSY_MASTER_KEY=${ARSY_MASTER_KEY:?ARSY_MASTER_KEY is required and must match arsy}
     volumes:
