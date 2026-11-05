@@ -52,11 +52,19 @@ export function PageHero({
       aria-labelledby={titleId}
     >
       <div className="mw-hero__copy">
-        {kicker && <Kicker className="mw-hero__kicker">{kicker}</Kicker>}
-        <Title className="mw-hero__title" id={titleId}>
+        {kicker && (
+          <Kicker className="mw-hero__kicker" data-slot="hero-kicker">
+            {kicker}
+          </Kicker>
+        )}
+        <Title className="mw-hero__title" data-slot="hero-title" id={titleId}>
           {title}
         </Title>
-        {summary && <p className="mw-hero__summary">{summary}</p>}
+        {summary && (
+          <p className="mw-hero__summary" data-slot="hero-summary">
+            {summary}
+          </p>
+        )}
         {actions && <div className="mw-hero__actions">{actions}</div>}
       </div>
       {media && (

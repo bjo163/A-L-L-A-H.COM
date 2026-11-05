@@ -64,22 +64,22 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [x] **PUI-0103** Audit CSS exports `./skins.css` and `./theme.css` against actual package files.
 - [x] **PUI-0104** Verify every public export resolves in a real consumer context.
 - [x] **PUI-0105** Identify consumer imports that bypass public exports through private source paths.
-- [ ] **PUI-0106** Replace private imports only where the package API already provides an equivalent stable export; coordinate consumer changes under parent task ownership.
-- [ ] **PUI-0107** Document public API stability and the policy for adding, deprecating and removing exports.
+- [-] **PUI-0106** Replace private imports only where the package API already provides an equivalent stable export; coordinate consumer changes under parent task ownership.
+- [x] **PUI-0107** Document public API stability and the policy for adding, deprecating and removing exports.
 - [x] **PUI-0108** Verify package metadata, React 19 peer dependencies and workspace dependency boundaries.
 - [x] **PUI-0109** Verify package source format remains TypeScript/TSX and ESM as currently contracted.
 - [x] **PUI-0110** Detect circular dependencies and unintended imports from app/backend packages.
-- [ ] **PUI-0111** Verify tree-shaking and CSS import behavior using the actual consumer build pipeline.
-- [~] **PUI-0112** Add export-contract tests for every supported public entrypoint.
+- [x] **PUI-0111** Verify tree-shaking and CSS import behavior using the actual consumer build pipeline.
+- [x] **PUI-0112** Add export-contract tests for every supported public entrypoint.
 
 ### P1.2 Layer boundaries
-- [ ] **PUI-0113** Verify tokens/skins own presentation values only and contain no business data.
-- [ ] **PUI-0114** Verify raw layout owns structure only and has no brand or data-fetching responsibilities.
-- [ ] **PUI-0115** Verify components own semantic controls and atoms, not app workflows.
-- [ ] **PUI-0116** Verify primitives own shared mechanics/providers, not product navigation or remote data.
-- [ ] **PUI-0117** Verify blocks own reusable task compositions and receive data/callbacks from consumers.
-- [ ] **PUI-0118** Add or refine architecture checks for forbidden app/backend imports and private implementation leakage.
-- [ ] **PUI-0119** Document package layer ownership and import direction with examples grounded in current source.
+- [x] **PUI-0113** Verify tokens/skins own presentation values only and contain no business data.
+- [x] **PUI-0114** Verify raw layout owns structure only and has no brand or data-fetching responsibilities.
+- [x] **PUI-0115** Verify components own semantic controls and atoms, not app workflows.
+- [x] **PUI-0116** Verify primitives own shared mechanics/providers, not product navigation or remote data.
+- [x] **PUI-0117** Verify blocks own reusable task compositions and receive data/callbacks from consumers.
+- [x] **PUI-0118** Add or refine architecture checks for forbidden app/backend imports and private implementation leakage.
+- [x] **PUI-0119** Document package layer ownership and import direction with examples grounded in current source.
 
 **Phase 1 exit gate:** public entrypoints are intentional and tested; layer boundaries are enforceable; consumers do not depend on accidental internals.
 

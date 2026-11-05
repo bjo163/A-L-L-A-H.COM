@@ -152,7 +152,7 @@ packages/ui/
 
 This is a point-in-time inventory; verify exports and source before extending.
 
-- **Components:** Button, Input, Textarea, Select, Form, Card, Badge, Avatar, Table, Dialog, Link, Skeleton, Icon, Emblem, Checkbox, ToolRegistryCard, ToolDetailPanel, ToolParameterField.
+- **Components:** Button, Input, Textarea, Select, Form, Card, Badge, Avatar, Table, Dialog, Link, Skeleton, Icon, Emblem, Checkbox, ToolRegistryCard, ToolDetailPanel, ToolParameterField, ToolExecutionForm, ToolResultViewer.
 - **Blocks:** EcosystemNavbar, Endpoints, SessionCard, SoundToggle, VisualEffectsToggle, useEcosystemSession, WorldArtwork, DestinationCard, Kicker, PageHero, RouteShell, SectionHeading, SkipLink, StatePanel, StatusMessage, SkinLaboratory.
 - **Raw layout:** RawContainer, RawSection, RawStack, RawCluster, RawGrid.
 - **Primitives:** VisualEffectsProvider, useVisualEffects, MotionFrame.

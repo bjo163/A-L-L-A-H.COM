@@ -66,7 +66,7 @@ Do not promote status without current source/test/visual evidence.
 | Theme mapping | `src/theme.css`, `src/skins.css` | EXISTS | Token pipeline | MU-0101–0113, MU-0114–0128 |
 | World CSS recipes | `src/skins.css` | PARTIAL | Existing per-world geometry selectors | MU-0114–0128, MU-0414–0435 |
 | World vector scenes | `src/blocks/world-artwork.tsx` | EXISTS foundation | Six initial 1600×900 scenes | MU-0603–0608 (upgrade/add distinct production art, not rebuild scenes) |
-| Components | `src/components/*` | EXISTS foundation | 17 current exported modules | MU-0301–0334 |
+| Components | `src/components/*`, public barrel and package README | 20 current exported modules, including ToolExecutionForm and ToolResultViewer; README inventory synchronized | Do not duplicate current semantic controls | MU-0301–0334 |
 | Blocks | `src/blocks/*` | EXISTS foundation | 17 current exported modules | MU-0401–0448 |
 | Raw layout | `src/raw/layout.tsx` | EXISTS | Five raw primitives | Extend only if a real layout gap exists |
 | Motion primitives | `src/primitives/visual-effects.tsx` | EXISTS foundation | Provider and MotionFrame | MU-0626–0635 |

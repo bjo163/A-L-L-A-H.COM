@@ -14,7 +14,7 @@ This matrix links the package-specific execution tasks to the canonical Moon UI 
 |---|---|---|---|---|
 | Repository/package baseline | live repo, package manifests, CI | PUI-0001–0021 | MU-0001–0031 | HEAD, status, source inventory, command output, overlap record |
 | Component/primitive ownership | `src/components`, `src/blocks`, `src/primitives`, root/subpath barrels | PUI-0018 | MU-0008–0010 | Owner/export map in `package-inventory.md`; route/business boundary review |
-| MCP tool UI exports | `src/components/ToolExecutionForm.tsx`, `ToolResultViewer.tsx`, component barrel | PUI-0101–0104, 0112 | MU-0930–0932 | Named public exports and successful strict package typecheck; UI test suite |
+| MCP tool UI exports | `src/components/ToolExecutionForm.tsx`, `ToolResultViewer.tsx`, component barrel | PUI-0101–0104, 0112 | MU-0930–0932 | Named public exports, committed source files, strict package typecheck, export-contract and component UI tests |
 | Internal dependency direction | imports under `src/components`, `src/blocks`, package boundary checks | PUI-0110, 0118 | MU-0008–0010, MU-0930–0942 | no package self-imports or app/backend imports; architecture gate |
 | Public API/exports | package.json, src/index.ts, subpath indexes | PUI-0101–0112 | MU-0930–0942 | export tests, consumer import/build evidence |
 | Layer boundaries | README architecture table, source imports | PUI-0113–0119 | MU-0008–0010, MU-0930–0942 | dependency/architecture checks |

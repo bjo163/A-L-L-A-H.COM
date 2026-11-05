@@ -158,3 +158,18 @@ The final `dev` HEAD after report update is recorded by the final verification s
 A deeper scan found duplicate detailed T-001–T-010 SkinRoot instructions later in the platform-standardization task document, beyond its original Phase 1 section. Those duplicate subtasks, old all-app parallelization and old acceptance scope have now been removed or transferred. The legacy plan retains only a clear supersession pointer to MU-0801–MU-0822 and MU-0930–MU-0942. Its non-UI platform capability work remains in place.
 
 Latest verified `dev` HEAD before this report update: `e1e9bffd142739b783c2b38e978f989b16a17721`.
+
+## 13. Package UI execution follow-up
+
+- Phase 0 package inventory and ownership tasks PUI-0001–0021 were verified and synchronized with the parent MU checklist; detailed evidence is in the [package UI delivery report](../20261105-package-ui-core-delivery/report.md).
+- Exported the existing MCP `ToolExecutionForm` and `ToolResultViewer` through the package component barrel. The first API commit `c601271` omitted the two then-untracked source files; GitHub CI caught the missing modules (TS2307). Added both files in `0baf916` and reran verification.
+- Follow-up CI for `0baf916`: validation/build/promotion [41997399270](https://github.com/bjo163/A-L-L-A-H.COM/actions/runs/41997399270), Quick CI [41997399331](https://github.com/bjo163/A-L-L-A-H.COM/actions/runs/41997399331), and CodeQL [41997399382](https://github.com/bjo163/A-L-L-A-H.COM/actions/runs/41997399382) all succeeded.
+- Local evidence: `pnpm ui:test` 48/48, `pnpm ui:contrast` passed all six skins, `pnpm lint:arch`, `pnpm lint`, docs 100/100, and strict typecheck across 30 projects passed.
+- Current verified remote `dev` HEAD at the layer/API CI check: `a7c3848aabbdbe3953249c371e4b9e68c6d7d691` (2026-11-05). Package UI plan remains in progress; no visual certification is claimed.
+
+### Package API and layer follow-up
+
+- The package API commit `c601271` was followed by `0baf916` after CI exposed that the two newly exported tool components were untracked and absent from the first commit. The repair succeeded in all checks.
+- Removed package-barrel self-imports in five MCP components in commit `f679081` (rebased atop concurrent `dev` commits). Descendant CI at `a7c3848` passed: [CI validation 41998797004](https://github.com/bjo163/A-L-L-A-H.COM/actions/runs/41998797004), [Quick CI 41998796889](https://github.com/bjo163/A-L-L-A-H.COM/actions/runs/41998796889), and [CodeQL 41998796801](https://github.com/bjo163/A-L-L-A-H.COM/actions/runs/41998796801).
+- A concurrent plan folder missing required `design.md` made the local docs gate fail at 95/100 before push; added the contract-compliant design artifact in commit `a7c3848`, after which docs returned to 100/100. A local-only stale derived contract index from unrelated untracked workspace contracts was regenerated for the pre-push check; it is not part of the UI commits.
+- The package API test now validates all export targets and public JS barrels; `pnpm ui:test` passes 49/49. `PageHero` and `StatusMessage` expose tested stable `data-slot` hooks. The README inventory and PUI/MU ledgers are synchronized in the pending package documentation commit.

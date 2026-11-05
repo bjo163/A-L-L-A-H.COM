@@ -45,8 +45,16 @@ export function StatusMessage({
         {markerGlyph[tone]}
       </span>
       <div className="mw-status__body">
-        {title && <p className="mw-status__title">{title}</p>}
-        {children && <div className="mw-status__message">{children}</div>}
+        {title && (
+          <p className="mw-status__title" data-slot="status-title">
+            {title}
+          </p>
+        )}
+        {children && (
+          <div className="mw-status__message" data-slot="status-message">
+            {children}
+          </div>
+        )}
         {action && <div className="mw-status__action">{action}</div>}
       </div>
     </div>

@@ -464,7 +464,7 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [ ] **MU-0929** Do not report full certification if any required app build, contrast, accessibility, visual or docs gate remains failing.
 
 ### P9.3 Documentation and delivery
-- [ ] **MU-0930** Update README current inventory to match actual public exports.
+- [x] **MU-0930** Update README current inventory to match actual public exports.
 - [ ] **MU-0931** Update BLUEPRINT implementation/gap statuses and remove stale claims.
 - [ ] **MU-0932** Update RESEARCH-AND-DIRECTION with adopted, deferred and rejected concepts plus evidence.
 - [ ] **MU-0933** Update DNA component mapping with implemented APIs and status.

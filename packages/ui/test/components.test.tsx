@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as React from 'react';
@@ -15,6 +16,43 @@ import { RouteShell } from '../src/blocks/route-shell';
 import { SectionHeading } from '../src/blocks/section-heading';
 import { StatePanel, type StatePanelKind } from '../src/blocks/state-panel';
 import { StatusMessage, type StatusTone } from '../src/blocks/status-message';
+import * as publicApi from '../src/index';
+import * as componentApi from '../src/components/index';
+import * as blockApi from '../src/blocks/index';
+import * as primitiveApi from '../src/primitives/index';
+import * as rawApi from '../src/raw/index';
+import * as sfxApi from '../src/sfx/index';
+import * as tokenApi from '../src/tokens/index';
+
+test('every package export target exists and shared entrypoints expose their APIs', () => {
+  const packageRoot = new URL('../', import.meta.url);
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    exports: Record<string, string | Record<string, string>>;
+  };
+
+  for (const [subpath, entry] of Object.entries(manifest.exports)) {
+    const targets = typeof entry === 'string' ? [entry] : Object.values(entry);
+    for (const target of targets) {
+      assert.ok(existsSync(new URL(target, packageRoot)), `${subpath} target ${target} must exist`);
+    }
+  }
+
+  for (const [name, entrypoint] of Object.entries({
+    root: publicApi,
+    components: componentApi,
+    blocks: blockApi,
+    primitives: primitiveApi,
+    raw: rawApi,
+    sfx: sfxApi,
+    tokens: tokenApi,
+  })) {
+    assert.ok(Object.keys(entrypoint).length > 0, `${name} entrypoint must expose exports`);
+  }
+
+  assert.ok('ToolExecutionForm' in componentApi);
+  assert.ok('ToolResultViewer' in componentApi);
+  assert.ok('SkinRoot' in publicApi);
+});
 
 const controls = [
   ['Input', (props: { required?: boolean }) => <Input {...props} />],
@@ -145,8 +183,9 @@ test('PageHero wires its title to the section name and skips empty slots', () =>
     />
   );
 
-  assert.match(plain, /<h1 class="mw-hero__title">Threshold<\/h1>/);
-  assert.match(plain, /<p class="mw-kicker mw-hero__kicker" data-slot="kicker">entry<\/p>/);
+  assert.match(plain, /<h1 class="mw-hero__title" data-slot="hero-title">Threshold<\/h1>/);
+  assert.match(plain, /<p class="mw-kicker mw-hero__kicker" data-slot="hero-kicker">entry<\/p>/);
+  assert.match(plain, /<p class="mw-hero__summary" data-slot="hero-summary">Cross over\.<\/p>/);
   assert.doesNotMatch(plain, /aria-labelledby/);
   assert.doesNotMatch(plain, /<figcaption/);
   assert.match(full, /<section class="mw-hero" data-slot="hero" data-media-layout="side" aria-labelledby="hero">/);
@@ -170,7 +209,7 @@ test('PageHero backdrop mode keeps one h1 and puts the caption over the art', ()
   );
 
   assert.match(markup, /class="mw-hero mw-hero--backdrop" data-slot="hero" data-media-layout="backdrop">/);
-  assert.match(markup, /<h2 class="mw-hero__title">One identity\.<\/h2>/);
+  assert.match(markup, /<h2 class="mw-hero__title" data-slot="hero-title">One identity\.<\/h2>/);
   assert.doesNotMatch(markup, /<h1/);
   assert.match(markup, /<figcaption class="mw-hero__caption"><span><\/span><span>L \/ 02<\/span><\/figcaption>/);
 });
@@ -214,6 +253,8 @@ for (const tone of tones) {
 
     assert.match(markup, new RegExp(`role="${expectedRole}"`));
     assert.match(markup, new RegExp(`data-tone="${tone}"`));
+    assert.match(markup, /data-slot="status-title">Session<\/p>/);
+    assert.match(markup, /data-slot="status-message">The hub did not answer\.<\/div>/);
     assert.match(markup, /<span class="mw-status__marker" aria-hidden="true">[^<]+<\/span>/);
     assert.match(markup, /The hub did not answer\./);
   });
