@@ -138,7 +138,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         return;
       }
       if (message.command === 'configureProvider') {
-        await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:a-l-l-a-h.allah-vscode-extension agentProvider');
+        await vscode.commands.executeCommand('allah.configureProviders');
         return;
       }
       if (message.command === 'stop') {

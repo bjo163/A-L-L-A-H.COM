@@ -266,6 +266,24 @@ Task persistence is opt-in and limited to a redacted 4,000-character prompt with
 | `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
 | `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
 
+## Unified agent provider setup
+
+The command-palette entry and Workspace Agent Configure button now use the same filtered settings page for `agentProvider`, model, and endpoint settings. Readiness and discovered models stay in the Workspace Agent; the Check provider action refreshes status after settings changes.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 59 tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, 28 host tests |
+| `pnpm extension:build` | Passed: standalone check and bundle |
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 28 commands and 8 views |
+| `pnpm --filter allah-vscode-extension check-package` | Passed: 6 packaged files |
+| `pnpm --filter allah-vscode-extension package` | Passed: VSIX created |
+| `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
+| `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
+
 ## Recent pushed commits
 
 - `2c32e9c` manifest contract coverage and architecture trace.

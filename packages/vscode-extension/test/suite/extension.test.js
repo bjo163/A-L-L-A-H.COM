@@ -150,6 +150,68 @@ suite('A-L-L-A-H.COM extension host', () => {
       }
     });
 
+    test('configures the agent provider from the same surface that reports readiness', async () => {
+      const originalExecuteCommand = vscode.commands.executeCommand.bind(vscode.commands);
+      const commands = [];
+      const provider = createLocalAgentProvider({
+        async checkAgentProvider() {
+          return {
+            ok: true,
+            provider: 'ollama',
+            model: 'host-local-model',
+            models: ['host-local-model'],
+            message: 'Ollama is ready with model "host-local-model".',
+          };
+        },
+      });
+      let receiveMessage;
+      const webview = {
+        cspSource: 'vscode-webview:',
+        options: {},
+        html: '',
+        onDidReceiveMessage(handler) {
+          receiveMessage = handler;
+          return { dispose() {} };
+        },
+        async postMessage(message) {
+          commands.push(message);
+          return true;
+        },
+      };
+      const originalExecute = vscode.commands.executeCommand;
+
+      try {
+        vscode.commands.executeCommand = async (command, ...args) => {
+          commands.push([command, ...args]);
+          if (command === 'workbench.action.openSettings') return true;
+          return originalExecuteCommand(command, ...args);
+        };
+        provider.resolveWebviewView({
+          webview,
+          onDidDispose() {
+            return { dispose() {} };
+          },
+        });
+        await receiveMessage({ command: 'ready' });
+        const status = commands.find((message) => message.type === 'provider-status');
+        assert.equal(status.ok, true);
+        assert.deepEqual(status.models, ['host-local-model']);
+
+        await receiveMessage({ command: 'configureProvider' });
+        assert.ok(commands.some((entry) => Array.isArray(entry) && entry[0] === 'allah.configureProviders'));
+        assert.ok(commands.some((entry) => Array.isArray(entry)
+          && entry[0] === 'workbench.action.openSettings'
+          && entry[1] === '@ext:a-l-l-a-h.allah-vscode-extension agentProvider'));
+        await originalExecuteCommand('allah.configureProviders');
+        assert.equal(
+          commands.filter((entry) => Array.isArray(entry) && entry[0] === 'workbench.action.openSettings').length,
+          2
+        );
+      } finally {
+        vscode.commands.executeCommand = originalExecute;
+      }
+    });
+
     test('repository index prefers the workspace root package manifest', async () => {
       const provider = createLocalAgentProvider({});
       const index = await provider.repositoryContext.build(vscode.workspace.workspaceFolders[0]);

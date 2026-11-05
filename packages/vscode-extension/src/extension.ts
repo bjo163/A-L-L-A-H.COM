@@ -684,7 +684,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
     }),
     vscode.commands.registerCommand('allah.configureProviders', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+      await vscode.commands.executeCommand(
+        'workbench.action.openSettings',
+        '@ext:a-l-l-a-h.allah-vscode-extension agentProvider'
+      );
     }),
     vscode.commands.registerCommand('allah.analyzeImpact', async () => {
       await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');

@@ -63,6 +63,9 @@ service to activate or manage local projects.
 - The Workspace Agent checks the selected provider before every session,
   discovers Ollama models from `/api/tags`, and lets you select an installed
   model. It never switches providers silently.
+- `LLM: Configure Providers` and the Workspace Agent's Configure button open
+  the same extension-filtered agent settings. Readiness and model selection
+  stay in the Workspace Agent; use Check provider there after changing settings.
 
 ## AI providers and offline behavior
 
