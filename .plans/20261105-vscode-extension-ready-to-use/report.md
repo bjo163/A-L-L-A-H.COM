@@ -124,11 +124,11 @@ The extension host verifies that rejected or cancelled approval never starts a c
 
 ## Timeline recovery host evidence
 
-The host test hydrates a persisted running session, verifies it is presented as blocked with a `mission.interrupted` event, and confirms the provider is not called automatically. Actual VS Code process-restart recovery and an explicit resume/replay flow remain open under VSC-019.
+Host tests hydrate a persisted running session as blocked with a `mission.interrupted` event and confirm the provider is not called automatically. Replay attempts for completed or interrupted remote missions return their existing state without provider work. Actual VS Code process-restart recovery and a user-visible local resume flow remain open under VSC-019 because local prompts are not persisted.
 
 | Command | Result |
 |---|---|
-| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, eighteen host tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, nineteen host tests |
 
 ## Roadmap claim audit
 
@@ -137,6 +137,7 @@ The P1/P2 checklist now distinguishes tested utilities from shipped workflows. V
 ## Limitations
 
 - Automated host coverage verifies activation, workspace roots, provider routing, edit approval, validation approval, cancellation, and repair bounds. Manual installed-webview click-through, live Ollama execution, and persisted timeline recovery remain unverified.
+- The latest `pnpm verify:fast` is blocked by an unrelated parse error in `packages/arsy-orm/src/migrator.ts:612`. `pnpm docs:check` is blocked by the unrelated `.plans/20261105-cross-app-identity-federation` plan missing its required `rules.md`; neither file was changed for this extension batch.
 - Ollama live acceptance remains environment-dependent; no running Ollama endpoint/model was available during this pass.
 - The existing Vitest-only provider service tests are not part of the extension package dependency graph and were not claimed as passed.
 - P1/P2 roadmap work remains intentionally open.

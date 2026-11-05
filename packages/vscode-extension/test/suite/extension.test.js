@@ -109,6 +109,56 @@ suite('A-L-L-A-H.COM extension host', () => {
       assert.equal(providerCalls, 0);
     });
 
+    test('does not re-execute completed or interrupted remote missions', async () => {
+      const timestamp = new Date().toISOString();
+      let providerCalls = 0;
+      const provider = createLocalAgentProvider({
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent() {
+          providerCalls += 1;
+          return 'must not replay';
+        },
+      });
+      await provider.context.globalState.update('allah.localAgent.sessions', [
+        {
+          id: 'remote-completed-session',
+          mode: 'code',
+          state: 'completed',
+          startedAt: timestamp,
+          updatedAt: timestamp,
+          remoteMissionId: 'remote-completed',
+          timeline: [],
+        },
+        {
+          id: 'remote-interrupted-session',
+          mode: 'code',
+          state: 'running',
+          startedAt: timestamp,
+          updatedAt: timestamp,
+          remoteMissionId: 'remote-interrupted',
+          timeline: [],
+        },
+      ]);
+
+      assert.equal(
+        await provider.executeRemoteMission(
+          { id: 'remote-completed', mode: 'code', goal: 'repeat completed work' },
+          new AbortController().signal
+        ),
+        'completed'
+      );
+      assert.equal(
+        await provider.executeRemoteMission(
+          { id: 'remote-interrupted', mode: 'code', goal: 'resume interrupted work' },
+          new AbortController().signal
+        ),
+        'blocked'
+      );
+      assert.equal(providerCalls, 0);
+    });
+
     test('refreshes plans, opens artifacts, and updates task status', async () => {
       await vscode.commands.executeCommand('allah.refreshPlans');
       const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
