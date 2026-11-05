@@ -1,7 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Input, Textarea, Select, Checkbox } from '@moonwitness/ui';
+import { Input } from './input';
+import { Textarea } from './textarea';
+import { Select } from './select';
+import { Checkbox } from './checkbox';
 import type { ToolParameter } from '@moonwitness/types';
 import { cn } from '../lib/utils';
 

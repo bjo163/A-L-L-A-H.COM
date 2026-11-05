@@ -15,6 +15,7 @@ This matrix links the package-specific execution tasks to the canonical Moon UI 
 | Repository/package baseline | live repo, package manifests, CI | PUI-0001–0021 | MU-0001–0031 | HEAD, status, source inventory, command output, overlap record |
 | Component/primitive ownership | `src/components`, `src/blocks`, `src/primitives`, root/subpath barrels | PUI-0018 | MU-0008–0010 | Owner/export map in `package-inventory.md`; route/business boundary review |
 | MCP tool UI exports | `src/components/ToolExecutionForm.tsx`, `ToolResultViewer.tsx`, component barrel | PUI-0101–0104, 0112 | MU-0930–0932 | Named public exports and successful strict package typecheck; UI test suite |
+| Internal dependency direction | imports under `src/components`, `src/blocks`, package boundary checks | PUI-0110, 0118 | MU-0008–0010, MU-0930–0942 | no package self-imports or app/backend imports; architecture gate |
 | Public API/exports | package.json, src/index.ts, subpath indexes | PUI-0101–0112 | MU-0930–0942 | export tests, consumer import/build evidence |
 | Layer boundaries | README architecture table, source imports | PUI-0113–0119 | MU-0008–0010, MU-0930–0942 | dependency/architecture checks |
 | Skin runtime | src/skins, SkinRoot, SkinScope | PUI-0201–0208 | MU-0019, MU-0101–0128, MU-0801–0809 | SSR/hydration tests, scope isolation |
@@ -51,6 +52,8 @@ This matrix links the package-specific execution tasks to the canonical Moon UI 
 Phase 0 ownership and baseline classification are complete from the live source inventory, architecture search, six DNA specifications, root engineering contracts, and package documentation. `package-inventory.md` records the 57-source/5-test inventory, complete file paths, app consumers and entrypoints. App route/data/auth/persistence ownership is documented in README §6 and BLUEPRINT §0.2 and the repository architecture check passes.
 
 The package-only API gap found during the baseline was that existing `ToolExecutionForm` and `ToolResultViewer` source modules were missing from `src/components/index.ts`. Both are now included in the public component surface. They accept provided data/callbacks and do not own provider transport. Source-level feature tests exist but are excluded from `pnpm ui:test` and depend on absent Vitest/Testing Library packages; do not claim those tests pass or credit feature-level test coverage until the test harness is reconciled.
+
+The export audit also found five tool UI modules importing their own library through `@moonwitness/ui`, creating a package-barrel cycle. Those modules now import sibling components or the shared status block directly. `rg "@moonwitness/ui" packages/ui/src` returns no package self-imports; package typecheck, `pnpm ui:test` and lint pass.
 
 When a PUI task is verified:
 1. Record exact source paths and test/manual evidence here or in report.

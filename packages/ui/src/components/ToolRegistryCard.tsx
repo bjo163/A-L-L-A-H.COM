@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Button } from '@moonwitness/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './card';
+import { Badge } from './badge';
+import { Button } from './button';
 import type { McpTool } from '@moonwitness/types';
 import { cn } from '../lib/utils';
 

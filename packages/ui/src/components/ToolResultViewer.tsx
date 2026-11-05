@@ -1,15 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-  Button,
-  StatusMessage,
-} from '@moonwitness/ui';
+import { Card, CardHeader, CardTitle, CardContent } from './card';
+import { Badge } from './badge';
+import { Button } from './button';
+import { StatusMessage } from '../blocks/status-message';
 import type { McpToolCallResult } from '@moonwitness/types';
 
 export interface ToolResultViewerProps {

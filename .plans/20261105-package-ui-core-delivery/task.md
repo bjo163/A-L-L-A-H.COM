@@ -68,7 +68,7 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [ ] **PUI-0107** Document public API stability and the policy for adding, deprecating and removing exports.
 - [x] **PUI-0108** Verify package metadata, React 19 peer dependencies and workspace dependency boundaries.
 - [x] **PUI-0109** Verify package source format remains TypeScript/TSX and ESM as currently contracted.
-- [ ] **PUI-0110** Detect circular dependencies and unintended imports from app/backend packages.
+- [x] **PUI-0110** Detect circular dependencies and unintended imports from app/backend packages.
 - [ ] **PUI-0111** Verify tree-shaking and CSS import behavior using the actual consumer build pipeline.
 - [~] **PUI-0112** Add export-contract tests for every supported public entrypoint.
 

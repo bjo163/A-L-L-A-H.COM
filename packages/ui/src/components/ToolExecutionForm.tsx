@@ -1,16 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  Button,
-  Textarea,
-  StatusMessage,
-} from '@moonwitness/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './card';
+import { Button } from './button';
+import { Textarea } from './textarea';
+import { StatusMessage } from '../blocks/status-message';
 import type { McpTool } from '@moonwitness/types';
 
 export interface ToolExecutionFormProps {
