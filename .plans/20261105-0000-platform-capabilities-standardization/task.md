@@ -211,7 +211,7 @@ The old T-001 through T-010 detail sections have been removed from this executio
 - Phase 2 (Capability Implementation) → Phase 3 (Guardrails) → Phase 4 (BACKLOG Updates). UI skin integration is tracked separately by the Moon UI Master Consolidation plan.
 
 ### Parallel Dependencies
-- Within Phase 1: All 10 applications independent (parallel)
+- UI skin integration is tracked only in the Moon UI Master Consolidation plan; this plan has no skin integration phase.
 - Within Phase 2: Capabilities 6-13 independent (parallel); Capability 4 depends on brainstorming output
 - Within Phase 3: Sequential (all three guardrails in same section)
 - Within Phase 4: Independent status updates (parallel)
