@@ -53,6 +53,62 @@ suite('A-L-L-A-H.COM extension host', () => {
   });
 
   if (Number(process.env.ALLAH_EXPECTED_WORKSPACE_ROOTS) === 1) {
+    test('restores interrupted sessions as blocked without restarting provider work', async () => {
+      const timestamp = new Date().toISOString();
+      const session = {
+        id: 'interrupted-host-session',
+        mode: 'code',
+        state: 'running',
+        startedAt: timestamp,
+        updatedAt: timestamp,
+        timeline: [],
+      };
+      let providerCalls = 0;
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent() {
+          providerCalls += 1;
+          return 'must not resume automatically';
+        },
+      };
+      const provider = createLocalAgentProvider(client);
+      const stateKey = 'allah.localAgent.sessions';
+      await provider.context.globalState.update(stateKey, [session]);
+      const messages = [];
+      let receiveMessage;
+      const webview = {
+        cspSource: 'vscode-webview:',
+        options: {},
+        html: '',
+        onDidReceiveMessage(handler) {
+          receiveMessage = handler;
+          return { dispose() {} };
+        },
+        async postMessage(message) {
+          messages.push(message);
+          return true;
+        },
+      };
+
+      provider.resolveWebviewView({
+        webview,
+        onDidDispose() {
+          return { dispose() {} };
+        },
+      });
+      await receiveMessage({ command: 'ready' });
+
+      const history = messages.find((message) => message.type === 'history');
+      assert.equal(history.sessions[0].state, 'blocked');
+      assert.ok(history.sessions[0].timeline.some((event) => event.type === 'mission.interrupted'));
+      assert.ok(messages.some((message) =>
+        message.type === 'mission-restored' && message.state === 'blocked'
+      ));
+      assert.equal(providerCalls, 0);
+    });
+
     test('refreshes plans, opens artifacts, and updates task status', async () => {
       await vscode.commands.executeCommand('allah.refreshPlans');
       const root = vscode.workspace.workspaceFolders[0].uri.fsPath;

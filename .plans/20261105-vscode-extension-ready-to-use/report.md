@@ -122,6 +122,14 @@ The extension host verifies that rejected or cancelled approval never starts a c
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, seventeen host tests |
 | `pnpm extension:test` | Passed: 49 tests, including the bounded repair policy |
 
+## Timeline recovery host evidence
+
+The host test hydrates a persisted running session, verifies it is presented as blocked with a `mission.interrupted` event, and confirms the provider is not called automatically. Actual VS Code process-restart recovery and an explicit resume/replay flow remain open under VSC-019.
+
+| Command | Result |
+|---|---|
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, eighteen host tests |
+
 ## Roadmap claim audit
 
 The P1/P2 checklist now distinguishes tested utilities from shipped workflows. VSC-058, 059, 061, 063-067, and 069-074 remain pending because their helpers are not consumed by a user-facing or runtime workflow. Their unit tests remain useful, but they are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.
