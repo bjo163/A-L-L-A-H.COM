@@ -6,9 +6,10 @@ target/
 .env
 .env.local
 data/
+!addons/mw_notify/data/
+!addons/mw_notify/data/*.ts
 .next/
 *.tsbuildinfo
 *.err
 *.out
 apps/server/
-
