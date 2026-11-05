@@ -236,6 +236,16 @@ function checkCiAndRelease() {
   const appCi = read(join(root, '.github/workflows/ci-dev.yml'));
   const sbom = read(join(root, '.github/workflows/sbom.yml'));
   const packageScripts = readJson(join(root, 'package.json')).scripts;
+  for (const [workflow, contents] of [['ci-dev.yml', appCi], ['platform-contracts.yml', ci]]) {
+    for (const event of ['push', 'pull_request']) {
+      if (!new RegExp(`^  ${event}:\\r?\\n    branches: \\[dev, main\\]`, 'm').test(contents)) {
+        failures.push(`${workflow}: ${event} must validate both dev and main`);
+      }
+    }
+  }
+  if (!appCi.includes('pnpm --filter @allah/arsy-orm test')) {
+    failures.push('ci-dev.yml: ORM model and persistence tests are missing');
+  }
   for (const app of apps) {
     const buildScript = app === 'arsy' ? null : app === 'e-isp' ? 'esp:build' : `${app}:build`;
     const buildCommand = app === 'arsy' ? 'pnpm --filter @allah/arsy build' : `pnpm ${buildScript}`;

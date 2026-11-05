@@ -57,7 +57,8 @@ Never report skipped checks as passing.
 
 - `pnpm verify:fast` is the local pre-push check: documentation contract, architecture invariants, ESLint on changed files, and full TypeScript project checks with incremental build metadata.
 - `pnpm verify:release` runs all local checks, tests, scaffold validation, and workspace builds.
-- CI remains authoritative for promotion and records elapsed time for each gate. Fast local checks do not replace required CI checks.
+- GitHub CI runs quality and platform-contract gates on pushes and pull requests targeting `dev` or `main`; the `dev` push promotion flow remains unchanged. Fast local checks do not replace CI.
+- GitHub branch protection and rulesets are not configured, so workflow checks run but are not enforced as merge requirements.
 
 ## Verification Baseline (2026-11-04)
 
