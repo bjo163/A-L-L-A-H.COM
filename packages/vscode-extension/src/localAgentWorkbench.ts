@@ -27,6 +27,7 @@ import {
   type MissionTimelineEvent,
 } from './missionTimeline';
 import { RepositoryContextService } from './repositoryContext';
+import { decomposeTask } from './taskDecomposer';
 
 interface LocalAgentSession {
   id: string;
@@ -365,9 +366,69 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       await this.persistSession(session);
       const workspaceContext = await this.getWorkspaceContext(folder);
       await this.postMissionEvent(session, 'context.selected', 'Workspace context selected');
+      const plan = mode === 'code' || mode === 'debug' || mode === 'autopilot'
+        ? decomposeTask(trimmedPrompt)
+        : [];
+      let approvedPlan: string | undefined;
+      if (plan.length > 1) {
+        approvedPlan = await this.client.completeAgent(
+          buildAgentSystemPrompt('plan'),
+          [
+            'Create a concise implementation plan with one numbered item per supplied task.',
+            'Do not propose edits or commands. Include observable verification steps.',
+            `User task: ${trimmedPrompt}`,
+            `Detected tasks:\n${plan.map((task, index) => `${index + 1}. ${task.title}`).join('\n')}`,
+            workspaceContext,
+          ].join('\n\n'),
+          controller.signal
+        );
+        if (controller.signal.aborted) {
+          session.state = 'cancelled';
+          await this.postMissionEvent(session, 'mission.cancelled', 'Mission cancelled');
+          this.post({ type: 'cancelled' });
+          return session.state;
+        }
+        if (!approvedPlan.trim()) {
+          throw new Error('The model returned an empty implementation plan.');
+        }
+        if (approvedPlan.length > 4_000) {
+          throw new Error('The implementation plan exceeds the 4,000-character review limit.');
+        }
+        await this.postMissionEvent(
+          session,
+          'plan.review',
+          'Implementation plan ready',
+          approvedPlan.slice(0, 500)
+        );
+        const approval = await vscode.window.showWarningMessage(
+          'Review the implementation plan before requesting edits.',
+          {
+            modal: true,
+            detail: approvedPlan.slice(0, 4_000),
+          },
+          'Continue with this plan'
+        );
+        if (approval !== 'Continue with this plan') {
+          session.state = 'blocked';
+          await this.postMissionEvent(session, 'plan.rejected', 'Implementation plan rejected');
+          this.post({ type: 'blocked', message: 'The implementation plan was not approved. No edit proposal was requested.' });
+          return session.state;
+        }
+        if (controller.signal.aborted) {
+          session.state = 'cancelled';
+          await this.postMissionEvent(session, 'mission.cancelled', 'Mission cancelled');
+          this.post({ type: 'cancelled' });
+          return session.state;
+        }
+        await this.postMissionEvent(session, 'plan.approved', 'Implementation plan approved');
+      }
       const response = await this.client.completeAgent(
         buildAgentSystemPrompt(mode),
-        `${trimmedPrompt}${workspaceContext}`,
+        [
+          trimmedPrompt,
+          ...(approvedPlan ? [`Follow this user-approved implementation plan:\n${approvedPlan}`] : []),
+          workspaceContext,
+        ].join('\n\n'),
         controller.signal
       );
       if (controller.signal.aborted) {

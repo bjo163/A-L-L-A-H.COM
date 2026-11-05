@@ -49,7 +49,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 ### 04 Agent execution
 - [x] VSC-036 Document/test Ask, Plan, Ideate, Code, Debug and Autopilot boundaries. `agentPolicy.test.ts` verifies read-only modes and Autopilot boundaries.
 - [x] VSC-037 Verify bounded context and sensitive-file exclusions.
-- [ ] VSC-038 Enforce plan-first execution for multi-step changes.
+- [x] VSC-038 Enforce plan-first execution for multi-step changes. Code, Debug, and Autopilot prompts decomposed into multiple actions receive a model-generated plan; the user must approve it before an edit proposal is requested. Rejection or cancellation makes no edit request.
 - [x] VSC-039 Enforce proposed diff, approval and conflict detection.
 - [x] VSC-040 Propagate cancellation through provider and tools. Provider requests accept AbortSignal with a bounded timeout; agent and validation runs abort their active controllers.
 - [x] VSC-041 Restrict tools/terminal commands through policy engine.
@@ -65,7 +65,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 
 ### 09 Release 0.4.0
 - [x] VSC-049 Run build, typecheck, lint and focused tests. Extension build, strict typecheck, source lint, unit tests, and host tests passed; repository gates are blocked by unrelated dirty `packages/arsy-orm/src/migrator.ts:612` parsing and a missing `rules.md` in another plan.
-- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 21 tests total.
+- [x] VSC-050 Run extension-host suite and record environment/results. Three VS Code 1.144.1 host launches passed with 24 tests total.
 - [x] VSC-051 Run security and standalone checks.
 - [x] VSC-052 Inspect VSIX contents and monorepo imports. Package inspection confirms only manifest, README, LICENSE, CONTRACT, and bundled dist are shipped; development tests are excluded.
 - [!] VSC-053 VSIX installed in an isolated profile, but full packaged-extension user-journey click-through remains unverified; host interaction tests currently exercise the development extension.

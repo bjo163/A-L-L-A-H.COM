@@ -47,6 +47,9 @@ service to activate or manage local projects.
   list.
 - Code and Debug sessions open proposed diffs before applying edits. Files are
   checked again before apply so external changes cannot be overwritten.
+- Multi-step Code, Debug, and Autopilot requests show an implementation plan
+  for approval before requesting an edit proposal. Code and Debug edits still
+  require their normal separate approval.
 - The Workspace Agent checks the selected provider before every session,
   discovers Ollama models from `/api/tags`, and lets you select an installed
   model. It never switches providers silently.

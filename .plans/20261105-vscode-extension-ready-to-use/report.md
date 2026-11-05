@@ -107,6 +107,20 @@ The extension host ran a Code-mode edit through the real `MoonWitnessClient` aga
 | `pnpm --filter allah-vscode-extension typecheck` | Passed |
 | `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
 
+## Plan-first execution for multi-step edits
+
+Code, Debug, and Autopilot requests are split into bounded actions. When multiple actions are detected, the selected provider must return an implementation plan first. The plan is shown in a native VS Code modal and must be approved before the agent requests an edit proposal. Cancellation during review prevents the follow-up provider request. Approved edits continue through the existing diff and edit-approval checks. This checkpoint does not replace the required user approval for normal Code or Debug edits.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 53 tests, including action decomposition coverage |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated VS Code 1.144.1 launches, twenty-four host tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+
+The host tests exercise plan rejection, approval, prompt handoff, and cancellation. The native modal is tested through VS Code's extension host; a manual UI click-through was not performed.
+
 ## SecretStorage enforcement
 
 Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set API Key` command remains the supported entry point, while activation retains a one-time migration path for previously configured values and removes them from settings. Host acceptance verified that the stored value is absent from configuration and is sent only to the configured local mock gateway as `x-virtual-key`.
@@ -156,7 +170,7 @@ Host tests hydrate a persisted running session as blocked with a `mission.interr
 
 | Command | Result |
 |---|---|
-| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty-one host tests |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty-four host tests |
 
 ## Roadmap claim audit
 

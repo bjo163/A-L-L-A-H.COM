@@ -400,6 +400,130 @@ suite('A-L-L-A-H.COM extension host', () => {
       }
     });
 
+    test('requires plan approval before a multi-step edit proposal', async () => {
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const warningCalls = [];
+      const modelCalls = [];
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent(system, prompt) {
+          modelCalls.push({ system, prompt });
+          return '1. Update the implementation.\n2. Add a focused test.\nVerify both with the test suite.';
+        },
+      };
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = async (message) => {
+          warningCalls.push(message);
+          return undefined;
+        };
+        const provider = createLocalAgentProvider(client);
+        assert.equal(await provider.run('code', 'Update the implementation and add a focused test.'), 'blocked');
+        assert.equal(modelCalls.length, 1);
+        assert.ok(modelCalls[0].system.includes('Do not propose file edits.'));
+        assert.ok(warningCalls.some((message) => message.includes('implementation plan')));
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+      }
+    });
+
+    test('passes only an approved multi-step plan to the edit proposal request', async () => {
+      const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const filePath = path.join(root, 'src', 'approved-plan-flow.ts');
+      const original = 'const plan = "pending";\n';
+      await fs.writeFile(filePath, original);
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const modelCalls = [];
+      const plan = '1. Change the status value.\n2. Verify the resulting code.';
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent(system, prompt) {
+          modelCalls.push({ system, prompt });
+          if (system.includes('Do not propose file edits.')) return plan;
+          return JSON.stringify({
+            response: 'Updated the status.',
+            edits: [{
+              path: 'src/approved-plan-flow.ts',
+              oldText: original,
+              newText: 'const plan = "approved";\n',
+            }],
+          });
+        },
+      };
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = async (message) =>
+          message.includes('implementation plan')
+            ? 'Continue with this plan'
+            : message.startsWith('Apply ') ? 'Apply changes' : undefined;
+        const provider = createLocalAgentProvider(client);
+        assert.equal(
+          await provider.run('code', 'Change the status value and verify the resulting code.'),
+          'completed'
+        );
+        assert.equal(modelCalls.length, 2);
+        assert.ok(modelCalls[1].prompt.includes(`user-approved implementation plan:\n${plan}`));
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        assert.equal(document.getText(), 'const plan = "approved";\n');
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+      }
+    });
+
+    test('cancels a plan review without requesting edits', async () => {
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const modelCalls = [];
+      let releaseReview;
+      let notifyReview;
+      const reviewRequested = new Promise((resolve) => {
+        notifyReview = resolve;
+      });
+      const review = new Promise((resolve) => {
+        releaseReview = resolve;
+      });
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent(system, prompt) {
+          modelCalls.push({ system, prompt });
+          return '1. Update the implementation.\n2. Verify the change.';
+        },
+      };
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = () => {
+          notifyReview();
+          return review;
+        };
+        const provider = createLocalAgentProvider(client);
+        const events = [];
+        provider.post = (message) => events.push(message);
+        const run = provider.run('code', 'Update the implementation and verify the change.');
+        await reviewRequested;
+        provider.activeRun.abort();
+        releaseReview('Continue with this plan');
+        assert.equal(await run, 'cancelled');
+        assert.equal(modelCalls.length, 1);
+        assert.ok(events.some((event) => event.type === 'cancelled'));
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+      }
+    });
+
     test('applies proposed edits only after approval', async () => {
       const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
       const filePath = path.join(root, 'src', 'agent-approval-accepted.ts');
