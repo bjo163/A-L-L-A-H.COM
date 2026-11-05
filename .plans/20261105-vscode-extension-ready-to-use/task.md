@@ -78,8 +78,8 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-058 Context memory with explicit scope, retention and controls. Added bounded workspace/session memory with expiry, clear, forget, and workspace isolation.
 - [ ] VSC-059 AI task decomposer with small tasks and acceptance criteria.
 - [x] VSC-060 Workspace-aware mission templates. Added deterministic matching against indexed workspace files and framework metadata.
-- [ ] VSC-061 Dependency-aware scheduling and progress synchronization.
-- [ ] VSC-062 Documentation drift detection and proposed updates.
+- [x] VSC-061 Dependency-aware scheduling and progress synchronization. Added a typed task graph readiness and progress utility.
+- [x] VSC-062 Documentation drift detection and proposed updates. Added metadata-only drift findings with actionable suggestions.
 
 ## P1 — 0.6.0
 - [ ] VSC-063 Define agent roles, tools, inputs, outputs and capabilities.
