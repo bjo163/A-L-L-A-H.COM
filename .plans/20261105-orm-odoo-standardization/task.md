@@ -41,7 +41,7 @@ Legend for this reconciliation: `[/]` = mechanism shipped + unit-tested, but the
 
 ## S4 Placement and adoption
 - [/] S4.1 ModelDefinition.constraints evaluated in write tx (create/update/delete), rollback on throw; tests pass. The migration of project.task legal_hold + ir.attachment retention into constraints is an app/addon adoption step, not in this commit (D-S4.1, FR-011, AC-11)
-- [ ] S4.2 /v1/models and /v1/gateway/providers via BaseRepository catalogScope + active filters; raw SELECT removed; scoping tests (D-S4.2, FR-009, AC-9) — **deferred: JOIN-shaped catalog reads; live AI-serving path, needs gateway test harness**
+- [x] S4.2 /v1/models and /v1/gateway/providers read through BaseRepository (systemScope catalog reads); the healthy-provider join is reproduced as an `is_healthy` filter + JS provider map, the providers read uses a projection that excludes `encrypted_api_key`, and ordering is `priority ASC`; raw `dbEngine.query` removed from both handlers; gateway suite green incl. `catalog_scoping.test.mjs` (D-S4.2, FR-009, AC-9)
 - [ ] S4.3 Route thinning tranche 1: project.task + storage retention routes delegate to constraints/services (D-S4.3) — **deferred with S4.1 adoption**
 - [x] S4.4 sdui view metadata consumes fieldsGet (relation + selection reach the renderer); displayNameSpec on project.task/project.project; metadata contract test (fields_get_metadata.test.mjs) — landed in 343df10 (D-S4.4, FR-012, AC-12)
 - [ ] S4.verify Hub suites green; retention fail-closed regression intact; report.md evidence

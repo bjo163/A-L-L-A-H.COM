@@ -35,7 +35,7 @@ while cross-package *adoption* steps remain logged as deferred with their owners
 | AC-6 sync redaction | met | fail-closed regex patterns + `MODEL_SYNC_EXCLUDE`; sync_redaction tests |
 | AC-7 translation model key | met | `ir.translation.model_name` column + model-filtered lookup with legacy fallback |
 | AC-8 increment/keyset parity | met | incrementById recomputes stored computes; findKeyset shares the post-read pipeline |
-| AC-9 gateway catalog via repo | **deferred** | see Deviations — `catalogRepo` helper added but `/v1/models` + `/v1/gateway/providers` still raw JOIN reads; live AI-serving path, owner-paced |
+| AC-9 gateway catalog via repo | met | `/v1/models` + `/v1/gateway/providers` read via `catalogRepo().find({ systemScope })`; healthy-provider join reproduced as an `is_healthy` filter + provider map; providers projection excludes `encrypted_api_key`; `priority ASC`; raw `dbEngine.query` removed. Guarded by `catalog_scoping.test.mjs` (gateway suite 21/21 green) |
 | AC-10 audit vs enforce + superuser | met | `resolveAclMode` default `enforce` (unset fails closed; `audit`/`off` explicit opt-ins); `AccessDeniedError` in enforce; `logger.warn{acl_would_deny}` in audit; system + `globalAccess` bypass — covered by access_control tests (S3.5 landed) |
 | AC-11 retention as one constraint | **partial** | the `constraints` mechanism + rollback tests ship; migrating `legal_hold`/retention into `project.task`/`ir.attachment` and deleting route duplicates is an adoption step |
 | AC-12 fieldsGet → sdui | met | sdui view fallback built from `BaseRepository.fieldsGet()` (relation + selection reach the renderer); `displayNameSpec` on project.task/project.project; `fields_get_metadata.test.mjs` contract test — landed in 343df10 |
@@ -66,10 +66,11 @@ while cross-package *adoption* steps remain logged as deferred with their owners
 1. ~~**S3.5 enforce flip**~~ — **landed**. Owner cleared the C-3/C-4 gate; `resolveAclMode()` now defaults to
    `enforce` (unset fails closed, `audit`/`off` remain explicit opt-ins). The base seed grants (group_id 0) cover the
    core route surface; models lacking any grant are now default-deny by design.
-2. **S4.2 gateway catalog** — `/v1/models` and `/v1/gateway/providers` (`llm-gateway/src/index.ts:92,95,652`) still
-   read via raw `dbEngine.query` JOINs. A `catalogRepo(modelName)` helper was added (`index.ts:76`) but is not yet
-   wired into those handlers; the conversion needs an expand+filter rewrite that preserves the current unscoped
-   global-catalog behavior, plus a gateway catalog scoping test. It is a live AI-serving path, so it is owner-paced.
+2. ~~**S4.2 gateway catalog**~~ — **landed**. `/v1/models` and `/v1/gateway/providers` now read through
+   `BaseRepository.find` (`systemScope`); the raw `dbEngine.query` JOINs are gone. The credential envelope
+   (`encrypted_api_key`) is excluded by an explicit projection, and the healthy-provider scoping + `priority ASC`
+   ordering are reproduced in the handlers and locked by `catalog_scoping.test.mjs`. `/v1/gateway/usage` still uses a
+   LEFT JOIN (analytics, out of S4.2's named scope).
 3. **S4.1/S4.3 legal_hold + retention adoption** — the constraint mechanism is ready; wiring `project.task` and
    `ir.attachment` to it and removing the duplicated route checks belongs with route thinning (owner-paced, needs hub).
 4. ~~**S4.4 fieldsGet → sdui**~~ — **landed** in 343df10: the sdui view fallback is built from

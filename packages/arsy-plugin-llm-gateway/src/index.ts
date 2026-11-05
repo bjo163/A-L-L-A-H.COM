@@ -88,30 +88,44 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   // GET /v1/models (Universal Model Catalog)
   fastify.get(`${prefix}/models`, async () => {
     try {
-      const models = (await dbEngine.query(
-        'SELECT m.model_id, m.name, p.slug as provider_slug, p.name as provider_name FROM ai_model m JOIN ai_provider p ON m.provider_id = p.id WHERE p.is_healthy = true'
-      )) as Array<{ model_id: string; name: string; provider_slug: string; provider_name: string }>;
+      // Platform catalog, read through the repository rather than a raw JOIN.
+      // systemScope matches the endpoint's existing unscoped global-catalog
+      // behavior; a model reaches the list only when its provider is healthy,
+      // reproducing the prior `INNER JOIN ai_provider ... is_healthy = true`.
+      const scope = { systemScope: true } as const;
 
-      const routes = (await dbEngine.query('SELECT alias, name FROM ai_route')) as Array<{
-        alias: string;
-        name: string;
-      }>;
+      const healthy = await catalogRepo('ai.provider').find({
+        scope,
+        filters: [{ field: 'is_healthy', operator: '=', value: true }],
+        fields: ['id', 'slug', 'name'],
+      });
+      const providerById = new Map<number, { slug: string; name: string }>();
+      for (const p of healthy) {
+        providerById.set(Number(p.id), { slug: String(p.slug), name: String(p.name) });
+      }
+
+      const models = await catalogRepo('ai.model').find({ scope });
+      const routes = await catalogRepo('ai.route').find({ scope, fields: ['alias', 'name'] });
 
       const data = [
         ...routes.map((r) => ({
-          id: r.alias,
+          id: String(r.alias),
           object: 'model',
           created: Math.floor(Date.now() / 1000),
           owned_by: 'moonwitness-router',
-          displayName: r.name,
+          displayName: String(r.name),
         })),
-        ...models.map((m) => ({
-          id: m.model_id,
-          object: 'model',
-          created: Math.floor(Date.now() / 1000),
-          owned_by: m.provider_slug,
-          displayName: `${m.name} (${m.provider_name})`,
-        })),
+        ...models.flatMap((m) => {
+          const provider = providerById.get(Number(m.provider_id));
+          if (!provider) return [];
+          return [{
+            id: String(m.model_id),
+            object: 'model',
+            created: Math.floor(Date.now() / 1000),
+            owned_by: provider.slug,
+            displayName: `${String(m.name)} (${provider.name})`,
+          }];
+        }),
       ];
 
       return ok({
@@ -645,12 +659,17 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   });
 
   // GET /v1/gateway/providers
-  // Platform configuration, and never the stored credential envelope.
+  // Platform configuration, and never the stored credential envelope. The
+  // projection is the guard: it lists only the non-secret columns, so the
+  // repository read cannot surface `encrypted_api_key`.
   fastify.get(`${prefix}/gateway/providers`, async () => {
     try {
-      const providers = await dbEngine.query(
-        'SELECT id, company_id, name, slug, provider_type, base_url, priority, is_healthy FROM ai_provider ORDER BY priority ASC'
-      );
+      const providers = await catalogRepo('ai.provider').find({
+        scope: { systemScope: true },
+        fields: ['id', 'company_id', 'name', 'slug', 'provider_type', 'base_url', 'priority', 'is_healthy'],
+        orderBy: 'priority',
+        orderDirection: 'ASC',
+      });
       return ok(providers);
     } catch (err: any) {
       return fail('PROVIDERS_FETCH_ERROR', err.message);
