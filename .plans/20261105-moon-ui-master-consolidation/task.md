@@ -35,7 +35,7 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [ ] **MU-0006** Read `AGENTS.md`, `AUTONOMOUS.md`, `DOCUMENTATION_CONTRACT.md`, `QUALITY.md`, `DESIGN.md`, `DECISIONS.md` and relevant DNA contracts.
 - [ ] **MU-0007** Read all four Moon UI source documents and extract every requirement into `coverage-matrix.md`.
 - [x] **MU-0008** Enumerate all package source files, exports, tests, app consumers, fonts, image/audio assets and scripts from the live tree.
-- [ ] **MU-0009** Search all frontend apps for direct icon-library imports, app-local design tokens, duplicate controls and private `mw-*` selectors.
+- [x] **MU-0009** Search all frontend apps for direct icon-library imports, app-local design tokens, duplicate controls and private `mw-*` selectors.
 - [x] **MU-0010** Record the current root build/test/lint/typecheck/docs commands from `package.json`; do not invent scripts.
 - [x] **MU-0011** Run baseline `pnpm ui:test` and record exact output.
 - [x] **MU-0012** Run baseline `pnpm ui:contrast` and record exact output.

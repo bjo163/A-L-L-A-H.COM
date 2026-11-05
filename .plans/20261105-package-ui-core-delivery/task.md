@@ -45,8 +45,8 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [ ] **PUI-0015** Classify each package capability as implemented, partial, proposed, tested, visually verified, integrated or blocked.
 
 ### P0.2 Ownership and overlap
-- [ ] **PUI-0016** Confirm `@moonwitness/ui` is the sole shared visual and interaction package.
-- [ ] **PUI-0017** Search for duplicate token registries, icon systems, motion providers, SFX engines and asset registries before proposing changes.
+- [x] **PUI-0016** Confirm `@moonwitness/ui` is the sole shared visual and interaction package.
+- [x] **PUI-0017** Search for duplicate token registries, icon systems, motion providers, SFX engines and asset registries before proposing changes.
 - [ ] **PUI-0018** Map each current component/block/primitive to its package owner and public export.
 - [ ] **PUI-0019** Verify app-specific routes, fetching, authorization, persistence and business logic remain outside the package.
 - [ ] **PUI-0020** Map package tasks to canonical parent MU task IDs; identify overlap and defer any item already fully satisfied.
