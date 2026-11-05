@@ -1,5 +1,5 @@
 import path from 'path';
-import type { AgentMode } from '@moonwitness/types';
+import type { AgentMode } from './contracts';
 
 export interface ProposedFileEdit {
   path: string;

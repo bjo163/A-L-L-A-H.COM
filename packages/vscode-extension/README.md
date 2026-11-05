@@ -1,6 +1,9 @@
 # A-L-L-A-H.COM VS Code Extension
 
-The extension manages repository `.plans` files, connects to the Arsy API and MoonWitness gateway, and provides a Windows-local coding agent from VS Code.
+The extension is a standalone VS Code workbench for repository `.plans` files,
+workspace navigation, diagnostics, templates, and local developer workflows.
+It does not require this monorepo, Arsy, MoonWitness, Turso, or any cloud
+service to activate or manage local projects.
 
 ## Plans
 
@@ -10,20 +13,57 @@ The extension manages repository `.plans` files, connects to the Arsy API and Mo
 - Local and gateway-generated plans contain `spec.md`, `task.md`, `design.md`, and `rules.md`.
 - Choose a workspace folder when more than one root is open.
 
-## Arsy and gateway
+## Coding workflow
 
-- The Arsy view reports `/health` and `/ready` separately and opens `/docs`.
-- The model view reads the gateway catalog. A catalog entry does not prove that an upstream provider is configured.
-- The AI plan command rejects mock completions, failed requests, and incomplete or malformed responses. It does not create a local fallback plan.
+- The Workspace Agent supports Ask, Plan, Ideate, Code, Debug, and Autopilot
+  sessions.
+- The activity bar exposes one agent surface, `Workspace Agent`. The former
+  remote swarm surface is not part of the standalone workflow.
+- The workbench UI is organized as a three-part command deck: intent, approved
+  verification, and evidence. This keeps the next decision visible instead of
+  presenting a generic dashboard.
+- The visual system uses VS Code theme tokens, a single status accent, compact
+  section numbering, and no decorative motion. This preserves editor context
+  and makes state changes legible in light and dark themes.
+- At narrow panel widths, the header and action row reflow into one column,
+  controls retain a 44px touch target, and keyboard focus remains visible.
+- Build a repository context index with `Workspace: Build Context Index`.
+  The index records non-sensitive paths, project manifests, and `.plans`
+  artifacts without sending file contents.
+- Use `Workspace: Search and Open File` for bounded file discovery and
+  `Tasks: Run Approved Validation` for the fixed, approval-gated validation
+  list.
+- Code and Debug sessions open proposed diffs before applying edits. Files are
+  checked again before apply so external changes cannot be overwritten.
+- The Workspace Agent checks the selected provider before every session,
+  discovers Ollama models from `/api/tags`, and lets you select an installed
+  model. It never switches providers silently.
+
+## AI providers and offline behavior
+
+- Core workspace and `.plans` features work fully offline.
+- Optional provider adapters use native HTTP and VS Code `SecretStorage`; no
+  provider is required for activation.
+- Workspace Agent can use `allah.agentProvider = ollama` with a local Ollama
+  endpoint. Set `allah.agentModel` to an installed Ollama model such as
+  `llama3.1`. If Ollama is unavailable, the panel reports the connection error
+  instead of silently switching to a remote service.
+- The AI plan command rejects mock completions, failed requests, and incomplete
+  or malformed responses. It does not create a local fallback plan.
+
+The MoonWitness activity bar views are wired to their providers: Setup Wizard,
+Health Dashboard, Provider Configuration, Impact Analyzer, Usage and Budget,
+and Audit Trail and Replay. Their commands focus the corresponding view before
+starting the action.
 
 The `allah.gatewayUrl` and `allah.arsyUrl` settings default to `http://127.0.0.1:5150`. Set `allah.plannerModel` to a gateway model identifier. `allah.apiKey` is optional when the endpoint requires authentication.
 
-## Local agent and remote missions
+## Local agent and safety
 
 - Ask, Plan, Code, Debug, Ideate, and Autopilot modes use extension-side tool policies. Workspace edits are previewed before application; validation runs use a fixed, approval-gated command list.
-- Workspace context is selected and sent only after explicit session consent. The local agent cannot access paths outside the selected workspace or silently commit, push, or deploy.
-- Pairing stores the device credential in VS Code `SecretStorage`. The extension polls for Headquarter missions over an outbound connection; Headquarter cannot choose local paths or override extension permissions.
-- Signup provisions each account with an isolated personal tenant. Team device sharing requires an administrator to assign members to the same organization tenant.
+- Workspace context is selected and sent only after explicit session consent.
+- The local agent cannot access paths outside the selected workspace or silently commit, push, or deploy.
+- Remote mission pairing and cloud synchronization are not part of the standalone product.
 
 ## Verification
 
@@ -33,4 +73,5 @@ From the repository root, run:
 pnpm extension:test
 pnpm --filter allah-vscode-extension typecheck
 pnpm extension:build
+pnpm --filter allah-vscode-extension check-standalone
 ```

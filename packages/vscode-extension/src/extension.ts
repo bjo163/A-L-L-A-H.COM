@@ -1,13 +1,39 @@
 ﻿import * as path from 'path';
 import * as vscode from 'vscode';
 import { MoonWitnessClient } from './client';
-import { ArsyStatusTreeDataProvider, ModelTreeDataProvider } from './treeProvider';
 import { PlanTreeDataProvider } from './planTreeProvider';
 import { PlanManager, type PlanItem, type TaskItem, type TaskStatus } from './planManager';
-import { AgentWorkbenchProvider } from './agentWorkbench';
 import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
-import { RemoteMissionService } from './remoteMissionService';
+
+// Phase 1 Providers
+import { ProviderRegistry } from './providers/ProviderRegistry';
+
+// Phase 2 Services
+import { CredentialManager } from './services/CredentialManager';
+import { HealthMonitorService } from './services/HealthMonitorService';
+import { ProviderIntegration } from './services/ProviderIntegration';
+
+// Phase 3 Services & UI
+import { MissionTimelineService } from './services/MissionTimelineService';
+import { MissionTemplateService } from './services/MissionTemplateService';
+import { TokenCounterService } from './services/TokenCounterService';
+import { OnboardingWizardProvider } from './OnboardingWizardProvider';
+import { HealthDashboardProvider } from './HealthDashboardProvider';
+import { ProviderConfigPanel } from './ProviderConfigPanel';
+import { AgentCodeActionProvider, registerCodeActionCommands } from './CodeActionProvider';
+import { EnhancedClientWrapper } from './services/EnhancedClientWrapper';
+import { FirstTimeSetupDetector } from './FirstTimeSetupDetector';
+
+// Phase 4 Services & UI
+import { ImpactAnalyzerService } from './services/ImpactAnalyzerService';
+import { UsageDashboardService } from './services/UsageDashboardService';
+import { TimelineReplayService } from './services/TimelineReplayService';
+import { ImpactAnalyzerProvider } from './ImpactAnalyzerProvider';
+import { UsageDashboardPanel } from './UsageDashboardPanel';
+import { TimelineReplayProvider } from './TimelineReplayProvider';
 import { TursoClient } from './tursoClient';
+import { registerOfflineWorkbench } from './offlineWorkbench';
+import { RepositoryContextService } from './repositoryContext';
 
 
 function isTaskItem(value: unknown): value is TaskItem {
@@ -158,25 +184,6 @@ function registerPlanWatchers(context: vscode.ExtensionContext, planProvider: Pl
   );
 }
 
-async function updateStatusBar(
-  statusBarItem: vscode.StatusBarItem,
-  client: MoonWitnessClient
-): Promise<Awaited<ReturnType<MoonWitnessClient['checkHealth']>>> {
-  statusBarItem.text = '$(sync~spin) MoonWitness';
-  statusBarItem.tooltip = 'Checking the gateway health endpoint.';
-  statusBarItem.show();
-
-  const health = await client.checkHealth();
-  if (health.ok) {
-    statusBarItem.text = `$(pass-filled) MoonWitness (${health.latencyMs}ms)`;
-    statusBarItem.tooltip = `Connected to the gateway.\nLatency: ${health.latencyMs}ms`;
-  } else {
-    statusBarItem.text = '$(circle-slash) MoonWitness (offline)';
-    statusBarItem.tooltip = `Gateway health check failed: ${health.message || 'Unknown error'}. Click to retry.`;
-  }
-  return health;
-}
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const activationLog = vscode.window.createOutputChannel('A-L-L-A-H.COM Extension');
   context.subscriptions.push(activationLog);
@@ -190,30 +197,119 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       `Could not move the legacy MoonWitness API key to SecretStorage: ${error instanceof Error ? error.message : String(error)}`
     );
   }
-  const planProvider = new PlanTreeDataProvider();
-  const modelProvider = new ModelTreeDataProvider(client);
-  const arsyStatusProvider = new ArsyStatusTreeDataProvider(client);
-  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  const workbenchProvider = new AgentWorkbenchProvider(client);
-  const localAgentProvider = new LocalAgentWorkbenchProvider(context, client);
-  const remoteMissionService = new RemoteMissionService(client, localAgentProvider);
 
-  statusBarItem.command = 'allah.testConnection';
+  // Phase 1-3 Service Initialization
+  const providerRegistry = ProviderRegistry.getInstance();
+  const credentialManager = new CredentialManager(context.secrets);
+  const healthMonitor = HealthMonitorService.getInstance(providerRegistry);
+  const missionTimeline = MissionTimelineService.getInstance();
+  const missionTemplates = MissionTemplateService.getInstance();
+  const tokenCounter = TokenCounterService.getInstance();
+  const firstTimeSetupDetector = new FirstTimeSetupDetector(context);
+
+  // Initialize provider integration with VSCode settings
+  const providerIntegration = ProviderIntegration.getInstance(credentialManager);
+  await providerIntegration.initialize();
+
+  // Start health monitoring
+  healthMonitor.start();
+
+  // Phase 4 Service Initialization
+  const impactAnalyzer = ImpactAnalyzerService.getInstance();
+  const usageDashboard = UsageDashboardService.getInstance(tokenCounter, missionTimeline);
+  const timelineReplay = TimelineReplayService.getInstance(missionTimeline);
+
+  // Register Phase 3 UI Providers
+  const onboardingWizard = new OnboardingWizardProvider(context, credentialManager, providerIntegration);
+  const healthDashboard = new HealthDashboardProvider(context, healthMonitor);
+  const providerConfig = new ProviderConfigPanel(context, credentialManager);
+  const enhancedClient = new EnhancedClientWrapper(providerRegistry, healthMonitor);
+  const codeActionProvider = new AgentCodeActionProvider(enhancedClient);
+  registerCodeActionCommands(context, enhancedClient);
+
+  // Register Phase 4 UI Providers
+  const impactAnalyzerProvider = new ImpactAnalyzerProvider(context, impactAnalyzer);
+  const usageDashboardPanel = new UsageDashboardPanel(context, usageDashboard);
+  const timelineReplayProvider = new TimelineReplayProvider(context, timelineReplay);
+
+  // Register webview view providers
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      OnboardingWizardProvider.viewType,
+      onboardingWizard
+    ),
+    vscode.window.registerWebviewViewProvider(
+      HealthDashboardProvider.viewType,
+      healthDashboard
+    ),
+    vscode.window.registerWebviewViewProvider(
+      ProviderConfigPanel.viewType,
+      providerConfig
+    ),
+    vscode.window.registerWebviewViewProvider(
+      ImpactAnalyzerProvider.viewType,
+      impactAnalyzerProvider
+    ),
+    vscode.window.registerWebviewViewProvider(
+      UsageDashboardPanel.viewType,
+      usageDashboardPanel
+    ),
+    vscode.window.registerWebviewViewProvider(
+      TimelineReplayProvider.viewType,
+      timelineReplayProvider
+    )
+  );
+
+  // Register code action provider
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      { scheme: 'file', language: '*' },
+      codeActionProvider
+    )
+  );
+
+  // Check if first-time setup is needed
+  if (await firstTimeSetupDetector.shouldShowWizard(credentialManager)) {
+    vscode.commands.executeCommand('allah.showOnboardingWizard');
+  }
+
+  const planProvider = new PlanTreeDataProvider();
+  const repositoryContext = new RepositoryContextService(context);
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  const localAgentProvider = new LocalAgentWorkbenchProvider(context, client);
+  statusBarItem.command = 'allah.focusLocalAgent';
   context.subscriptions.push(
     statusBarItem,
     planProvider,
-    modelProvider,
-    arsyStatusProvider,
-    remoteMissionService,
-    vscode.window.registerWebviewViewProvider(AgentWorkbenchProvider.viewType, workbenchProvider),
     vscode.window.registerWebviewViewProvider(LocalAgentWorkbenchProvider.viewType, localAgentProvider),
     vscode.window.registerTreeDataProvider('allah.views.plans', planProvider),
-    vscode.window.registerTreeDataProvider('allah.views.models', modelProvider),
-    vscode.window.registerTreeDataProvider('allah.views.arsy', arsyStatusProvider)
   );
   registerPlanWatchers(context, planProvider);
-  remoteMissionService.start();
-  void updateStatusBar(statusBarItem, client);
+  registerOfflineWorkbench(context);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('allah.indexWorkspace', async () => {
+      const folders = vscode.workspace.workspaceFolders ?? [];
+      if (folders.length === 0) {
+        vscode.window.showWarningMessage('Open a workspace folder before indexing it.');
+        return;
+      }
+      const folder = folders.length === 1
+        ? folders[0]
+        : (await vscode.window.showQuickPick(
+          folders.map((candidate) => ({ label: candidate.name, description: candidate.uri.fsPath, folder: candidate })),
+          { placeHolder: 'Choose a workspace to index' }
+        ))?.folder;
+      if (!folder) return;
+      const index = await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'Indexing workspace context' },
+        () => repositoryContext.build(folder)
+      );
+      vscode.window.showInformationMessage(`Workspace index ready. ${index.files.length} non-sensitive files recorded.`);
+    })
+  );
+  statusBarItem.text = '$(hubot) Workspace Agent';
+  statusBarItem.tooltip = 'Local, offline-first coding workflow. Click to focus the agent panel.';
+  statusBarItem.show();
 
   context.subscriptions.push(
     vscode.commands.registerCommand('allah.createPlan', async () => {
@@ -308,13 +404,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       setTaskStatus(value, 'pending', planProvider);
     }),
     vscode.commands.registerCommand('allah.testConnection', async () => {
-      const health = await updateStatusBar(statusBarItem, client);
-      if (health.ok) {
-        vscode.window.showInformationMessage(`MoonWitness gateway connected (${health.latencyMs}ms).`);
-      } else {
-        vscode.window.showWarningMessage(`MoonWitness gateway unavailable: ${health.message || 'Unknown error'}.`);
-      }
-      modelProvider.refresh();
+      const status = await client.checkAgentProvider();
+      statusBarItem.text = status.ok ? '$(hubot) Agent Ready' : '$(hubot) Agent Setup';
+      statusBarItem.tooltip = status.message;
+      (status.ok ? vscode.window.showInformationMessage : vscode.window.showWarningMessage)(
+        status.message
+      );
+    }),
+    vscode.commands.registerCommand('allah.focusLocalAgent', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
     }),
     vscode.commands.registerCommand('allah.setApiKey', async () => {
       const apiKey = await vscode.window.showInputBox({
@@ -331,37 +429,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       } catch (error) {
         vscode.window.showErrorMessage(
           `Could not update the MoonWitness API key: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    }),
-    vscode.commands.registerCommand('allah.pairAgentDevice', async () => {
-      if (process.platform !== 'win32') {
-        vscode.window.showWarningMessage('Remote agent pairing is currently supported only by the Windows extension host.');
-        return;
-      }
-      const code = await vscode.window.showInputBox({
-        prompt: 'Enter the short-lived pairing code from Headquarter.',
-        password: true,
-        ignoreFocusOut: true,
-        validateInput: (value) => (/^[a-f0-9]{48}$/i.test(value.trim())
-          ? undefined
-          : 'Enter the 48-character pairing code shown in Headquarter.'),
-      });
-      if (!code) return;
-      const deviceName = await vscode.window.showInputBox({
-        prompt: 'Choose a name for this paired Windows device.',
-        value: 'Windows VS Code',
-        validateInput: (value) => (value.trim().length > 0 && value.trim().length <= 100
-          ? undefined
-          : 'Device name must be between 1 and 100 characters.'),
-      });
-      if (!deviceName) return;
-      try {
-        const deviceId = await client.claimAgentDevice(code, deviceName);
-        vscode.window.showInformationMessage(`This Windows extension is paired as device ${deviceId}.`);
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Could not pair this Windows device: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }),
@@ -392,7 +459,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.window.showErrorMessage(`Could not load or select a gateway model: ${error instanceof Error ? error.message : String(error)}`);
       }
     }),
-    vscode.commands.registerCommand('allah.refreshArsyStatus', () => arsyStatusProvider.refresh()),
     vscode.commands.registerCommand('allah.syncPlansToHub', async () => {
       const folder = await chooseWorkspaceFolder();
       if (!folder) return;
@@ -506,6 +572,144 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       } catch (error) {
         vscode.window.showErrorMessage(`Could not open Arsy API documentation: ${error instanceof Error ? error.message : String(error)}`);
       }
+    }),
+    // Phase 3 Commands
+    vscode.commands.registerCommand('allah.showOnboardingWizard', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+    }),
+    vscode.commands.registerCommand('allah.showHealthDashboard', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+    }),
+    vscode.commands.registerCommand('allah.configureProviders', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+    }),
+    vscode.commands.registerCommand('allah.analyzeImpact', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+    }),
+    vscode.commands.registerCommand('allah.showUsageDashboard', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+    }),
+    vscode.commands.registerCommand('allah.showTimelineReplay', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+    }),
+    vscode.commands.registerCommand('allah.setBudgetLimit', async () => {
+      const input = await vscode.window.showInputBox({
+        prompt: 'Set the monthly token budget limit in USD.',
+        placeHolder: '25',
+        validateInput: (value) => {
+          const amount = Number(value);
+          return Number.isFinite(amount) && amount >= 0 ? undefined : 'Enter a non-negative number.';
+        },
+      });
+      if (input === undefined) return;
+      usageDashboard.setBudgetLimit('monthly', {
+        period: 'monthly',
+        maxTokens: Number.POSITIVE_INFINITY,
+        maxCost: Number(input),
+        alertThreshold: 75,
+      });
+      vscode.window.showInformationMessage(`Monthly budget limit set to $${Number(input).toFixed(2)}.`);
+    }),
+    vscode.commands.registerCommand('allah.exportAuditTrail', async () => {
+      const timeline = missionTimeline.getCurrentTimeline() ?? missionTimeline.getAllTimelines().at(-1);
+      if (!timeline) {
+        vscode.window.showInformationMessage('There is no audit trail to export yet.');
+        return;
+      }
+      const exported = missionTimeline.exportTimelineRedacted(timeline.missionId);
+      if (!exported) {
+        vscode.window.showErrorMessage('The audit trail could not be exported.');
+        return;
+      }
+      const target = await vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '', 'allah-audit-trail.json')),
+        filters: { JSON: ['json'] },
+      });
+      if (!target) return;
+      await vscode.workspace.fs.writeFile(target, Buffer.from(exported, 'utf8'));
+      vscode.window.showInformationMessage(`Audit trail exported to ${target.fsPath}.`);
+    }),
+    vscode.commands.registerCommand('allah.showMissionTimeline', async () => {
+      const entries = missionTimeline
+        .getAllTimelines()
+        .flatMap((timeline) => timeline.events)
+        .sort((left, right) => right.timestamp - left.timestamp)
+        .slice(0, 10);
+      const message = entries.length === 0
+        ? 'No mission events recorded yet.'
+        : `Mission Timeline (${entries.length} events):\n${entries
+            .map((event) => `[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type}: ${event.title}`)
+            .join('\n')}`;
+      vscode.window.showInformationMessage(message);
+    }),
+    vscode.commands.registerCommand('allah.showMissionTemplates', async () => {
+      const categories = missionTemplates.getCategories();
+      const selected = await vscode.window.showQuickPick(
+        categories,
+        { placeHolder: 'Choose a template category' }
+      );
+      if (!selected) return;
+
+      const templates = missionTemplates.getTemplatesByCategory(selected);
+      const selectedTemplate = await vscode.window.showQuickPick(
+        templates.map((template) => ({ label: template.title, description: template.description, template })),
+        { placeHolder: 'Choose a template' }
+      );
+      if (!selectedTemplate) return;
+
+      vscode.window.showInformationMessage(
+        `Template: ${selectedTemplate.template.title}\n${selectedTemplate.template.description}`
+      );
+    }),
+    vscode.commands.registerCommand('allah.exportMissionTimeline', async () => {
+      const timeline = missionTimeline.getCurrentTimeline() ?? missionTimeline.getAllTimelines().at(-1);
+      if (!timeline) {
+        vscode.window.showInformationMessage('There is no mission timeline to export yet.');
+        return;
+      }
+
+      const format = await vscode.window.showQuickPick(
+        [
+          { label: 'JSON', description: 'Machine-readable JSON format' },
+          { label: 'CSV', description: 'Spreadsheet-compatible CSV' },
+        ],
+        { placeHolder: 'Choose export format' }
+      );
+      if (!format) return;
+
+      try {
+        const exported = format.label === 'JSON'
+          ? missionTimeline.exportTimeline(timeline.missionId)
+          : [
+              ['timestamp', 'type', 'title', 'description'],
+              ...timeline.events.map((event) => [
+                new Date(event.timestamp).toISOString(),
+                event.type,
+                event.title,
+                event.description ?? '',
+              ]),
+            ]
+              .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+              .join('\n');
+        if (exported === null) {
+          vscode.window.showInformationMessage('The mission timeline is not available to export.');
+          return;
+        }
+        vscode.window.showInformationMessage(`Mission timeline exported (${exported.length} bytes)`);
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Export failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }),
+    vscode.commands.registerCommand('allah.checkTokenUsage', async () => {
+      const stats = tokenCounter.getUsageStats();
+      const message = `Token Usage:\nEstimated Cost: $${stats.totalCost.toFixed(4)}\nTotal Tokens: ${stats.totalTokens}\nProviders Used: ${Object.keys(stats.byProvider).join(', ') || 'None'}`;
+      vscode.window.showInformationMessage(message);
+    }),
+    vscode.commands.registerCommand('allah.resetHealthMonitor', async () => {
+      healthMonitor.reset();
+      vscode.window.showInformationMessage('Health monitor has been reset.');
     })
   );
     activationLog.appendLine(`[${new Date().toISOString()}] Activation completed.`);
@@ -538,4 +742,6 @@ function setTaskStatus(value: unknown, status: TaskStatus, planProvider: PlanTre
   }
 }
 
-export function deactivate(): void {}
+export function deactivate(): void {
+  HealthMonitorService.getInstance(ProviderRegistry.getInstance()).stop();
+}

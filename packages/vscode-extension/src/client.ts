@@ -5,7 +5,7 @@ import {
   type GatewayModel,
 } from './gatewayContracts';
 import type { PlanMarkdownBodies } from './planManager';
-import type { ChatCompletionResponse, ChatMessage, RemoteAgentMission } from '@moonwitness/types';
+import type { ChatCompletionResponse, ChatMessage, RemoteAgentMission } from './contracts';
 
 const API_KEY_SECRET = process.env.API_KEY_SECRET_NAME || 'allah.apiKey';
 const SESSION_TOKEN_SECRET = process.env.SESSION_TOKEN_SECRET_NAME || 'allah.sessionToken';
@@ -285,6 +285,10 @@ export class MoonWitnessClient {
     signal?: AbortSignal
   ): Promise<string> {
     const config = vscode.workspace.getConfiguration('allah');
+    const provider = config.get<'gateway' | 'ollama'>('agentProvider') || 'gateway';
+    if (provider === 'ollama') {
+      return this.completeWithOllama(system, prompt, signal);
+    }
     const model = config.get<string>('agentModel')
       || config.get<string>('plannerModel')
       || 'dx-default';
@@ -299,6 +303,105 @@ export class MoonWitnessClient {
     const content = response.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || content.trim().length === 0) {
       throw new Error('The model returned an empty agent response.');
+    }
+    return content;
+  }
+
+  async checkAgentProvider(): Promise<{
+    provider: 'gateway' | 'ollama';
+    ok: boolean;
+    model: string;
+    models: string[];
+    message: string;
+  }> {
+    const config = vscode.workspace.getConfiguration('allah');
+    const provider = config.get<'gateway' | 'ollama'>('agentProvider') || 'gateway';
+    if (provider === 'ollama') {
+      const baseUrl = (config.get<string>('ollamaUrl') || 'http://127.0.0.1:11434').replace(/\/+$/, '');
+      const configuredModel = config.get<string>('agentModel')?.trim() || '';
+      try {
+        const response = await fetch(`${baseUrl}/api/tags`);
+        const payload = await response.json().catch(() => undefined) as { models?: Array<{ name?: unknown }> } | undefined;
+        if (!response.ok) {
+          return { provider, ok: false, model: configuredModel, models: [], message: `Ollama returned HTTP ${response.status}.` };
+        }
+        const models = (payload?.models ?? [])
+          .map((entry) => typeof entry.name === 'string' ? entry.name : '')
+          .filter(Boolean);
+        if (models.length === 0) {
+          return { provider, ok: false, model: configuredModel, models, message: 'Ollama is running, but no local model is installed.' };
+        }
+        const model = configuredModel || models[0];
+        if (!configuredModel) {
+          await config.update('agentModel', model, vscode.ConfigurationTarget.Global);
+        }
+        if (!models.includes(model)) {
+          return { provider, ok: false, model, models, message: `Model "${model}" is not installed in Ollama.` };
+        }
+        return { provider, ok: true, model, models, message: `Ollama is ready with model "${model}".` };
+      } catch (error) {
+        return { provider, ok: false, model: configuredModel, models: [], message: `Ollama is unavailable at ${baseUrl}: ${errorMessage(error)}` };
+      }
+    }
+
+    const health = await this.checkHealth();
+    const model = config.get<string>('agentModel') || config.get<string>('plannerModel') || 'dx-default';
+    if (!health.ok) {
+      return { provider, ok: false, model, models: [], message: health.message || 'Gateway is not ready.' };
+    }
+    try {
+      const models = (await this.fetchModels()).map((entry) => entry.id);
+      return {
+        provider,
+        ok: models.length > 0 && models.includes(model),
+        model,
+        models,
+        message: models.length === 0
+          ? 'Gateway is healthy, but its model catalog is empty.'
+          : models.includes(model) ? `Gateway is ready with model "${model}".` : `Model "${model}" is not in the gateway catalog.`,
+      };
+    } catch (error) {
+      return { provider, ok: false, model, models: [], message: `Gateway model catalog failed: ${errorMessage(error)}` };
+    }
+  }
+
+  private async completeWithOllama(
+    system: string,
+    prompt: string,
+    signal?: AbortSignal
+  ): Promise<string> {
+    const config = vscode.workspace.getConfiguration('allah');
+    const baseUrl = (config.get<string>('ollamaUrl') || 'http://127.0.0.1:11434').replace(/\/+$/, '');
+    const model = config.get<string>('agentModel') || 'llama3.1';
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: prompt },
+          ],
+        }),
+        signal,
+      });
+    } catch (error) {
+      throw new Error(`Ollama is unavailable at ${baseUrl}: ${errorMessage(error)}`);
+    }
+    const payload = await response.json().catch(() => undefined) as {
+      message?: { content?: unknown };
+      error?: unknown;
+    } | undefined;
+    if (!response.ok) {
+      const detail = typeof payload?.error === 'string' ? payload.error : `HTTP ${response.status}`;
+      throw new Error(`Ollama request failed: ${detail}`);
+    }
+    const content = payload?.message?.content;
+    if (typeof content !== 'string' || content.trim().length === 0) {
+      throw new Error(`Ollama returned an empty response for model "${model}".`);
     }
     return content;
   }

@@ -16,7 +16,14 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:allah.testConnection"
+    "onCommand:allah.testConnection",
+    "onView:allah.localAgentWorkbench",
+    "onView:allah.views.onboarding",
+    "onView:allah.views.health",
+    "onView:allah.views.providerConfig",
+    "onView:allah.views.impactAnalyzer",
+    "onView:allah.views.usageDashboard",
+    "onView:allah.views.timelineReplay"
   ],
   "contributes": {
     "commands": [
@@ -68,6 +75,11 @@
       {
         "command": "allah.indexWorkspace",
         "title": "Workspace: Build Context Index",
+        "category": "A-L-L-A-H"
+      },
+      {
+        "command": "allah.focusLocalAgent",
+        "title": "Workspace Agent: Focus",
         "category": "A-L-L-A-H"
       },
       {
@@ -166,10 +178,6 @@
           "id": "allah.views.plans",
           "name": "Project Manager (.plans)",
           "icon": "$(checklist)"
-        },
-        {
-          "id": "allah.agentWorkbench",
-          "name": "Swarm Operations"
         },
         {
           "id": "allah.localAgentWorkbench",
@@ -278,6 +286,20 @@
           "type": "string",
           "default": "",
           "description": "Optional model identifier used by workspace agent sessions."
+        },
+        "allah.agentProvider": {
+          "type": "string",
+          "enum": [
+            "gateway",
+            "ollama"
+          ],
+          "default": "gateway",
+          "description": "Backend for Workspace Agent responses. Ollama runs locally at the configured URL."
+        },
+        "allah.ollamaUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:11434",
+          "description": "Ollama HTTP endpoint used when agentProvider is ollama."
         },
         "allah.apiKey": {
           "type": "string",

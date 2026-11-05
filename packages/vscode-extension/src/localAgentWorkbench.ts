@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 import * as vscode from 'vscode';
-import type { AgentMode } from '@moonwitness/types';
+import type { AgentMode } from './contracts';
 import { MoonWitnessClient } from './client';
 import { getAgentToolDecision, isAgentMode } from './agentPolicy';
 import {
@@ -26,6 +26,7 @@ import {
   type MissionState,
   type MissionTimelineEvent,
 } from './missionTimeline';
+import { RepositoryContextService } from './repositoryContext';
 
 interface LocalAgentSession {
   id: string;
@@ -75,11 +76,14 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     signature: string;
     workspaceDigest: string;
   }>();
+  private readonly repositoryContext: RepositoryContextService;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly client: MoonWitnessClient
-  ) {}
+  ) {
+    this.repositoryContext = new RepositoryContextService(context);
+  }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
@@ -92,10 +96,28 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       if (message.command === 'ready') {
         const sessions = await this.restoreSessionHistory();
         this.post({ type: 'history', sessions });
+        await this.sendProviderStatus();
         const latest = sessions[0];
         if (latest?.timeline?.length) {
           this.post({ type: 'mission-restored', state: latest.state, events: latest.timeline });
         }
+        return;
+      }
+      if (message.command === 'checkProvider') {
+        await this.sendProviderStatus();
+        return;
+      }
+      if (message.command === 'selectModel' && typeof message.model === 'string' && message.model.trim()) {
+        await vscode.workspace.getConfiguration('allah').update(
+          'agentModel',
+          message.model.trim(),
+          vscode.ConfigurationTarget.Global
+        );
+        await this.sendProviderStatus();
+        return;
+      }
+      if (message.command === 'configureProvider') {
+        await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:a-l-l-a-h.allah-vscode-extension agentProvider');
         return;
       }
       if (message.command === 'stop') {
@@ -155,6 +177,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     const contextChoice = await vscode.window.showQuickPick(
       [
         ...(activeFileIsAvailable ? [{ label: 'Active editor file', description: activeRelativePath, value: 'active' }] : []),
+        { label: 'Repository index', description: 'Use the saved file and plan map, without sending file contents', value: 'index' },
         { label: 'Choose workspace files', description: 'Filter and select up to five files', value: 'files' },
         { label: 'No workspace context', description: 'Send only the task text', value: 'none' },
       ],
@@ -162,6 +185,10 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     );
     if (!contextChoice) throw new Error('Agent session cancelled before selecting workspace context.');
     if (contextChoice.value === 'none') return '';
+    if (contextChoice.value === 'index') {
+      const index = this.repositoryContext.get(folder) ?? await this.repositoryContext.build(folder);
+      return `\n\n${this.repositoryContext.format(index)}`;
+    }
 
     const selectedFiles: Array<{ relativePath: string; document: vscode.TextDocument }> = [];
     if (contextChoice.value === 'active' && editor && activeFileIsAvailable) {
@@ -246,6 +273,12 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   ): Promise<LocalAgentSession['state'] | undefined> {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || this.activeRun || externalSignal?.aborted) return 'cancelled';
+
+    const providerStatus = await this.client.checkAgentProvider();
+    if (!providerStatus.ok) {
+      this.post({ type: 'blocked', message: `${providerStatus.message} Use Configure or Check provider above before starting a session.` });
+      return 'blocked';
+    }
 
     const folder = await this.chooseWorkspace();
     if (!folder) return 'blocked';
@@ -815,6 +848,22 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     if (this.view) void this.view.webview.postMessage(data);
   }
 
+  private async sendProviderStatus(): Promise<void> {
+    try {
+      const status = await this.client.checkAgentProvider();
+      this.post({ type: 'provider-status', ...status });
+    } catch (error) {
+      this.post({
+        type: 'provider-status',
+        provider: 'unknown',
+        ok: false,
+        model: '',
+        models: [],
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   private getHtml(webview: vscode.Webview): string {
     const nonce = Buffer.from(randomUUID()).toString('base64');
     const script = `
@@ -826,10 +875,21 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
       const validationCommand = document.getElementById('validation-command');
       const runValidation = document.getElementById('run-validation');
       const proposeRepair = document.getElementById('propose-repair');
-      const status = document.getElementById('status');
+      const resetDraft = document.getElementById('reset-draft');
+      const providerStatus = document.getElementById('provider-status');
+      const checkProvider = document.getElementById('check-provider');
+      const configureProvider = document.getElementById('configure-provider');
+      const modelList = document.getElementById('model-list');
+      const statusBar = document.getElementById('status');
+      const status = document.getElementById('status-text');
       const output = document.getElementById('output');
       const history = document.getElementById('history');
       const timeline = document.getElementById('mission-timeline');
+      const setBusy = (busy) => {
+        run.disabled = busy;
+        stop.disabled = !busy;
+        updateValidationAvailability();
+      };
 
       const renderTimelineEvent = (event) => {
         const item = document.createElement('li');
@@ -872,6 +932,20 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         }
       };
 
+      const renderProviderStatus = (data) => {
+        providerStatus.textContent = data.message || 'Provider status unavailable.';
+        providerStatus.dataset.state = data.ok ? 'ready' : 'error';
+        modelList.replaceChildren();
+        if (Array.isArray(data.models)) {
+          for (const modelName of data.models) {
+            const option = document.createElement('option');
+            option.value = modelName;
+            option.textContent = modelName;
+            modelList.appendChild(option);
+          }
+        }
+      };
+
       const updateValidationAvailability = () => {
         const readOnly = ['ask', 'plan', 'ideate'].includes(mode.value);
         runValidation.disabled = readOnly || run.disabled;
@@ -882,6 +956,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         const data = message.data;
         if (data.type === 'history') {
           renderHistory(data.sessions);
+        } else if (data.type === 'provider-status') {
+          renderProviderStatus(data);
         } else if (data.type === 'mission-restored') {
           renderTimeline(data.events);
           status.textContent = data.state === 'blocked'
@@ -896,60 +972,50 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
           proposeRepair.disabled = false;
         } else if (data.type === 'started') {
           status.textContent = 'Requesting workspace-context consent';
-          run.disabled = true;
-          runValidation.disabled = true;
-          validationCommand.disabled = true;
-          stop.disabled = false;
+          statusBar.dataset.state = 'working';
+          setBusy(true);
           output.replaceChildren();
           timeline.replaceChildren();
           proposeRepair.hidden = true;
         } else if (data.type === 'validation-approval') {
           proposeRepair.hidden = true;
           status.textContent = data.message;
-          run.disabled = true;
-          runValidation.disabled = true;
-          validationCommand.disabled = true;
-          stop.disabled = false;
+          statusBar.dataset.state = 'working';
+          setBusy(true);
           output.replaceChildren();
         } else if (data.type === 'validation-started') {
           proposeRepair.hidden = true;
           status.textContent = 'Running ' + data.command;
-          run.disabled = true;
-          runValidation.disabled = true;
-          validationCommand.disabled = true;
-          stop.disabled = false;
+          statusBar.dataset.state = 'working';
+          setBusy(true);
         } else if (data.type === 'result') {
           status.textContent = data.appliedEdits
             ? 'Edits applied, not independently validated'
             : 'Model response received, not independently verified';
+          statusBar.dataset.state = 'success';
           const result = document.createElement('pre');
           result.textContent = data.response || data.message || '';
           output.appendChild(result);
-          run.disabled = false;
-          stop.disabled = true;
-          updateValidationAvailability();
+          setBusy(false);
         } else if (data.type === 'validation-result' || data.type === 'validation-failed') {
           status.textContent = data.message;
+          statusBar.dataset.state = 'error';
           if (data.output) {
             const result = document.createElement('pre');
             result.textContent = data.output;
             output.appendChild(result);
           }
-          run.disabled = false;
-          stop.disabled = true;
-          updateValidationAvailability();
+          setBusy(false);
         } else if (data.type === 'blocked' || data.type === 'failed' || data.type === 'cancelled') {
           status.textContent = data.type === 'blocked' ? 'Blocked' : data.type;
+          statusBar.dataset.state = data.type === 'blocked' ? 'blocked' : 'error';
           const messageNode = document.createElement('p');
           messageNode.textContent = data.message || 'Session cancelled.';
           output.appendChild(messageNode);
-          run.disabled = false;
-          runValidation.disabled = false;
-          validationCommand.disabled = false;
-          stop.disabled = true;
-          updateValidationAvailability();
+          setBusy(false);
         } else if (data.type === 'validation-blocked') {
           status.textContent = data.message;
+          statusBar.dataset.state = 'blocked';
           run.disabled = false;
           stop.disabled = true;
           updateValidationAvailability();
@@ -968,21 +1034,39 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         if (!prompt.value.trim()) return;
         vscode.postMessage({ command: 'run', mode: mode.value, prompt: prompt.value });
       });
+      resetDraft.addEventListener('click', () => {
+        prompt.value = '';
+        output.replaceChildren();
+        renderTimeline([]);
+        status.textContent = 'Ready';
+        statusBar.dataset.state = 'ready';
+        proposeRepair.hidden = true;
+        prompt.focus();
+      });
       runValidation.addEventListener('click', () => {
         vscode.postMessage({
           command: 'runValidation',
           mode: mode.value,
           validationCommand: validationCommand.value,
         });
-        proposeRepair.addEventListener('click', () => {
-          const sessionId = proposeRepair.dataset.sessionId;
-          if (!sessionId) return;
-          proposeRepair.disabled = true;
-          vscode.postMessage({ command: 'proposeRepair', sessionId });
-        });
+      });
+      proposeRepair.addEventListener('click', () => {
+        const sessionId = proposeRepair.dataset.sessionId;
+        if (!sessionId) return;
+        proposeRepair.disabled = true;
+        vscode.postMessage({ command: 'proposeRepair', sessionId });
       });
       mode.addEventListener('change', updateValidationAvailability);
       stop.addEventListener('click', () => vscode.postMessage({ command: 'stop' }));
+      checkProvider.addEventListener('click', () => {
+        providerStatus.textContent = 'Checking provider readiness...';
+        providerStatus.dataset.state = 'working';
+        vscode.postMessage({ command: 'checkProvider' });
+      });
+      configureProvider.addEventListener('click', () => vscode.postMessage({ command: 'configureProvider' }));
+      modelList.addEventListener('change', () => {
+        if (modelList.value) vscode.postMessage({ command: 'selectModel', model: modelList.value });
+      });
       window.addEventListener('load', () => vscode.postMessage({ command: 'ready' }));
     `;
 
@@ -994,31 +1078,103 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
 <title>Workspace Agent</title>
 <style>
-  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 12px; }
-  label { display: block; margin: 10px 0 4px; color: var(--vscode-descriptionForeground); font-size: 11px; text-transform: uppercase; }
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 16px 14px 28px; line-height: 1.45; }
+  main { max-width: 760px; margin: 0 auto; }
+  .agent-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding-bottom: 18px; border-bottom: 1px solid var(--vscode-panel-border); }
+  .eyebrow, .section-index { margin: 0 0 3px; color: var(--vscode-textLink-foreground); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+  h1, h2, h4 { margin: 0; font-weight: 650; letter-spacing: -0.02em; }
+  h1 { font-size: clamp(20px, 4vw, 28px); }
+  h2 { font-size: 15px; }
+  h4 { font-size: 12px; margin-top: 18px; }
+  .lede, .section-note, .field-help { margin: 4px 0 0; color: var(--vscode-descriptionForeground); font-size: 12px; }
+  .mode-mark { border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 9px; letter-spacing: .08em; padding: 5px 7px; white-space: nowrap; }
+  #status { display: flex; align-items: center; gap: 8px; min-height: 38px; margin: 14px 0; padding: 8px 10px; border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); }
+  .status-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--vscode-descriptionForeground); }
+  #status[data-state="working"] { border-color: var(--vscode-focusBorder); color: var(--vscode-foreground); }
+  #status[data-state="working"] .status-dot { background: var(--vscode-focusBorder); }
+  #status[data-state="success"] .status-dot { background: var(--vscode-testing-iconPassed); }
+  #status[data-state="error"] .status-dot, #status[data-state="blocked"] .status-dot { background: var(--vscode-testing-iconFailed); }
+  .provider-surface { margin: 14px 0; padding: 14px; border: 1px solid var(--vscode-panel-border); background: var(--vscode-sideBar-background); }
+  #provider-status[data-state="ready"] { color: var(--vscode-testing-iconPassed); }
+  #provider-status[data-state="error"] { color: var(--vscode-testing-iconFailed); }
+  #provider-status[data-state="working"] { color: var(--vscode-textLink-foreground); }
+  .work-surface { margin: 14px 0; padding: 14px; border: 1px solid var(--vscode-panel-border); background: var(--vscode-editor-background); }
+  .secondary-surface { background: var(--vscode-sideBar-background); }
+  .result-surface { min-height: 96px; }
+  .section-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .section-note { max-width: 220px; text-align: right; }
+  label { display: block; margin: 10px 0 4px; color: var(--vscode-foreground); font-size: 11px; font-weight: 600; }
   select, textarea, button { width: 100%; box-sizing: border-box; font: inherit; }
-  select, textarea { color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); padding: 7px; }
-  textarea { min-height: 100px; resize: vertical; }
-  button { margin-top: 6px; min-height: 36px; padding: 8px; border: 0; color: var(--vscode-button-foreground); background: var(--vscode-button-background); cursor: pointer; }
+  select, textarea { min-height: 40px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); padding: 8px 9px; }
+  textarea { min-height: 112px; resize: vertical; }
+  button { min-height: 44px; margin-top: 8px; padding: 9px 11px; border: 1px solid transparent; color: var(--vscode-button-foreground); background: var(--vscode-button-background); cursor: pointer; }
   button:hover:not(:disabled) { background: var(--vscode-button-hoverBackground); }
   button:active:not(:disabled) { transform: translateY(1px); }
   button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  select { cursor: pointer; }
-  #status { margin: 10px 0; color: var(--vscode-descriptionForeground); }
-  pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px; background: var(--vscode-textCodeBlock-background); }
+  button.quiet { color: var(--vscode-foreground); background: transparent; border-color: var(--vscode-panel-border); }
+  .action-row { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; }
+  .empty-state { margin: 0; color: var(--vscode-descriptionForeground); font-size: 12px; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 10px; background: var(--vscode-textCodeBlock-background); border: 1px solid var(--vscode-panel-border); }
   .mission-list { margin: 10px 0 0; padding: 0; list-style: none; }
-  .mission-list li { position: relative; padding: 8px 0 8px 14px; border-left: 2px solid var(--vscode-focusBorder); }
+  .mission-list li { position: relative; padding: 8px 0 8px 14px; border-left: 2px solid var(--vscode-panel-border); }
   .mission-list li strong, .mission-list li span { display: block; overflow-wrap: anywhere; }
   .mission-list li span { margin-top: 2px; color: var(--vscode-descriptionForeground); }
-  .mission-list li:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+  @media (max-width: 420px) {
+    body { padding: 12px 10px 24px; }
+    .agent-header, .section-heading { display: block; }
+    .mode-mark { display: inline-block; margin-top: 10px; }
+    .section-note { max-width: none; margin-top: 6px; text-align: left; }
+    .action-row { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button:active:not(:disabled) { transform: none; }
+  }
 </style>
 </head>
 <body>
 <main>
-<h1>Workspace Agent</h1>
-<label for="mode">Mode</label>
-<select id="mode">
+<header class="agent-header">
+  <div>
+    <p class="eyebrow">LOCAL WORKSPACE CONTROL</p>
+    <h1>Workspace Agent</h1>
+    <p class="lede">Turn a coding intent into a reviewable workspace change.</p>
+  </div>
+  <span class="mode-mark" aria-label="Offline-first local agent">OFFLINE-FIRST</span>
+</header>
+<section class="provider-surface" aria-labelledby="provider-heading">
+  <div class="section-heading">
+    <div>
+      <p class="section-index">00</p>
+      <h2 id="provider-heading">Provider readiness</h2>
+    </div>
+    <p id="provider-status" class="section-note" data-state="working">Checking provider...</p>
+  </div>
+  <div class="action-row">
+    <button id="check-provider" class="quiet" type="button">Check provider</button>
+    <button id="configure-provider" class="quiet" type="button">Configure</button>
+  </div>
+  <label for="model-list">Available models</label>
+  <select id="model-list" aria-describedby="provider-help">
+    <option value="">Check provider to load models</option>
+  </select>
+  <p id="provider-help" class="field-help">The agent never falls back to another provider without your action.</p>
+</section>
+<div id="status" class="status" data-state="ready" role="status" aria-live="polite">
+  <span class="status-dot" aria-hidden="true"></span><span id="status-text">Ready</span>
+</div>
+<section class="work-surface" aria-labelledby="intent-heading">
+  <div class="section-heading">
+    <div>
+      <p class="section-index">01</p>
+      <h2 id="intent-heading">Set the intent</h2>
+    </div>
+    <p class="section-note">The agent will ask before reading workspace context.</p>
+  </div>
+  <label for="mode">Working mode</label>
+<select id="mode" aria-describedby="mode-help">
   <option value="ask">Ask, read-only</option>
   <option value="plan">Plan, read-only</option>
   <option value="ideate">Ideate / brainstorm, read-only</option>
@@ -1026,18 +1182,40 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   <option value="debug">Debug, review edits before apply</option>
   <option value="autopilot">Autopilot, scoped workspace edits</option>
 </select>
+<p id="mode-help" class="field-help">Read-only modes never edit files. Code and Debug prepare a diff before apply.</p>
 <label for="prompt">Task</label>
-<textarea id="prompt" placeholder="Describe the question or workspace task"></textarea>
-<button id="run">Start session</button>
-<label for="validation-command">Approved workspace validation</label>
+<textarea id="prompt" placeholder="Example: trace the failing test and propose the smallest fix"></textarea>
+<div class="action-row">
+  <button id="run" class="primary">Start session</button>
+  <button id="reset-draft" class="quiet" type="button">Clear</button>
+</div>
+</section>
+<section class="work-surface secondary-surface" aria-labelledby="validation-heading">
+  <div class="section-heading">
+    <div>
+      <p class="section-index">02</p>
+      <h2 id="validation-heading">Verify with permission</h2>
+    </div>
+    <p class="section-note">Commands are fixed, scoped, and approval-gated.</p>
+  </div>
+<label for="validation-command">Validation command</label>
 <select id="validation-command">
   ${validationCommands.map((item) => `<option value="${item.id}">${item.label} (${item.command})</option>`).join('')}
 </select>
 <button id="run-validation">Run validation with approval</button>
 <button id="propose-repair" hidden>Propose one repair for this validation failure</button>
-<button id="stop" disabled>Cancel</button>
-<div id="status" role="status" aria-live="polite">Ready</div>
-<div id="output" aria-live="polite"></div>
+<button id="stop" class="quiet" disabled>Cancel current action</button>
+</section>
+<section class="work-surface result-surface" aria-labelledby="result-heading">
+  <div class="section-heading">
+    <div>
+      <p class="section-index">03</p>
+      <h2 id="result-heading">Evidence</h2>
+    </div>
+    <p class="section-note">Responses, diffs, and validation output stay visible here.</p>
+  </div>
+  <div id="output" aria-live="polite"><p class="empty-state">No result yet. Start with a focused intent.</p></div>
+</section>
 <section aria-labelledby="mission-heading">
   <h4 id="mission-heading">Mission timeline</h4>
   <ol id="mission-timeline" class="mission-list" aria-live="polite"><li data-empty>Start a mission to see progress.</li></ol>

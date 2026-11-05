@@ -1,4 +1,4 @@
-import type { AgentMode, AgentToolDecision, AgentToolName } from '@moonwitness/types';
+import type { AgentMode, AgentToolDecision, AgentToolName } from './contracts';
 
 const policy: Record<AgentMode, Record<AgentToolName, AgentToolDecision>> = {
   ask: {
