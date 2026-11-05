@@ -67,12 +67,17 @@ const sduiPluginAsync: FastifyPluginAsync<SduiPluginOptions> = async (fastify: F
       return ok({ model, view_type, title: persisted.title, arch: persisted.arch });
     }
 
-    // Default dynamic view schema derived directly from ORM model fields
-    const fieldsList = Object.entries(modelDef.fields).map(([name, def]) => ({
+    // Fallback dynamic view schema, built from the ORM's own fields_get
+    // introspection rather than a hand-listed subset, so selection options and
+    // relation targets reach the renderer (roadmap S4.4, AC-12).
+    const fieldMeta = new BaseRepository(modelDef).fieldsGet();
+    const fieldsList = Object.entries(fieldMeta).map(([name, def]) => ({
       name,
-      label: def.label || name,
+      label: (def.string as string) || name,
       type: def.type,
-      required: def.required || false,
+      required: def.required ?? false,
+      ...(def.relation ? { relation: def.relation } : {}),
+      ...(def.selection ? { selection: def.selection } : {}),
     }));
 
     const viewSchema = {

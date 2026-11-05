@@ -4,6 +4,7 @@ export const ProjectTask = defineModel({
   name: 'project.task',
   tableName: 'project_task',
   displayName: 'Task',
+  displayNameSpec: 'name',
   fields: {
     company_id: fields.integer({ label: 'Company ID', required: true }),
     project_id: fields.many2one('project.project', { label: 'Project', required: true }),

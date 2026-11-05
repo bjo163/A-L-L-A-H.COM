@@ -4,6 +4,7 @@ export const ProjectProject = defineModel({
   name: 'project.project',
   tableName: 'project_project',
   displayName: 'Project',
+  displayNameSpec: 'name',
   fields: {
     company_id: fields.integer({ label: 'Company ID', required: true }),
     name: fields.char({ label: 'Project Name', required: true }),

@@ -71,6 +71,16 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
     return typeof companyId === 'number' ? companyId : null;
   };
 
+  // Catalog reads go through the repository, not raw SQL. modelRegistry.get is
+  // untyped-undefined, so guard the registration the same way router.ts does.
+  const catalogRepo = (modelName: string): BaseRepository => {
+    const model = modelRegistry.get(modelName);
+    if (!model) {
+      throw new Error(`LLM gateway model '${modelName}' is not registered. Did the mw_llm_router addon load?`);
+    }
+    return new BaseRepository(model);
+  };
+
   // Initialize router models and database defaults
   await router.initialize();
   await fastify.register(deviceControlPlugin, { prefix });
@@ -413,9 +423,14 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   );
 
   // GET /v1/mcp/audit: Tool execution audit log (from ToolRegistry)
-  fastify.get(`${prefix}/mcp/audit`, async () => {
+  fastify.get(`${prefix}/mcp/audit`, async (request, reply) => {
+    const tenant = tenantOf(request);
+    if (typeof tenant !== 'number') {
+      reply.status(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
     try {
-      const log = toolRegistry.getLog();
+      const log = toolRegistry.getLog(tenant);
       return ok({ audit: log, total: log.length });
     } catch (err: any) {
       return fail('MCP_AUDIT_ERROR', err.message);
