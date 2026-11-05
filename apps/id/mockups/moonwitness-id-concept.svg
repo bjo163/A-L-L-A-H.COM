@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120">
+<defs>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#050b18"/><stop offset=".55" stop-color="#0a1830"/><stop offset="1" stop-color="#030711"/></linearGradient>
+ <linearGradient id="panel" x2="1" y2="1"><stop stop-color="#132746"/><stop offset=".55" stop-color="#0a1427"/><stop offset="1" stop-color="#101d32"/></linearGradient>
+ <linearGradient id="silver" x2="1"><stop stop-color="#91a9c9"/><stop offset=".5" stop-color="#f0f4f8"/><stop offset="1" stop-color="#8298b7"/></linearGradient>
+ <radialGradient id="moon"><stop stop-color="#f5f1e8"/><stop offset=".45" stop-color="#b6c8dc"/><stop offset=".8" stop-color="#526b8b"/><stop offset="1" stop-color="#182a45"/></radialGradient>
+ <radialGradient id="glow"><stop stop-color="#527fc0" stop-opacity=".42"/><stop offset="1" stop-color="#527fc0" stop-opacity="0"/></radialGradient>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<rect width="1600" height="1120" fill="url(#bg)"/>
+<circle cx="1350" cy="130" r="290" fill="url(#glow)"/>
+<g fill="#dbe5f3" opacity=".32"><circle cx="85" cy="95" r="1.5"/><circle cx="460" cy="55" r="1"/><circle cx="780" cy="90" r="1.4"/><circle cx="1200" cy="70" r="1"/><circle cx="1510" cy="250" r="1.4"/><circle cx="900" cy="525" r="1"/><circle cx="80" cy="980" r="1.3"/><circle cx="1470" cy="980" r="1"/></g>
+<text x="70" y="65" fill="#dce7f6" font-family="Georgia,serif" font-size="20" letter-spacing="4">MOONWITNESS ID</text>
+<text x="70" y="112" fill="#f4f6fb" font-family="Georgia,serif" font-size="42">THE LUNAR IDENTITY ARCHIVE</text>
+<text x="72" y="145" fill="#8fa5c3" font-family="Arial,sans-serif" font-size="15" letter-spacing="3">ONE IDENTITY · INFINITE HORIZONS · EXPERIENCE CONCEPT 01</text>
+<path d="M70 170H1530" stroke="#344965" stroke-width="1"/>
+<!-- frame 1 -->
+<g transform="translate(70 205)">
+ <rect width="710" height="385" rx="16" fill="url(#panel)" stroke="#516b8e"/>
+ <circle cx="530" cy="160" r="150" fill="url(#glow)"/>
+ <circle cx="540" cy="150" r="108" fill="url(#moon)"/>
+ <circle cx="540" cy="150" r="126" fill="none" stroke="#9bb4d5" opacity=".55"/>
+ <ellipse cx="540" cy="150" rx="170" ry="55" fill="none" stroke="#8da8cc" opacity=".5" transform="rotate(-22 540 150)"/>
+ <ellipse cx="540" cy="150" rx="195" ry="75" fill="none" stroke="#718daf" opacity=".25" transform="rotate(18 540 150)"/>
+ <path d="M390 285H700M425 270L455 230M610 270L650 215" stroke="#9ab0ce" opacity=".3"/>
+ <text x="38" y="45" fill="#e3ebf7" font-family="Georgia,serif" font-size="17">MOONWITNESS ID</text>
+ <text x="38" y="143" fill="#f5f6fa" font-family="Georgia,serif" font-size="43">A quieter way</text>
+ <text x="38" y="190" fill="#f5f6fa" font-family="Georgia,serif" font-size="43">to enter.</text>
+ <text x="40" y="225" fill="#9eafc6" font-family="Arial,sans-serif" font-size="15">Your identity gateway to the MoonWitness universe.</text>
+ <rect x="40" y="260" width="185" height="43" rx="21" fill="#dbe6f5"/><text x="132" y="287" text-anchor="middle" fill="#14233b" font-family="Arial,sans-serif" font-size="13" font-weight="bold">ENTER YOUR IDENTITY →</text>
+ <text x="38" y="350" fill="#7489a6" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">01 / ARRIVAL — OBSERVATORY THRESHOLD</text>
+</g>
+<!-- frame 2 -->
+<g transform="translate(820 205)">
+ <rect width="710" height="385" rx="16" fill="url(#panel)" stroke="#516b8e"/>
+ <circle cx="105" cy="165" r="160" fill="url(#glow)"/>
+ <circle cx="105" cy="165" r="92" fill="none" stroke="#b7c7dd" opacity=".35"/>
+ <circle cx="105" cy="165" r="70" fill="none" stroke="#b7c7dd" opacity=".5"/>
+ <circle cx="105" cy="165" r="42" fill="url(#moon)"/>
+ <path d="M10 165H200M105 65V265" stroke="#a7bdd9" opacity=".25"/>
+ <text x="260" y="70" fill="#eaf0f8" font-family="Georgia,serif" font-size="30">Identity Gate</text>
+ <text x="260" y="100" fill="#8ea3c0" font-family="Arial,sans-serif" font-size="13">Sign in to continue your journey.</text>
+ <text x="260" y="148" fill="#aebdd0" font-family="Arial,sans-serif" font-size="12">EMAIL ADDRESS</text>
+ <rect x="260" y="160" width="390" height="42" rx="7" fill="#081326" stroke="#344b6a"/>
+ <text x="277" y="186" fill="#6e829f" font-family="Arial,sans-serif" font-size="13">you@example.com</text>
+ <text x="260" y="230" fill="#aebdd0" font-family="Arial,sans-serif" font-size="12">PASSWORD</text>
+ <rect x="260" y="242" width="390" height="42" rx="7" fill="#081326" stroke="#344b6a"/>
+ <text x="277" y="268" fill="#6e829f" font-family="Arial,sans-serif" font-size="13">••••••••••••</text>
+ <rect x="260" y="305" width="390" height="42" rx="21" fill="#dbe6f5"/>
+ <text x="455" y="332" text-anchor="middle" fill="#14233b" font-family="Arial,sans-serif" font-size="13" font-weight="bold">SIGN IN</text>
+ <text x="38" y="365" fill="#7489a6" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">02 / IDENTITY GATE — LOGIN</text>
+</g>
+<!-- frame 3 -->
+<g transform="translate(70 620)">
+ <rect width="710" height="405" rx="16" fill="url(#panel)" stroke="#516b8e"/>
+ <rect x="0" y="0" width="150" height="405" rx="16" fill="#071225"/>
+ <text x="25" y="38" fill="#dce7f6" font-family="Georgia,serif" font-size="14">MW / ID</text>
+ <g font-family="Arial,sans-serif" font-size="13" fill="#8fa5c1">
+  <text x="25" y="95">◉  Overview</text><text x="25" y="140">◎  Sessions</text><text x="25" y="185">◇  Destinations</text><text x="25" y="230">⚙  Security</text>
+ </g>
+ <text x="185" y="58" fill="#7f96b6" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">PERSONAL IDENTITY SPACE</text>
+ <text x="185" y="102" fill="#f0f4fa" font-family="Georgia,serif" font-size="32">Your orbit.</text>
+ <circle cx="240" cy="190" r="48" fill="url(#moon)"/>
+ <circle cx="240" cy="190" r="59" fill="none" stroke="#8ba7cc" opacity=".5"/>
+ <text x="320" y="174" fill="#f0f4fa" font-family="Georgia,serif" font-size="23">Welcome back</text>
+ <text x="320" y="202" fill="#91a6c1" font-family="Arial,sans-serif" font-size="13">Identity is active. Your account is ready.</text>
+ <path d="M185 275H665" stroke="#344965"/>
+ <text x="185" y="310" fill="#dce7f6" font-family="Georgia,serif" font-size="20">Connected destinations</text>
+ <g>
+  <rect x="185" y="330" width="135" height="48" rx="7" fill="#152a49" stroke="#3b5578"/><text x="202" y="359" fill="#e4edf9" font-family="Arial,sans-serif" font-size="13">GATE ↗</text>
+  <rect x="335" y="330" width="135" height="48" rx="7" fill="#152a49" stroke="#3b5578"/><text x="352" y="359" fill="#e4edf9" font-family="Arial,sans-serif" font-size="13">DOCK ↗</text>
+  <rect x="485" y="330" width="180" height="48" rx="7" fill="#152a49" stroke="#3b5578"/><text x="502" y="359" fill="#e4edf9" font-family="Arial,sans-serif" font-size="13">HEADQUARTER ↗</text>
+ </g>
+ <text x="185" y="395" fill="#7489a6" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">03 / PERSONAL ORBIT — ACCOUNT</text>
+</g>
+<!-- frame 4 -->
+<g transform="translate(820 620)">
+ <rect width="710" height="405" rx="16" fill="url(#panel)" stroke="#516b8e"/>
+ <text x="38" y="54" fill="#7f96b6" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">TRUST &amp; ACCESS</text>
+ <text x="38" y="100" fill="#f0f4fa" font-family="Georgia,serif" font-size="32">Session archive.</text>
+ <text x="38" y="128" fill="#91a6c1" font-family="Arial,sans-serif" font-size="13">Review devices that currently hold access to your identity.</text>
+ <g font-family="Arial,sans-serif">
+  <rect x="38" y="160" width="634" height="60" rx="8" fill="#0a172b" stroke="#344b6a"/>
+  <text x="58" y="185" fill="#e8eef8" font-size="14">This device · Chrome / Windows</text><text x="58" y="205" fill="#8fa5c1" font-size="11">Current session</text><text x="625" y="195" fill="#a8c9ef" text-anchor="end" font-size="12">ACTIVE</text>
+  <rect x="38" y="232" width="634" height="60" rx="8" fill="#0a172b" stroke="#344b6a"/>
+  <text x="58" y="257" fill="#e8eef8" font-size="14">Mobile device · Browser</text><text x="58" y="277" fill="#8fa5c1" font-size="11">Last seen · verified server time</text><text x="625" y="267" fill="#a8c9ef" text-anchor="end" font-size="12">REVOKE</text>
+  <rect x="38" y="304" width="634" height="60" rx="8" fill="#0a172b" stroke="#344b6a"/>
+  <text x="58" y="329" fill="#e8eef8" font-size="14">Other browser session</text><text x="58" y="349" fill="#8fa5c1" font-size="11">Device and expiry details from ARSY</text><text x="625" y="339" fill="#a8c9ef" text-anchor="end" font-size="12">REVOKE</text>
+ </g>
+ <text x="38" y="390" fill="#7489a6" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">04 / SESSION ARCHIVE — SECURITY</text>
+</g>
+<text x="70" y="1080" fill="#8095b2" font-family="Arial,sans-serif" font-size="12" letter-spacing="2">CONCEPT MOCKUP · NOT A CLAIM OF IMPLEMENTED FEATURES · ARSY REMAINS THE IDENTITY AUTHORITY</text>
+</svg>
