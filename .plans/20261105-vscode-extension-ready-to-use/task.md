@@ -79,7 +79,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-059 AI task decomposer with small tasks and acceptance criteria. Added bounded deterministic decomposition with dependency links and criteria.
 - [x] VSC-060 Workspace-aware mission templates. Added deterministic matching against indexed workspace files and framework metadata.
 - [x] VSC-061 Dependency-aware scheduling and progress synchronization. Added a typed task graph readiness and progress utility.
-- [x] VSC-062 Documentation drift detection and proposed updates. Added metadata-only drift findings with actionable suggestions.
+- [x] VSC-062 Documentation drift detection and proposed updates. Repository indexing now includes bounded metadata-only findings and exposes actionable suggestions to the agent context.
 
 ## P1 — 0.6.0
 - [x] VSC-063 Define agent roles, tools, inputs, outputs and capabilities. Added typed supervisor, researcher, builder, and reviewer definitions with approval requirements.

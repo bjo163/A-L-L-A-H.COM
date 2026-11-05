@@ -3,6 +3,7 @@ import path from 'path';
 import * as vscode from 'vscode';
 import { isSensitiveWorkspacePath } from './localAgentCore';
 import { buildRepositoryDna, type RepositoryDna } from './repositoryDna';
+import { findDocumentationDrift, type DocumentationDrift } from './documentationDrift';
 
 export interface RepositoryContextIndex {
   workspacePath: string;
@@ -11,6 +12,7 @@ export interface RepositoryContextIndex {
   plans: string[];
   manifests: string[];
   dna: RepositoryDna;
+  drift: DocumentationDrift[];
   summary: string;
 }
 
@@ -35,6 +37,7 @@ export class RepositoryContextService {
     const manifests = files.filter((file) => /(?:^|[\\/])(?:package\.json|tsconfig(?:\..+)?\.json|pnpm-workspace\.yaml|Cargo\.toml|pyproject\.toml|go\.mod)$/.test(file));
     const packageManifest = await this.readPackageManifest(root, files);
     const dna = buildRepositoryDna(files, packageManifest);
+    const drift = findDocumentationDrift(dna.scripts, manifests, dna.documentation);
     const summary = [
       `Workspace: ${folder.name}`,
       `Files indexed: ${files.length}`,
@@ -42,8 +45,9 @@ export class RepositoryContextService {
       `Project manifests: ${manifests.length}`,
       `Detected: ${[dna.packageManager, ...dna.frameworks].filter(Boolean).join(', ') || 'no known framework metadata'}.`,
       'Excluded: .git, dependencies, build output, and sensitive paths.',
+      `Documentation suggestions: ${drift.length}.`,
     ].join('\n');
-    const index = { workspacePath: root, generatedAt: new Date().toISOString(), files, plans, manifests, dna, summary };
+    const index = { workspacePath: root, generatedAt: new Date().toISOString(), files, plans, manifests, dna, drift, summary };
     await this.context.workspaceState.update(INDEX_KEY, index);
     return index;
   }
@@ -72,6 +76,9 @@ export class RepositoryContextService {
       `- Scripts: ${index.dna.scripts.slice(0, 40).join(', ') || 'none detected'}`,
       `- Dependencies: ${index.dna.dependencies.slice(0, 80).join(', ') || 'none detected'}`,
       `- Documentation: ${index.dna.documentation.slice(0, 80).join(', ') || 'none detected'}`,
+      '',
+      'Proposed documentation updates:',
+      ...(index.drift ?? []).map((finding) => `- ${finding.value}: ${finding.suggestion}`),
     ].join('\n');
   }
 

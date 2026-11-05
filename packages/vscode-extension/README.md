@@ -29,7 +29,8 @@ service to activate or manage local projects.
   controls retain a 44px touch target, and keyboard focus remains visible.
 - Build a repository context index with `Workspace: Build Context Index`.
   The index records non-sensitive paths, project manifests, and `.plans`
-  artifacts without sending file contents.
+  artifacts without sending file contents. It also suggests documentation
+  updates from project metadata; suggestions do not edit project files.
 - Use `Workspace: Search and Open File` for bounded file discovery and
   `Tasks: Run Approved Validation` for the fixed, approval-gated validation
   list.

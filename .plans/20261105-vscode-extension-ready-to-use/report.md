@@ -52,6 +52,15 @@ When using the already-running VS Code executable, the host runner logs a shared
 | `pnpm extension:test` | Passed: 45 tests |
 | `pnpm --filter allah-vscode-extension build` | Passed |
 
+## Documentation drift integration
+
+Repository indexing now runs the metadata-only documentation drift detector and includes its suggestions in the context returned to the local agent. It proposes changes only; it does not edit project documentation.
+
+| Command | Result |
+|---|---|
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm extension:test -- --test-name-pattern='documentation drift\|repository DNA'` | Passed: 45 tests (runner invokes the full extension unit list) |
+
 ## Limitations
 
 - A VS Code extension-host harness is not available in the current repository, so activation, webview click-through, multi-root, clean-profile installation, and reload/recovery acceptance remain unverified.
