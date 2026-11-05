@@ -3,7 +3,7 @@
  * Uses existing gateway infrastructure with virtual API keys
  */
 
-import type { ILLMProvider, LLMProvider, ModelInfo, ChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
+import type { ILLMProvider, LLMProvider, ModelInfo, StandaloneChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
 
 export class MoonWitnessProvider implements ILLMProvider {
   readonly id: LLMProvider = 'moonwitness';
@@ -59,7 +59,7 @@ export class MoonWitnessProvider implements ILLMProvider {
 
   async chat(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -99,7 +99,7 @@ export class MoonWitnessProvider implements ILLMProvider {
 
   async stream(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;

@@ -5,7 +5,7 @@ import {
   type GatewayModel,
 } from './gatewayContracts';
 import type { PlanMarkdownBodies } from './planManager';
-import type { ChatCompletionResponse, ChatMessage, RemoteAgentMission } from './contracts';
+import type { RemoteAgentMission, StandaloneChatCompletionResponse, StandaloneChatMessage } from './contracts';
 
 const API_KEY_SECRET = process.env.API_KEY_SECRET_NAME || 'allah.apiKey';
 const SESSION_TOKEN_SECRET = process.env.SESSION_TOKEN_SECRET_NAME || 'allah.sessionToken';
@@ -77,7 +77,7 @@ class StandaloneHttpClient {
         ? [{ id: model.id, ...(typeof model.owned_by === 'string' ? { owned_by: model.owned_by } : {}) }]
         : []);
     },
-    chat: (body: { model: string; messages: ChatMessage[] }, signal?: AbortSignal): Promise<ChatCompletionResponse> =>
+    chat: (body: { model: string; messages: StandaloneChatMessage[] }, signal?: AbortSignal): Promise<StandaloneChatCompletionResponse> =>
       this.request('/v1/chat/completions', {
         method: 'POST',
         body: JSON.stringify(body),

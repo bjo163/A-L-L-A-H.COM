@@ -1,4 +1,4 @@
-import type { ChatMessage } from '../contracts';
+import type { StandaloneChatMessage } from '../contracts';
 
 /**
  * Abstract interface for LLM providers
@@ -23,7 +23,7 @@ export interface ModelInfo {
   ownedBy?: string;
 }
 
-export type { ChatMessage } from '../contracts';
+export type { StandaloneChatMessage } from '../contracts';
 
 export interface ChatResponse {
   id: string;
@@ -69,7 +69,7 @@ export interface ILLMProvider {
    */
   chat(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -82,7 +82,7 @@ export interface ILLMProvider {
    */
   stream(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;

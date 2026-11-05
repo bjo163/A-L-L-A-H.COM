@@ -3,7 +3,7 @@
  * Wraps the LLM client with retry, fallback, and queuing logic
  */
 
-import { ProviderRegistry, type ILLMProvider, type ChatMessage, type ChatResponse, type StreamChunk } from '../providers';
+import { ProviderRegistry, type ILLMProvider, type StandaloneChatMessage, type ChatResponse, type StreamChunk } from '../providers';
 import { RetryPolicy, CircuitBreaker } from './RetryPolicy';
 import { ProviderFallbackChain } from './ProviderFallbackChain';
 import { RequestQueue, type QueuedRequest } from './RequestQueue';
@@ -40,7 +40,7 @@ export class EnhancedClientWrapper {
    */
   async chat(
     modelId: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -69,7 +69,7 @@ export class EnhancedClientWrapper {
    */
   async stream(
     modelId: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;

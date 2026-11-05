@@ -28,7 +28,7 @@ export interface RemoteAgentMission {
   updatedAt: string;
 }
 
-export interface ChatMessage {
+export interface StandaloneChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string | Array<
     | { type: 'text'; text: string }
@@ -43,14 +43,14 @@ export interface ChatMessage {
   tool_call_id?: string;
 }
 
-export interface ChatCompletionResponse {
+export interface StandaloneChatCompletionResponse {
   id: string;
   object: string;
   created: number;
   model: string;
   choices: Array<{
     index: number;
-    message: ChatMessage;
+    message: StandaloneChatMessage;
     finish_reason: string;
   }>;
   usage?: {

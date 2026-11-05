@@ -3,7 +3,7 @@
  * Direct integration with OpenAI API for GPT models
  */
 
-import type { ILLMProvider, LLMProvider, ModelInfo, ChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
+import type { ILLMProvider, LLMProvider, ModelInfo, StandaloneChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
 
 // Popular OpenAI models with capabilities
 const OPENAI_MODELS = [
@@ -72,7 +72,7 @@ export class OpenAIProvider implements ILLMProvider {
 
   async chat(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -112,7 +112,7 @@ export class OpenAIProvider implements ILLMProvider {
 
   async stream(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;

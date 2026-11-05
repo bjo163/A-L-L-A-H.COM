@@ -3,7 +3,7 @@
  * Direct integration with Google Generative AI API
  */
 
-import type { ILLMProvider, LLMProvider, ModelInfo, ChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
+import type { ILLMProvider, LLMProvider, ModelInfo, StandaloneChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
 
 const GEMINI_MODELS = [
   {
@@ -69,7 +69,7 @@ export class GeminiProvider implements ILLMProvider {
 
   async chat(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -109,7 +109,7 @@ export class GeminiProvider implements ILLMProvider {
 
   async stream(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;

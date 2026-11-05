@@ -3,7 +3,7 @@
  * Direct integration with Anthropic API for Claude models
  */
 
-import type { ILLMProvider, LLMProvider, ModelInfo, ChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
+import type { ILLMProvider, LLMProvider, ModelInfo, StandaloneChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
 
 const ANTHROPIC_MODELS = [
   {
@@ -77,7 +77,7 @@ export class AnthropicProvider implements ILLMProvider {
 
   async chat(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -125,7 +125,7 @@ export class AnthropicProvider implements ILLMProvider {
 
   async stream(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;

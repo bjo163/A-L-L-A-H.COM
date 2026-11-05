@@ -3,7 +3,7 @@
  * Local model support via Ollama (localhost:11434)
  */
 
-import type { ILLMProvider, LLMProvider, ModelInfo, ChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
+import type { ILLMProvider, LLMProvider, ModelInfo, StandaloneChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
 
 export class OllamaProvider implements ILLMProvider {
   readonly id: LLMProvider = 'ollama';
@@ -45,7 +45,7 @@ export class OllamaProvider implements ILLMProvider {
 
   async chat(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     options?: {
       temperature?: number;
       maxTokens?: number;
@@ -102,7 +102,7 @@ export class OllamaProvider implements ILLMProvider {
 
   async stream(
     model: string,
-    messages: ChatMessage[],
+    messages: StandaloneChatMessage[],
     onChunk: (chunk: StreamChunk) => void,
     options?: {
       temperature?: number;
