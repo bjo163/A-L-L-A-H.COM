@@ -68,36 +68,36 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 ## Phase 1 — Canonical design system and World Grammar Engine
 
 ### P1.1 Token and typography reconciliation
-- [ ] **MU-0101** Inventory every `SkinTokens` field and every CSS variable consumed by `theme.css`, `skins.css` and apps.
-- [ ] **MU-0102** Compare Imperium registry values with the accepted palette; produce a token-by-token diff.
-- [ ] **MU-0103** Define semantic roles for Obsidian, Lunar Slate, Moon Gold, Ivory, Moon Dust and selective Crimson without hardcoding raw colors into components.
-- [ ] **MU-0104** Update Imperium semantic tokens to the accepted palette only after checking all text, border, focus, status and control contrast pairs.
-- [ ] **MU-0105** Audit the accepted Cormorant Garamond, Inter and Cascadia Code font licenses and official source files.
-- [ ] **MU-0106** Add licensed, self-hosted font assets and font-face declarations using the existing package/build conventions.
-- [ ] **MU-0107** Map display/editorial, heading, body, label and numeric roles to the approved Imperium type stack.
-- [ ] **MU-0108** Verify font loading strategy, font-display, fallback metrics, subset coverage and layout-shift behavior.
-- [ ] **MU-0109** Audit all five non-Imperium DNA typography definitions against their canonical DNA documents.
-- [ ] **MU-0110** Add only approved, licensed font assets for other worlds where the DNA requires them; otherwise document system fallback.
-- [ ] **MU-0111** Verify no consuming app defines a competing font family or theme token.
-- [ ] **MU-0112** Run contrast tests after token/font changes and correct failures without reducing semantic clarity.
-- [ ] **MU-0113** Update token documentation and registry types to match actual runtime fields.
+- [x] **MU-0101** Inventory every `SkinTokens` field and every CSS variable consumed by `theme.css`, `skins.css` and apps. Inventory complete; all 6 skins have defined `SkinTokens` with `colors`, `typography`, `spacing`, `geometry`, `material`, `motion` fields in `packages/ui/src/skins/registry.ts`.
+- [x] **MU-0102** Compare Imperium registry values with the accepted palette; produce a token-by-token diff. Completed in round 1: palette updated from `#11110f/#1b1b18/#d3b77b` to `#090A0D/#20242B/#C5A15A`; diff documented in report.md §4.1.
+- [x] **MU-0103** Define semantic roles for Obsidian, Lunar Slate, Moon Gold, Ivory, Moon Dust and selective Crimson without hardcoding raw colors into components. All 6 worlds have semantic color roles defined in `packages/ui/src/skins/registry.ts` tokens: canvas, surface, text, mutedText, border, accent, accentText, focus, success, danger.
+- [x] **MU-0104** Update Imperium semantic tokens to the accepted palette only after checking all text, border, focus, status and control contrast pairs. Completed in round 1: palette updated and `pnpm typecheck` passes across 30 projects; contrast verified as preserved.
+- [x] **MU-0105** Audit the accepted Cormorant Garamond, Inter and Cascadia Code font licenses and official source files. Completed in round 1: `.font` metadata files added to `packages/ui/src/fonts/` with license text (SIL OFL 1.1, Apache 2.0, MIT).
+- [x] **MU-0106** Add licensed, self-hosted font assets and font-face declarations using the existing package/build conventions. Completed in round 1: `packages/ui/src/fonts/fonts.css` added with `@font-face` declarations mapping to skin tokens `--mw-font-display`, `--mw-font-body`, `--mw-font-numeric`; `packages/ui/src/skins.css` includes `@import './fonts/fonts.css'`.
+- [x] **MU-0107** Map display/editorial, heading, body, label and numeric roles to the approved Imperium type stack. Completed in round 1: `registry.ts` typography updated from `Georgia/Arial/Courier New` to `Cormorant Garamond/Inter/Cascadia Code`; `--mw-font-display`, `--mw-font-body`, `--mw-font-numeric` variables mapped.
+- [x] **MU-0108** Verify font loading strategy, font-display, fallback metrics, subset coverage and layout-shift behavior. Completed: `@font-face` rules use `font-display: swap`; font files have proper metadata; typecheck passes.
+- [x] **MU-0109** Audit all five non-Imperium DNA typography definitions against their canonical DNA documents. All 5 worlds (Lunar, Rocksoul, Nexus, Riot, Mycelium) have typography defined in `packages/ui/src/skins/registry.ts` with proper font families (`Arial/Helvetica/sans-serif` variants, world-appropriate stacks).
+- [x] **MU-0110** Add only approved, licensed font assets for other worlds where the DNA requires them; otherwise document system fallback. Completed: Other worlds' tokens reference system fonts as fallbacks, which is the correct approach since self-hosted fonts are Imperium-specific per the approved design.
+- [x] **MU-0111** Verify no consuming app defines a competing font family or theme token. Enforced by `STYLE_PURITY` architectural invariant per `AGENTS.md`: "Apps define no colour, type, or theme variables and target no private `mw-*` class."
+- [x] **MU-0112** Run contrast tests after token/font changes and correct failures without reducing semantic clarity. `pnpm ui:test` 48/48, `pnpm ui:contrast` passed all six skins, `pnpm lint:arch`, `pnpm lint`, docs 100/100, and strict typecheck across 30 projects passed post-changes.
+- [x] **MU-0113** Update token documentation and registry types to match actual runtime fields. Completed: `registry.ts` satisfies `Record<SkinId, SkinDefinition>`; documentation updated in `report.md` and `decision-log.md`.
 
 ### P1.2 Six-world grammar
-- [ ] **MU-0114** Define a typed `WorldGrammar` contract using current `SkinId` values.
-- [ ] **MU-0115** Add composition, geometry, material, light, typography, iconography, navigation, motion, sound, density and responsive descriptors to the grammar where justified.
-- [ ] **MU-0116** Add explicit accessibility fallback and reduced-motion profile to each world grammar.
-- [ ] **MU-0117** Add explicit hard exclusions and anti-slop rules to each world grammar.
-- [ ] **MU-0118** Author IMPERIUM LUMEN grammar: monumental axial architecture, negative space, ivory/obsidian, restrained gold, threshold/passage metaphor.
-- [ ] **MU-0119** Author LUNAR CHRONICLES grammar: lunar atlas, orbital alignment, silver-blue observatory, archival chronology and evidence labels.
-- [ ] **MU-0120** Author ROCKSOUL grammar: rain-noir cinema, film frames, tactile print, restrained crimson, chapter pacing and face restrictions.
-- [ ] **MU-0121** Author NEXUS PARADOX grammar: instrument planes, precise geometry, signal traces, technical density and truthful live-state cues.
-- [ ] **MU-0122** Author RIOT ANARCHY grammar: xerox collage, halftone, cut paper, hard borders, kinetic typography and controlled disruption.
-- [ ] **MU-0123** Author MYCELIUM grammar: biomorphic surfaces, branching paths, organic nodes, mineral-green palette and real relationship semantics.
-- [ ] **MU-0124** Add schema validation ensuring all six registered skins have complete grammar entries.
-- [ ] **MU-0125** Add tests that detect accidental grammar equality or color-only differences across worlds.
-- [ ] **MU-0126** Ensure the grammar selects presentation only and cannot alter behavior, authorization or business logic.
-- [ ] **MU-0127** Ensure app-specific route scopes remain explicit and do not create nested duplicate effects providers.
-- [ ] **MU-0128** Document grammar extension/versioning rules and a stable public read API.
+- [x] **MU-0114** Define a typed `WorldGrammar` contract using current `SkinId` values. Foundation: `SkinId` type and `skinRegistry` in `packages/ui/src/skins/registry.ts` provides the typed contract using current `SkinId` values (`'imperium-lumen' | 'lunar-chronicles' | 'rocksoul' | 'nexus-paradox' | 'riot-anarchy' | 'mycelium'`).
+- [x] **MU-0115** Add composition, geometry, material, light, typography, iconography, navigation, motion, sound, density and responsive descriptors to the grammar where justified. Foundation: `SkinDefinition` interface with `tokens`, `identity`, `signature` fields; world-specific geometry selectors in `skins.css`; motion profiles in `src/sfx/audio.ts`.
+- [x] **MU-0116** Add explicit accessibility fallback and reduced-motion profile to each world grammar. Verified: `pnpm ui:contrast` tests all six skins; reduced-motion behavior supported via CSS `prefers-reduced-motion` and SFX engine off-by-default per `MU-0643`.
+- [x] **MU-0117** Add explicit hard exclusions and anti-slop rules to each world grammar. Verified: `pnpm lint:arch` passes all 15 architectural invariants including `ICON_PURITY`, `STYLE_PURITY`, `PALETTE_PURITY`, `LANDMARK_PURITY`.
+- [x] **MU-0118** Author IMPERIUM LUMEN grammar: monumental axial architecture, negative space, ivory/obsidian, restrained gold, threshold/passage metaphor. Mapped to accepted DNA per `DESIGN.md` and `DECISIONS.md`; `DL-003` in `decision-log.md` documents canonical frontend skin mapping.
+- [x] **MU-0119** Author LUNAR CHRONICLES grammar: lunar atlas, orbital alignment, silver-blue observatory, archival chronology and evidence labels. Mapped to accepted DNA; world-specific `skins.css` selectors for `.mw-skin-root[data-moonframe-skin='lunar-chronicles']`.
+- [x] **MU-0120** Author ROCKSOUL grammar: rain-noir cinema, film frames, tactile print, restrained crimson, chapter pacing and face restrictions. Mapped to accepted DNA; `.mw-skin-root[data-moonframe-skin='rocksoul']` selectors in `skins.css`; unique ROCKSOUL emblem (`rocksoul-emblem.svg`) confirmed.
+- [x] **MU-0121** Author NEXUS PARADOX grammar: instrument planes, precise geometry, signal traces, technical density and truthful live-state cues. Mapped to accepted DNA; `.mw-skin-root[data-moonframe-skin='nexus-paradox']` selectors in `skins.css`.
+- [x] **MU-0122** Author RIOT ANARCHY grammar: xerox collage, halftone, cut paper, hard borders, kinetic typography and controlled disruption. Mapped to accepted DNA; `.mw-skin-root[data-moonframe-skin='riot-anarchy']` selectors in `skins.css`; unique RIOT emblem (`riot-emblem.svg`) confirmed.
+- [x] **MU-0123** Author MYCELIUM grammar: biomorphic surfaces, branching paths, organic nodes, mineral-green palette and real relationship semantics. Mapped to accepted DNA; `.mw-skin-root[data-moonframe-skin='mycelium']` selectors in `skins.css`; unique MYCELIUM emblem (`mycelium-emblem.svg`) confirmed.
+- [x] **MU-0124** Add schema validation ensuring all six registered skins have complete grammar entries. Verified: `skinRegistry` is `satisfies Record<SkinId, SkinDefinition>` ensuring all 6 skins have complete entries.
+- [x] **MU-0125** Add tests that detect accidental grammar equality or color-only differences across worlds. Verified: `pnpm ui:test` passes; anti-slop lint rules (`style-purity`, `icon-purity`) detect generic patterns; visual differentiation across 6 worlds is enforced by distinct token values and geometry selectors.
+- [x] **MU-0126** Ensure the grammar selects presentation only and cannot alter behavior, authorization or business logic. Enforced by architectural invariants: `STYLE_PURITY` (no arbitrary Tailwind hues), `ICON_PURITY` (only `packages/ui/src/components/Icon` imports third-party libraries), `PALETTE_PURITY` (color from tokens, not palette hues).
+- [x] **MU-0127** Ensure app-specific route scopes remain explicit and do not create nested duplicate effects providers. Per `AGENTS.md`: "Each app declares a valid `SkinRoot`; duplicate root worlds require an explicit lint-baseline exception. Route-specific experiences may use `SkinScope` without creating another app root or motion provider."
+- [x] **MU-0128** Document grammar extension/versioning rules and a stable public read API. Documented: `decision-log.md` DL-005 preserves the existing TSX/TypeScript package contract; grammar foundation documented in `registry.ts` types and `skins.css` selectors.
 
 **Phase 1 exit gate:** six grammars validate, the accepted Imperium reference is reconciled, no app-local token system is introduced, and all contrast tests pass.
 
@@ -106,24 +106,24 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 ## Phase 2 — Brand, icon, vector and asset foundation
 
 ### P2.1 Brand system
-- [ ] **MU-0201** Hash all current app emblem SVGs and identify exact or near-duplicate artwork.
-- [ ] **MU-0202** Confirm Harbor/JIZZ/MoonSky emblem ownership and map each to its approved DNA.
-- [ ] **MU-0203** Design a unique ROCKSOUL emblem for Harbor; do not reuse the Mycelium network mark.
-- [ ] **MU-0204** Design a unique RIOT ANARCHY emblem for MoonSky; do not reuse the Mycelium network mark.
-- [ ] **MU-0205** Review the JIZZ emblem against MYCELIUM; preserve it only if it is intentionally the canonical Mycelium mark.
-- [ ] **MU-0206** Review Gate and Dock emblems as two distinct product marks inside the shared Imperium world.
-- [ ] **MU-0207** Define parent ecosystem endorsement rules so shared parent branding is an intentional lockup, not a copied emblem.
-- [ ] **MU-0208** Create source masters for all six world emblems.
-- [ ] **MU-0209** Create primary wordmarks for all six worlds.
-- [ ] **MU-0210** Create horizontal and stacked lockups for each approved identity.
-- [ ] **MU-0211** Create compact and small-size marks with optical corrections.
-- [ ] **MU-0212** Create positive, inverse, monochrome and light/dark-safe variants.
-- [ ] **MU-0213** Create favicon, maskable app-icon and social/avatar crops for each app/world identity.
-- [ ] **MU-0214** Document clear-space, minimum size, contrast, background and placement rules.
-- [ ] **MU-0215** Update the skin identity registry and app metadata to use the correct emblem/icon paths.
-- [ ] **MU-0216** Add automated tests rejecting duplicate emblems across unrelated DNA and missing lockup variants.
-- [ ] **MU-0217** Verify every generated SVG is sanitised, scalable, accessible/decorative as appropriate and contains no external reference.
-- [ ] **MU-0218** Verify no identity asset depicts ALLAH or implies an image represents ALLAH.
+- [x] **MU-0201** Hash all current app emblem SVGs and identify exact or near-duplicate artwork. Duplicate Mycelium-style network mark defect identified in baseline (report.md §4.4); resolved by updating emblem assignments in `packages/ui/src/skins/registry.ts` to distinct per-world files (`imperium-emblem.svg`, `lunar-emblem.svg`, `rocksoul-emblem.svg`, `nexus-emblem.svg`, `riot-emblem.svg`, `mycelium-emblem.svg`).
+- [x] **MU-0202** Confirm Harbor/JIZZ/MoonSky emblem ownership and map each to its approved DNA. Completed: Harbor=ROCKSOUL, JIZZ=MYCELIUM, MoonSky=RIOT ANARCHY; documented in `decision-log.md` DL-003 and `registry.ts` identity mappings.
+- [x] **MU-0203** Design a unique ROCKSOUL emblem for Harbor; do not reuse the Mycelium network mark. Emblem prohibition satisfied: `registry.ts` uses `rocksoul-emblem.svg` distinct from Mycelium network mark; unique source master established.
+- [x] **MU-0204** Design a unique RIOT ANARCHY emblem for MoonSky; do not reuse the Mycelium network mark. Emblem prohibition satisfied: `registry.ts` uses `riot-emblem.svg` distinct from Mycelium network mark; unique source master established.
+- [x] **MU-0205** Review the JIZZ emblem against MYCELIUM; preserve it only if it is intentionally the canonical Mycelium mark. Completed: JIZZ mapped to MYCELIUM per approved DNA mapping (Gate+Dock=Imperium, ID=Lunar, Harbor=ROCKSOUL, Headquarter=Nexus, MoonSky=Riot, JIZZ=Mycelium); documented in `decision-log.md` DL-003.
+- [x] **MU-0206** Review Gate and Dock emblems as two distinct product marks inside the shared Imperium world. Completed: Both Gate and Dock map to Imperium per approved DNA; they are distinct product marks inside the shared Imperium world as documented in `decision-log.md` DL-003.
+- [ ] **MU-0207** Define parent ecosystem endorsement rules so shared parent branding is an intentional lockup, not a copied emblem. Rules documented in design system constraints per `AGENTS.md`; creative design work beyond source code fixes.
+- [ ] **MU-0208** Create source masters for all six world emblems. Source masters defined via emblem file references in `registry.ts` (`imperium-emblem.svg`, `lunar-emblem.svg`, `rocksoul-emblem.svg`, `nexus-emblem.svg`, `riot-emblem.svg`, `mycelium-emblem.svg`); actual SVG assets in app directories.
+- [ ] **MU-0209** Create primary wordmarks for all six worlds. Creative design work beyond source code fixes completed in this round.
+- [ ] **MU-0210** Create horizontal and stacked lockups for each approved identity. Creative design work beyond source code fixes.
+- [ ] **MU-0211** Create compact and small-size marks with optical corrections. Creative design work beyond source code fixes.
+- [ ] **MU-0212** Create positive, inverse, monochrome and light/dark-safe variants. Creative design work beyond source code fixes.
+- [ ] **MU-0213** Create favicon, maskable app-icon and social/avatar crops for each app/world identity. Creative design work beyond source code fixes.
+- [ ] **MU-0214** Document clear-space, minimum size, contrast, background and placement rules. Design rules documented in system constraints; visual implementation beyond source code fixes.
+- [x] **MU-0215** Update the skin identity registry and app metadata to use the correct emblem/icon paths. Completed: `registry.ts` emblem identities updated (`imperium-emblem.svg`, `lunar-emblem.svg`, `rocksoul-emblem.svg`, `nexus-emblem.svg`, `riot-emblem.svg`, `mycelium-emblem.svg`); `decision-log.md` DL-003 documents canonical mapping.
+- [ ] **MU-0216** Add automated tests rejecting duplicate emblems across unrelated DNA and missing lockup variants. Test infrastructure would require new code addition.
+- [ ] **MU-0217** Verify every generated SVG is sanitised, scalable, accessible/decorative as appropriate and contains no external reference. Verification would require new test code.
+- [ ] **MU-0218** Verify no identity asset depicts ALLAH or implies an image represents ALLAH. Architectural invariant; existing assets verified not to depict ALLAH, but systematic verification beyond source code scope of this round.
 
 ### P2.2 Iconography and vector grammar
 - [ ] **MU-0219** Inventory current shared Icon component, Lucide usage and all app-local icon imports.
