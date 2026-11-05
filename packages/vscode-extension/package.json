@@ -92,6 +92,12 @@
                                              "title":  "MoonWitness: Pull Plan States from Arsy Hub",
                                              "category":  "A-L-L-A-H",
                                              "icon":  "$(cloud-download)"
+                                         },
+                                         {
+                                             "command":  "allah.syncPlansToTurso",
+                                             "title":  "MoonWitness: Sync .plans to Turso Cloud (LibSQL)",
+                                             "category":  "A-L-L-A-H",
+                                             "icon":  "$(database)"
                                          }
                                      ],
                         "viewsContainers":  {
@@ -179,6 +185,11 @@
                                                              "command":  "allah.pullPlanFromHub",
                                                              "when":  "view == allah.plansView",
                                                              "group":  "navigation@2"
+                                                         },
+                                                         {
+                                                             "command":  "allah.syncPlansToTurso",
+                                                             "when":  "view == allah.plansView",
+                                                             "group":  "navigation@3"
                                                          }
                                                      ],
                                       "view/item/context":  [

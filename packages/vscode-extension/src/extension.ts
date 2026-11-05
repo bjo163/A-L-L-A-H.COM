@@ -1,4 +1,4 @@
-import * as path from 'path';
+﻿import * as path from 'path';
 import * as vscode from 'vscode';
 import { MoonWitnessClient } from './client';
 import { ArsyStatusTreeDataProvider, ModelTreeDataProvider } from './treeProvider';
@@ -7,6 +7,7 @@ import { PlanManager, type PlanItem, type TaskItem, type TaskStatus } from './pl
 import { AgentWorkbenchProvider } from './agentWorkbench';
 import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
 import { RemoteMissionService } from './remoteMissionService';
+import { TursoClient } from './tursoClient';
 
 
 function isTaskItem(value: unknown): value is TaskItem {
@@ -454,6 +455,44 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             planProvider.refresh();
           } catch (err) {
             vscode.window.showErrorMessage(`Pull failed: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      );
+    }),
+    vscode.commands.registerCommand('allah.syncPlansToTurso', async () => {
+      const folder = await chooseWorkspaceFolder();
+      if (!folder) return;
+      const tursoUrl = process.env.TURSO_DATABASE_URL || 'libsql://moonwitness-vscode-bjo163.aws-ap-southeast-1.turso.io';
+      const tursoToken = process.env.TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTM4NDU2MTMsImlkIjoiMDFhMWE5ODctOGYwMS03YzI5LTkyMjktNjIzZDc1MmExYzQ4Iiwia2lkIjoib0RNRU1INkFreTVCTFhiUVhDcEYxUlk1c2xSM2FCYjRWcEd6cS1sXzNNVSIsInJpZCI6Ijc4NjMwMGYyLWVmMjYtNDI1OS1iNDIxLTgzMzViZjhiMTFlOCJ9.IORHDVxvCu4ZLlX0kwOFlyB2AMjwI6i-hgF8LweHMJ2fVjBypQ8kU-I8MfY8z-MhhL78biqOAz-A0ym9aLQpDA';
+      
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'Syncing .plans to Turso Cloud DB...' },
+        async () => {
+          try {
+            const turso = new TursoClient({ url: tursoUrl, authToken: tursoToken });
+            const projectId = folder.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+            await turso.upsertProject({ id: projectId, name: folder.name, workspace_path: folder.uri.fsPath });
+            
+            const localPlans = PlanManager.scanWorkspace(folder.uri.fsPath);
+            const payload = localPlans.map((p) => ({
+              slug: p.folderName,
+              title: p.title,
+              specStatus: p.status,
+              folderHash: p.id,
+              tasks: p.tasks.map((t) => ({
+                text: t.text,
+                state: t.status === 'in-progress' ? 'in_progress' : t.status,
+                lineIndex: t.lineIndex,
+                sourceLine: t.sourceLine,
+                fileHash: t.text,
+              })),
+            }));
+            
+            const result = await turso.syncPlans(projectId, payload);
+            vscode.window.showInformationMessage(`Turso Cloud Sync: Synced ${localPlans.length} plans (${result.insertedOrUpdated} records) to Turso DB.`);
+            planProvider.refresh();
+          } catch (err) {
+            vscode.window.showErrorMessage(`Turso sync failed: ${err instanceof Error ? err.message : String(err)}`);
           }
         }
       );

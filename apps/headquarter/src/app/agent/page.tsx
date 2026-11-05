@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useRef } from 'react';
 import {
@@ -54,12 +54,13 @@ export default function AgentStudioPage() {
     setSSEEvents([]);
     setError(null);
 
-    mwClient.agent.stream(request, (event: any, data: string) => {
-      setSSEEvents(prev => [...prev, { event, data }]);
+    mwClient.agent.stream(request, (event: string, data: unknown) => {
+      const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+      setSSEEvents(prev => [...prev, { event, data: dataStr }]);
 
       // Parse and update steps based on event type
       try {
-        const parsed = JSON.parse(data);
+        const parsed = typeof data === 'object' && data !== null ? (data as any) : JSON.parse(dataStr);
         switch (event) {
           case 'thought': {
             setSteps(prev => {
