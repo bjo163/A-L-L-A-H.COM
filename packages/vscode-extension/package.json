@@ -63,6 +63,11 @@
         "category": "A-L-L-A-H"
       },
       {
+        "command": "allah.loadPlanTask",
+        "title": "Workspace Agent: Load Task as Draft",
+        "category": "A-L-L-A-H"
+      },
+      {
         "command": "allah.searchWorkspace",
         "title": "Workspace: Search and Open File",
         "category": "A-L-L-A-H"
@@ -271,6 +276,11 @@
           "command": "allah.resetTaskToPending",
           "when": "view == allah.views.plans && viewItem == taskItem",
           "group": "task@3"
+        },
+        {
+          "command": "allah.loadPlanTask",
+          "when": "view == allah.views.plans && viewItem == taskItem",
+          "group": "task@4"
         }
       ]
     },

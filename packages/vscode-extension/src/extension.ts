@@ -410,6 +410,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.window.showErrorMessage(`Could not open the task checklist: ${error instanceof Error ? error.message : String(error)}`);
       }
     }),
+    vscode.commands.registerCommand('allah.loadPlanTask', async (value: unknown) => {
+      const task = getTaskItem(value);
+      if (!task) {
+        vscode.window.showErrorMessage('Select a task in the Plans view before loading it into Workspace Agent.');
+        return;
+      }
+      const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(task.filePath));
+      if (!folder) {
+        vscode.window.showErrorMessage('The selected plan task is outside the open workspace folders.');
+        return;
+      }
+      try {
+        const delivered = await localAgentProvider.loadPlanTaskDraft(task, folder);
+        vscode.window.showInformationMessage(delivered
+          ? 'Loaded the plan task into Workspace Agent. Review it before starting.'
+          : 'Queued the plan task for Workspace Agent. It will appear when the view opens.');
+      } catch (error) {
+        vscode.window.showErrorMessage(`Could not load the plan task: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }),
     vscode.commands.registerCommand('allah.markTaskInProgress', (value: unknown) => {
       setTaskStatus(value, 'in-progress', planProvider);
     }),
@@ -696,7 +716,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
     }),
     vscode.commands.registerCommand('allah.showTimelineReplay', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.allah-explorer');
+      await vscode.commands.executeCommand('workbench.action.openView', TimelineReplayProvider.viewType);
     }),
     vscode.commands.registerCommand('allah.setBudgetLimit', async () => {
       const input = await vscode.window.showInputBox({
@@ -736,17 +756,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.window.showInformationMessage(`Audit trail exported to ${target.fsPath}.`);
     }),
     vscode.commands.registerCommand('allah.showMissionTimeline', async () => {
-      const entries = missionTimeline
-        .getAllTimelines()
-        .flatMap((timeline) => timeline.events)
-        .sort((left, right) => right.timestamp - left.timestamp)
-        .slice(0, 10);
-      const message = entries.length === 0
-        ? 'No mission events recorded yet.'
-        : `Mission Timeline (${entries.length} events):\n${entries
-            .map((event) => `[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type}: ${event.title}`)
-            .join('\n')}`;
-      vscode.window.showInformationMessage(message);
+      try {
+        await localAgentProvider.focusMissionTimeline();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Could not open the Workspace Agent timeline: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }),
     vscode.commands.registerCommand('allah.showMissionTemplates', async () => {
       if (!vscode.workspace.isTrusted) {

@@ -17,6 +17,8 @@ service to activate or manage local projects.
 
 - Start coding work in `Workspace Agent: Focus`.
 - Browse plan artifacts in `Project Manager (.plans)`.
+- Right-click a plan checklist item and choose `Workspace Agent: Load Task as Draft`.
+  The selected task and workspace are loaded for review; the agent does not start automatically.
 - Configure providers with `LLM: Configure Providers` and store a gateway key with `MoonWitness: Set API Key`.
 - Open provider health, usage, and audit tools from the MoonWitness activity bar.
 
@@ -66,6 +68,8 @@ service to activate or manage local projects.
 - `LLM: Configure Providers` and the Workspace Agent's Configure button open
   the same extension-filtered agent settings. Readiness and model selection
   stay in the Workspace Agent; use Check provider there after changing settings.
+- `Timeline: Show Recent Events` focuses the local Workspace Agent timeline.
+  `Audit: Timeline Replay & Export` opens the separate replay and export view.
 
 ## AI providers and offline behavior
 

@@ -12,7 +12,7 @@ test('manifest commands and views have runtime registrations', () => {
     encoding: 'utf8',
   });
 
-  if (!output.includes('28 commands and 8 views')) {
+  if (!output.includes('29 commands and 8 views')) {
     throw new Error(`Unexpected manifest parity result: ${output}`);
   }
 });

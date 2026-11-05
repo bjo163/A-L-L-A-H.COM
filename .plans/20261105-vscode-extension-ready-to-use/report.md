@@ -266,6 +266,23 @@ Task persistence is opt-in and limited to a redacted 4,000-character prompt with
 | `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
 | `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
 
+## Plan, mission, and timeline navigation
+
+Plan checklist context actions now load the selected item and workspace as a reviewable Code-mode draft. The user must still start the session and approve workspace context and any edits. Local session history exposes each stored timeline, `Timeline: Show Recent Events` focuses the active local timeline, and `Audit: Timeline Replay & Export` opens the separate replay view.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 59 tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src --max-warnings 0` | Passed |
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, 29 host tests |
+| `pnpm --filter allah-vscode-extension check-manifest` | Passed: 29 commands and 8 views |
+| `pnpm --filter allah-vscode-extension check-standalone` | Passed |
+| `pnpm --filter allah-vscode-extension package` | Passed: `allah-vscode-extension-0.3.0.vsix` |
+| `code --install-extension packages\vscode-extension\allah-vscode-extension-0.3.0.vsix --force` | Passed |
+| `code --list-extensions --show-versions` | Passed: `a-l-l-a-h.allah-vscode-extension@0.3.0` |
+
 ## Unified agent provider setup
 
 The command-palette entry and Workspace Agent Configure button now use the same filtered settings page for `agentProvider`, model, and endpoint settings. Readiness and discovered models stay in the Workspace Agent; the Check provider action refreshes status after settings changes.

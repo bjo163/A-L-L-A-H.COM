@@ -77,9 +77,10 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'allah.localAgentWorkbench';
 
   private view?: vscode.WebviewView;
-  private pendingTemplateDraft?: { mode: AgentMode; prompt: string };
-  private pendingTemplateDelivery?: Promise<boolean>;
-  private templateWorkspace?: vscode.WorkspaceFolder;
+  private pendingAgentDraft?: { type: 'template-draft' | 'plan-task-draft'; mode: AgentMode; prompt: string };
+  private pendingAgentDraftDelivery?: Promise<boolean>;
+  private draftWorkspace?: vscode.WorkspaceFolder;
+  private focusTimelineWhenReady = false;
   private activeRun: AbortController | undefined;
   private readonly resumeLocks = new Set<string>();
   private readonly repairCandidates = new Map<string, {
@@ -111,7 +112,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         this.post({ type: 'history', sessions: this.toHistoryView(sessions) });
         await this.sendProviderStatus();
         try {
-          await this.deliverPendingTemplateDraft();
+          await this.deliverPendingAgentDraft();
         } catch (error) {
           this.post({
             type: 'failed',
@@ -121,6 +122,10 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         const latest = sessions[0];
         if (latest?.timeline?.length) {
           this.post({ type: 'mission-restored', state: latest.state, events: latest.timeline });
+        }
+        if (this.focusTimelineWhenReady) {
+          this.focusTimelineWhenReady = false;
+          this.post({ type: 'focus-timeline' });
         }
         return;
       }
@@ -146,8 +151,12 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         return;
       }
       if (message.command === 'clearTemplateDraft') {
-        this.pendingTemplateDraft = undefined;
-        this.templateWorkspace = undefined;
+        this.pendingAgentDraft = undefined;
+        this.draftWorkspace = undefined;
+        return;
+      }
+      if (message.command === 'showSessionTimeline' && typeof message.sessionId === 'string') {
+        this.showSessionTimeline(message.sessionId);
         return;
       }
       if (message.command === 'proposeRepair' && typeof message.sessionId === 'string') {
@@ -171,8 +180,8 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         && isAgentMode(message.mode)
         && typeof message.prompt === 'string'
       ) {
-        const templateWorkspace = this.templateWorkspace;
-        this.templateWorkspace = undefined;
+        const draftWorkspace = this.draftWorkspace;
+        this.draftWorkspace = undefined;
         const resumeSessionId = typeof message.resumeSessionId === 'string'
           ? message.resumeSessionId
           : undefined;
@@ -187,7 +196,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
             message.prompt,
             undefined,
             undefined,
-            templateWorkspace,
+            draftWorkspace,
             message.persistForResume === true || Boolean(resumeSessionId),
             resumeSessionId
           );
@@ -213,31 +222,65 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     prompt: string,
     workspace: vscode.WorkspaceFolder
   ): Promise<boolean> {
-    this.pendingTemplateDraft = { mode, prompt };
-    this.templateWorkspace = workspace;
+    return this.loadAgentDraft('template-draft', mode, prompt, workspace);
+  }
+
+  async loadPlanTaskDraft(
+    task: { text: string; filePath: string },
+    workspace: vscode.WorkspaceFolder
+  ): Promise<boolean> {
+    const relativeTaskPath = path.relative(workspace.uri.fsPath, task.filePath);
+    const prompt = [
+      'Work on the selected plan task.',
+      `Task: ${task.text}`,
+      `Checklist: ${relativeTaskPath}`,
+      'Do not change its checklist status. The developer will update it after reviewing the result.',
+    ].join('\n\n');
+    return this.loadAgentDraft('plan-task-draft', 'code', prompt, workspace);
+  }
+
+  private async loadAgentDraft(
+    type: 'template-draft' | 'plan-task-draft',
+    mode: AgentMode,
+    prompt: string,
+    workspace: vscode.WorkspaceFolder
+  ): Promise<boolean> {
+    this.pendingAgentDraft = { type, mode, prompt };
+    this.draftWorkspace = workspace;
     await vscode.commands.executeCommand('allah.focusLocalAgent');
     const view = this.view;
     if (!view) return false;
     view.show(true);
-    return (await this.deliverPendingTemplateDraft()) || this.pendingTemplateDraft === undefined;
+    return (await this.deliverPendingAgentDraft()) || this.pendingAgentDraft === undefined;
   }
 
-  private async deliverPendingTemplateDraft(): Promise<boolean> {
-    if (this.pendingTemplateDelivery) return this.pendingTemplateDelivery;
+  async focusMissionTimeline(): Promise<void> {
+    this.focusTimelineWhenReady = true;
+    await vscode.commands.executeCommand('workbench.action.openView', LocalAgentWorkbenchProvider.viewType);
     const view = this.view;
-    const draft = this.pendingTemplateDraft;
+    if (view) {
+      view.show(true);
+      this.focusTimelineWhenReady = false;
+      this.post({ type: 'focus-timeline' });
+    }
+  }
+
+  private async deliverPendingAgentDraft(): Promise<boolean> {
+    if (this.pendingAgentDraftDelivery) return this.pendingAgentDraftDelivery;
+    const view = this.view;
+    const draft = this.pendingAgentDraft;
     if (!view || !draft) return false;
 
-    this.pendingTemplateDelivery = (async () => {
-      const delivered = await view.webview.postMessage({ type: 'template-draft', ...draft });
+    this.pendingAgentDraftDelivery = (async () => {
+      const delivered = await view.webview.postMessage({ ...draft });
       if (!delivered) return false;
-      this.pendingTemplateDraft = undefined;
+      this.pendingAgentDraft = undefined;
       return true;
     })();
     try {
-      return await this.pendingTemplateDelivery;
+      return await this.pendingAgentDraftDelivery;
     } finally {
-      this.pendingTemplateDelivery = undefined;
+      this.pendingAgentDraftDelivery = undefined;
     }
   }
 
@@ -1102,6 +1145,20 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
     });
   }
 
+  private showSessionTimeline(sessionId: string): void {
+    const session = this.getSessionHistory().find((entry) => entry.id === sessionId);
+    if (!session) {
+      this.post({ type: 'blocked', message: 'That local session is no longer available.' });
+      return;
+    }
+    this.post({
+      type: 'mission-restored',
+      state: session.state,
+      events: session.timeline || [],
+    });
+    this.post({ type: 'focus-timeline' });
+  }
+
   private async forgetSavedTask(sessionId: string): Promise<void> {
     const sessions = this.getSessionHistory();
     const session = sessions.find((entry) => entry.id === sessionId);
@@ -1268,6 +1325,17 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
             });
             item.appendChild(resume);
           }
+          if (Array.isArray(session.timeline) && session.timeline.length > 0) {
+            const viewTimeline = document.createElement('button');
+            viewTimeline.type = 'button';
+            viewTimeline.className = 'quiet';
+            viewTimeline.textContent = 'View timeline';
+            viewTimeline.setAttribute('aria-label', 'View this session timeline');
+            viewTimeline.addEventListener('click', () => {
+              vscode.postMessage({ command: 'showSessionTimeline', sessionId: session.id });
+            });
+            item.appendChild(viewTimeline);
+          }
           if (session.hasSavedTask) {
             const forget = document.createElement('button');
             forget.type = 'button';
@@ -1307,13 +1375,15 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
         const data = message.data;
         if (data.type === 'history') {
           renderHistory(data.sessions);
-        } else if (data.type === 'template-draft') {
+        } else if (data.type === 'template-draft' || data.type === 'plan-task-draft') {
           if (!['ask', 'plan', 'code', 'debug', 'ideate'].includes(data.mode) || typeof data.prompt !== 'string') return;
           mode.value = data.mode;
           prompt.value = data.prompt;
           resumeSessionId = undefined;
           prompt.focus();
-          status.textContent = 'Template loaded. Review the task before starting the session.';
+          status.textContent = data.type === 'plan-task-draft'
+            ? 'Plan task loaded. Review it before starting the session.'
+            : 'Template loaded. Review the task before starting the session.';
         } else if (data.type === 'resume-draft') {
           if (!['ask', 'plan', 'code', 'debug', 'ideate', 'autopilot'].includes(data.mode)
             || typeof data.prompt !== 'string'
@@ -1333,6 +1403,10 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
           status.textContent = data.state === 'blocked'
             ? 'Previous mission is paused. Start a new session to continue.'
             : 'Previous mission timeline restored.';
+        } else if (data.type === 'focus-timeline') {
+          const heading = document.getElementById('mission-heading');
+          heading.scrollIntoView({ block: 'center' });
+          heading.focus();
         } else if (data.type === 'mission-event' && data.event) {
           if (timeline.querySelector('[data-empty]')) timeline.replaceChildren();
           renderTimelineEvent(data.event);
@@ -1611,7 +1685,7 @@ export class LocalAgentWorkbenchProvider implements vscode.WebviewViewProvider {
   <div id="output" aria-live="polite"><p class="empty-state">No result yet. Start with a focused intent.</p></div>
 </section>
 <section aria-labelledby="mission-heading">
-  <h4 id="mission-heading">Mission timeline</h4>
+  <h4 id="mission-heading" tabindex="-1">Mission timeline</h4>
   <ol id="mission-timeline" class="mission-list" aria-live="polite"><li data-empty>Start a mission to see progress.</li></ol>
 </section>
 <section aria-labelledby="history-heading">

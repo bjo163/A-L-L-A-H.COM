@@ -65,6 +65,7 @@ suite('A-L-L-A-H.COM extension host', () => {
       'allah.focusLocalAgent',
       'allah.createPlan',
       'allah.refreshPlans',
+      'allah.loadPlanTask',
       'allah.searchWorkspace',
       'allah.runApprovedTask',
       'allah.manageWorkspaceMemory',
@@ -209,6 +210,57 @@ suite('A-L-L-A-H.COM extension host', () => {
         );
       } finally {
         vscode.commands.executeCommand = originalExecute;
+      }
+    });
+
+    test('loads selected plan tasks as drafts and focuses the local mission timeline', async () => {
+      const originalExecuteCommand = vscode.commands.executeCommand;
+      const commandCalls = [];
+      const messages = [];
+      const provider = createLocalAgentProvider({});
+      const workspace = vscode.workspace.workspaceFolders[0];
+      const webview = {
+        cspSource: 'vscode-webview:',
+        options: {},
+        html: '',
+        onDidReceiveMessage() {
+          return { dispose() {} };
+        },
+        async postMessage(message) {
+          messages.push(message);
+          return true;
+        },
+      };
+
+      try {
+        vscode.commands.executeCommand = async (command, ...args) => {
+          commandCalls.push([command, ...args]);
+          return undefined;
+        };
+        provider.resolveWebviewView({
+          webview,
+          show() {},
+          onDidDispose() {
+            return { dispose() {} };
+          },
+        });
+        const delivered = await provider.loadPlanTaskDraft({
+          text: 'Verify the focused host test.',
+          filePath: path.join(workspace.uri.fsPath, '.plans', 'extension-host-plan', 'task.md'),
+        }, workspace);
+        assert.equal(delivered, true);
+        const draft = messages.find((message) => message.type === 'plan-task-draft');
+        assert.equal(draft.mode, 'code');
+        assert.ok(draft.prompt.includes('Verify the focused host test.'));
+        assert.ok(draft.prompt.includes('.plans\\extension-host-plan\\task.md'));
+        assert.ok(draft.prompt.includes('Do not change its checklist status.'));
+
+        await provider.focusMissionTimeline();
+        assert.ok(messages.some((message) => message.type === 'focus-timeline'));
+        assert.ok(commandCalls.some(([command]) => command === 'allah.focusLocalAgent'));
+        assert.ok(commandCalls.some(([command]) => command === 'workbench.action.openView'));
+      } finally {
+        vscode.commands.executeCommand = originalExecuteCommand;
       }
     });
 
