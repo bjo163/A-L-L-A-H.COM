@@ -9,6 +9,7 @@
 - Repository metadata indexing prefers the workspace root package manifest over nested packages.
 - Gateway credentials use SecretStorage without a user-editable API key setting.
 - Provider timeouts cover response-body reads, caller cancellation remains active through parsing, and Ollama discovery is bounded.
+- The optional Ollama adapter reads advertised model capabilities and context length; missing metadata stays unknown.
 - Setup, security, and troubleshooting guidance for local Ollama and optional Gateway use.
 - MIT license and repository metadata in the extension package.
 

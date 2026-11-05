@@ -39,7 +39,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 ### 03 Providers and local-first
 - [!] VSC-028 Finalize one provider adapter contract and registry. The primary Workspace Agent uses explicit Gateway/Ollama routing; legacy registry and fallback services remain isolated pending a larger adapter consolidation.
 - [x] VSC-029 Verify Ollama endpoint setup and connection test against a loopback mock server. Live Ollama remains an environment acceptance.
-- [ ] VSC-030 Verify model discovery and capability metadata.
+- [x] VSC-030 Verify model discovery and capability metadata. The Ollama adapter reads installed tags and advertised `/api/show` capabilities; absent metadata stays unknown. Three focused tests cover the contract.
 - [x] VSC-031 Make provider/model selection explicit and observable. Provider selection is explicit, model readiness is checked before sessions, and fallback is opt-in only.
 - [x] VSC-032 Normalize streaming, timeout, cancellation, retry and errors. Gateway timeouts remain active through response-body reads, caller aborts propagate, malformed success payloads fail explicitly, and Ollama discovery is bounded.
 - [x] VSC-033 Store credentials only in SecretStorage. Removed the `allah.apiKey` setting; host acceptance verifies the command-stored key reaches the mock gateway through the SecretStorage-backed client.

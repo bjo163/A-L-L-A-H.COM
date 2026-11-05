@@ -5,6 +5,40 @@
 
 import type { ILLMProvider, LLMProvider, ModelInfo, StandaloneChatMessage, ChatResponse, StreamChunk } from './ILLMProvider';
 
+interface OllamaModelTag {
+  name?: unknown;
+}
+
+interface OllamaModelInfo {
+  capabilities?: unknown;
+  model_info?: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getModelCapabilities(value: unknown): ModelInfo['capabilities'] {
+  if (!isRecord(value)) return {};
+
+  const capabilities: ModelInfo['capabilities'] = {};
+  if (Array.isArray(value.capabilities) && value.capabilities.every((item) => typeof item === 'string')) {
+    capabilities.supportsVision = value.capabilities.includes('vision');
+    capabilities.supportsFunctionCalling = value.capabilities.includes('tools');
+  }
+
+  if (isRecord(value.model_info)) {
+    const contextLength = Object.entries(value.model_info).find(([key, candidate]) =>
+      key.endsWith('.context_length') && typeof candidate === 'number' && Number.isSafeInteger(candidate) && candidate > 0
+    )?.[1];
+    if (typeof contextLength === 'number') {
+      capabilities.maxContextWindow = contextLength;
+    }
+  }
+
+  return capabilities;
+}
+
 export class OllamaProvider implements ILLMProvider {
   readonly id: LLMProvider = 'ollama';
   readonly name = 'Ollama (Local)';
@@ -20,27 +54,33 @@ export class OllamaProvider implements ILLMProvider {
   }
 
   async listModels(): Promise<ModelInfo[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/tags`);
-      if (!response.ok) return [];
-
-      const data = await response.json() as any;
-      const models = Array.isArray(data.models) ? data.models : [];
-
-      return models.map((model: any) => ({
-        id: model.name,
-        name: model.name,
-        provider: this.id,
-        capabilities: {
-          supportsVision: false, // Most Ollama models don't support vision
-          supportsFunctionCalling: false,
-          maxContextWindow: 4096,
-        },
-        ownedBy: 'ollama',
-      }));
-    } catch {
-      return [];
+    const response = await fetch(`${this.baseUrl}/api/tags`);
+    if (!response.ok) {
+      throw new Error(`Ollama model discovery failed: HTTP ${response.status}.`);
     }
+
+    const payload = await response.json() as { models?: unknown } | null;
+    const models = Array.isArray(payload?.models) ? payload.models : [];
+    return Promise.all(models.flatMap((model) => {
+      if (!isRecord(model) || typeof model.name !== 'string' || model.name.trim().length === 0) return [];
+      return [this.getModelInfo(model.name)];
+    }));
+  }
+
+  private async getModelInfo(name: string): Promise<ModelInfo> {
+    const response = await fetch(`${this.baseUrl}/api/show`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: name }),
+    });
+    const metadata = response.ok ? await response.json() as OllamaModelInfo : undefined;
+    return {
+      id: name,
+      name,
+      provider: this.id,
+      capabilities: getModelCapabilities(metadata),
+      ownedBy: 'ollama',
+    };
   }
 
   async chat(

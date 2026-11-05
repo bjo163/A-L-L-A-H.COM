@@ -8,9 +8,9 @@ import type { StandaloneChatMessage } from '../contracts';
 export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'moonwitness';
 
 export interface ModelCapabilities {
-  supportsVision: boolean;
-  supportsFunctionCalling: boolean;
-  maxContextWindow: number;
+  supportsVision?: boolean;
+  supportsFunctionCalling?: boolean;
+  maxContextWindow?: number;
   inputCostPer1MTokens?: number;
   outputCostPer1MTokens?: number;
 }

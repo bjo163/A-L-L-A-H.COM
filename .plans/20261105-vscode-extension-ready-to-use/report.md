@@ -87,6 +87,16 @@ The repository index now prefers the workspace-root `package.json` when nested p
 |---|---|
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, twenty host tests |
 
+## Ollama model capability metadata
+
+The optional Ollama adapter discovers installed model names from `/api/tags`, then reads each model's advertised `capabilities` and architecture context length from `/api/show`. Missing fields remain unknown instead of being reported as unsupported or assigned a guessed context window. Discovery HTTP failures are surfaced to the caller.
+
+| Command | Result |
+|---|---|
+| `pnpm extension:test` | Passed: 52 tests, including three Ollama discovery and metadata tests |
+| `pnpm --filter allah-vscode-extension typecheck` | Passed |
+| `pnpm exec eslint packages/vscode-extension/src/providers --max-warnings 0` | Passed |
+
 ## SecretStorage enforcement
 
 Removed the `allah.apiKey` configuration option. The explicit `MoonWitness: Set API Key` command remains the supported entry point, while activation retains a one-time migration path for previously configured values and removes them from settings. Host acceptance verified that the stored value is absent from configuration and is sent only to the configured local mock gateway as `x-virtual-key`.
