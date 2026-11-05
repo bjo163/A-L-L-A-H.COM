@@ -2151,7 +2151,7 @@ Moon UI's next frontier is achieved when it can express six distinct world gramm
 
 ## 68. Canonical execution and overlap control
 
-The implementation baseline, predecessor-plan reconciliation, task-level delivery sequence, autonomous execution rules and requirement traceability live in the [Moon UI Master Consolidation Plan](../.plans/20261105-moon-ui-master-consolidation/spec.md).
+The implementation baseline, predecessor-plan reconciliation, task-level delivery sequence, autonomous execution rules and requirement traceability live in the [Moon UI Master Consolidation Plan](../../.plans/20261105-moon-ui-master-consolidation/spec.md).
 
 This blueprint remains the product/architecture target; the master plan is the execution queue. Before implementing any blueprint item, inspect the current source and active plans. Reuse existing SkinRoot/SkinScope, six skin definitions, six original vector scenes, shared components/blocks/primitives, Skin Laboratory and procedural SFX engine. Do not rebuild them merely because the target blueprint describes their complete future role.
 
