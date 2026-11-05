@@ -1,5 +1,5 @@
 ---
-status: in_progress
+status: superseded
 ---
 
 # Six-World High-Detail Artwork
@@ -45,3 +45,17 @@ Create original, detailed vector artwork for all six worlds and integrate it thr
 - Reworking product workflows, navigation, or data semantics.
 - New external asset services, new image-rendering dependencies, or third-party visual references copied as final art.
 - Unsupported astronomy, device telemetry, user metrics, or narrative claims.
+
+
+---
+
+## Supersession notice — 2026-11-05
+
+This plan is superseded as an execution source by [Moon UI Master Consolidation](../20261105-moon-ui-master-consolidation/spec.md).
+
+The unfinished deliverables are transferred to:
+- MU-0414–MU-0435 — six-world signature compositions and visual integration.
+- MU-0601–MU-0617 — artwork/cover foundry, production assets, responsive derivatives and provenance.
+- MU-0901–MU-0929 — responsive, accessibility, visual and quality certification.
+
+Do not execute this plan in parallel. Its existing audit observations remain historical context; re-audit against the current source before acting. No task is considered complete merely because it was transferred.
