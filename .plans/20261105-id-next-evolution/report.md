@@ -40,6 +40,9 @@ This is a verified baseline, not completion of the full product roadmap. New rou
 - ID-071 adds `noindex, nofollow` metadata to account, login, registration, and initial-setup routes, with metadata tests covering titles and robots policy.
 - Responsive browser checks at 360, 768, and 1440 CSS pixels found no horizontal overflow; the confirmation dialog remained within the viewport. The browser check used an in-memory local ARSY instance and synthetic credentials only, not production origins or accounts.
 - ID-020 remains pending: the full keyboard, screen-reader, and reduced-motion audit has not been completed.
+- ID-066 verified the sign-in form's accessible names, three associated labels, native required-field validation, keyboard submission, and the revoke dialog's focus/ Escape behavior in a synthetic browser session. This does not claim a screen-reader audit.
+- ID-067 verified the ID login surface at 360, 390, 768, 1024, and 1440 CSS pixels with no horizontal overflow. A 180px stress viewport was also used to harden narrow form controls and identity reflow; decorative SVG artwork remains intentionally clipped at that non-target width.
+- ID-068 verified reduced-motion disables ambient motion controls and sound effects remain optional; no required account or authentication action depends on audio. The verification used the local synthetic browser session.
 
 | Command | Result |
 |---|---|

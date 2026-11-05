@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { mwClient } from '@allah/sdk';
 import type { GatewayTelemetry } from '@moonwitness/types';
-import { Button, Form, Input, Card, RouteShell } from '@moonwitness/ui';
+import { Button, Card, Form, Input, RouteShell, StatePanel } from '@moonwitness/ui';
+import { RouteHeader } from '@/components/route-header';
+import { useAsyncData } from '@/lib/use-async-data';
+import { useDocumentTitle } from '@/lib/use-document-title';
+import { formatMs, formatNumber, formatUsd } from '@/lib/hq-format';
 
 interface KnowledgeChunk {
   id: number | string;
@@ -35,14 +39,16 @@ function isKnowledgeResponse(value: unknown): value is { chunks: KnowledgeChunk[
 }
 
 export default function KnowledgePage() {
+  useDocumentTitle('Knowledge Explorer | Headquarter');
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<KnowledgeChunk[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [telemetry, setTelemetry] = useState<GatewayTelemetry | null>(null);
-  const [telemetryLoading, setTelemetryLoading] = useState(true);
-  const [telemetryError, setTelemetryError] = useState<string | null>(null);
+
+  const { data: telemetry, loading: telemetryLoading, error: telemetryError } =
+    useAsyncData<GatewayTelemetry>(() => mwClient.router.getTelemetry());
 
   const search = async () => {
     const term = query.trim();
@@ -66,37 +72,11 @@ export default function KnowledgePage() {
     }
   };
 
-  useEffect(() => {
-    document.title = 'Knowledge Explorer | Headquarter';
-    let active = true;
-
-    mwClient.router.getTelemetry()
-      .then((data) => {
-        if (active) setTelemetry(data);
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setTelemetryError(error instanceof Error ? error.message : 'Unable to load gateway telemetry.');
-        }
-      })
-      .finally(() => {
-        if (active) setTelemetryLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
   return (
-    <RouteShell as="main" className="hq-route hq-knowledge p-6 max-w-6xl mx-auto">
-      <header className="mb-6">
-        <p className="hq-kicker">QORPUS / KNOWLEDGE INDEX</p>
-        <h1 className="text-2xl font-bold mb-2">Knowledge Explorer</h1>
-        <p className="text-muted-foreground">Search indexed records and inspect gateway telemetry.</p>
-      </header>
+    <RouteShell as="main" className="hq-route hq-knowledge">
+      <RouteHeader title="Knowledge Explorer" summary="Qorpus index — search indexed records and inspect gateway telemetry." />
 
-      <Card className="p-4 mb-6">
+      <Card className="p-4">
         <Form
           layout="grid"
           onSubmit={(event) => {
@@ -117,76 +97,65 @@ export default function KnowledgePage() {
             }}
           />
           <Button type="submit" disabled={loading || !query.trim()}>
-            {loading ? 'Searching...' : 'Search'}
+            {loading ? 'Searching…' : 'Search'}
           </Button>
         </Form>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section className="lg:col-span-2" aria-labelledby="knowledge-results-title">
+      <div className="hq-content-grid">
+        <section aria-labelledby="knowledge-results-title">
           <Card className="p-4">
             <h2 id="knowledge-results-title" className="text-lg font-semibold mb-4">Search Results</h2>
-            {searchError ? (
-              <p className="text-sm text-destructive" role="alert">{searchError}</p>
-            ) : results.length === 0 ? (
-              <p className="text-muted-foreground">
-                {loading
-                  ? 'Searching indexed records...'
-                  : hasSearched
-                    ? 'No records matched this query.'
-                    : 'Enter a search term to inspect indexed records.'}
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {results.map((result) => (
-                  <article key={result.id} className="border-b pb-4 last:border-0">
-                    <div className="flex justify-between items-start gap-4 mb-2">
-                      <h3 className="font-medium">{result.document_title}</h3>
-                      <span className="shrink-0 text-sm text-muted-foreground">
-                        Score: {(result.score * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-1">Category: {result.category}</p>
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {result.content.length > 200 ? `${result.content.slice(0, 200)}…` : result.content}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            )}
+
+            <div aria-live="polite">
+              {searchError ? (
+                <StatePanel kind="error" title="Search failed" cause={searchError} nextAction="Adjust the query or retry once the knowledge service is reachable." />
+              ) : loading ? (
+                <StatePanel kind="loading" title="Searching indexed records" cause="Reading matching chunks from Qorpus." />
+              ) : results.length === 0 ? (
+                <StatePanel
+                  kind="empty"
+                  title={hasSearched ? 'No records matched' : 'No search yet'}
+                  cause={hasSearched ? 'This query returned no indexed chunks.' : 'Enter a search term to inspect indexed records.'}
+                  nextAction={hasSearched ? 'Try a broader term or a different phrasing.' : undefined}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {results.map((result) => (
+                    <article key={result.id} className="border-b pb-4 last:border-0">
+                      <div className="flex justify-between items-start gap-4 mb-2">
+                        <h3 className="font-medium">{result.document_title}</h3>
+                        <span className="shrink-0 text-sm text-muted-foreground">Score: {(result.score * 100).toFixed(1)}%</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">Category: {result.category}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {result.content.length > 200 ? `${result.content.slice(0, 200)}…` : result.content}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
           </Card>
         </section>
 
         <section aria-labelledby="knowledge-telemetry-title">
           <Card className="p-4">
             <h2 id="knowledge-telemetry-title" className="text-lg font-semibold mb-4">Gateway Telemetry</h2>
+
             {telemetryError ? (
-              <p className="text-sm text-destructive" role="alert">
-                Telemetry unavailable: {telemetryError}
-              </p>
+              <StatePanel kind="offline" title="Telemetry unavailable" cause={telemetryError} />
             ) : telemetryLoading ? (
-              <p className="text-muted-foreground" role="status">Loading telemetry...</p>
+              <StatePanel kind="loading" title="Loading telemetry" cause="Reading gateway metrics." />
             ) : telemetry ? (
               <dl className="space-y-3">
-                <div>
-                  <dt className="text-sm text-muted-foreground">Total Requests</dt>
-                  <dd className="text-xl font-bold">{telemetry.metrics.totalRequests.toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm text-muted-foreground">Total Tokens</dt>
-                  <dd className="text-xl font-bold">{telemetry.metrics.totalTokens.toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm text-muted-foreground">Total Cost (USD)</dt>
-                  <dd className="text-xl font-bold">${telemetry.metrics.totalCostUsd.toFixed(4)}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm text-muted-foreground">Average Latency</dt>
-                  <dd className="text-xl font-bold">{telemetry.metrics.avgLatencyMs}ms</dd>
-                </div>
+                <div className="hq-kv-row"><dt>Total Requests</dt><dd className="text-xl font-bold">{formatNumber(telemetry.metrics.totalRequests)}</dd></div>
+                <div className="hq-kv-row"><dt>Total Tokens</dt><dd className="text-xl font-bold">{formatNumber(telemetry.metrics.totalTokens)}</dd></div>
+                <div className="hq-kv-row"><dt>Total Cost (USD)</dt><dd className="text-xl font-bold">{formatUsd(telemetry.metrics.totalCostUsd)}</dd></div>
+                <div className="hq-kv-row"><dt>Average Latency</dt><dd className="text-xl font-bold">{formatMs(telemetry.metrics.avgLatencyMs)}</dd></div>
               </dl>
             ) : (
-              <p className="text-muted-foreground">No telemetry response was returned.</p>
+              <StatePanel kind="empty" title="No telemetry returned" cause="The gateway did not return a metrics payload." />
             )}
           </Card>
         </section>

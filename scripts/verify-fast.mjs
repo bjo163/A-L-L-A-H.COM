@@ -22,9 +22,10 @@ let failed = false;
 for (const [label, action] of [
   ['Documentation contract', () => runPnpm(['docs:check'])],
   ['Unit contract', () => runPnpm(['contract:check'])],
+  ['Contract index freshness', () => runPnpm(['contract:index:check'])],
   ['Architecture invariants', () => runPnpm(['lint:arch'])],
   ['Changed-file ESLint', () => runPnpm(['lint:affected'])],
-  ['Incremental TypeScript', () => runPnpm(['typecheck'])],
+  ['Affected TypeScript', () => runPnpm(['typecheck:affected'])],
 ]) {
   const code = await measure(label, action);
   if (code !== 0) {

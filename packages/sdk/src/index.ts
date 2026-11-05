@@ -10,6 +10,8 @@ import type {
   GatewayProviderInfo,
   GatewayUsageLog,
   SDUIRoot,
+  SDUINode,
+  AgentStep,
   JsonRpcResponse,
   McpTool,
   McpToolCallResult,
@@ -20,6 +22,7 @@ import type {
   PairedAgentDevice,
   RemoteAgentMission,
 } from '@moonwitness/types';
+
 
 export interface SdkOptions {
   baseUrl?: string;
@@ -285,7 +288,8 @@ export class MoonWitnessClient {
 
     chatStream: async (
       req: ChatCompletionRequest,
-      onChunk: (chunk: ChatCompletionChunk) => void
+      onChunk: (chunk: ChatCompletionChunk) => void,
+      signal?: AbortSignal
     ): Promise<void> => {
       const headers = new Headers();
       headers.set('Content-Type', 'application/json');
@@ -300,6 +304,7 @@ export class MoonWitnessClient {
         headers,
         body: JSON.stringify({ ...req, stream: true }),
         credentials: 'include',
+        ...(signal ? { signal } : {}),
       });
 
       if (!response.ok || !response.body) {
@@ -311,30 +316,39 @@ export class MoonWitnessClient {
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+      // Cancel the reader when the caller aborts so the loop below releases the
+      // connection immediately rather than draining the remainder of the stream.
+      const onAbort = () => void reader.cancel();
+      signal?.addEventListener('abort', onAbort);
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith(':')) continue;
-          if (trimmed === 'data: [DONE]') return;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
-          if (trimmed.startsWith('data: ')) {
-            try {
-              const chunk = JSON.parse(trimmed.slice(6));
-              if (chunk.choices) {
-                onChunk(chunk as ChatCompletionChunk);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) continue;
+            if (trimmed === 'data: [DONE]') return;
+
+            if (trimmed.startsWith('data: ')) {
+              try {
+                const chunk = JSON.parse(trimmed.slice(6));
+                if (chunk.choices) {
+                  onChunk(chunk as ChatCompletionChunk);
+                }
+              } catch {
+                // Ignore partial chunk decode
               }
-            } catch {
-              // Ignore partial chunk decode
             }
           }
         }
+      } finally {
+        signal?.removeEventListener('abort', onAbort);
       }
     },
 
@@ -362,6 +376,7 @@ export class MoonWitnessClient {
       return res as GatewayProviderInfo[];
     },
 
+    /** @deprecated Prefer {@link router.getUsageLogs}, which validates the response shape. */
     getUsage: async (): Promise<GatewayUsageLog[]> => {
       return this.request<GatewayUsageLog[]>('/v1/gateway/usage');
     },
@@ -742,10 +757,10 @@ export class MoonWitnessClient {
       session_id: string;
       success: boolean;
       total_steps: number;
-      steps: any[];
+      steps: AgentStep[];
       final_response: string;
       finish_reason: string;
-      sdui_payloads: any[];
+      sdui_payloads: SDUINode[];
       error?: string;
     }> => {
       return this.request('/v1/agent/run', {
@@ -756,7 +771,8 @@ export class MoonWitnessClient {
 
     stream: async (
       options: AgentRunInput,
-      onEvent: (event: string, data: any) => void
+      onEvent: (event: string, data: unknown) => void,
+      signal?: AbortSignal
     ): Promise<void> => {
       const token = await this.getSessionTokenForRequest();
       const headers: Record<string, string> = {
@@ -770,6 +786,7 @@ export class MoonWitnessClient {
         headers,
         body: JSON.stringify(options),
         credentials: 'include',
+        ...(signal ? { signal } : {}),
       });
 
       if (!res.ok) {
@@ -779,40 +796,48 @@ export class MoonWitnessClient {
       const reader = res.body?.getReader();
       if (!reader) throw new Error('ReadableStream not supported by runtime');
 
+      // Release the connection the moment the caller aborts.
+      const onAbort = () => void reader.cancel();
+      signal?.addEventListener('abort', onAbort);
+
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-        buffer = lines.pop() || '';
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
 
-        for (const block of lines) {
-          const trimmed = block.trim();
-          if (!trimmed) continue;
+          for (const block of lines) {
+            const trimmed = block.trim();
+            if (!trimmed) continue;
 
-          let currentEvent = 'message';
-          let currentData = '';
+            let currentEvent = 'message';
+            let currentData = '';
 
-          for (const line of trimmed.split('\n')) {
-            if (line.startsWith('event: ')) {
-              currentEvent = line.replace('event: ', '').trim();
-            } else if (line.startsWith('data: ')) {
-              currentData = line.replace('data: ', '').trim();
+            for (const line of trimmed.split('\n')) {
+              if (line.startsWith('event: ')) {
+                currentEvent = line.replace('event: ', '').trim();
+              } else if (line.startsWith('data: ')) {
+                currentData = line.replace('data: ', '').trim();
+              }
             }
-          }
 
-          if (currentData) {
-            try {
-              onEvent(currentEvent, JSON.parse(currentData));
-            } catch {
-              onEvent(currentEvent, currentData);
+            if (currentData) {
+              try {
+                onEvent(currentEvent, JSON.parse(currentData));
+              } catch {
+                onEvent(currentEvent, currentData);
+              }
             }
           }
         }
+      } finally {
+        signal?.removeEventListener('abort', onAbort);
       }
     },
   };

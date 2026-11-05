@@ -1,303 +1,203 @@
----
-contract: "DOCUMENTATION_CONTRACT.md"
-id: "CROSS_APP_IDENTITY_FEDERATION_TASKS"
-version: "1.0.0"
-owner: "platform-architecture"
-status: "proposed"
----
-# Task: Implementation Breakdown for Cross-Application Identity & Authentication Federation
+# Cross-App Identity Federation & Session Synchronization
 
 ## Implementation Phases
 
-### Phase 1: Federation Package Foundation (Weeks 1-2)
-**Goal**: Create `packages/federation` with core SDK methods and JWT token format.
+### Phase 1: SDK Enhancements (Week 1-2)
+- [ ] Add `verifyCrossAppAuth` method to `@allah/sdk`
+- [ ] Add `syncSessionToApps` method to `@allah/sdk`
+- [ ] Add `getCurrentTenant` method to `@allah/sdk`
+- [ ] Update SDK types in `@moonwitness/types`
+- [ ] Run SDK typecheck and lint
 
-**Tasks**:
-- [ ] Initialize `packages/federation` package structure with pnpm workspace registration
-- [ ] Define `FederatedTokenClaims` interface and JWT token format with required claims
-- [ ] Implement `tokenManager/` module with JWT creation, validation, and refresh functions
-- [ ] Implement `sessionStore/` module with in-memory session storage and PGlite persistence
-- [ ] Implement `tenantManager/` module with tenant context and default-deny enforcement
-- [ ] Implement `correlationMiddleware/` for Express/Next.js route correlation ID propagation
-- [ ] Write unit tests for token manager, session store, and tenant manager
-- [ ] Ensure TypeScript strict mode compatibility with 0 errors
-- [ ] Generate package documentation and API reference
+### Phase 2: Auth Middleware (Week 2-3)
+- [ ] Create shared auth middleware for Next.js apps
+- [ ] Implement session detection logic
+- [ ] Add tenant validation middleware
+- [ ] Integrate with existing Better Auth flows
+- [ ] Test middleware with each app
 
-**Dependencies**: `@allah/types`, `@allah/sdk`, `@moonwitness/types`, PGlite
+### Phase 3: API Endpoints (Week 3-4)
+- [ ] Implement `/api/auth/cross-app/verify` endpoint
+- [ ] Implement `/api/auth/cross-app/sync` endpoint
+- [ ] Implement `/api/auth/cross-app/status` endpoint
+- [ ] Add request validation and error handling
+- [ ] Connect endpoints to SDK methods
 
-**Completion Criteria**:
-- `packages/federation` package creates successfully with `pnpm typecheck`
-- All unit tests pass (100% for federation package)
-- JWT token format defined and documented
-- Tenant context management with default-deny works
+### Phase 4: UI Components (Week 4-5)
+- [ ] Create `AuthButton` component
+- [ ] Create `SessionStatus` component
+- [ ] Create `ConnectAccount` component
+- [ ] Create `ReAuthModal` component
+- [ ] Integrate components into each app
 
----
+### Phase 5: Audit Logging (Week 5-6)
+- [ ] Implement structured auth event logging
+- [ ] Add tenant context to all auth logs
+- [ ] Configure log aggregation
+- [ ] Create log-based metrics and alerts
 
-### Phase 2: Platform Hub Federation Endpoints (Weeks 3-4)
-**Goal**: Implement platform hub endpoints for federation operations.
+### Phase 6: Documentation and Cleanup (Week 6-7)
+- [ ] Update SDK documentation
+- [ ] Update app integration guides
+- [ ] Run full test suite
+- [ ] Verify typecheck across all packages
+- [ ] Clean up any temporary code
 
-**Tasks**:
-- [ ] Create hub login endpoint `/api/federation/login`
-- [ ] Create hub logout endpoint `/api/federation/logout`
-- [ ] Create hub session endpoint `/api/federation/session`
-- [ ] Create hub refresh endpoint `/api/federation/refresh`
-- [ ] Create hub health endpoint `/api/federation/health`
-- [ ] Create hub token validation endpoint `/api/federation/tokens/validate`
-- [ ] Implement session storage in PGlite with append-only audit events
-- [ ] Implement tenant context enforcement in hub routes
-- [ ] Write integration tests for all hub endpoints
-- [ ] Configure hub CORS for cross-app communication
-- [ ] Ensure hub endpoints comply with MoonWitness invariants (no PII, parameterized SQL)
+## Ordered and Independ Executable Tasks
 
-**Dependencies**: `@allah/arsy-orm`, PGlite, `@moonwitness/ui` (for auth screens)
+### Task 1: SDK Method Additions
+**Description**: Add three new methods to the MoonWitnessClient class in `@allah/sdk/src/index.ts`:
+- `verifyCrossAppAuth(targetApp: string)`
+- `syncSessionToApps(targetApps?: string[])`
+- `getCurrentTenant()`
 
-**Completion Criteria**:
-- All hub endpoints respond correctly with proper status codes
-- Session persistence works with PGlite
-- Tenant isolation enforced at hub level
-- Health endpoint returns expected metadata
-- All invariants preserved (auth, tenant, SQL, retention, SSRF)
+**Dependencies**: None (can work in isolation)
+**Affected Files**: `packages/sdk/src/index.ts`, `packages/types/src/**`
+**Testing**: SDK unit tests, typecheck
 
----
+### Task 2: Auth Middleware Core
+**Description**: Create shared auth middleware that can be used by all Next.js apps:
+- Session detection from cookies/localStorage
+- Tenant ID extraction and validation
+- Cross-app session check
+- Auto-authentication trigger
 
-### Phase 3: Application Integration (Weeks 5-8)
-**Goal**: Integrate federation into all 10+ applications (dock, headquarter, e-isp, gate, harbor, jizz, moonsky, sentinel, id).
+**Dependencies**: Task 1 (SDK methods needed)
+**Affected Files**: `apps/*/middleware.ts` (or equivalent), `packages/ui/src/blocks/`
+**Testing**: Manual test in each app, typecheck
 
-**Tasks** — Per application:
+### Task 3: API Endpoints Implementation
+**Description**: Implement the three new API routes:
+- `POST /api/auth/cross-app/verify`
+- `POST /api/auth/cross-app/sync`
+- `GET /api/auth/cross-app/status`
 
-**dock** (P0):
-- [ ] Import `@allah/federation` SDK
-- [ ] Replace local auth with federation login/logout
-- [ ] Implement cross-app SSO navigation
-- [ ] Add auth state change listeners
-- [ ] Update UI to use @moonwitness/ui auth components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
+**Dependencies**: Task 1 (SDK methods), Task 2 (middleware)
+**Affected Files**: `apps/*/api/auth/cross-app/route.ts`, `packages/sdk/src/index.ts`
+**Testing**: Integration tests, manual API testing
 
-**headquarter** (P0):
-- [ ] Import `@allah/federation` SDK
-- [ ] Replace local auth with federation login/logout
-- [ ] Implement cross-app SSO navigation
-- [ ] Implement tenant context in routes
-- [ ] Update UI to use @moonwitness/ui auth components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
+### Task 4: UI Component Development
+**Description**: Develop the auth UI components for cross-app awareness:
+- `AuthButton` with sign-in/sign-out toggle
+- `SessionStatus` displaying user and tenant info
+- `ConnectAccount` for manual sync across apps
+- `ReAuthModal` for session renewal
 
-**e-isp** (P1):
-- [ ] Import `@allah/federation` SDK
-- [ ] Configure federation with e-isp-specific app_id
-- [ ] Implement login/logout flows
-- [ ] Add consent propagation
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
+**Dependencies**: Task 2 (middleware ready)
+**Affected Files**: `packages/ui/src/components/auth/`, `apps/*/page.tsx`
+**Testing**: UI tests, visual regression, accessibility
 
-**gate** (P1):
-- [ ] Import `@allah/federation` SDK
-- [ ] Replace local auth with federation
-- [ ] Implement session management
-- [ ] Add tenant context awareness
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
+### Task 5: Audit Logging Implementation
+**Description**: Add structured logging for all authentication events:
+- Login/logout events with tenant context
+- Cross-app sync events
+- Session expiry and re-auth events
+- Security events (token tampering, tenant mismatch)
 
-**harbor** (P2):
-- [ ] Import `@allah/federation` SDK
-- [ ] Configure federation settings
-- [ ] Implement basic auth flow
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
+**Dependencies**: Task 3 (API endpoints)
+**Affected Files**: `packages/*/lib/logging/`, `apps/*/lib/logger.ts`
+**Testing**: Log verification, metric checks
 
-**jizz** (P2 - WORLD OBSERVATORY):
-- [ ] Import `@allah/federation` SDK
-- [ ] Configure federation for observatory app
-- [ ] Implement login/logout
-- [ ] Add session management
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
+### Task 6: Integration and Testing
+**Description**: Integrate all components and run comprehensive tests:
+- Typecheck all packages (`pnpm typecheck`)
+- Run lint:arch (`pnpm lint:arch`)
+- Run docs check (`pnpm docs:check`)
+- Test cross-app auth flow end-to-end
+- Verify no breaking changes to existing auth
 
-**moonsky** (P2):
-- [ ] Import `@allah/federation` SDK
-- [ ] Configure federation settings
-- [ ] Implement auth flow
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
-
-**sentinel** (P2):
-- [ ] Import `@allah/federation` SDK
-- [ ] Configure federation for RADIUS daemon
-- [ ] Implement session management
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
-
-**id** (P0 - Identity Center):
-- [ ] Import `@allah/federation` SDK
-- [ ] Enhance existing auth with federation methods
-- [ ] Implement ID-N01 through ID-N08 strategic initiatives
-- [ ] Add cross-app federation support
-- [ ] Update UI components
-- [ ] Write app-specific tests
-- [ ] Verify TypeScript typecheck passes
-
-**Additional integration tasks**:
-- [ ] Update all app Dockerfiles for federation service dependencies
-- [ ] Update all app next.config.ts for hub endpoint URLs
-- [ ] Update environment variables configuration (.env.example)
-- [ ] Create migration guides for each app
-- [ ] Run cross-app integration tests (at least dock ↔ headquarter ↔ id)
-- [ ] Verify end-to-end SSO flow across 3+ applications
-
-**Dependencies**: Each app's existing auth dependencies, `@allah/federation`, `@moonwitness/ui`
-
-**Completion Criteria**:
-- All 10+ applications integrated with federation SDK
-- Cross-app SSO works between at least 3 applications (dock, headquarter, id)
-- All apps pass `pnpm typecheck` with 0 errors
-- All apps pass `pnpm lint:arch` with 100% compliance
-- Cross-app integration tests pass end-to-end
-
----
-
-### Phase 4: Observability, Documentation, and Release (Weeks 9-10)
-**Goal**: Add observability, documentation, and prepare for release.
-
-**Tasks**:
-- [ ] Implement metrics facade with Prometheus-compatible exposition format
-- [ ] Add correlation ID propagation metrics
-- [ ] Implement tenant violation tracking
-- [ ] Write health endpoint with observability metadata
-- [ ] Generate API documentation for `@allah/federation`
-- [ ] Create migration guide for existing applications
-- [ ] Update BACKLOG.md with new items
-- [ ] Create demo scenarios for cross-app SSO
-- [ ] Run full quality gate: `pnpm verify:fast`
-- [ ] Run full quality gate: `pnpm verify:release`
-- [ ] Verify `pnpm docs:check` passes (100/100)
-- [ ] Verify `pnpm contract:check` passes across all units
-- [ ] Verify `pnpm lint:arch` passes with 100%
-- [ ] Verify `pnpm typecheck` passes across all packages and apps
-- [ ] Create release branch and tag
-
-**Dependencies**: All packages and apps from previous phases
-
-**Completion Criteria**:
-- `pnpm verify:fast` passes locally
-- `pnpm verify:release` passes locally
-- `pnpm docs:check` passes (100/100)
-- `@allah/federation` package published to package registry
-- All quality gates pass
-
----
-
-## Ordered and Independently Executable Tasks
-
-| Task ID | Task | Phase | Owner | Estimated Effort |
-|---|---|---|---|---|
-| T-01 | Initialize packages/federation package structure | 1 | platform-architecture | 0.5 days |
-| T-02 | Define FederatedTokenClaims interface and JWT format | 1 | platform-architecture | 1 day |
-| T-03 | Implement tokenManager module (JWT creation/validation/refresh) | 1 | platform-architecture | 2 days |
-| T-04 | Implement sessionStore module (in-memory + PGlite persistence) | 1 | platform-architecture | 2 days |
-| T-05 | Implement tenantManager module (default-deny enforcement) | 1 | platform-architecture | 1.5 days |
-| T-06 | Implement correlationMiddleware for Express/Next.js | 1 | platform-architecture | 1 day |
-| T-07 | Write unit tests for federation package | 1 | platform-architecture | 2 days |
-| T-08 | Create hub login endpoint | 2 | platform-architecture | 2 days |
-| T-09 | Create hub logout endpoint | 2 | platform-architecture | 1.5 days |
-| T-10 | Create hub session endpoint | 2 | platform-architecture | 1.5 days |
-| T-11 | Create hub refresh endpoint | 2 | platform-architecture | 1.5 days |
-| T-12 | Create hub health endpoint | 2 | platform-architecture | 1 day |
-| T-13 | Create hub token validation endpoint | 2 | platform-architecture | 1.5 days |
-| T-14 | Implement session storage with PGlite audit events | 2 | platform-architecture | 2 days |
-| T-15 | Integrate federation into dock app | 3 | dock-team | 3 days |
-| T-16 | Integrate federation into headquarter app | 3 | headquarter-team | 3 days |
-| T-17 | Integrate federation into e-isp app | 3 | e-isp-team | 2.5 days |
-| T-18 | Integrate federation into gate app | 3 | gate-team | 2.5 days |
-| T-19 | Integrate federation into harbor app | 3 | harbor-team | 2 days |
-| T-20 | Integrate federation into jizz app | 3 | jizz-team | 2.5 days |
-| T-21 | Integrate federation into moonsky app | 3 | moonsky-team | 2 days |
-| T-22 | Integrate federation into sentinel app | 3 | sentinel-team | 2 days |
-| T-23 | Integrate federation into id app (enhance ID-N01 to ID-N08) | 3 | id-team | 4 days |
-| T-24 | Run cross-app integration tests (dock ↔ headquarter ↔ id) | 4 | QA-team | 3 days |
-| T-25 | Implement metrics facade and Prometheus exposition | 4 | platform-architecture | 2 days |
-| T-26 | Generate API documentation and migration guides | 4 | platform-architecture | 2 days |
-| T-27 | Run full quality gates and prepare release | 4 | platform-architecture | 3 days |
+**Dependencies**: All previous tasks
+**Affected Files**: All packages and apps
+**Testing**: Full test suite, integration tests
 
 ## Dependencies and Execution Order
 
-**Critical Path**:
-1. T-01 → T-02 → T-03 → T-04 → T-05 → T-06 → T-07 (Phase 1 foundation)
-2. T-08 → T-09 → T-10 → T-11 → T-12 → T-13 → T-14 (Phase 2 hub endpoints, can start after Phase 1 begins)
-3. T-15 → T-16 → T-17 → T-18 → T-19 → T-20 → T-21 → T-22 → T-23 (Phase 3 app integrations, each independent but share Phase 1-2 foundation)
-4. T-24 → T-25 → T-26 → T-27 (Phase 4 observability, docs, release, requires Phase 3 completion)
+### Hard Dependencies (must complete in order)
+1. Task 1 → Task 2 (SDK methods needed for middleware)
+2. Task 2 → Task 3 (middleware needed for API endpoints)
+3. Task 3 → Task 4 (API endpoints needed for UI integration)
+4. Task 4 + Task 5 → Task 6 (UI + logging for final testing)
 
-**Parallelizable Workstreams**:
-- All app integrations (T-15 through T-23) can run in parallel once Phase 1-2 foundation is complete
-- Unit tests (T-07) can run in parallel with hub endpoint development (T-08 through T-14)
-- Migration guide documentation (T-26) can start once first app integration completes
+### Parallelizable Workstreams
+- **Phase 1 (SDK)**: Can run independently of app changes
+- **Phase 4 (UI)**: Can start once middleware (Task 2) is stable
+- **Phase 5 (Logging)**: Can run alongside Phase 3 (API endpoints)
 
-**Required Files and Affected Modules**:
-- **New files**: `packages/federation/src/`, hub route handlers, app integration files
-- **Modified files**: Existing auth files in each app, `@allah/sdk` index.ts, environment configs
-- **Affected modules**: `@allah/federation`, `@allah/sdk`, `@allah/arsy-orm`, `@moonwitness/ui`, each app's auth routes
+### Required Files and Affected Modules
+
+| Task | Required Files | Affected Modules |
+|---|---|---|
+| 1 | `packages/sdk/src/index.ts`, `packages/types/` | SDK, Types |
+| 2 | `apps/*/middleware.ts`, `packages/ui/src/blocks/` | All apps, UI blocks |
+| 3 | `apps/*/api/auth/cross-app/route.ts`, `packages/sdk/` | All apps, SDK |
+| 4 | `packages/ui/src/components/auth/`, `apps/*/page.tsx` | UI, All apps |
+| 5 | `packages/*/lib/logging/`, `apps/*/lib/logger.ts` | All packages, All apps |
+| 6 | All packages and apps | Full monorepo |
 
 ## Testing and Validation Procedures
 
 ### Unit Tests
-- `packages/federation`: 100% branch coverage for tokenManager, sessionStore, tenantManager
-- Hub endpoints: integration tests for each endpoint with various scenarios
-- Each app: component tests for auth UI, integration tests for federation SDK usage
+- SDK method tests: `pnpm test -- packages/sdk`
+- Middleware tests: `pnpm test -- apps/dock` (etc.)
+- API route tests: Integration test suite
 
 ### Integration Tests
-- Cross-app SSO flow: login in dock → navigate to headquarter → authenticated
-- Session propagation: session state consistent across app boundaries
-- Tenant isolation: tenant A cannot access tenant B's resources
-- Token refresh: automatic refresh before expiry, graceful fallback on failure
+- End-to-end cross-app auth flow
+- Session sync between apps
+- Tenant isolation verification
+- Error scenario testing
 
-### End-to-End Tests
-- Full login flow in dock app
-- Cross-app navigation maintaining authentication
-- User logs out from headquarter → session cleared in dock
-- Tenant context propagation across multiple hops
-- Hub health check and degradation behavior
-
-### Validation Commands
-- `pnpm typecheck` — all packages and apps pass strict mode
-- `pnpm lint:arch` — 100% arch invariant compliance
-- `pnpm docs:check` — 100/100 required
-- `pnpm contract:check` — per-unit CONTRACT.md presence + code cross-check
-- `pnpm ui:test` — design system component contracts
-- `pnpm ui:contrast` — WCAG ratios for skin token pairs
-- `pnpm arsy:build`, `pnpm headquarter:build`, `pnpm dock:build`, `pnpm id:build` — all app builds pass
-
-## Documentation Requirements
-
-- [ ] `packages/federation` package README with API reference
-- [ ] Migration guide for each integrated app
-- [ ] API documentation generated via TypeDoc
-- [ ] Update BACKLOG.md with federation-related items
-- [ ] Update ROADMAP.md stage progress if applicable
-- [ ] In-app auth documentation (login, logout, session management)
-- [ ] Cross-app SSO workflow documentation
-- [ ] Tenant isolation policy documentation
-- [ ] Health endpoint documentation
+### Validation Gates (must pass before task completion)
+1. `pnpm typecheck` - TypeScript strict mode passes
+2. `pnpm lint:arch` - Architectural invariants preserved
+3. `pnpm docs:check` - Documentation 100/100
+4. `pnpm ui:contrast` - WCAG ratios for auth components
+5. `pnpm arsy:build` - Arsy ORM builds successfully
+6. No breaking changes to existing auth flows
 
 ## Completion Checklist
 
-- [ ] `packages/federation` package created with core SDK methods
-- [ ] Platform hub federation endpoints implemented and tested
-- [ ] All 10+ applications integrated with federation SDK
-- [ ] Cross-app SSO works end-to-end between at least 3 applications
-- [ ] Tenant isolation preserved and default-deny enforced across all apps
-- [ ] Correlation ID propagation works across app boundaries
-- [ ] Token refresh strategy works with automatic renewal before expiry
-- [ ] All quality gates pass: `pnpm verify:fast`, `pnpm verify:release`
-- [ ] `pnpm docs:check` passes (100/100)
-- [ ] `pnpm lint:arch` passes with 100% compliance
-- [ ] `pnpm typecheck` passes across all packages and apps (0 errors strict mode)
-- [ ] Documentation generated and published to package registry
-- [ ] BACKLOG.md updated with federation items
-- [ ] Release branch created and tagged
+### Phase 1 Complete (SDK)
+- [ ] `verifyCrossAppAuth` method implemented and tested
+- [ ] `syncSessionToApps` method implemented and tested
+- [ ] `getCurrentTenant` method implemented and tested
+- [ ] SDK typecheck passes
+
+### Phase 2 Complete (Middleware)
+- [ ] Auth middleware created for all 9 apps
+- [ ] Session detection works across all apps
+- [ ] Tenant validation working
+- [ ] No breaking changes to existing auth
+
+### Phase 3 Complete (API Endpoints)
+- [ ] `/api/auth/cross-app/verify` endpoint tested
+- [ ] `/api/auth/cross-app/sync` endpoint tested
+- [ ] `/api/auth/cross-app/status` endpoint tested
+- [ ] Error handling implemented
+
+### Phase 4 Complete (UI Components)
+- [ ] `AuthButton` component developed and tested
+- [ ] `SessionStatus` component developed and tested
+- [ ] `ConnectAccount` component developed and tested
+- [ ] `ReAuthModal` component developed and tested
+- [ ] Components integrated into all apps
+
+### Phase 5 Complete (Audit Logging)
+- [ ] Auth events logged with structured JSON
+- [ ] Tenant context included in all logs
+- [ ] Log aggregation configured
+- [ ] Metrics and alerts operational
+
+### Phase 6 Complete (Documentation & Cleanup)
+- [ ] SDK documentation updated
+- [ ] App integration guides updated
+- [ ] Full test suite passes
+- [ ] Typecheck across all packages passes
+- [ ] Lint:arch passes (100%)
+- [ ] Docs:check passes (100/100)
+
+### Overall Completion
 - [ ] All acceptance criteria from spec.md met
+- [ ] All success metrics target met
+- [ ] No critical or blocking bugs
+- [ ] Ready for production deployment review

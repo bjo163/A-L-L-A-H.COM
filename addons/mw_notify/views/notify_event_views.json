@@ -1,0 +1,28 @@
+{
+  "model": "notify.event",
+  "views": {
+    "tree": {
+      "title": "Notification Events",
+      "fields": [
+        { "name": "template_code", "label": "Template", "sortable": true },
+        { "name": "channel_type", "label": "Channel Type" },
+        { "name": "recipient", "label": "Recipient" },
+        { "name": "status", "label": "Status", "sortable": true },
+        { "name": "attempts", "label": "Attempts" }
+      ]
+    },
+    "form": {
+      "title": "Notification Event Details",
+      "fields": [
+        { "name": "template_code", "label": "Template", "col_span": 6 },
+        { "name": "channel_id", "label": "Channel", "widget": "many2one", "col_span": 6 },
+        { "name": "channel_type", "label": "Channel Type", "col_span": 6 },
+        { "name": "recipient", "label": "Recipient", "col_span": 6 },
+        { "name": "subject", "label": "Subject", "col_span": 12 },
+        { "name": "body", "label": "Body", "col_span": 12 },
+        { "name": "status", "label": "Status", "col_span": 6 },
+        { "name": "attempts", "label": "Attempts", "col_span": 6 }
+      ]
+    }
+  }
+}

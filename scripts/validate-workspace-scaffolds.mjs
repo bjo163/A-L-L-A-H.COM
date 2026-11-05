@@ -21,7 +21,7 @@ const APP_TYPES = {
   // Next.js App Router apps (require next.config.ts + src/app/ + Dockerfile)
   nextjs: {
     requiredFiles: ['next.config.ts', 'src/app', 'Dockerfile'],
-    apps: ['dock', 'gate', 'harbor', 'headquarter', 'id', 'jizz', 'moonsky'],
+    apps: ['dock', 'gate', 'harbor', 'headquarter', 'id', 'jizz', 'moonsky', 'e-isp'],
   },
   // Fastify app (requires package.json with fastify, src/app.ts or similar)
   fastify: {

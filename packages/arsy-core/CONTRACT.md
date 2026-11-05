@@ -8,7 +8,7 @@ version: 1.0.0
 status: released
 last_verified: 2026-02-10
 summary: Shared kernel for response envelope errors logging and config
-publicSurface: [logger, AppError, resolveLocalSecret]
+publicSurface: [logger, AppError, resolveLocalSecret, ssrfSafeFetch, validatePublicUrlSsrf]
 depends: []
 ---
 
@@ -16,13 +16,14 @@ depends: []
 
 The shared kernel every backend package and app depends on: the response
 envelope, the `AppError` type, structured `logger`, the DI container/kernel, the
-request principal, and local secret/config resolution.
+request principal, local secret/config resolution, and resolver-aware outbound
+HTTP protection.
 
 ## Public surface
 
-`logger`, `AppError`, `resolveLocalSecret` re-exported from `src/index.ts`
-(`response`, `errors`, `logger`, `container`, `kernel`, `principal`, `config`).
+`logger`, `AppError`, `resolveLocalSecret`, `ssrfSafeFetch`,
+`validatePublicUrlSsrf`, and `SsrfBlockedError` are re-exported from `src/index.ts`.
 
 ## Depends
 
-Workspace-internal dependencies: none. External runtime: `pino`.
+Workspace-internal dependencies: none. External runtime: `pino`, `undici`.

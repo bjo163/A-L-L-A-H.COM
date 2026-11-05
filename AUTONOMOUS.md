@@ -52,12 +52,11 @@ Zero placeholder files. Strict types. High-signal comments only.
 ## 5. Verify
 
 ```bash
-pnpm --filter @allah/arsy build
-pnpm docs:check
+pnpm verify:fast
 ```
 
 On error: self-diagnose and fix root cause. Never prompt user.
-Full gate list → [AGENTS.md](AGENTS.md) § Quality Gates.
+Full gate list → [AGENTS.md](AGENTS.md) § Quality Gates. CI runs the full required quality checks and builds affected workspace components before promotion; `pnpm verify:release` runs the all-workspace release suite locally.
 
 ## 6. Document
 

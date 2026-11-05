@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { validateUrlSsrf, resolvePublicAddresses, classifyHostname } from '../src/ssrf.js';
+import {
+  validateUrlSsrf,
+  validatePublicUrlSsrf,
+  ssrfSafeFetch,
+  resolvePublicAddresses,
+  classifyHostname,
+} from '../src/ssrf.js';
 
 function resolverWith(v4, v6 = []) {
   return {
@@ -45,6 +51,19 @@ describe('SSRF guard against resolved IPs', () => {
     assert.equal(validateUrlSsrf('http://10.0.0.5:11434/v1'), false); // never widens past loopback
     assert.equal(validateUrlSsrf('http://169.254.169.254/'), false);
     delete process.env.ALLOW_LOCAL_AI;
+  });
+
+  it('keeps notification-style public-only requests strict when local AI is enabled', () => {
+    const previous = process.env.ALLOW_LOCAL_AI;
+    process.env.ALLOW_LOCAL_AI = 'true';
+    try {
+      assert.equal(validateUrlSsrf('http://127.0.0.1:8080'), true);
+      assert.equal(validatePublicUrlSsrf('http://127.0.0.1:8080'), false);
+      assert.throws(() => ssrfSafeFetch('http://127.0.0.1:8080'), /public HTTP\(S\) endpoint/);
+    } finally {
+      if (previous === undefined) delete process.env.ALLOW_LOCAL_AI;
+      else process.env.ALLOW_LOCAL_AI = previous;
+    }
   });
 
   it('fails closed on DNS rebinding: a public name returning a loopback record', async () => {

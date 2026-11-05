@@ -18,6 +18,9 @@ The AI gateway Fastify plugin: strategy-based routing across providers with
 fallback chains, semantic and TTL caches, usage accounting, circuit breaking, and
 SSRF-guarded adapters.
 
+The resolver-aware SSRF implementation is owned by `@allah/arsy-core` and
+re-exported here for gateway callers.
+
 ## Public surface
 
 `SmartRouter`, `GatewayCache`, `UsageManager`, `deviceControlPlugin` (plus the

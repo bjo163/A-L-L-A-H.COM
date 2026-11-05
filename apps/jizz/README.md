@@ -4,7 +4,7 @@ id: "APP_JIZZ_README"
 version: "0.1.0"
 owner: "frontend"
 status: "implemented"
-last_verified: "2026-11-03"
+last_verified: "2026-11-05"
 ---
 # WORLD OBSERVATORY — Public Homepage
 

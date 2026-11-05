@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "openai-compatible",
+  "version": "0.1.0",
+  "description": "Call chat completion models through a locally configured OpenAI-compatible API.",
+  "author": {
+    "name": "Local"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "OpenAI-Compatible Models",
+        "shortDescription": "Call other model APIs",
+        "longDescription": "Send a prompt to a model configured on this computer through a compatible chat completions API.",
+        "developerName": "Local",
+        "category": "Developer Tools",
+        "capabilities": [],
+        "defaultPrompt": "Use the OpenAI-compatible model tool when I ask you to consult a separately configured model."
+      }
+    }
+  }
+}

@@ -1,33 +1,4 @@
 #!/bin/sh
 
-echo "[HUSKY] 1/5 Running Documentation Contract & Compliance Gate..."
-pnpm docs:check || {
-  echo "[HUSKY ERROR] Documentation contract check failed. Commit aborted."
-  exit 1
-}
-
-echo "[HUSKY] 2/5 Running Architectural Invariant Linter (@moonwitness/lint)..."
-pnpm lint:arch || {
-  echo "[HUSKY ERROR] Monorepo architectural violations detected. Commit aborted."
-  exit 1
-}
-
-echo "[HUSKY] 3/5 Running ESLint Gate..."
-pnpm lint || {
-  echo "[HUSKY ERROR] ESLint violations detected. Commit aborted."
-  exit 1
-}
-
-echo "[HUSKY] 4/5 Running Strict TypeScript Typecheck..."
-pnpm typecheck || {
-  echo "[HUSKY ERROR] TypeScript compilation failed. Commit aborted."
-  exit 1
-}
-
-echo "[HUSKY] 5/5 Running Skin Contrast Gate..."
-pnpm ui:contrast || {
-  echo "[HUSKY ERROR] WCAG contrast ratios failed. Commit aborted."
-  exit 1
-}
-
-echo "[HUSKY] Pre-commit quality verification passed successfully."
+echo "[HUSKY] Checking staged whitespace and conflict markers..."
+git diff --cached --check || exit 1

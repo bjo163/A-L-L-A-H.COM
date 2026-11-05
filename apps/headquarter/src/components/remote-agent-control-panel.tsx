@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentMode, AgentSessionEvent, PairedAgentDevice, RemoteAgentMission } from '@moonwitness/types';
 import { mwClient } from '@allah/sdk';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Dialog, Input, StatePanel, StatusMessage, Textarea } from '@moonwitness/ui';
+import { usePolling } from '@/lib/use-polling';
 
 const modes: AgentMode[] = ['ask', 'plan', 'code', 'debug', 'ideate', 'autopilot'];
 const cancellableStates = new Set(['queued', 'running', 'awaiting_approval']);
@@ -34,6 +35,10 @@ export function RemoteAgentControlPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<PairedAgentDevice | null>(null);
 
+  // Guards state writes from in-flight requests that resolve after teardown.
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
   const refresh = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
@@ -44,9 +49,9 @@ export function RemoteAgentControlPanel() {
       setDevices(nextDevices);
       setMissions(nextMissions);
       setSelectedDeviceId((current) => (
-        nextDevices.some((device: any) => device.id === current)
+        nextDevices.some((device) => device.id === current)
           ? current
-          : nextDevices.find((device: any) => device.status !== 'revoked')?.id ?? ''
+          : nextDevices.find((device) => device.status !== 'revoked')?.id ?? ''
       ));
       setError(null);
     } catch (requestError) {
@@ -58,41 +63,38 @@ export function RemoteAgentControlPanel() {
 
   useEffect(() => {
     void refresh(true);
-    const timer = setInterval(() => void refresh(), 5_000);
-    return () => clearInterval(timer);
   }, [refresh]);
 
-  useEffect(() => {
+  // Visibility-aware polling replaces the raw setInterval loop: it pauses when the
+  // tab is hidden, quiets under reduced-motion, and clears on unmount.
+  usePolling(() => void refresh(), 5_000, { respectReducedMotion: true });
+
+  const loadEvents = useCallback(async () => {
     if (!selectedMissionId) {
-      setEvents([]);
+      setEvents((prev) => (prev.length ? [] : prev));
       setEventsLoading(false);
       return;
     }
-
-    let active = true;
     setEventsLoading(true);
-    const loadEvents = async () => {
-      try {
-        const nextEvents = await mwClient.agentControl.getMissionEvents(selectedMissionId);
-        if (active) {
-          setEvents(nextEvents);
-          setEventsLoading(false);
-        }
-      } catch (requestError) {
-        if (active) {
-          setError(describeError(requestError));
-          setEventsLoading(false);
-        }
+    try {
+      const nextEvents = await mwClient.agentControl.getMissionEvents(selectedMissionId);
+      if (mountedRef.current) {
+        setEvents(nextEvents);
+        setEventsLoading(false);
       }
-    };
-
-    void loadEvents();
-    const timer = setInterval(() => void loadEvents(), 3_000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+    } catch (requestError) {
+      if (mountedRef.current) {
+        setError(describeError(requestError));
+        setEventsLoading(false);
+      }
+    }
   }, [selectedMissionId]);
+
+  useEffect(() => {
+    void loadEvents();
+  }, [loadEvents]);
+
+  usePolling(() => void loadEvents(), 3_000, { respectReducedMotion: true });
 
   const createPairing = async () => {
     const name = deviceName.trim();
@@ -256,6 +258,7 @@ export function RemoteAgentControlPanel() {
                         variant={selectedDeviceId === device.id ? 'gold' : 'outline'}
                         className="remote-agent-control__select"
                         aria-pressed={selectedDeviceId === device.id}
+                        aria-label={`Select device ${device.name}, status ${device.status}`}
                         disabled={device.status === 'revoked'}
                         onClick={() => setSelectedDeviceId(device.id)}
                       >
@@ -354,6 +357,7 @@ export function RemoteAgentControlPanel() {
                         variant={selectedMissionId === mission.id ? 'gold' : 'outline'}
                         className="remote-agent-control__mission"
                         aria-pressed={selectedMissionId === mission.id}
+                        aria-label={`Select ${mission.mode} mission, status ${mission.state}, sent to ${target?.name ?? 'unknown device'}`}
                         onClick={() => setSelectedMissionId(mission.id)}
                       >
                         <span>{mission.mode} · {mission.state}</span>

@@ -1,47 +1,84 @@
-# Rules: Feature Flag & Configuration Management System
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "FEATURE-FLAG-CONFIG-SYSTEM-RULES"
+version: "1.0.0"
+owner: "architecture"
+status: "proposed"
+last_verified: "2026-11-05"
+---
+# Feature Flag & Configuration Management System — Invariants & Rules
 
-## R1 — Security Rules
-- All flag evaluation endpoints MUST be default-deny; only explicit public allowlist (`/health`, `/ready`) is anonymous
-- Flag mutation endpoints (create, update, delete, promote) MUST require a verified authenticated principal
-- Flag mutation endpoints MUST require elevated role: `superuser`, `admin`, or explicit per-flag RBAC grant
-- No flag evaluation or audit log MAY include PII (user email, phone, IP, raw session data)
-- Flag values that reference secrets MUST be stored as references, never inline plaintext values
-- RBAC MUST be enforced server-side; client-side checks are display-only and never trusted
+These rules are drawn from this plan's own `design.md` (Implementation Constraints, Security
+Architecture, Targeting Engine, Offline Fallback, Failure Scenarios) and `task.md` acceptance
+criteria. They bound what any implementation of this proposal must preserve.
 
-## R2 — Tenant Isolation Rules
-- Every flag, experiment, targeting rule, and audit event row MUST include `company_id`
-- `company_id` MUST be derived from the authenticated principal, never from the request body
-- Fail-closed: if `company_id` cannot be derived from the principal, the operation MUST be rejected
-- Cross-tenant flag reads MUST be denied unless the caller has an explicit global admin grant with a recorded reason
-- Global admin flag operations MUST require a non-zero `company_id` target and a recorded reason
-- Generic CRUD endpoints MUST NOT expose flag, targeting, or audit models cross-tenant
+## Non-negotiable platform invariants (MoonWitness)
 
-## R3 — Audit Trail Rules
-- Every flag/configuration/experiment change MUST write one append-only audit event in the same transaction
-- Audit events MUST store changed field names, not changed values (preserves MoonWitness Audit invariant)
-- Audit events MUST record: actor id, target company_id, request id, operation, changed field names, timestamp
-- Audit events MUST NOT be mutable or deletable by any application role
-- Audit log retention MUST comply with GDPR: configurable retention window, purge on request
+- **Fail-closed tenancy.** Every flag, config, experiment, and audit row is scoped by `company_id`;
+  tenant targeting matches `company_id` and cross-tenant reads are refused.
+- **No raw SQL / parameterized values only.** Store access goes through the PGlite WASM ORM with
+  parameterized statements; string-built queries are prohibited.
+- **Append-only audit.** Flag CRUD, toggles, targeting changes, and config edits emit append-only
+  audit events with actor, timestamp, IP, and user agent; a before/after diff is stored, and
+  replay is available for recovery.
+- **Default-deny authentication.** All endpoints resolve auth first; unauthenticated or
+  unbound-tenant requests are rejected rather than defaulted to a privileged scope.
+- **UI purity.** Admin surfaces honor `PALETTE_PURITY`, `STYLE_PURITY`, `UI_PURITY`.
+- **No new dependencies beyond the existing stack.** Node.js 16+/Bun, Fastify 5.x, TypeScript 5.x,
+  PGlite WASM; Docker/Coolify deployment compatible.
 
-## R4 — SSRF and Network Rules
-- Flag evaluation client MUST NOT accept arbitrary base URLs from request input without validation
-- Any base URL used for flag service discovery MUST be validated to reject private/loopback/link-local addresses
-- Reject: 10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12, 127.0.0.1, ::1, fe80::/10, localhost
-- Validate `base_url` before the request and re-check the resolved IP after DNS resolution
+## Authorization (RBAC)
 
-## R5 — Offline and Consistency Rules
-- Flag evaluation MUST use a local cache with TTL; if flag service is unreachable, cached values are served
-- Cache MUST fail-closed: unknown flags with no cached value evaluate to the configured default
-- Flag evaluation MUST be eventually consistent across all app instances
-- Cache TTL MUST be configurable per flag; default TTL MUST be bounded (<= 5 minutes)
-- Flag evaluation MUST NOT throw when the flag service is unreachable; it MUST return the cached/default value
+Roles are Admin (full CRUD), Developer (read + create/update own flags), Viewer (read-only), and
+Auditor (read audit logs only). Authentication reuses `@allah/sdk` and cross-app SSO; JWT tokens gate
+API access; permission checks apply to every endpoint including batch evaluation and the WebSocket
+stream.
 
-## R6 — Quality and Verification Rules
-- All feature-flag TypeScript MUST pass strict typecheck with zero errors
-- All feature-flag code MUST pass `pnpm lint:arch` with zero violations
-- All feature-flag code MUST pass `pnpm lint` with zero ESLint errors
-- All feature-flag code MUST pass `pnpm docs:check` at 100/100
-- No new raw HTML elements (`<button>`, `<input>`, `<a>`, `<select>`, `<textarea>`, `<form>`) in app JSX
-- All new code MUST use `@moonwitness/ui` component patterns and skin token usage
-- Flag evaluation MUST complete in under 10ms for cached evaluations
-- No database schema change MAY introduce downtime; all changes MUST be idempotent and backward-compatible
+## Secrets and privacy
+
+- Configuration values **never** contain secrets. Secrets stay in existing Vault/KMS storage and
+  config entries reference secret IDs only.
+- Audit logs store **hashed** user IDs, never raw IDs; metrics and traces carry no PII.
+- Data retention is GDPR-compliant and configurable; PII filtering applies to logs and metrics.
+
+## Evaluation and targeting rules
+
+- Rule precedence is fixed and ordered: user ID → user segments → percentage rollout → geo → device
+  → tenant → custom attributes → default value. First match wins.
+- Bucketing is hash-based and consistent (`sha256(flagKey:userId) % total`) so a user's variant is
+  stable across evaluations.
+- Server-side evaluation is authoritative; client-side results are advisory and validated. Targeting
+  must not be bypassable by client tampering.
+- Optimistic locking via a `version` field governs flag/config updates; concurrent edits resolve
+  last-write-wins by version while the audit trail is preserved.
+- A/B experiments require a control variant, explicit traffic allocation, and statistical gating
+  (Bayesian; MDE 5%, power 80%, significance 95%) before declaring a winner.
+
+## Caching and degraded-mode behavior
+
+- Layered cache TTLs are enforced: in-memory 1 minute (server) / 5 minutes (client), LocalStorage
+  1 hour, IndexedDB 24 hours; keys are namespaced by flag, environment, and hash.
+- Cache invalidation fires on flag change (event bus → WebSocket); batch invalidation and
+  stale-while-revalidate prevent stampedes.
+- Degraded mode is fail-safe: when the service is unreachable use cached values; when the cache has
+  expired fall back to typed defaults, and emit degraded-mode metrics. Circuit breakers isolate
+  service calls to prevent cascade failures.
+
+## Rate limiting and resilience
+
+- Rate limit is 100 requests/minute per user/IP (1000/hour sustained) across evaluation and admin
+  endpoints; input validation is enforced at every endpoint.
+- Real-time propagation to clients is bounded (target: within 5 seconds of a change).
+- Cached flag evaluation is targeted at <10ms (service path <50ms) with cache hit rate >95% and
+  service availability 99.9% under degraded mode; load behavior is verified before release.
+
+## Compatibility and migration
+
+- Backward compatible with existing `@allah/sdk`; no breaking changes to the 10 integrated apps.
+- Migration tools for hardcoded, environment-variable, and database-flag sources must provide
+  dry-run validation and rollback.
+
+## Gate contract
+
+Implementation is not complete until `pnpm verify:release`, `lint:arch`, `typecheck`, `docs:check`
+(100/100), `ui:test`, and `ui:contrast` pass, all app builds succeed, and security scans are clean.

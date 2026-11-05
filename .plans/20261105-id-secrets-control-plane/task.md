@@ -11,7 +11,7 @@ last_verified: "2026-11-05"
 
 Task status: [ ] pending · [/] in progress · [x] completed with evidence. Every task is intentionally bounded. Follow dependency order. Do not handle real secret material.
 
-Execution update: SEC-001–020 are complete with source-backed evidence in [audit-matrix.md](./audit-matrix.md), [threat-model.md](./threat-model.md), and [decision-proposal.md](./decision-proposal.md). The proposal is not an accepted ADR. Waves 2–9 remain on hold until the relevant authority, key-custody, and migration decisions are accepted.
+Execution update: SEC-001–030 are complete with source-backed evidence in [audit-matrix.md](./audit-matrix.md), [threat-model.md](./threat-model.md), and [decision-proposal.md](./decision-proposal.md), plus shared contracts and compile-time redaction checks. The proposal is not an accepted ADR. Waves 3–9 remain on hold until the relevant authority, key-custody, and migration decisions are accepted.
 
 ## Wave 0 — Repository discovery and capability map
 - [x] SEC-001 Locate the actual NAS secret encryption implementation and document exact file paths.
@@ -38,16 +38,18 @@ Execution update: SEC-001–020 are complete with source-backed evidence in [aud
 - [x] SEC-020 Record a proposed ADR for crypto, key custody, API credential verification, and migration; block code until accepted.
 
 ## Wave 2 — Shared contracts and type safety
-- [ ] SEC-021 Define SecretMetadata type with no plaintext/ciphertext fields.
-- [ ] SEC-022 Define SecretVersionMetadata type with version, status, timestamps, and safe fingerprint.
-- [ ] SEC-023 Define SecretCreateInput type with value marked write-only at API boundary.
-- [ ] SEC-024 Define SecretListQuery with bounded pagination and server-side filters.
-- [ ] SEC-025 Define ApiCredentialMetadata type with prefix, owner, scopes, environment, expiry, last-used and status.
-- [ ] SEC-026 Define ServicePrincipalSummary type without credential material.
-- [ ] SEC-027 Define EnvironmentSummary and EnvironmentVariableMetadata types.
-- [ ] SEC-028 Define redacted EnvironmentDiff type that cannot carry old/new secret values.
-- [ ] SEC-029 Define AccessRequest and ApprovalDecision contracts.
-- [ ] SEC-030 Add compile-time tests proving metadata response types do not expose secret value fields.
+- [x] SEC-021 Define SecretMetadata type with no plaintext/ciphertext fields.
+- [x] SEC-022 Define SecretVersionMetadata type with version, status, timestamps, and safe fingerprint.
+- [x] SEC-023 Define SecretCreateInput type with value marked write-only at API boundary.
+- [x] SEC-024 Define SecretListQuery with bounded pagination and server-side filters.
+- [x] SEC-025 Define ApiCredentialMetadata type with prefix, owner, scopes, environment, expiry, last-used and status.
+- [x] SEC-026 Define ServicePrincipalSummary type without credential material.
+- [x] SEC-027 Define EnvironmentSummary and EnvironmentVariableMetadata types.
+- [x] SEC-028 Define redacted EnvironmentDiff type that cannot carry old/new secret values.
+- [x] SEC-029 Define AccessRequest and ApprovalDecision contracts.
+- [x] SEC-030 Add compile-time tests proving metadata response types do not expose secret value fields.
+
+Execution evidence: SEC-021–030 shared contracts and compile-time redaction checks pass with `pnpm exec tsc --noEmit -p packages/types/tsconfig.json`.
 
 ## Wave 3 — ARSY authority and storage foundations
 - [ ] SEC-031 Define dedicated ARSY secret repository interface; keep credential models out of generic CRUD.

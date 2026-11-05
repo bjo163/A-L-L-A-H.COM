@@ -59,6 +59,7 @@ export default [
       'out/**',
       'build/**',
       '**/build/**',
+      '**/.vscode-test/**',
       'next-env.d.ts',
       '**/*.d.ts',
       'pnpm-lock.yaml',

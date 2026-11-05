@@ -53,6 +53,12 @@ Secrets · least privilege · access control · injection · SSRF · dependency 
 Record per verified task: exact command + output · test result · environment limits · path or commit · manual verification.
 Never report skipped checks as passing.
 
+## Delivery Feedback
+
+- `pnpm verify:fast` is the local pre-push check: documentation contract, architecture invariants, ESLint on changed files, and full TypeScript project checks with incremental build metadata.
+- `pnpm verify:release` runs all local checks, tests, scaffold validation, and workspace builds.
+- CI remains authoritative for promotion and records elapsed time for each gate. Fast local checks do not replace required CI checks.
+
 ## Verification Baseline (2026-11-04)
 
 Every row is a command run against the current worktree with its recorded exit code and counts. `IMPLEMENTED` claims without a row here are unverified.

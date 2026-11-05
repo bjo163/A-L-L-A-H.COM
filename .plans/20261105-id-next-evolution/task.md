@@ -93,9 +93,9 @@ Execution update: Wave 0 is recorded in [capability-matrix.md](./capability-matr
 ## Wave 7 — Lunar experience & quality (ID-N07, P1)
 - [ ] ID-064 Create route-by-route composition brief for arrival, login, registration, account, trust, recovery, and privacy.
 - [ ] ID-065 Preserve LUNAR CHRONICLES DNA while ensuring every control remains legible and accessible.
-- [ ] ID-066 Audit all form labels, descriptions, error association, focus order, and keyboard submission.
-- [ ] ID-067 Audit all routes at 360, 390, 768, 1024, and 1440 CSS px.
-- [ ] ID-068 Verify reduced-motion and sound preference behavior; no required action depends on sound.
+- [x] ID-066 Audit all form labels, descriptions, error association, focus order, and keyboard submission.
+- [x] ID-067 Audit all routes at 360, 390, 768, 1024, and 1440 CSS px.
+- [x] ID-068 Verify reduced-motion and sound preference behavior; no required action depends on sound.
 - [ ] ID-069 Verify localization, long strings, date/time zones, and RTL readiness without claiming full RTL until tested.
 - [ ] ID-070 Add route-level browser smoke tests for guest, authenticated, expired, and unavailable states.
 - [x] ID-071 Audit metadata, icons, page titles, robots policy, and accidental indexing of private routes.

@@ -18,18 +18,20 @@ import { loadDefaultData as mwQorpusDefaultData } from './mw_qorpus/data/index';
 import { loadDefaultData as mwStorageDefaultData } from './mw_storage/data/index';
 import { loadDefaultData as nexusDefaultData } from './nexus/data/index';
 import { loadDefaultData as orbitDefaultData } from './orbit/data/index';
+import { loadDefaultData as mwNotifyDefaultData } from './mw_notify/data/index';
 
 /**
- * addon name -> its default-data loader. All eight addons ship a loader;
- * four (`mw_qorpus`, `mw_storage`, `nexus`, `orbit`) return an empty result
- * because they own no platform reference rows, but their presence is an
- * explicit, deliberate statement (matching `data: []` in the manifest).
+ * addon name -> its default-data loader. All nine addons ship a loader; four
+ * (`mw_qorpus`, `mw_storage`, `nexus`, `orbit`) return an empty result because
+ * they own no platform reference rows, but their presence is an explicit,
+ * deliberate statement (matching `data: []` in the manifest).
  */
 export const DEFAULT_DATA_REGISTRY: Record<string, (ctx: SeedContext) => Promise<SeedResult>> = {
   base: baseDefaultData,
   mw_llm_router: mwLlmRouterDefaultData,
   works: worksDefaultData,
   project: projectDefaultData,
+  mw_notify: mwNotifyDefaultData,
   mw_qorpus: mwQorpusDefaultData,
   mw_storage: mwStorageDefaultData,
   nexus: nexusDefaultData,

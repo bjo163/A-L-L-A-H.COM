@@ -129,6 +129,13 @@ export const AiUsageDaily = defineModel({
     latency_p50_ms: fields.integer({ label: 'Latency p50 MS', default: 0 }),
     latency_p95_ms: fields.integer({ label: 'Latency p95 MS', default: 0 }),
   },
+  // Roadmap T3.5: the daily rollup is one row per (company, day, provider, model).
+  // The unique index guards the concrete-key case against concurrent double-inserts;
+  // rows with a NULL provider/model (cached/ad-hoc) stay NULL (the routing-metric
+  // consumer relies on that) and are deduplicated by the rollup's in-memory key.
+  indexes: [
+    { fields: ['company_id', 'day', 'provider_id', 'model_id'], unique: true },
+  ],
 });
 
 export const AiThread = defineModel({

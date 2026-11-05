@@ -8,6 +8,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+---
+contract: "DOCUMENTATION_CONTRACT.md"
+id: "APP_JIZZ_AGENTS"
+version: "0.1.0"
+owner: "frontend"
+status: "implemented"
+last_verified: "2026-11-05"
+---
+
 # World Observatory Agent Guidance
 
 Follow the repository-wide [AGENTS.md](../../AGENTS.md) and [documentation contract](../../DOCUMENTATION_CONTRACT.md). This file adds Next.js-specific guidance for the WORLD OBSERVATORY app.

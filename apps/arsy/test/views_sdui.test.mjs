@@ -3,6 +3,15 @@ import { test } from 'node:test';
 import { runBootSeed } from '../src/seed.ts';
 import { buildAuthenticatedApp } from './helpers.mjs';
 import { BaseRepository, dbEngine, modelRegistry } from '@allah/arsy-orm';
+import { resolveViewFiles } from '../../../addons/views.ts';
+
+// Every (model, view_type) pair across the declared view files becomes one
+// ir.ui.view row. Derived from the registry so adding an addon's views (e.g.
+// mw_notify in T3.4) is reflected automatically rather than a frozen magic number.
+const DECLARED_VIEW_COUNT = resolveViewFiles().reduce(
+  (n, file) => n + Object.keys(file.views).length,
+  0,
+);
 
 // Roadmap T3.1: manifest-declared view JSON is boot-seeded into `ir.ui.view`
 // (digest-gated) and the SDUI endpoint reads the persisted arch before falling
@@ -31,8 +40,9 @@ async function seedOnce() {
 
 test('declared views boot-seed into ir.ui.view at the platform tenant, digest-gated', async () => {
   const first = await seedOnce();
-  // base declares res.partner (tree, form) and res.company (tree, form).
-  assert.equal(first.created, 4, 'first boot creates the four declared platform views');
+  // base (res.partner + res.company, each tree+form) plus every other addon's
+  // declared views; the count is derived from VIEW_REGISTRY, not hard-coded.
+  assert.equal(first.created, DECLARED_VIEW_COUNT, 'first boot creates every declared platform view');
   assert.equal(first.updated, 0, 'a clean boot updates nothing');
 
   const rows = await viewRows();
@@ -46,7 +56,7 @@ test('declared views boot-seed into ir.ui.view at the platform tenant, digest-ga
   const second = await seedOnce();
   assert.equal(second.created, 0, 'second boot creates no view rows');
   assert.equal(second.updated, 0, 'second boot updates no view rows (digest match)');
-  assert.equal(second.unchanged, 4, 'all four views reported unchanged on re-seed');
+  assert.equal(second.unchanged, DECLARED_VIEW_COUNT, 'all declared views reported unchanged on re-seed');
 
   const after = await viewRows();
   assert.equal(after.length, rows.length, 'row count is stable across re-seed');

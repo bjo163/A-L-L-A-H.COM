@@ -5,15 +5,7 @@ import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { EcosystemNavbar, Link as MwLink, StatusMessage, resolveEcosystemEndpoints, useEcosystemSession } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
-
-const workspaces = [
-  { href: '/', label: 'Overview', note: 'Platform map' },
-  { href: '/ai-gateway', label: 'AI Gateway', note: 'Routing & usage' },
-  { href: '/agent', label: 'Agent Studio', note: 'Run an agent' },
-  { href: '/swarm', label: 'Swarm Ops', note: 'Coordinate tasks' },
-  { href: '/tools', label: 'Tool Registry', note: 'MCP tools' },
-  { href: '/knowledge', label: 'Knowledge', note: 'Qorpus search' },
-];
+import { HQ_RAIL_NAV, hqIndexLabel } from '@/lib/nav-registry';
 
 const sessionAuth = {
   getCurrentUser: () => mwClient.auth.getCurrentUser(),
@@ -41,17 +33,17 @@ export function HeadquarterShell({ children }: { children: ReactNode }) {
       <div className="hq-shell__layout">
         <aside className="hq-rail" aria-label="Headquarter workspace">
           <div className="hq-rail__heading">
-            <span className="hq-rail__index">N / 04</span>
+            <span className="hq-rail__index">N / {hqIndexLabel(HQ_RAIL_NAV.length - 1)}</span>
             <p>Control modules</p>
           </div>
           <nav className="hq-rail__nav" aria-label="Headquarter sections">
-            {workspaces.map((workspace, index) => {
+            {HQ_RAIL_NAV.map((workspace, index) => {
               const isCurrent = pathname === workspace.href;
 
               return (
                 <MwLink asChild current={isCurrent} className="hq-rail__link" key={workspace.href}>
                   <NextLink href={workspace.href}>
-                    <span className="hq-rail__link-index">0{index + 1}</span>
+                    <span className="hq-rail__link-index">{hqIndexLabel(index)}</span>
                     <span className="hq-rail__link-copy">
                       <span>{workspace.label}</span>
                       <small>{workspace.note}</small>

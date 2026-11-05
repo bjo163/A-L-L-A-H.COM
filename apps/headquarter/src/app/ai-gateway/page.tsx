@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Badge,
   Button,
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  Badge,
   Input,
+  RouteShell,
   Select,
+  StatePanel,
+  StatusMessage,
   Table,
   TableBody,
   TableCaption,
@@ -20,356 +22,334 @@ import {
   TableHeader,
   TableScroll,
   TableRow,
-  StatusMessage,
-  RouteShell,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type {
-  GatewayTelemetry,
+  ChatCompletionChunk,
+  GatewayModelInfo,
   GatewayProviderInfo,
+  GatewayTelemetry,
   GatewayUsageLog,
 } from '@moonwitness/types';
+import { RouteHeader } from '@/components/route-header';
+import { useAsyncData } from '@/lib/use-async-data';
+import { useDocumentTitle } from '@/lib/use-document-title';
+import { formatMs, formatNumber, formatUsd } from '@/lib/hq-format';
+import { COMMON_UI } from '@/lib/strings';
+
+interface GatewaySnapshot {
+  telemetry: GatewayTelemetry;
+  providers: GatewayProviderInfo[];
+  logs: GatewayUsageLog[];
+  models: GatewayModelInfo[];
+}
+
+const LOG_PREVIEW = 20;
 
 export default function AiGatewayPage() {
-  const [telemetry, setTelemetry] = useState<GatewayTelemetry | null>(null);
-  const [providers, setProviders] = useState<GatewayProviderInfo[]>([]);
-  const [usageLogs, setUsageLogs] = useState<GatewayUsageLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  useDocumentTitle('AI Gateway | Headquarter');
 
-  // Test Console State
+  const { data, loading, error, refresh } = useAsyncData<GatewaySnapshot>(async (signal) => {
+    const [telemetry, providers, logs, models] = await Promise.all([
+      mwClient.router.getTelemetry(),
+      mwClient.router.getProviders(),
+      mwClient.router.getUsageLogs(),
+      mwClient.router.listModels().catch(() => [] as GatewayModelInfo[]),
+    ]);
+    if (signal.aborted) throw new Error('aborted');
+    return { telemetry, providers, logs, models };
+  });
+
+  // Test console state
   const [testModel, setTestModel] = useState('dx-default');
   const [testPrompt, setTestPrompt] = useState('');
   const [testOutput, setTestOutput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [tData, pData, uData] = await Promise.all([
-        mwClient.router.getTelemetry(),
-        mwClient.router.getProviders(),
-        mwClient.router.getUsageLogs(),
-      ]);
-
-      setTelemetry(tData);
-      setProviders(pData);
-      setUsageLogs(uData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed connecting to Arsy AI Gateway');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const streamControllerRef = useRef<AbortController | null>(null);
+  const outputBufferRef = useRef('');
+  const flushHandleRef = useRef<number | null>(null);
 
   useEffect(() => {
-    document.title = 'AI Gateway | Headquarter';
-    fetchData();
+    return () => {
+      streamControllerRef.current?.abort();
+      if (flushHandleRef.current !== null) cancelAnimationFrame(flushHandleRef.current);
+    };
   }, []);
 
-  const handleTestChatStream = async () => {
-    if (!testPrompt.trim()) return;
-    setIsStreaming(true);
+  // Buffer tokens in a ref and paint once per animation frame, so a fast stream
+  // does not trigger a React render for every delta.
+  const scheduleFlush = useCallback(() => {
+    if (flushHandleRef.current !== null) return;
+    flushHandleRef.current = requestAnimationFrame(() => {
+      flushHandleRef.current = null;
+      setTestOutput(outputBufferRef.current);
+    });
+  }, []);
+
+  const handleStreamChunk = useCallback((chunk: ChatCompletionChunk) => {
+    const delta = chunk.choices?.[0]?.delta?.content;
+    if (delta) {
+      outputBufferRef.current += delta;
+      scheduleFlush();
+    }
+  }, [scheduleFlush]);
+
+  const runTestChatStream = async () => {
+    if (!testPrompt.trim() || isStreaming) return;
+    const controller = new AbortController();
+    streamControllerRef.current = controller;
+    outputBufferRef.current = '';
     setTestOutput('');
-    setTestStatus('Initiating SSE stream...');
+    setIsStreaming(true);
+    setTestStatus('Initiating SSE stream…');
 
     try {
       await mwClient.router.chatStream(
-        {
-          model: testModel,
-          messages: [{ role: 'user', content: testPrompt }],
-        },
-        (chunk: any) => {
-          const delta = chunk.choices?.[0]?.delta?.content;
-          if (delta) {
-            setTestOutput((prev) => prev + delta);
-          }
-        }
+        { model: testModel, messages: [{ role: 'user', content: testPrompt }] },
+        handleStreamChunk,
+        controller.signal,
       );
+      setTestOutput(outputBufferRef.current);
       setTestStatus('Stream completed');
-      // Refresh telemetry & logs after test call
-      fetchData();
-    } catch (err) {
-      setTestStatus(`Stream failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      refresh();
+    } catch (streamError) {
+      if (controller.signal.aborted) {
+        setTestStatus('Stream stopped');
+      } else {
+        setTestOutput(outputBufferRef.current);
+        setTestStatus(streamError instanceof Error ? `Stream failed: ${streamError.message}` : 'Stream failed');
+      }
     } finally {
       setIsStreaming(false);
+      streamControllerRef.current = null;
     }
   };
 
+  const stopStream = () => {
+    streamControllerRef.current?.abort();
+  };
+
+  const modelOptions = data?.models ?? [];
+  const visibleLogs = data ? (showAllLogs ? data.logs : data.logs.slice(0, LOG_PREVIEW)) : [];
+
   return (
-    <RouteShell as="main" className="hq-route hq-ai-gateway flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                AI Gateway Control Plane
-              </h1>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Multi-provider routing, zero-copy streaming, virtual keys, and cost telemetry
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/">Back to HQ</Link>
-            </Button>
-            <Button variant="default" size="sm" onClick={fetchData} disabled={loading}>
-              {loading ? 'Refreshing...' : 'Refresh Telemetry'}
-            </Button>
-          </div>
-        </div>
+    <RouteShell as="main" className="hq-route hq-ai-gateway">
+      <RouteHeader
+        title="AI Gateway Control Plane"
+        summary="Multi-provider routing, zero-copy streaming, virtual keys, and cost telemetry."
+        actions={
+          <Button variant="default" size="sm" onClick={refresh} disabled={loading}>
+            {loading ? COMMON_UI.refreshing : COMMON_UI.refresh}
+          </Button>
+        }
+      />
 
-        {error && (
-          <StatusMessage tone="danger" title="Telemetry unavailable" action={<Button variant="outline" size="sm" onClick={fetchData}>Retry</Button>}>
-            {error}
-          </StatusMessage>
-        )}
+      {error && (
+        <StatusMessage tone="danger" title="Telemetry unavailable" action={<Button variant="outline" size="sm" onClick={refresh}>Retry</Button>}>
+          {error}
+        </StatusMessage>
+      )}
 
-        {/* Telemetry Metric Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      {loading && !data ? (
+        <StatePanel kind="loading" title="Reading gateway telemetry" cause="Collecting metrics, providers, models, and usage logs from the connected gateway." />
+      ) : data ? (
+        <section className="hq-metric-grid" aria-label="Gateway telemetry metrics">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Routed Requests</CardDescription>
-              <CardTitle className="text-2xl font-mono text-foreground">
-                {loading ? 'Loading...' : (telemetry?.metrics?.totalRequests?.toLocaleString() ?? 'Not reported')}
-              </CardTitle>
+              <CardTitle className="text-2xl hq-mono">{formatNumber(data.telemetry?.metrics?.totalRequests)}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <span className="text-[10px] text-muted-foreground">Reported by connected gateway</span>
-            </CardContent>
+            <CardContent><span className="hq-micro">Reported by connected gateway</span></CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Tokens Processed</CardDescription>
-              <CardTitle className="text-2xl font-mono text-ring">
-                {loading ? 'Loading...' : (telemetry?.metrics?.totalTokens?.toLocaleString() ?? 'Not reported')}
-              </CardTitle>
+              <CardTitle className="text-2xl hq-mono text-ring">{formatNumber(data.telemetry?.metrics?.totalTokens)}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <span className="text-[10px] text-muted-foreground">Prompt + completion tokens</span>
-            </CardContent>
+            <CardContent><span className="hq-micro">Prompt + completion tokens</span></CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Accrued Cost (USD)</CardDescription>
-              <CardTitle className="text-2xl font-mono text-success">
-                {loading ? 'Loading...' : (telemetry?.metrics?.totalCostUsd != null ? `$${telemetry.metrics.totalCostUsd.toFixed(4)}` : 'Not reported')}
-              </CardTitle>
+              <CardTitle className="text-2xl hq-mono text-success">{formatUsd(data.telemetry?.metrics?.totalCostUsd)}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <span className="text-[10px] text-muted-foreground">Model tariff calculation</span>
-            </CardContent>
+            <CardContent><span className="hq-micro">Model tariff calculation</span></CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Avg Response Latency</CardDescription>
-              <CardTitle className="text-2xl font-mono text-foreground">
-                {loading ? 'Loading...' : (telemetry?.metrics?.avgLatencyMs != null ? `${telemetry.metrics.avgLatencyMs}ms` : 'Not reported')}
-              </CardTitle>
+              <CardTitle className="text-2xl hq-mono">{formatMs(data.telemetry?.metrics?.avgLatencyMs)}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <span className="text-[10px] text-muted-foreground">TTFT & total elapsed roundtrip</span>
-            </CardContent>
+            <CardContent><span className="hq-micro">TTFT &amp; total elapsed roundtrip</span></CardContent>
           </Card>
         </section>
+      ) : null}
 
-        {/* Active Providers & Circuit Breaker Status */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Active Providers & Fallback Pipeline
-            </h2>
+      <section className="hq-section" aria-labelledby="gateway-providers-title">
+        <div className="hq-section__heading">
+          <h2 id="gateway-providers-title">Active Providers &amp; Fallback Pipeline</h2>
+        </div>
+
+        {loading && !data ? (
+          <StatePanel as="h3" kind="loading" title="Loading provider records" cause="Reading the provider list from the gateway." />
+        ) : data && data.providers.length === 0 ? (
+          <StatePanel
+            as="h3"
+            kind="empty"
+            title="No providers returned"
+            cause="The connected gateway reported no providers."
+            nextAction="Confirm the gateway is configured with at least one upstream provider."
+          />
+        ) : data ? (
+          <div className="hq-metric-grid">
+            {data.providers.map((provider) => {
+              const circuit = data.telemetry?.circuits?.[provider.slug];
+              const isAvailable = circuit ? circuit.healthy : provider.is_healthy;
+              return (
+                <Card key={provider.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-sm font-medium">{provider.name}</CardTitle>
+                      <Badge variant={isAvailable ? 'active' : 'revoked'} dot>
+                        {isAvailable ? 'HEALTHY' : 'CIRCUIT OPEN'}
+                      </Badge>
+                    </div>
+                    <CardDescription className="hq-mono text-xs">{provider.slug}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs">
+                    <dl className="hq-kv-row"><dt>Type</dt><dd className="hq-mono">{provider.provider_type}</dd></dl>
+                    <dl className="hq-kv-row"><dt>Priority</dt><dd className="hq-mono">Tier {provider.priority}</dd></dl>
+                    <dl className="hq-kv-row"><dt>Endpoint</dt><dd className="hq-mono min-w-0 flex-1 justify-end truncate" title={provider.base_url}>{provider.base_url}</dd></dl>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
+        ) : null}
+      </section>
 
-          {providers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {loading ? 'Loading provider records...' : 'No providers were returned by the connected gateway.'}
-            </p>
+      <section className="hq-section" aria-labelledby="gateway-tester-title">
+        <div className="hq-section__heading">
+          <div>
+            <h2 id="gateway-tester-title">Interactive Gateway Tester</h2>
+            <p className="hq-micro">Live Server-Sent Events (SSE) streaming validation directly against the Arsy AI Gateway.</p>
+          </div>
+          <Select label="Route Alias" value={testModel} onChange={(e) => setTestModel(e.target.value)} className="text-xs">
+            <option value="dx-default">dx-default (Fallback sequence)</option>
+            {modelOptions
+              .filter((model) => model.id !== 'dx-default')
+              .map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.displayName ? `${model.id} (${model.displayName})` : model.id}
+                </option>
+              ))}
+          </Select>
+        </div>
+
+        <div className="flex gap-2">
+          <Input
+            value={testPrompt}
+            onChange={(e) => setTestPrompt(e.target.value)}
+            label="Prompt to stream"
+            placeholder="Enter prompt to stream…"
+            className="flex-1"
+          />
+          {isStreaming ? (
+            <Button variant="destructive" onClick={stopStream}>Stop</Button>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {providers.map((p) => {
-                const circuit = telemetry?.circuits?.[p.slug];
-                const isAvailable = circuit ? circuit.healthy : p.is_healthy;
-
-                return (
-                  <Card key={p.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium">{p.name}</CardTitle>
-                        <Badge variant={isAvailable ? 'active' : 'revoked'} dot>
-                          {isAvailable ? 'HEALTHY' : 'CIRCUIT OPEN'}
-                        </Badge>
-                      </div>
-                      <CardDescription className="text-xs font-mono">{p.slug}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-xs font-mono text-foreground">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Type:</span>
-                        <span>{p.provider_type}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Priority:</span>
-                        <span>Tier {p.priority}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Endpoint:</span>
-                        <span className="truncate max-w-[140px] text-muted-foreground">{p.base_url}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <Button variant="gold" onClick={runTestChatStream} disabled={!testPrompt.trim()}>Stream Completion</Button>
           )}
-        </section>
+        </div>
 
-        {/* Interactive Gateway Test Console */}
-        <section className="p-6 rounded-xl bg-card border border-border space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">
-                Interactive Gateway Tester
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Live Server-Sent Events (SSE) streaming validation directly against the Arsy AI Gateway
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select
-                label="Route Alias"
-                value={testModel}
-                onChange={(e) => setTestModel(e.target.value)}
-                className="text-xs"
-              >
-                <option value="dx-default">dx-default (Fallback sequence)</option>
-                <option value="dx-fast">dx-fast (Lowest latency/cost)</option>
-                <option value="dx-reasoning">dx-reasoning (Deep intelligence)</option>
-                <option value="gpt-4o">gpt-4o (Direct upstream)</option>
-                <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet (Anthropic)</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Google)</option>
-              </Select>
-            </div>
-          </div>
+        {testStatus && (
+          <p className="hq-micro hq-mono" role="status">
+            <span>Status: </span>
+            <span className={testStatus.toLowerCase().includes('fail') ? 'text-destructive' : 'text-success'}>{testStatus}</span>
+          </p>
+        )}
 
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                value={testPrompt}
-                onChange={(e) => setTestPrompt(e.target.value)}
-                label="Prompt to stream"
-                placeholder="Enter prompt to stream..."
-                className="flex-1 font-mono text-xs"
-              />
-              <Button
-                variant="gold"
-                onClick={handleTestChatStream}
-                disabled={isStreaming || !testPrompt.trim()}
-              >
-                {isStreaming ? 'Streaming...' : 'Stream Completion'}
-              </Button>
-            </div>
+        <div className="p-4 rounded-lg border border-border min-h-[90px] text-sm whitespace-pre-wrap leading-relaxed" aria-live="polite">
+          {testOutput || <span className="text-muted-foreground italic">Stream output will render here in real-time…</span>}
+        </div>
+      </section>
 
-            {testStatus && (
-              <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-2">
-                <span>Status:</span>
-                <span className={testStatus.includes('failed') ? 'text-destructive' : 'text-success'}>
-                  {testStatus}
-                </span>
-              </div>
-            )}
-
-            <div className="p-4 rounded-lg bg-card border border-border min-h-[90px] text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed">
-              {testOutput || (
-                <span className="text-muted-foreground italic">
-                  Stream output will render here in real-time...
-                </span>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Live Persistent Usage Log Table */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Live Gateway Usage Logs (PGlite)
-            </h2>
-            <span className="text-xs text-muted-foreground font-mono">
-              Last {usageLogs.length} audit records
+      <section className="hq-section" aria-labelledby="gateway-logs-title">
+        <div className="hq-section__heading">
+          <h2 id="gateway-logs-title">Live Gateway Usage Logs (PGlite)</h2>
+          {data && data.logs.length > 0 && (
+            <span className="hq-section__meta">
+              {visibleLogs.length} of {data.logs.length} records
             </span>
-          </div>
+          )}
+        </div>
 
-          <Card className="overflow-hidden">
-            <TableScroll>
-              <Table>
-                <TableCaption>
-                  {`Gateway audit records, newest last. ${usageLogs.length} shown.`}
-                </TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Log ID</TableHead>
-                    <TableHead>Model / Provider</TableHead>
-                    <TableHead>Key Prefix</TableHead>
-                    <TableHead>Tokens</TableHead>
-                    <TableHead>Latency</TableHead>
-                    <TableHead>Cost (USD)</TableHead>
-                    <TableHead>Cache</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usageLogs.length === 0 ? (
+        {loading && !data ? (
+          <StatePanel as="h3" kind="loading" title="Loading usage logs" cause="Reading audit records from PGlite." />
+        ) : data && data.logs.length === 0 ? (
+          <StatePanel
+            as="h3"
+            kind="empty"
+            title="No requests logged yet"
+            cause="The gateway has not recorded any chat completions."
+            nextAction="Issue a chat completion above to generate an audit record."
+          />
+        ) : data ? (
+          <>
+            <Card className="overflow-hidden">
+              <TableScroll>
+                <Table>
+                  <TableCaption>Gateway audit records, newest last. Showing {visibleLogs.length} of {data.logs.length}.</TableCaption>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8}>
-                        No requests logged yet. Issue a chat completion above to generate audit logs.
-                      </TableCell>
+                      <TableHead>Log ID</TableHead>
+                      <TableHead>Model / Provider</TableHead>
+                      <TableHead>Key Prefix</TableHead>
+                      <TableHead>Tokens</TableHead>
+                      <TableHead>Latency</TableHead>
+                      <TableHead>Cost (USD)</TableHead>
+                      <TableHead>Cache</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ) : (
-                    usageLogs.map((log) => (
+                  </TableHeader>
+                  <TableBody>
+                    {visibleLogs.map((log) => (
                       <TableRow key={log.id}>
                         <TableCell>#{log.id}</TableCell>
                         <TableCell>
-                          <span>{log.model_name || 'Not reported'}</span>
-                          {log.provider_name && (
-                            <span className="block">{log.provider_name}</span>
-                          )}
+                          <span>{log.model_name || COMMON_UI.notReported}</span>
+                          {log.provider_name && <span className="block">{log.provider_name}</span>}
                         </TableCell>
-                        <TableCell>{log.key_name || 'Not reported'}</TableCell>
+                        <TableCell>{log.key_name || COMMON_UI.notReported}</TableCell>
                         <TableCell>
-                          <span>{log.total_tokens}</span>
-                          <span className="block">
-                            {log.prompt_tokens} in / {log.completion_tokens} out
-                          </span>
+                          <span>{formatNumber(log.total_tokens)}</span>
+                          <span className="block">{formatNumber(log.prompt_tokens)} in / {formatNumber(log.completion_tokens)} out</span>
                         </TableCell>
-                        <TableCell>{log.latency_ms}ms</TableCell>
+                        <TableCell>{formatMs(log.latency_ms)}</TableCell>
+                        <TableCell>{formatUsd(log.cost_usd, 5)}</TableCell>
+                        <TableCell>{log.is_cached ? <Badge variant="gold">CACHE HIT</Badge> : <span>PASS</span>}</TableCell>
                         <TableCell>
-                          ${Number(log.cost_usd || 0).toFixed(5)}
-                        </TableCell>
-                        <TableCell>
-                          {log.is_cached ? (
-                            <Badge variant="gold">CACHE HIT</Badge>
-                          ) : (
-                            <span>PASS</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={log.status_code === 200 ? 'active' : 'revoked'}>
-                            {log.status_code}
-                          </Badge>
+                          <Badge variant={log.status_code === 200 ? 'active' : 'revoked'}>{log.status_code}</Badge>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableScroll>
-          </Card>
-        </section>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableScroll>
+            </Card>
+            {data.logs.length > LOG_PREVIEW && (
+              <Button variant="outline" size="sm" onClick={() => setShowAllLogs((prev) => !prev)}>
+                {showAllLogs ? 'Show fewer' : `Show all ${data.logs.length} records`}
+              </Button>
+            )}
+          </>
+        ) : null}
+      </section>
     </RouteShell>
   );
 }

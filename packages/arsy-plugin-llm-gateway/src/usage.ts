@@ -113,6 +113,24 @@ export class UsageManager {
     }
   }
 
+  // Total recorded cost (USD) for a tenant on a UTC day. Used by the per-tenant
+  // daily budget guard (roadmap F1): the day and company are bound parameters.
+  async dailySpend(companyId: number, day: string): Promise<number> {
+    try {
+      const rows = (await dbEngine.query(
+        `SELECT COALESCE(SUM(cost_usd), 0) AS total FROM ai_usage_log
+          WHERE company_id = $1
+            AND create_date >= $2::date
+            AND create_date < ($2::date + INTERVAL '1 day')`,
+        [companyId, day]
+      )) as Array<{ total: number | string }>;
+      return Number(rows[0]?.total || 0);
+    } catch (err: any) {
+      logger.error({ err }, 'Failed computing daily spend');
+      return 0;
+    }
+  }
+
   calculateCost(
     promptTokens: number,
     completionTokens: number,

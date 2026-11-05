@@ -15,6 +15,8 @@ import { resolveLoadOrder, ALL_ADDON_NAMES } from './index';
 
 import baseResPartnerViews from './base/views/res_partner_views.json';
 import baseResCompanyViews from './base/views/res_company_views.json';
+import notifyChannelViews from './mw_notify/views/notify_channel_views.json';
+import notifyEventViews from './mw_notify/views/notify_event_views.json';
 
 /** One field entry inside a view's `fields` array (shape is view-type specific). */
 export interface ViewFieldSpec {
@@ -27,6 +29,12 @@ export interface ViewFieldSpec {
 export interface ViewDef {
   title?: string;
   fields: ViewFieldSpec[];
+}
+
+/** Declared view file: a target model and the views keyed by view type. */
+export interface DeclaredViewFile {
+  model: string;
+  views: Record<string, ViewDef>;
 }
 
 /** A declared view file: a target model and the views keyed by view type. */
@@ -46,6 +54,10 @@ export const VIEW_REGISTRY: Record<string, DeclaredViewFile[]> = {
   base: [
     baseResPartnerViews as DeclaredViewFile,
     baseResCompanyViews as DeclaredViewFile,
+  ],
+  mw_notify: [
+    notifyChannelViews as DeclaredViewFile,
+    notifyEventViews as DeclaredViewFile,
   ],
 };
 

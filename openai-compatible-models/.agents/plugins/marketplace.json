@@ -1,0 +1,17 @@
+{
+  "name": "openai-compatible-models",
+  "plugins": [
+    {
+      "name": "openai-compatible",
+      "source": {
+        "source": "local",
+        "path": "./plugins/openai-compatible"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

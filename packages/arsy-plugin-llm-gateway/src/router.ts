@@ -6,6 +6,11 @@ import { GeminiAdapter } from './adapters/gemini';
 import type { ProviderAdapter } from './adapters/base';
 import { ProviderCircuitBreaker } from './circuit';
 import { hashVirtualKey } from './usage';
+import {
+  buildStrategyChain,
+  type RouteCandidate,
+  type RoutingStrategy,
+} from './strategy';
 import type {
   ProviderRecord,
   ModelRecord,
@@ -40,6 +45,10 @@ export class SmartRouter {
   private configCache: { key: string; fetchedAt: number; providers: ProviderRecord[]; models: ModelRecord[] } | null = null;
   private routeCache = new Map<string, { fetchedAt: number; route: RouteRecord | undefined }>();
 
+  // Monotonic cursor per route alias, so weighted_rr rotates deterministically
+  // across successive requests (roadmap F2).
+  private rrCursors = new Map<string, number>();
+
   constructor(private readonly options: LlmGatewayOptions = {}) {}
 
   async initialize(): Promise<void> {
@@ -71,6 +80,14 @@ export class SmartRouter {
     return new BaseRepository<T>(model);
   }
 
+  /**
+   * @deprecated The canonical source of these routing rows is the addon dataset
+   * at `addons/mw_llm_router/data` (seeded by the hub boot loader). This inline
+   * bootstrap only runs when no platform providers exist yet — i.e. a standalone
+   * gateway with no addon boot seed — so it defers to the addon whenever the hub
+   * has already seeded. Keep the specs in sync with the addon; a package must
+   * not import addon code, so this is a deliberate, guarded fallback copy.
+   */
   private async seedDefaultsIfEmpty(): Promise<void> {
     try {
       const providerRepo = this.repo('ai.provider');
@@ -233,52 +250,45 @@ export class SmartRouter {
       this.configCache = { key: visibleKey, fetchedAt: now, providers: providerRows, models: modelRows };
     }
 
-    const targetChain: RouteResolution['targetChain'] = [];
-
-    // Prioritize chain selection based on alias or direct model matching
-    for (const provider of providerRows) {
-      let matchingModel = modelRows.find(
-        (m) => m.provider_id === provider.id && (m.model_id === requestedModelOrAlias || m.name === requestedModelOrAlias)
-      );
-
-      // If requested was an alias (dx-fast, dx-default, dx-reasoning), assign appropriate provider model
-      if (!matchingModel) {
-        if (requestedModelOrAlias === 'dx-fast') {
-          matchingModel = modelRows.find((m) => m.provider_id === provider.id && m.input_cost_per_m < 1.0);
-        } else if (requestedModelOrAlias === 'dx-reasoning') {
-          matchingModel = modelRows.find(
-            (m) => m.provider_id === provider.id && (m.model_id.includes('sonnet') || m.model_id.includes('gpt-4o'))
-          );
-        }
-        // Fallback to any model on this provider
-        if (!matchingModel) {
-          matchingModel = modelRows.find((m) => m.provider_id === provider.id);
-        }
-      }
-
-      if (matchingModel) {
-        let adapter = this.adapters.get(provider.slug);
-        if (!adapter) {
-          // The column holds an AES-GCM envelope; the upstream call needs the plaintext key,
-          // so a row written before envelope encryption existed fails closed here.
-          const apiKey = provider.encrypted_api_key ? decryptSecret(provider.encrypted_api_key) : undefined;
-          if (provider.provider_type === 'anthropic') {
-            adapter = new AnthropicAdapter(provider.slug, provider.base_url, apiKey);
-          } else if (provider.provider_type === 'gemini') {
-            adapter = new GeminiAdapter(provider.slug, provider.base_url, apiKey);
-          } else {
-            adapter = new OpenAiAdapter(provider.slug, provider.base_url, apiKey);
-          }
-          this.adapters.set(provider.slug, adapter);
-        }
-
-        targetChain.push({
-          provider,
-          model: matchingModel,
-          adapter,
-        });
-      }
+    // Group models by provider, then realize the route's declared strategy into an
+    // ordered fallback chain (roadmap F2). The literal-alias special-case is gone:
+    // chain ordering now comes from `route.strategy` reading F1 usage rollups + health.
+    const modelsByProvider = new Map<number, ModelRecord[]>();
+    for (const m of modelRows) {
+      const pid = Number(m.provider_id);
+      const arr = modelsByProvider.get(pid) || [];
+      arr.push(m);
+      modelsByProvider.set(pid, arr);
     }
+
+    // A concrete model_id/name request pins that exact model on each provider that
+    // offers it (a targeted fallback), preserving the old direct-match behavior.
+    const exactMatches: RouteCandidate[] = [];
+    for (const provider of providerRows) {
+      const exact = (modelsByProvider.get(Number(provider.id)) || []).find(
+        (m) => m.model_id === requestedModelOrAlias || m.name === requestedModelOrAlias
+      );
+      if (exact) exactMatches.push({ provider, model: exact });
+    }
+
+    let candidates: RouteCandidate[];
+    if (exactMatches.length > 0) {
+      candidates = exactMatches;
+    } else {
+      const strategy = (route.strategy || 'fallback') as RoutingStrategy;
+      const metrics = await this.loadUsageMetrics(visibleCompanyIds);
+      const metricsFor = (c: RouteCandidate) =>
+        metrics.get(`${Number(c.provider.id)}:${Number(c.model.id)}`);
+      const cursor = (this.rrCursors.get(route.alias) || 0) + 1;
+      this.rrCursors.set(route.alias, cursor);
+      candidates = buildStrategyChain(strategy, providerRows, modelsByProvider, metricsFor, cursor);
+    }
+
+    const targetChain: RouteResolution['targetChain'] = candidates.map((c) => ({
+      provider: c.provider,
+      model: c.model,
+      adapter: this.getAdapter(c.provider),
+    }));
 
     if (targetChain.length === 0) {
       // Fallback default adapter
@@ -307,6 +317,64 @@ export class SmartRouter {
     }
 
     return { route, targetChain };
+  }
+
+  // Resolve (and memoize) the adapter for a provider. The encrypted_api_key column
+  // holds an AES-GCM envelope; the upstream call needs the plaintext key, so a row
+  // written before envelope encryption existed fails closed here.
+  private getAdapter(provider: ProviderRecord): ProviderAdapter {
+    let adapter = this.adapters.get(provider.slug);
+    if (!adapter) {
+      const apiKey = provider.encrypted_api_key ? decryptSecret(provider.encrypted_api_key) : undefined;
+      if (provider.provider_type === 'anthropic') {
+        adapter = new AnthropicAdapter(provider.slug, provider.base_url, apiKey);
+      } else if (provider.provider_type === 'gemini') {
+        adapter = new GeminiAdapter(provider.slug, provider.base_url, apiKey);
+      } else {
+        adapter = new OpenAiAdapter(provider.slug, provider.base_url, apiKey);
+      }
+      this.adapters.set(provider.slug, adapter);
+    }
+    return adapter;
+  }
+
+  // Advisory per-(provider, model) routing metrics from the ai.usage_daily rollup
+  // (roadmap F1). Reads are scoped to the visible tenant set; the most recent
+  // recorded day wins per pairing. Any failure degrades to an empty map so the
+  // strategy falls back to list prices / priority rather than erroring.
+  private async loadUsageMetrics(
+    visibleCompanyIds: number[]
+  ): Promise<Map<string, { latencyP50Ms?: number; costUsd?: number; requestCount?: number }>> {
+    const metrics = new Map<string, { latencyP50Ms?: number; costUsd?: number; requestCount?: number }>();
+    try {
+      const def = modelRegistry.get('ai.usage_daily');
+      if (!def) return metrics;
+      const repo = new BaseRepository<Record<string, any>>(def);
+      const rows = await repo.find({
+        scope: { systemScope: true },
+        filters: [{ field: 'company_id', operator: 'IN', value: visibleCompanyIds }],
+        limit: 500,
+      });
+      const newestDay = new Map<string, string>();
+      for (const row of rows) {
+        if (row.provider_id == null || row.model_id == null) continue;
+        const key = `${Number(row.provider_id)}:${Number(row.model_id)}`;
+        const day = String(row.day || '');
+        if ((newestDay.get(key) || '') >= day && metrics.has(key)) continue;
+        newestDay.set(key, day);
+        const requests = Number(row.request_count || 0);
+        const totalCost = Number(row.total_cost_usd || 0);
+        const latency = Number(row.latency_p50_ms || 0);
+        metrics.set(key, {
+          latencyP50Ms: latency > 0 ? latency : undefined,
+          costUsd: requests > 0 ? totalCost / requests : undefined,
+          requestCount: requests,
+        });
+      }
+    } catch (err: any) {
+      logger.warn({ err }, 'Could not load usage_daily metrics for routing (advisory)');
+    }
+    return metrics;
   }
 
   async executeWithFallback(

@@ -31,6 +31,12 @@ export const IrCron = defineModel({
     ),
     last_error: fields.text({ label: 'Last Error' }),
     run_count: fields.integer({ label: 'Run Count', default: 0 }),
+    // Work-queue bookkeeping (roadmap T3.2): consecutive-failure attempts drive
+    // exponential backoff; the claimer resets `attempt_count` on success and
+    // parks `next_retry_at` at the backoff instant on failure (kept alongside
+    // `nextcall` so the schedule column stays the single due-time source).
+    attempt_count: fields.integer({ label: 'Attempt Count', default: 0 }),
+    next_retry_at: fields.datetime({ label: 'Next Retry At' }),
   },
   indexes: [
     { fields: ['company_id'] },

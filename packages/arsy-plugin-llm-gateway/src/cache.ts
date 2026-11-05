@@ -67,20 +67,31 @@ export class GatewayCache {
         if (expiresAt && Date.now() > expiresAt) continue;
         const embedding = (entry as any).embedding;
         if (!Array.isArray(embedding)) continue;
-        const similarity = cosineSimilarity(queryEmbedding, embedding);
+        // Fail-closed vector math (roadmap T4) throws on a dimension mismatch; an
+        // individual legacy row must not abort the whole lookup, so skip it.
+        let similarity: number;
+        try {
+          similarity = cosineSimilarity(queryEmbedding, embedding);
+        } catch {
+          continue;
+        }
         if (similarity >= threshold) {
+          // response_json is a JSONB column: PGlite returns an already-parsed object,
+          // but a row written as a JSON string must still parse. Accept both shapes.
+          const raw = (entry as any).response_json;
+          let resp: ChatCompletionResponse;
           try {
-            const resp = JSON.parse((entry as any).response_json);
-            await repo.updateById(
-              Number((entry as any).id),
-              { hit_count: Number((entry as any).hit_count || 0) + 1 },
-              { companyId },
-              SYSTEM_ACTOR
-            );
-            return resp;
+            resp = typeof raw === 'string' ? JSON.parse(raw) : raw;
           } catch {
-            return null;
+            continue;
           }
+          await repo.updateById(
+            Number((entry as any).id),
+            { hit_count: Number((entry as any).hit_count || 0) + 1 },
+            { companyId },
+            SYSTEM_ACTOR
+          );
+          return resp;
         }
       }
     } catch (err) {
@@ -109,7 +120,7 @@ export class GatewayCache {
           prompt_hash: promptHash,
           prompt_text: promptText,
           embedding,
-          response_json: JSON.stringify(response),
+          response_json: response,
           model,
           hit_count: 0,
           expires_at: expiresAt,

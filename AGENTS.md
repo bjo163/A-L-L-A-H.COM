@@ -67,6 +67,8 @@ Contracts: [AUTONOMOUS.md](AUTONOMOUS.md) · [DOCUMENTATION_CONTRACT.md](DOCUMEN
 ## Quality Gates
 
 ```
+pnpm verify:fast         # local docs + architecture + changed-file lint + incremental full typecheck
+pnpm verify:release      # all required checks, tests, scaffold validation, and workspace builds
 pnpm docs:check          # 100/100 required
 pnpm contract:check      # per-unit CONTRACT.md presence + code cross-check
 pnpm docker:contract:check   # every app Docker image and runtime dependency
@@ -84,7 +86,7 @@ pnpm gate:build
 pnpm --filter @allah/arsy build
 ```
 
-Pre-commit: `docs:check` + `lint:arch` + `lint` + `typecheck` + `ui:contrast`. Pre-push: all build gates + `ui:test` + `ui:contrast`. Commit-msg: commitlint. Self-heal all errors. Never prompt user.
+Pre-commit: `git diff --cached --check`. Pre-push: `verify:fast` for rapid local feedback; full build/test gates remain mandatory in CI before promotion. Commit-msg: commitlint. `verify:release` runs the full local release suite when requested.
 
 Production Docker builds run on GitHub Actions only. Coolify receives its own GitHub webhook; image publication and Coolify deployment may run concurrently. Do not duplicate the resource-heavy Docker gate locally.
 

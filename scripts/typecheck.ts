@@ -51,7 +51,16 @@ function main() {
     // execFileSync fails on Windows (npx.cmd is not resolvable without a shell).
     const tscBin = path.join(ROOT_DIR, 'node_modules', 'typescript', 'bin', 'tsc');
     try {
-      execFileSync(process.execPath, [tscBin, '--noEmit', '--project', tsconfigPath], {
+      const cacheRelative = relativePath.replace(/[^a-zA-Z0-9_-]+/g, '-');
+      const cacheDir = path.join(ROOT_DIR, '.cache', 'typecheck');
+      fs.mkdirSync(cacheDir, { recursive: true });
+      execFileSync(process.execPath, [
+        tscBin,
+        '--noEmit',
+        '--incremental',
+        '--tsBuildInfoFile', path.join(cacheDir, `${cacheRelative}.tsbuildinfo`),
+        '--project', tsconfigPath,
+      ], {
         stdio: 'pipe',
         cwd: ROOT_DIR,
         encoding: 'utf8',

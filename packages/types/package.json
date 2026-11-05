@@ -11,6 +11,12 @@
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.8.2"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
   }
 }
-

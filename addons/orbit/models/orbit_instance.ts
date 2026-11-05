@@ -20,7 +20,9 @@ export const OrbitInstance = defineModel({
       { label: 'Status', default: 'provisioning', required: true }
     ),
     ip_address: fields.char({ label: 'IP Address' }),
-    partner_id: fields.integer({ label: 'Partner ID' }),
+    // Typed FK (roadmap T3.5): the owning customer is a res.partner. Integer id
+    // column preserved (no constraint added); the relation label enables `expand`.
+    partner_id: fields.many2one('res.partner', { label: 'Partner' }),
     template_id: fields.many2one('orbit.template', { label: 'Template' }),
   },
   indexes: [{ fields: ['company_id'] }, { fields: ['status'] }],

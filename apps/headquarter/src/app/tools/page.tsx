@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import {
+  Badge,
   Button,
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  Badge,
-  Input,
-  Select,
+  RouteShell,
+  StatePanel,
+  StatusMessage,
   Table,
   TableBody,
   TableCaption,
@@ -21,118 +21,65 @@ import {
   TableScroll,
   TableRow,
   Textarea,
-  StatusMessage,
-  RouteShell,
-  ToolRegistryCard,
   ToolDetailPanel,
+  ToolRegistryCard,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
 import type { McpTool, McpToolCallResult, ToolExecutionRecord } from '@moonwitness/types';
+import { RouteHeader } from '@/components/route-header';
+import { useAsyncData } from '@/lib/use-async-data';
+import { useDocumentTitle } from '@/lib/use-document-title';
+import { formatClock, formatMs } from '@/lib/hq-format';
+import { COMMON_UI } from '@/lib/strings';
+
+interface ToolSnapshot {
+  tools: McpTool[];
+  auditLog: ToolExecutionRecord[];
+}
+
+const AUDIT_PREVIEW = 15;
+
+function defaultArgsFor(tool: McpTool): string {
+  const schema = tool.inputSchema as { properties?: Record<string, unknown>; required?: string[] };
+  const props = schema?.properties || {};
+  const required = schema?.required || [];
+  const example: Record<string, unknown> = {};
+  for (const [key] of Object.entries(props)) {
+    if (required.includes(key)) example[key] = '';
+    else if (key === 'params') example[key] = [];
+    else if (key === 'max_bytes') example[key] = 50000;
+    else if (key === 'limit') example[key] = 5;
+    else if (key === 'min_score') example[key] = 0.7;
+    else example[key] = '';
+  }
+  return JSON.stringify(example, null, 2);
+}
 
 export default function ToolsPage() {
-  const [tools, setTools] = useState<McpTool[]>([]);
-  const [mcpConnected, setMcpConnected] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  useDocumentTitle('Tool Registry | Headquarter');
 
-  // Sandbox state
+  const { data, loading, error, refresh } = useAsyncData<ToolSnapshot>(async () => {
+    const [tools, auditLog] = await Promise.all([mwClient.mcp.listTools(), mwClient.mcp.getAuditLog()]);
+    return { tools, auditLog };
+  });
+
+  const tools = data?.tools ?? [];
+  const auditLog = data?.auditLog ?? [];
+  const mcpConnected = !error && data !== null;
+
+  // Execution state for the currently selected tool.
   const [selectedTool, setSelectedTool] = useState<McpTool | null>(null);
   const [toolArgs, setToolArgs] = useState('{}');
   const [callResult, setCallResult] = useState<McpToolCallResult | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
   const [isCalling, setIsCalling] = useState(false);
-
-  // Audit log state
-  const [auditLog, setAuditLog] = useState<ToolExecutionRecord[]>([]);
-  const [auditError, setAuditError] = useState<string | null>(null);
-
-  const fetchTools = async () => {
-    try {
-      setError(null);
-      const listed = await mwClient.mcp.listTools();
-      setTools(listed);
-      setMcpConnected(true);
-    } catch (err) {
-      setMcpConnected(false);
-      setError(err instanceof Error ? err.message : 'Unable to reach MCP endpoint');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAudit = async () => {
-    try {
-      setAuditError(null);
-      const data = await mwClient.mcp.getAuditLog();
-      setAuditLog(data);
-    } catch (err) {
-      setAuditError(err instanceof Error ? err.message : 'Unable to load the execution audit log.');
-    }
-  };
-
-  useEffect(() => {
-    document.title = 'Tool Registry | Headquarter';
-    fetchTools();
-    fetchAudit();
-  }, []);
-
-  const defaultArgsFor = (tool: McpTool): string => {
-    const schema = tool.inputSchema as { properties?: Record<string, unknown>; required?: string[] };
-    const props = schema?.properties || {};
-    const required = schema?.required || [];
-    const example: Record<string, unknown> = {};
-    for (const [key] of Object.entries(props)) {
-      if (required.includes(key)) {
-        example[key] = '';
-      } else if (key === 'params') {
-        example[key] = [];
-      } else if (key === 'max_bytes') {
-        example[key] = 50000;
-      } else if (key === 'limit') {
-        example[key] = 5;
-      } else if (key === 'min_score') {
-        example[key] = 0.7;
-      } else {
-        example[key] = '';
-      }
-    }
-    return JSON.stringify(example, null, 2);
-  };
+  const [showAllAudit, setShowAllAudit] = useState(false);
 
   const handleSelectTool = (tool: McpTool) => {
     setSelectedTool(tool);
     setToolArgs(defaultArgsFor(tool));
     setCallResult(null);
     setCallError(null);
-  };
-
-  const handleCallTool = async () => {
-    if (!selectedTool) return;
-    setIsCalling(true);
-    setCallResult(null);
-    setCallError(null);
-    let parsed: Record<string, unknown> = {};
-    try {
-      parsed = toolArgs.trim() ? JSON.parse(toolArgs) : {};
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        throw new Error('Arguments must be a JSON object');
-      }
-    } catch (err) {
-      setCallError(`Invalid JSON arguments: ${err instanceof Error ? err.message : 'Values must be valid JSON.'}`);
-      setIsCalling(false);
-      return;
-    }
-
-    try {
-      const result = await mwClient.mcp.callTool(selectedTool.name, parsed);
-      setCallResult(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      setCallError(message || 'Tool call failed');
-    } finally {
-      setIsCalling(false);
-      await fetchAudit();
-    }
   };
 
   const handleCloseDetail = () => {
@@ -142,242 +89,196 @@ export default function ToolsPage() {
     setCallError(null);
   };
 
+  const handleCallTool = async () => {
+    if (!selectedTool || isCalling) return;
+    setIsCalling(true);
+    setCallResult(null);
+    setCallError(null);
+
+    let parsed: Record<string, unknown>;
+    try {
+      const candidate: unknown = toolArgs.trim() ? JSON.parse(toolArgs) : {};
+      if (typeof candidate !== 'object' || candidate === null || Array.isArray(candidate)) {
+        throw new Error('Arguments must be a JSON object');
+      }
+      parsed = candidate as Record<string, unknown>;
+    } catch (parseError) {
+      setCallError(`Invalid JSON arguments: ${parseError instanceof Error ? parseError.message : 'Values must be valid JSON.'}`);
+      setIsCalling(false);
+      return;
+    }
+
+    try {
+      const result = await mwClient.mcp.callTool(selectedTool.name, parsed);
+      setCallResult(result);
+    } catch (callFailure) {
+      setCallError(callFailure instanceof Error && callFailure.message ? callFailure.message : 'Tool call failed');
+    } finally {
+      setIsCalling(false);
+      refresh();
+    }
+  };
+
+  const visibleAudit = showAllAudit ? auditLog : auditLog.slice(0, AUDIT_PREVIEW);
+  const connectionBadge = useMemo(() => {
+    if (loading && !data) return { variant: 'default' as const, label: 'CONNECTING' };
+    if (error) return { variant: 'revoked' as const, label: 'MCP UNAVAILABLE' };
+    return { variant: 'active' as const, label: 'MCP READY' };
+  }, [loading, data, error]);
+
   return (
-    <RouteShell as="main" className="hq-route hq-tools flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Tools & Model Context Protocol
-              </h1>
-              <Badge variant={mcpConnected ? 'active' : loading ? 'default' : 'revoked'} dot>
-                {loading ? 'CONNECTING' : mcpConnected ? 'MCP READY' : 'MCP UNAVAILABLE'}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Native platform tools & MCP server for external agents & IDEs
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/">Back to HQ</Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={fetchTools} disabled={loading}>
-              {loading ? 'Refreshing...' : 'Refresh Tools'}
-            </Button>
-          </div>
+    <RouteShell as="main" className="hq-route hq-tools">
+      <RouteHeader
+        title="Tools & Model Context Protocol"
+        summary="Native platform tools and the MCP server for external agents and IDEs."
+        status={<Badge variant={connectionBadge.variant} dot>{connectionBadge.label}</Badge>}
+        actions={
+          <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+            {loading ? COMMON_UI.refreshing : COMMON_UI.refresh}
+          </Button>
+        }
+      />
+
+      {error && (
+        <StatusMessage tone="danger" title="Tool registry unavailable" action={<Button variant="outline" size="sm" onClick={refresh}>Retry</Button>}>
+          {error}
+        </StatusMessage>
+      )}
+
+      <section className="hq-section" aria-labelledby="mcp-endpoint-title">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle id="mcp-endpoint-title" className="text-sm font-medium">MCP Endpoint</CardTitle>
+            <CardDescription className="hq-mono text-xs">POST /v1/mcp/message &bull; GET /v1/mcp/sse</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs">
+            <dl className="hq-kv-row"><dt>Ingress</dt><dd className="hq-mono">/v1/mcp/message</dd></dl>
+            <dl className="hq-kv-row"><dt>Stream</dt><dd className="hq-mono">/v1/mcp/sse</dd></dl>
+            <dl className="hq-kv-row"><dt>Registered tools</dt><dd className="hq-mono">{tools.length}</dd></dl>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="hq-section" aria-labelledby="tool-catalog-title">
+        <div className="hq-section__heading">
+          <h2 id="tool-catalog-title">Tool Registry Catalog</h2>
+          <span className="hq-section__meta">{tools.length} native platform tool(s)</span>
         </div>
 
-        {error && (
-          <StatusMessage tone="danger" title="Tool registry unavailable" action={<Button variant="outline" size="sm" onClick={fetchTools}>Retry</Button>}>
-            {error}
-          </StatusMessage>
+        {loading && !data ? (
+          <StatePanel as="h3" kind="loading" title="Loading tools" cause="Reading the registered MCP tool list." />
+        ) : tools.length === 0 ? (
+          <StatePanel
+            as="h3"
+            kind="empty"
+            title="No tools registered"
+            cause="The gateway returned an empty tool registry."
+            nextAction="Ensure the Arsy gateway is running with the tools registry loaded."
+          />
+        ) : (
+          <div className="hq-metric-grid" role="list" aria-label="Registered tools">
+            {tools.map((tool) => (
+              <div role="listitem" key={tool.name}>
+                <ToolRegistryCard tool={tool} onClick={handleSelectTool} />
+              </div>
+            ))}
+          </div>
         )}
+      </section>
 
-        {/* MCP Status Card */}
-        <section className="space-y-4">
+      {selectedTool && (
+        <section className="hq-section" aria-labelledby="tool-detail-title">
+          <div className="hq-section__heading">
+            <h2 id="tool-detail-title">Tool Detail &amp; Execution</h2>
+            <Badge variant="gold" dot>Selected</Badge>
+          </div>
+
+          <ToolDetailPanel tool={selectedTool} onExecute={() => void handleCallTool()} onClose={handleCloseDetail} />
+
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">MCP Endpoint</CardTitle>
-                <Badge variant={mcpConnected ? 'active' : loading ? 'default' : 'revoked'} dot>
-                  {loading ? 'CONNECTING' : mcpConnected ? 'CONNECTED' : 'UNAVAILABLE'}
-                </Badge>
-              </div>
-              <CardDescription className="text-xs font-mono">
-                POST /v1/mcp/message &bull; GET /v1/mcp/sse
-              </CardDescription>
+              <CardTitle className="text-sm font-medium">Arguments (JSON)</CardTitle>
+              <CardDescription>Provide a JSON object matching the tool schema, then execute it through the MCP gateway.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 text-xs font-mono text-foreground">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ingress:</span>
-                <span className="truncate max-w-[260px]">/v1/mcp/message</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Stream:</span>
-                <span className="truncate max-w-[260px]">/v1/mcp/sse</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Registered tools:</span>
-                <span className="font-semibold">{tools.length}</span>
-              </div>
+            <CardContent className="space-y-3">
+              <Textarea
+                label="Arguments (JSON)"
+                value={toolArgs}
+                onChange={(e) => setToolArgs(e.target.value)}
+                placeholder='{"key": "value"}'
+                className="font-mono text-xs"
+              />
+              <Button variant="gold" onClick={handleCallTool} disabled={isCalling}>
+                {isCalling ? 'Executing…' : 'Execute Tool'}
+              </Button>
+
+              {callError && <StatusMessage tone="danger" title="Tool call failed">{callError}</StatusMessage>}
+
+              {callResult && (
+                <div className="p-3 rounded-lg border border-border text-xs font-mono whitespace-pre-wrap leading-relaxed" aria-live="polite">
+                  {JSON.stringify(callResult, null, 2)}
+                </div>
+              )}
             </CardContent>
           </Card>
         </section>
+      )}
 
-        {/* Tool Registry Catalog - using ToolRegistryCard */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Tool Registry Catalog</h2>
-            <span className="text-xs text-muted-foreground font-mono">{tools.length} native platform tool(s)</span>
-          </div>
+      <section className="hq-section" aria-labelledby="tool-audit-title">
+        <div className="hq-section__heading">
+          <h2 id="tool-audit-title">Tool Execution Audit Log</h2>
+          <span className="hq-section__meta">{visibleAudit.length} of {auditLog.length} record(s)</span>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {tools.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent>
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    No tools registered. Ensure the Arsy gateway is running with the tools registry loaded.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              tools.map((tool) => (
-                <ToolRegistryCard
-                  key={tool.name}
-                  tool={tool}
-                  onClick={handleSelectTool}
-                />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Tool Detail Panel - using ToolDetailPanel */}
-        {selectedTool && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">Tool Detail</h2>
-              <Badge variant="gold" dot>SELECTED</Badge>
-            </div>
-            <ToolDetailPanel
-              tool={selectedTool}
-              onExecute={handleSelectTool}
-              onClose={() => setSelectedTool(null)}
-            />
-          </section>
-        )}
-
-        {/* Interactive Tool Execution Sandbox */}
-        <section className="p-6 rounded-xl bg-card border border-border space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Tool Execution Sandbox</h2>
-              <p className="text-xs text-muted-foreground">
-                Execute a registered platform tool through the MCP gateway with custom arguments.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Select
-                label="Tool"
-                value={selectedTool?.name || ''}
-                onChange={(e) => {
-                  const t = tools.find((tool) => tool.name === e.target.value);
-                  if (t) handleSelectTool(t);
-                }}
-                className="w-full text-xs"
-              >
-                <option value="">Select a tool...</option>
-                {tools.map((tool) => (
-                  <option key={tool.name} value={tool.name}>
-                    {tool.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <div className="flex items-end gap-2">
-              <Button variant="gold" onClick={handleCallTool} disabled={isCalling || !selectedTool}>
-                {isCalling ? 'Executing...' : 'Execute Tool'}
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Textarea
-              label="Arguments (JSON)"
-              value={toolArgs}
-              onChange={(e) => setToolArgs(e.target.value)}
-              placeholder='{"query": "SELECT count(*) FROM res_users"}'
-              className="font-mono text-xs"
-            />
-          </div>
-
-          {callError && (
-            <div role="alert" className="p-3 rounded bg-destructive/10 border border-destructive text-xs">
-              {callError}
-            </div>
-          )}
-
-          {callResult && (
+        {auditLog.length === 0 ? (
+          <StatePanel
+            as="h3"
+            kind="empty"
+            title="No executions recorded"
+            cause="No tool has been executed this session."
+            nextAction="Select a tool and execute it to record an audit entry."
+          />
+        ) : (
+          <>
             <Card className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-foreground">Result</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-3 rounded-lg bg-card border border-border text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
-                  {JSON.stringify(callResult, null, 2)}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </section>
-
-        {/* Tool Execution Audit Log */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Tool Execution Audit Log
-            </h2>
-            <span className="text-xs text-muted-foreground font-mono">
-              Last {auditLog.length} execution record(s)
-            </span>
-          </div>
-          {auditError && (
-             <p className="text-sm text-destructive" role="alert">
-               Audit log unavailable: {auditError}
-             </p>
-          )}
-
-          <Card className="overflow-hidden">
-            <TableScroll>
-              <Table>
-                <TableCaption>
-                  {`Tool executions recorded this session. ${auditLog.length} shown.`}
-                </TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Tool</TableHead>
-                    <TableHead>Actor</TableHead>
-                    <TableHead>Latency</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Error</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {auditLog.length === 0 ? (
+              <TableScroll>
+                <Table>
+                  <TableCaption>Tool executions recorded this session, newest last. Showing {visibleAudit.length} of {auditLog.length}.</TableCaption>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6}>
-                        No tool executions recorded yet. Use the sandbox above to execute a tool.
-                      </TableCell>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Tool</TableHead>
+                      <TableHead>Actor</TableHead>
+                      <TableHead>Latency</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Error</TableHead>
                     </TableRow>
-                  ) : (
-                    auditLog.map((entry) => (
+                  </TableHeader>
+                  <TableBody>
+                    {visibleAudit.map((entry) => (
                       <TableRow key={entry.id}>
-                        <TableCell>{new Date(entry.timestamp).toLocaleTimeString()}</TableCell>
+                        <TableCell>{formatClock(entry.timestamp)}</TableCell>
                         <TableCell>{entry.tool}</TableCell>
-                        <TableCell>{entry.actor || 'Not reported'}</TableCell>
-                        <TableCell>{entry.latencyMs}ms</TableCell>
+                        <TableCell>{entry.actor || COMMON_UI.notReported}</TableCell>
+                        <TableCell>{formatMs(entry.latencyMs)}</TableCell>
                         <TableCell>
-                          <Badge variant={entry.status === 'ok' ? 'active' : 'revoked'}>
-                            {entry.status === 'ok' ? 'OK' : 'ERROR'}
-                          </Badge>
+                          <Badge variant={entry.status === 'ok' ? 'active' : 'revoked'}>{entry.status === 'ok' ? 'OK' : 'ERROR'}</Badge>
                         </TableCell>
-                        <TableCell>
-                          {entry.error || 'No error'}
-                        </TableCell>
+                        <TableCell>{entry.error || 'No error'}</TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableScroll>
-          </Card>
-        </section>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableScroll>
+            </Card>
+            {auditLog.length > AUDIT_PREVIEW && (
+              <Button variant="outline" size="sm" onClick={() => setShowAllAudit((prev) => !prev)}>
+                {showAllAudit ? 'Show fewer' : `Show all ${auditLog.length} records`}
+              </Button>
+            )}
+          </>
+        )}
+      </section>
     </RouteShell>
   );
 }

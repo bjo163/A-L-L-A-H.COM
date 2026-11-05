@@ -1,379 +1,235 @@
 ﻿'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import {
+  Badge,
   Button,
   Card,
+  CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
   Input,
-  Badge,
   RouteShell,
+  StatePanel,
+  StatusMessage,
 } from '@moonwitness/ui';
 import { mwClient } from '@allah/sdk';
+import type { AgentRunInput } from '@moonwitness/types';
 import { RemoteAgentControlPanel } from '@/components/remote-agent-control-panel';
-import type {
-  AgentThought,
-  AgentToolCallEvent,
-  AgentToolResultEvent,
-  AgentStreamEvent,
-  AgentRunInput,
-  AgentRunResponse,
-  SDUINode,
-} from '@moonwitness/types';
+import { RouteHeader } from '@/components/route-header';
+import { SDUINodeView } from '@/components/sdui-node';
+import {
+  agentStepsReducer,
+  eventToAction,
+  initialAgentSteps,
+  type AgentStepUI,
+} from '@/lib/agent-steps-reducer';
+import { useDocumentTitle } from '@/lib/use-document-title';
+import { describeError } from '@/lib/hq-format';
+
+type RunStatus = 'idle' | 'running' | 'completed' | 'error';
 
 export default function AgentStudioPage() {
-  const [request, setRequest] = useState<AgentRunInput | null>(null);
-  const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
-  interface AgentStepUI {
-    step: number;
-    thought?: string;
-    tool_calls?: AgentToolCallEvent[];
-    tool_results?: AgentToolResultEvent[];
-    sdui?: SDUINode[];
-    response?: string;
-    finish_reason?: string;
-  }
+  useDocumentTitle('Agent Studio | Headquarter');
 
-  const [steps, setSteps] = useState<AgentStepUI[]>([]);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [sseEvents, setSSEEvents] = useState<Array<{ event: string; data: string }>>([]);
+  const [request, setRequest] = useState<AgentRunInput | null>(null);
+  const [status, setStatus] = useState<RunStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const streamRef = useRef<ReadableStream | null>(null);
+  const [steps, dispatch] = useReducer(agentStepsReducer, initialAgentSteps);
+
+  const controllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    document.title = 'Agent Studio | Headquarter';
+    return () => controllerRef.current?.abort();
   }, []);
 
-  const handleRunAgent = () => {
-    if (!request) return;
+  const isRunning = status === 'running';
+
+  const handleRunAgent = async () => {
+    if (!request?.prompt?.trim() || isRunning) return;
+
+    const controller = new AbortController();
+    controllerRef.current = controller;
     setStatus('running');
-    setSteps([]);
-    setSSEEvents([]);
+    dispatch({ type: 'reset' });
     setError(null);
 
-    mwClient.agent.stream(request, (event: string, data: unknown) => {
-      const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
-      setSSEEvents(prev => [...prev, { event, data: dataStr }]);
-
-      // Parse and update steps based on event type
-      try {
-        const parsed = typeof data === 'object' && data !== null ? (data as any) : JSON.parse(dataStr);
-        switch (event) {
-          case 'thought': {
-            setSteps(prev => {
-              const newStep = {
-                step: parsed.step,
-                thought: parsed.thought,
-                finish_reason: undefined,
-              };
-              // Insert at current position + 1
-              const newSteps = [...prev];
-              newSteps.splice(currentStep + 1, prev.length - currentStep - 1, newStep);
-              return newSteps;
-            });
-            break;
-          }
-          case 'tool_call': {
-            setSteps(prev => {
-              const newCall: AgentToolCallEvent = {
-                step: parsed.step,
-                call_id: parsed.call_id,
-                tool: parsed.tool,
-                arguments: parsed.arguments,
-              };
-              const newSteps = [...prev];
-              newSteps.splice(currentStep + 1, newSteps.length - currentStep - 1, {
-                ...newSteps[currentStep + 1] || { step: currentStep + 1 },
-                tool_calls: [...(newSteps[currentStep + 1]?.tool_calls || []), newCall],
-              });
-              return newSteps;
-            });
-            break;
-          }
-          case 'tool_result': {
-            setSteps(prev => {
-              const newResult: AgentToolResultEvent = {
-                step: parsed.step,
-                call_id: parsed.call_id,
-                tool: parsed.tool,
-                success: parsed.success,
-                result: parsed.result,
-                error: parsed.error,
-                latency_ms: parsed.latency_ms,
-              };
-              const newSteps = [...prev];
-              newSteps.splice(currentStep + 1, newSteps.length - currentStep - 1, {
-                ...newSteps[currentStep + 1] || { step: currentStep + 1 },
-                tool_results: [...(newSteps[currentStep + 1]?.tool_results || []), newResult],
-              });
-              return newSteps;
-            });
-            break;
-          }
-          case 'sdui': {
-            setSteps(prev => {
-              const newSdui = parsed.data;
-              const newSteps = [...prev];
-              newSteps.splice(currentStep + 1, newSteps.length - currentStep - 1, {
-                ...newSteps[currentStep + 1] || { step: currentStep + 1 },
-                sdui: [...(newSteps[currentStep + 1]?.sdui || []), newSdui],
-              });
-              return newSteps;
-            });
-            break;
-          }
-          case 'chunk': {
-            // Token-level response delta
-            setSteps(prev => {
-              const last = prev[prev.length - 1];
-              if (last && last.finish_reason === 'completed') {
-                return prev;
-              }
-              return prev.map((s, i) =>
-                i === prev.length - 1
-                  ? { ...s, response: (s.response || '') + (parsed.delta || '') }
-                  : s
-              );
-            });
-            break;
-          }
-          case 'done': {
-            setStatus('completed');
-            setSteps(prev => {
-              const finishReason = parsed.finish_reason || 'completed';
-              return prev.map(s => ({ ...s, finish_reason: finishReason }));
-            });
-            break;
-          }
-        }
-      } catch (err) {
-        console.error({ err }, 'SSE event parsing failed');
+    try {
+      await mwClient.agent.stream(
+        request,
+        (event, data) => {
+          const action = eventToAction(event, data);
+          if (action) dispatch(action);
+          if (event === 'done') setStatus('completed');
+        },
+        controller.signal,
+      );
+      // The stream resolved without an explicit 'done' event: settle as completed.
+      setStatus((current) => (current === 'running' ? 'completed' : current));
+    } catch (streamError) {
+      if (controller.signal.aborted) {
+        setStatus('idle');
+      } else {
         setStatus('error');
-        setError(err instanceof Error ? err.message : 'Failed to process agent stream');
+        setError(describeError(streamError));
       }
-    });
+    } finally {
+      controllerRef.current = null;
+    }
   };
 
-  const cancelAgent = () => {
+  const terminateAgent = () => {
+    controllerRef.current?.abort();
+    controllerRef.current = null;
     setStatus('idle');
-    setSteps([]);
-    setSSEEvents([]);
+    dispatch({ type: 'reset' });
     setError(null);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const name = e.target.name;
-    setRequest(prev => prev ? { ...prev, [name]: value === '' ? undefined : value } : {
-      prompt: value,
-      system: undefined,
-      max_steps: name === 'max_steps' ? parseInt(value) || 8 : 8,
-      timeout_ms: undefined,
-      allowed_tools: undefined,
-      temperature: undefined,
+  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setRequest((prev) => {
+      const base: AgentRunInput = prev ?? { prompt: '', max_steps: 8 };
+      if (name === 'max_steps') {
+        return { ...base, max_steps: value === '' ? 8 : parseInt(value, 10) || 8 };
+      }
+      return { ...base, prompt: value };
     });
-  };
+  }, []);
+
+  const sduiNodes = steps.flatMap((step: AgentStepUI) => step.sdui);
 
   return (
-    <RouteShell as="main" className="hq-route hq-agent flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
-        {/* Agent Controls */}
-        <section className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Agent Studio
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Autonomous cognitive agent loop with generative SDUI synthesis
-              </p>
-            </div>
+    <RouteShell as="main" className="hq-route hq-agent">
+      <RouteHeader
+        title="Agent Studio"
+        summary="Autonomous cognitive agent loop with generative SDUI synthesis."
+        status={isRunning ? <Badge variant="active" dot>Running</Badge> : null}
+      />
 
-            <div className="flex items-start gap-2">
-              <Input
-                type="number"
-                label="Max Steps"
-                name="max_steps"
-                min="1"
-                max="20"
-                value={request?.max_steps ?? 8}
-                onChange={handleChange}
-                className="w-24"
-              />
-              <span className="pt-7 text-xs text-muted-foreground">1-20</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Mission Input */}
-        <section className="mb-6">
+      <section className="hq-section" aria-label="Agent controls">
+        <div className="flex flex-wrap items-end gap-3">
           <Input
             label="Mission Goal"
-            placeholder="Enter your agent mission (e.g. 'Check attachment in CAS and summarize in SDUI card')"
+            name="prompt"
+            placeholder="Enter your agent mission (e.g. 'Check attachment in CAS and summarize in an SDUI card')"
             value={request?.prompt || ''}
-            onChange={(e) => handleChange(e)}
-            disabled={status === 'running'}
+            onChange={handleChange}
+            disabled={isRunning}
+            className="flex-1 min-w-0"
           />
-        </section>
-
-        {/* Controls */}
-        <section className="mb-6 flex gap-2">
-          <Button
-            variant={status === 'running' ? 'gold' : 'default'}
-            disabled={status === 'running'}
-            onClick={handleRunAgent}
-          >
-            {status === 'running' ? 'Running...' : 'Run Agent'}
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={status !== 'running'}
-            onClick={cancelAgent}
-          >
-            Terminate
-          </Button>
-        </section>
-
-        {/* Status */}
-        {status === 'running' && (
-          <div className="p-4 rounded-lg bg-card border border-border">
-            <div className="flex items-center gap-2">
-              <Badge variant="active" dot className="text-success">
-                RUNNING
-              </Badge>
-              <span className="text-sm text-muted-foreground">Reasoning...</span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Max steps: {request?.max_steps ?? 8}
-            </div>
+          <div className="flex items-end gap-2">
+            <Input
+              type="number"
+              label="Max Steps"
+              name="max_steps"
+              min="1"
+              max="20"
+              value={request?.max_steps ?? 8}
+              onChange={handleChange}
+              disabled={isRunning}
+              className="w-24"
+            />
           </div>
-        )}
+        </div>
 
-        {/* Live Reasoning Timeline */}
-        <section className="mb-6">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3">
-            Reasoning Timeline
-          </h2>
-          {status === 'idle' && steps.length === 0 && (
-            <div className="p-4 rounded-lg bg-card border border-border text-muted-foreground text-center">
-              No steps yet. Enter a mission goal and click "Run Agent".
-            </div>
-          )}
-          {status === 'running' || steps.length > 0 && (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {steps.map((step, i) => (
-                <div
-                  key={i}
-                  className={`p-3 rounded-lg transition-colors ${
-                    i <= currentStep ? 'bg-card' : 'bg-secondary'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-foreground">
-                      Step {step.step}
-                    </span>
-                    {step.finish_reason && (
-                      <Badge
-                        variant={step.finish_reason === 'completed' ? 'active' : 'revoked'}
-                        className="text-[10px]"
-                      >
-                        {step.finish_reason}
-                      </Badge>
-                    )}
-                  </div>
+        <div className="flex gap-2">
+          <Button variant={isRunning ? 'gold' : 'default'} disabled={isRunning || !request?.prompt?.trim()} onClick={handleRunAgent}>
+            {isRunning ? 'Running…' : 'Run Agent'}
+          </Button>
+          <Button variant="destructive" disabled={!isRunning} onClick={terminateAgent}>Terminate</Button>
+        </div>
+      </section>
 
-                  {step.thought && (
-                    <div className="text-[10px] text-muted-foreground mb-1">
-                      <Badge
-                        variant="active"
-                        className="inline-block px-2 py-0.5 text-[10px] rounded bg-success text-success animate-pulse"
-                      >
-                        Thinking
-                      </Badge>
-                      {step.thought}
-                    </div>
-                  )}
+      {error && (
+        <StatusMessage tone="danger" title="Agent run failed" action={<Button variant="outline" size="sm" onClick={handleRunAgent}>Retry</Button>}>
+          {error}
+        </StatusMessage>
+      )}
 
-                  {step.tool_calls && step.tool_calls.length > 0 && (
-                    <div className="text-[10px] text-muted-foreground mb-1">
-                      <span className="font-medium">Tools:</span>
-                      {step.tool_calls.map((tc, j) => (
-                        <span
-                          key={j}
-                          className="mr-1 text-[10px] bg-secondary border border-border rounded px-1.5 py-0.5"
-                        >
-                          {tc.tool}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+      <section className="hq-section" aria-labelledby="agent-timeline-title">
+        <div className="hq-section__heading">
+          <h2 id="agent-timeline-title">Reasoning Timeline</h2>
+          {isRunning && <span className="hq-section__meta">Reasoning…</span>}
+        </div>
 
-                  {step.tool_results && step.tool_results.length > 0 && (
-                    <div className="text-[10px] text-muted-foreground mb-1">
-                      <span className="font-medium">Results:</span>
-                      {step.tool_results.map((tr, j) => (
-                        <span
-                          key={j}
-                          className="mr-1 text-[10px] bg-card rounded px-1 py-0.5"
-                        >
-                          {tr.success ? 'OK' : 'ERR'}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {step.sdui && step.sdui.length > 0 && (
-                    <div className="text-[10px] text-muted-foreground mb-1">
-                      <span className="font-medium">SDUI:</span>
-                      {step.sdui.map((s, j) => (
-                        <span
-                          key={j}
-                          className="mr-1 text-[10px] bg-card rounded px-1 py-0.5"
-                        >
-                          {s.type}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {step.response && (
-                    <div className="mt-2 text-[10px] text-foreground whitespace-pre-wrap leading-relaxed">
-                      {step.response}
-                    </div>
+        {steps.length === 0 ? (
+          <StatePanel
+            kind="empty"
+            title="No steps yet"
+            cause="The agent has not streamed any events."
+            nextAction="Enter a mission goal and click Run Agent."
+          />
+        ) : (
+          <ul className="hq-log-list" aria-live="polite">
+            {steps.map((step) => (
+              <li className="hq-log-item" key={step.step}>
+                <div className="hq-log-item__head">
+                  <span className="text-sm font-medium">Step {step.step}</span>
+                  {step.finish_reason && (
+                    <Badge variant={step.finish_reason === 'completed' ? 'active' : 'revoked'}>{step.finish_reason}</Badge>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
 
-        {/* SDUI Preview */}
-        <section>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3">
-            SDUI Preview
-          </h2>
-          {steps.some(s => s.sdui && s.sdui.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Generated View</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[200px] overflow-auto bg-card border border-border">
-                <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
-{/* SDUI schema would be rendered here */}
-SDUI view rendering - preview not yet connected to backend
-</pre>
-              </CardContent>
-            </Card>
-          )}
-          {!(steps.some(s => s.sdui && s.sdui.length > 0)) && (
-            <div className="p-4 rounded-lg bg-card border border-border text-muted-foreground text-center">
-              No SDUI views yet. Run an agent to generate dynamic views.
-            </div>
-          )}
-        </section>
-        <RemoteAgentControlPanel />
+                {step.thought && (
+                  <div className="space-y-1">
+                    <Badge variant="active">Thinking</Badge>
+                    <p className="text-sm">{step.thought}</p>
+                  </div>
+                )}
+
+                {step.tool_calls.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {step.tool_calls.map((call, index) => (
+                      <span className="hq-micro hq-mono" key={`${call.call_id}-${index}`}>{call.tool}</span>
+                    ))}
+                  </div>
+                )}
+
+                {step.tool_results.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {step.tool_results.map((result, index) => (
+                      <Badge variant={result.success ? 'active' : 'revoked'} key={`${result.call_id}-${index}`}>
+                        {result.success ? 'OK' : 'ERR'}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {step.response && (
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{step.response}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="hq-section" aria-labelledby="agent-sdui-title">
+        <div className="hq-section__heading">
+          <h2 id="agent-sdui-title">SDUI Preview</h2>
+        </div>
+
+        {sduiNodes.length === 0 ? (
+          <StatePanel
+            kind="empty"
+            title="No SDUI views yet"
+            cause="The agent has not emitted any server-driven UI."
+            nextAction="Run an agent that produces an SDUI card to preview it here."
+          />
+        ) : (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Generated View</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {sduiNodes.map((node, index) => <SDUINodeView key={index} node={node} />)}
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      <RemoteAgentControlPanel />
     </RouteShell>
   );
 }

@@ -30,6 +30,7 @@ import { reconcilePlans } from '../../../addons/project/services/sync_worker';
 import { startCronRunner, stopCronRunner } from '../../../addons/project/services/cron_runner';
 import { DEFAULT_PROJECT_CRON } from '../../../addons/project/data/default';
 import type { SyncPayload } from '../../../addons/project/services/plan_scanner';
+import { recordNotifyEvent } from '../../../addons/mw_notify/services/events';
 
 export interface BuildAppOptions {
   enableLogging?: boolean;
@@ -360,6 +361,9 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     }
     const chunkRepo = repository('qorpus.chunk');
     const candidateLimit = Math.max(limit * 4, limit, 20);
+    // `expand: ['document_id']` replaces the hand-rolled chunk→document re-join
+    // (roadmap T3.5): the ORM collects the distinct FK ids and does one scoped IN
+    // query for the parents, so the search route no longer fabricates that join.
     const chunks = await chunkRepo.find({
       scope,
       filters: queryTerms.map((term, index) => ({
@@ -369,15 +373,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         connector: index === 0 ? ('AND' as const) : ('OR' as const),
       })),
       limit: candidateLimit,
+      expand: ['document_id'],
     });
-
-    // Join documents for the matched chunks only, via one scoped IN query.
-    const docIds = Array.from(new Set(chunks.map((chunk) => Number(chunk.document_id)).filter(Boolean)));
-    const docs =
-      docIds.length > 0
-        ? await repository('qorpus.document').find({ scope, filters: [{ field: 'id', operator: 'IN', value: docIds }] })
-        : [];
-    const docById = new Map(docs.map((doc) => [Number(doc.id), doc]));
 
     const queryLower = query.toLowerCase();
     const results = chunks
@@ -388,7 +385,7 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
         for (const term of queryTerms) {
           if (contentLower.includes(term.toLowerCase())) score += 0.1;
         }
-        const document = docById.get(Number(chunk.document_id));
+        const document = chunk.document_id as Record<string, unknown> | null;
         return {
           id: chunk.id,
           document_title: document?.title ?? 'Unknown',
@@ -405,8 +402,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
 
   app.get('/v1/threads', async (request) => {
-    const threads = await repository('ai.thread').find({ scope: tenantOf(request), limit: 100 });
-    return ok(threads, { totalItems: threads.length });
+    const { rows: threads, total } = await repository('ai.thread').search({ scope: tenantOf(request), limit: 100 });
+    return ok(threads, { totalItems: total });
   });
 
   app.post('/v1/threads', async (request, reply) => {
@@ -467,8 +464,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   app.get<{ Params: { model_name: string } }>('/api/v1/models/:model_name', async (request) => {
     const modelName = request.params.model_name;
     assertModelExposed(modelName);
-    const records = await repository(modelName).find({ scope: tenantOf(request), limit: 50 });
-    return ok(records, { totalItems: records.length });
+    const { rows: records, total } = await repository(modelName).search({ scope: tenantOf(request), limit: 50 });
+    return ok(records, { totalItems: total });
   });
 
   app.post<{ Params: { model_name: string }; Body: Record<string, unknown> }>(
@@ -493,9 +490,9 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     const reasonHash = requireAdminReasonHash(query.reason);
     const modelName = request.params.model_name;
     assertModelExposed(modelName);
-    const records = await repository(modelName).find({ scope: { companyId }, limit: 50 });
+    const { rows: records, total } = await repository(modelName).search({ scope: { companyId }, limit: 50 });
     await recordAdminRead(request, principal, companyId, modelName, '*', reasonHash);
-    return ok(records, { totalItems: records.length });
+    return ok(records, { totalItems: total });
   });
 
   app.post<{ Params: { model_name: string } }>('/v1/admin/models/:model_name', async (request, reply) => {
@@ -553,14 +550,14 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
     const query = request.query as Record<string, unknown>;
     const companyId = parseTenantCompanyId(query.company_id);
     const reasonHash = requireAdminReasonHash(query.reason);
-    const events = await repository('arsy.audit.event').find({
+    const { rows: events, total } = await repository('arsy.audit.event').search({
       scope: { companyId },
       limit: 100,
       orderBy: 'create_date',
       orderDirection: 'DESC',
     });
     await recordAdminRead(request, principal, companyId, 'arsy.audit.event', '*', reasonHash);
-    return ok(events, { totalItems: events.length });
+    return ok(events, { totalItems: total });
   });
 
   app.post<{ Params: { id: string } }>('/v1/admin/users/:id/role', async (request) => {
@@ -647,8 +644,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
 
   app.get('/v1/nexus/nas', async (request) => {
-    const nas = await repository('nexus.nas').find({ scope: tenantOf(request), limit: 100 });
-    return ok(nas.map(nasResponse), { totalItems: nas.length });
+    const { rows: nas, total } = await repository('nexus.nas').search({ scope: tenantOf(request), limit: 100 });
+    return ok(nas.map(nasResponse), { totalItems: total });
   });
 
   app.post('/v1/nexus/nas', async (request, reply) => {
@@ -708,13 +705,13 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
 
   app.get('/v1/nexus/pools', async (request) => {
-    const pools = await repository('nexus.ip_pool').find({ scope: tenantOf(request), limit: 100 });
-    return ok(pools, { totalItems: pools.length });
+    const { rows: pools, total } = await repository('nexus.ip_pool').search({ scope: tenantOf(request), limit: 100 });
+    return ok(pools, { totalItems: total });
   });
 
   app.get('/v1/orbit/instances', async (request) => {
-    const instances = await repository('orbit.instance').find({ scope: tenantOf(request), limit: 100 });
-    return ok(instances, { totalItems: instances.length });
+    const { rows: instances, total } = await repository('orbit.instance').search({ scope: tenantOf(request), limit: 100 });
+    return ok(instances, { totalItems: total });
   });
 
   app.post('/v1/orbit/instances', async (request, reply) => {
@@ -734,8 +731,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
 
   app.get('/v1/works/plans', async (request) => {
-    const plans = await repository('isp.plan').find({ scope: tenantOf(request), limit: 100 });
-    return ok(plans, { totalItems: plans.length });
+    const { rows: plans, total } = await repository('isp.plan').search({ scope: tenantOf(request), limit: 100 });
+    return ok(plans, { totalItems: total });
   });
 
   app.post('/v1/works/plans', async (request, reply) => {
@@ -752,8 +749,8 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   });
 
   app.get('/v1/works/subscriptions', async (request) => {
-    const subscriptions = await repository('isp.subscription').find({ scope: tenantOf(request), limit: 100 });
-    return ok(subscriptions, { totalItems: subscriptions.length });
+    const { rows: subscriptions, total } = await repository('isp.subscription').search({ scope: tenantOf(request), limit: 100 });
+    return ok(subscriptions, { totalItems: total });
   });
 
   app.post('/v1/works/subscriptions', async (request, reply) => {
@@ -790,9 +787,48 @@ export async function buildArsyApp(options: BuildAppOptions = {}): Promise<Fasti
   }
 
   app.get('/v1/works/invoices', async (request) => {
-    const invoices = await repository('isp.invoice').find({ scope: tenantOf(request), limit: 100 });
-    return ok(invoices, { totalItems: invoices.length });
+    const { rows: invoices, total } = await repository('isp.invoice').search({ scope: tenantOf(request), limit: 100 });
+    return ok(invoices, { totalItems: total });
   });
+
+  // Invoice state transitions (roadmap T3.4 producer). Moving an invoice to
+  // `paid` / `overdue` appends a pending notify.event naming the matching
+  // template code; the notify_dispatch cron renders and delivers it. The event
+  // write is a fire-and-forget append that must never fail the transition, so a
+  // producer error is logged, not thrown — the state change already committed.
+  const invoiceTransitions: Record<string, { state: string; templateCode?: string }> = {
+    open: { state: 'open' },
+    pay: { state: 'paid', templateCode: 'invoice.paid' },
+    markOverdue: { state: 'overdue', templateCode: 'invoice.overdue' },
+  };
+
+  for (const [action, rule] of Object.entries(invoiceTransitions)) {
+    app.post<{ Params: { id: string } }>(`/v1/works/invoices/:id/${action}`, async (request) => {
+      const scope = tenantOf(request);
+      const companyId = (scope as { companyId: number }).companyId;
+      const repo = repository('isp.invoice');
+      const id = parseId(request.params.id, 'invoice id');
+      const invoice = await repo.findById(id, scope);
+      if (!invoice) throw new AppError('Invoice not found', 404, 'INVOICE_NOT_FOUND');
+      const updated = await repo.updateById(id, { state: rule.state }, scope, actorOf(request));
+      if (!updated) throw new AppError('Invoice not found', 404, 'INVOICE_NOT_FOUND');
+      if (rule.templateCode) {
+        try {
+          await recordNotifyEvent(
+            {
+              companyId,
+              templateCode: rule.templateCode,
+              payload: { invoice_id: id, amount: invoice.amount ?? 0, currency: invoice.currency ?? 'IDR' },
+            },
+            actorOf(request),
+          );
+        } catch (err) {
+          app.log.warn({ err, invoiceId: id, templateCode: rule.templateCode }, 'notify event append failed on invoice transition');
+        }
+      }
+      return ok({ id, state: rule.state });
+    });
+  }
 
   // Public ISP projections. Read the cross-tenant platform catalog with
   // systemScope filtered to is_public, then assemble an explicit field whitelist

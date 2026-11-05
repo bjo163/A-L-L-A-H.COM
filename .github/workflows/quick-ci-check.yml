@@ -1,79 +1,29 @@
 name: Quick CI Health Check
 
+# Routine validation is owned by CI Validation Gate & Promotion. This manual
+# workflow remains available for ad hoc diagnostics without duplicate runs.
 on:
-  push:
-    branches: [dev, main]
-  pull_request:
-    branches: [dev, main]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   quick-check:
-    name: Quick Health Check
+    name: Manual Quick Health Check
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # No continue-on-error: a health check that cannot go red is a badge,
-    # not a gate. Failure steps below use `if: failure()` to report.
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
       - uses: pnpm/action-setup@v6
         with:
           version: 12.16.1
-
       - uses: actions/setup-node@v7
         with:
-          # Node 22 matches ci-dev.yml and every Dockerfile; a 24-only check
-          # proves nothing about what ships.
           node-version: 22
-          cache: 'pnpm'
-
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
-
-      - name: TypeCheck
-        run: pnpm typecheck
-
-      - name: Lint Arch
-        run: pnpm lint:arch
-
-      - name: Design System Tests
-        run: pnpm ui:test
-
-      - name: Skin Contrast Gate
-        run: pnpm ui:contrast
-
-      - name: Build Gate
-        run: pnpm gate:build
-
-      - name: Report failure
-        if: ${{ failure() }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          BRANCH: ${{ github.ref_name }}
-          COMMIT_SHA: ${{ github.sha }}
-        run: |
-          {
-            printf '## Quick Check Failed\n\n'
-            printf '**Branch:** %s\n**Commit:** %s\n**Run:** [View Logs](%s)\n\n' "$BRANCH" "$COMMIT_SHA" "$RUN_URL"
-            printf 'One of: typecheck, lint:arch, ui:test, ui:contrast, gate build.\n'
-            printf 'Reproduce locally: `pnpm typecheck && pnpm lint:arch && pnpm ui:test && pnpm ui:contrast && pnpm gate:build`\n'
-          } > "$RUNNER_TEMP/body.md"
-
-          title="[Quick Check Failed] Pre-push validation failed on ${BRANCH}"
-          existing=$(gh issue list --repo "$REPOSITORY" --state open \
-            --label ci-failure --label auto-created --label quick-check \
-            --search "${RUN_URL} in:body" --json number --jq '.[0].number' || true)
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --repo "$REPOSITORY" --body "Regressed again: ${RUN_URL}"
-          else
-            gh issue create --repo "$REPOSITORY" --title "$title" \
-              --body-file "$RUNNER_TEMP/body.md" \
-              --label ci-failure --label auto-created --label quick-check
-          fi
+      - run: pnpm typecheck
+      - run: pnpm lint:arch
+      - run: pnpm ui:test
+      - run: pnpm ui:contrast

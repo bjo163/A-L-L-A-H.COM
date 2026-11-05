@@ -3,6 +3,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { findPrivateUiClass } from './ui-purity.mjs';
+import {
+  listUnitDirs,
+  parseContractMarkdown,
+  setsEqual,
+  collectPackageExports,
+  readLayoutSkin,
+} from './contract/parse.mjs';
 
 const ROOT_DIR = path.resolve(process.cwd());
 
@@ -703,6 +710,399 @@ function checkAddonManifests() {
   }
 }
 
+// 10b. RULE: ADDON_DEFAULT_DATA
+// Every addon must declare its default data in the manifest, the declared
+// module must exist and export loadDefaultData, and any non-empty dataset must
+// be wired into the static DEFAULT_DATA_REGISTRY. Absence is only allowed as an
+// explicit `data: []`, never as a silent omission.
+function parseDefaultDataRegistry(content) {
+  const registered = new Set();
+  const re = /^[ \t]*([a-z_][a-z0-9_]*):[ \t]*\w+DefaultData\b/gm;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    registered.add(m[1]);
+  }
+  return registered;
+}
+
+function checkAddonDefaultData() {
+  const addonsDir = path.join(ROOT_DIR, 'addons');
+  if (!fs.existsSync(addonsDir)) return;
+
+  const registryPath = path.join(addonsDir, 'default-data.ts');
+  if (!fs.existsSync(registryPath)) {
+    addViolation('ADDON_DEFAULT_DATA', addonsDir, 'addons/default-data.ts seed registry is missing.');
+    return;
+  }
+  const registered = parseDefaultDataRegistry(fs.readFileSync(registryPath, 'utf8'));
+
+  for (const entry of fs.readdirSync(addonsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const addonName = entry.name;
+    const addonDir = path.join(addonsDir, addonName);
+    const manifestPath = path.join(addonDir, '__manifest__.json');
+    if (!fs.existsSync(manifestPath)) continue;
+
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+      continue; // parsed (or rejected) by ADDON_MANIFEST_CONSISTENCY
+    }
+
+    if (!Array.isArray(manifest.data)) {
+      addViolation(
+        'ADDON_DEFAULT_DATA',
+        manifestPath,
+        `Addon '${addonName}' manifest must declare a 'data' array; an explicit empty [] states "no platform defaults", a missing key is a wiring bug.`
+      );
+      continue;
+    }
+
+    for (const dataPath of manifest.data) {
+      const full = path.join(addonDir, dataPath);
+      if (!fs.existsSync(full)) {
+        addViolation('ADDON_DEFAULT_DATA', manifestPath, `Addon '${addonName}' declares data module '${dataPath}' which does not exist.`);
+        continue;
+      }
+      if (!/loadDefaultData/.test(fs.readFileSync(full, 'utf8'))) {
+        addViolation('ADDON_DEFAULT_DATA', full, `Addon '${addonName}' data module '${dataPath}' does not export loadDefaultData.`);
+      }
+    }
+
+    if (manifest.data.length > 0 && !registered.has(addonName)) {
+      addViolation(
+        'ADDON_DEFAULT_DATA',
+        registryPath,
+        `Addon '${addonName}' declares default data but has no loader registered in DEFAULT_DATA_REGISTRY.`
+      );
+    }
+  }
+}
+
+// 10b-2. RULE: ADDON_VIEWS_CONSISTENCY
+// The SDUI views counterpart to ADDON_DEFAULT_DATA (roadmap T3.1). Addons declare
+// their view JSON files in the manifest `views` key, but the boot bundles addons
+// via static imports, so those files are wired into the static VIEW_REGISTRY in
+// addons/views.ts. This rule enforces two-ways parity: an addon that declares
+// views must appear in the registry, and a registry entry must correspond to a
+// non-empty manifest `views` declaration. File existence itself is enforced by
+// the manifest views-parity check inside UNIT_CONTRACT_CONSISTENCY.
+function parseViewRegistry(content) {
+  const registered = new Set();
+  const start = content.indexOf('VIEW_REGISTRY');
+  if (start === -1) return registered;
+  const end = content.indexOf('};', start);
+  const block = content.slice(start, end === -1 ? content.length : end);
+  const re = /([a-z_][a-z0-9_]*):\s*\[/g;
+  let m;
+  while ((m = re.exec(block)) !== null) {
+    registered.add(m[1]);
+  }
+  return registered;
+}
+
+function checkAddonViews() {
+  const addonsDir = path.join(ROOT_DIR, 'addons');
+  if (!fs.existsSync(addonsDir)) return;
+
+  const registryPath = path.join(addonsDir, 'views.ts');
+  // The registry is optional until an addon actually declares views; a manifest
+  // that declares a view while no registry file exists is caught below because
+  // `registered` stays empty.
+  const registered = fs.existsSync(registryPath)
+    ? parseViewRegistry(fs.readFileSync(registryPath, 'utf8'))
+    : new Set();
+
+  for (const entry of fs.readdirSync(addonsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const addonName = entry.name;
+    const manifestPath = path.join(addonsDir, addonName, '__manifest__.json');
+    if (!fs.existsSync(manifestPath)) continue;
+
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+      continue; // handled by ADDON_MANIFEST_CONSISTENCY
+    }
+
+    const declaredViews = Array.isArray(manifest.views) ? manifest.views : [];
+    const inRegistry = registered.has(addonName);
+    if (declaredViews.length > 0 && !inRegistry) {
+      addViolation(
+        'ADDON_VIEWS_CONSISTENCY',
+        registryPath,
+        `Addon '${addonName}' declares views but has no entry in VIEW_REGISTRY (addons/views.ts).`
+      );
+    }
+    if (declaredViews.length === 0 && inRegistry) {
+      addViolation(
+        'ADDON_VIEWS_CONSISTENCY',
+        registryPath,
+        `Addon '${addonName}' has a VIEW_REGISTRY entry but declares no views in its manifest.`
+      );
+    }
+  }
+}
+
+// 10b-3. RULE: LLM_CATALOG_CONSISTENCY
+// The gateway plugin's lazy bootstrap (router.ts `seedDefaultsIfEmpty`) is a
+// guarded fallback copy of the canonical catalog in
+// `addons/mw_llm_router/data/default.ts`. A package cannot import addon code, so
+// the two must be kept in sync by hand — the existing comment says "keep the
+// specs in sync", but a comment is not enforced. This rule compares the provider
+// slugs, model ids, and route alias sets between the two and fails the arch gate
+// on drift, turning the prose invariant into a check. (The platform virtual key
+// is runtime-secret-derived and intentionally excluded.)
+function extractArrayBlock(content, name) {
+  const marker = `const ${name} = [`;
+  const start = content.indexOf(marker);
+  if (start === -1) return null;
+  const open = content.indexOf('[', start);
+  const close = content.indexOf(']', open);
+  return content.slice(open, close === -1 ? content.length : close);
+}
+
+function quotedValues(region, key) {
+  if (!region) return null;
+  const values = new Set();
+  const re = new RegExp(`${key}:\\s*'([^']+)'`, 'g');
+  let m;
+  while ((m = re.exec(region)) !== null) values.add(m[1]);
+  return values;
+}
+
+function compareCatalogSet(rule, label, addonValues, routerValues, addonPath, routerPath) {
+  if (addonValues === null || routerValues === null) {
+    addViolation(rule, routerPath, `Could not locate the '${label}' set in one of the catalogs; the drift check is broken, not passing.`);
+    return;
+  }
+  const onlyAddon = [...addonValues].filter((v) => !routerValues.has(v));
+  const onlyRouter = [...routerValues].filter((v) => !addonValues.has(v));
+  if (onlyAddon.length > 0 || onlyRouter.length > 0) {
+    const parts = [];
+    if (onlyAddon.length > 0) parts.push(`missing from plugin fallback: ${onlyAddon.join(', ')}`);
+    if (onlyRouter.length > 0) parts.push(`extra in plugin fallback: ${onlyRouter.join(', ')}`);
+    addViolation(
+      rule,
+      routerPath,
+      `LLM '${label}' catalog drift between ${addonPath} (canonical) and the plugin fallback — ${parts.join('; ')}.`
+    );
+  }
+}
+
+function checkLlmCatalogConsistency() {
+  const addonPath = path.join(ROOT_DIR, 'addons', 'mw_llm_router', 'data', 'default.ts');
+  const routerPath = path.join(ROOT_DIR, 'packages', 'arsy-plugin-llm-gateway', 'src', 'router.ts');
+  const relRouter = path.relative(ROOT_DIR, routerPath).replace(/\\/g, '/');
+  const relAddon = path.relative(ROOT_DIR, addonPath).replace(/\\/g, '/');
+  if (!fs.existsSync(addonPath) || !fs.existsSync(routerPath)) return;
+
+  const addonContent = fs.readFileSync(addonPath, 'utf8');
+  const routerContent = fs.readFileSync(routerPath, 'utf8');
+
+  // Canonical addon sets: quoted literals for each key across the whole file
+  // (interface fields are unquoted, so they never match).
+  compareCatalogSet(
+    'LLM_CATALOG_CONSISTENCY', 'provider slug',
+    quotedValues(addonContent, 'slug'),
+    quotedValues(extractArrayBlock(routerContent, 'providerSpecs'), 'slug'),
+    relAddon, relRouter,
+  );
+  compareCatalogSet(
+    'LLM_CATALOG_CONSISTENCY', 'model id',
+    quotedValues(addonContent, 'model_id'),
+    quotedValues(extractArrayBlock(routerContent, 'modelSpecs'), 'model_id'),
+    relAddon, relRouter,
+  );
+  compareCatalogSet(
+    'LLM_CATALOG_CONSISTENCY', 'route alias',
+    quotedValues(addonContent, 'alias'),
+    quotedValues(extractArrayBlock(routerContent, 'routeSpecs'), 'alias'),
+    relAddon, relRouter,
+  );
+}
+
+// 10c-0. RULE: SYNC_OUTBOX_REDACTION
+// The cross-app sync outbox is append-only and readable by every consumer, and
+// models opt in by name via ARSY_SYNC_MODELS (roadmap T3.3 adds `nexus.nas`, which
+// carries a `secret_encrypted` column). The one safeguard that lets a table with
+// encrypted/hashed columns join the ledger is the universal redaction inside the
+// `arsy_capture_sync_event` trigger: it strips every `*_encrypted` / `*_hash`
+// column before the payload is stored or diffed. This rule locks that invariant —
+// if the redaction predicates are removed, a secret could silently flow into the
+// ledger, so the arch gate fails instead of trusting the trigger to stay correct.
+function checkSyncOutboxRedaction() {
+  const migratorPath = path.join(ROOT_DIR, 'packages', 'arsy-orm', 'src', 'migrator.ts');
+  const rel = path.relative(ROOT_DIR, migratorPath).replace(/\\/g, '/');
+  if (!fs.existsSync(migratorPath)) return;
+
+  const content = fs.readFileSync(migratorPath, 'utf8');
+  const marker = 'CREATE OR REPLACE FUNCTION "arsy_capture_sync_event"';
+  const start = content.indexOf(marker);
+  if (start === -1) {
+    addViolation(
+      'SYNC_OUTBOX_REDACTION',
+      rel,
+      'The arsy_capture_sync_event trigger function is missing; sync-model writes cannot be captured safely.'
+    );
+    return;
+  }
+  const end = content.indexOf('$$ LANGUAGE plpgsql', start);
+  const body = content.slice(start, end === -1 ? content.length : end);
+
+  // Both secret-shaped predicates must be present as a regex exclusion (!~), not
+  // LIKE: LIKE treats `_` as a single-char wildcard and would be an unsafe matcher.
+  const hasEncrypted = /key\s+!~\s*'_encrypted\$'/.test(body);
+  const hasHash = /key\s+!~\s*'_hash\$'/.test(body);
+  if (!hasEncrypted || !hasHash) {
+    addViolation(
+      'SYNC_OUTBOX_REDACTION',
+      rel,
+      "The arsy_capture_sync_event trigger must strip every `*_encrypted` and `*_hash` column from the outbox payload (regex `key !~ '_encrypted$'` and `key !~ '_hash$'`) before a table with encrypted columns may join ARSY_SYNC_MODELS."
+    );
+  }
+}
+
+// 10c. RULE: UNIT_CONTRACT_CONSISTENCY
+// The code<->contract mirror for units, inside the gate that owns model
+// introspection. Addon side: CONTRACT.md frontmatter `models`/`data` lists must
+// mirror __manifest__.json, which ADDON_MANIFEST_CONSISTENCY already ties to the
+// defineModel declarations — so code <-> contract holds transitively. Package
+// side: `publicSurface` symbols must be exported from the package src. App side:
+// `routes` must exist under src/app and `skin` must match the layout's <SkinRoot>.
+// These mirror the deep checks `contract:check` runs, but live here too so a
+// single code<->contract drift fails the arch gate as well — the shared module
+// (parse.mjs) is the one implementation both gates read.
+function checkUnitContractConsistency() {
+  const addonsDir = path.join(ROOT_DIR, 'addons');
+  if (fs.existsSync(addonsDir)) {
+  for (const entry of fs.readdirSync(addonsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const addonName = entry.name;
+    const addonDir = path.join(addonsDir, addonName);
+    const manifestPath = path.join(addonDir, '__manifest__.json');
+    const contractPath = path.join(addonDir, 'CONTRACT.md');
+    if (!fs.existsSync(manifestPath)) continue;
+
+    if (!fs.existsSync(contractPath)) {
+      addViolation('UNIT_CONTRACT_CONSISTENCY', addonDir, `Addon '${addonName}' is missing CONTRACT.md.`);
+      continue;
+    }
+
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+      continue;
+    }
+
+    const doc = parseContractMarkdown(fs.readFileSync(contractPath, 'utf8'));
+    const lists = doc?.lists ?? {};
+    const rel = path.relative(ROOT_DIR, contractPath).replace(/\\/g, '/');
+
+    if (!Array.isArray(lists.models)) {
+      addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Addon '${addonName}' CONTRACT.md must declare a 'models' list.`);
+    } else if (Array.isArray(manifest.models) && !setsEqual(lists.models, manifest.models)) {
+      addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Addon '${addonName}' CONTRACT.md models differ from __manifest__.json.`);
+    }
+
+    if (!Array.isArray(lists.data)) {
+      addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Addon '${addonName}' CONTRACT.md must declare a 'data' list (empty is allowed).`);
+    } else if (Array.isArray(manifest.data) && !setsEqual(lists.data, manifest.data)) {
+      addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Addon '${addonName}' CONTRACT.md data differ from __manifest__.json.`);
+    }
+
+    // Views parity: declared view files must exist (empty/absent is allowed,
+    // matching the pre-consolidation behavior until every addon declares views).
+    // Manifests may name a bare file (resolved under the addon's `views/` dir,
+    // the `base` convention) or an addon-relative path.
+    const declaredViews = Array.isArray(manifest.views) ? manifest.views : [];
+    for (const viewPath of declaredViews) {
+      const direct = path.join(addonDir, viewPath);
+      const underViewsDir = path.join(addonDir, 'views', path.basename(viewPath));
+      if (!fs.existsSync(direct) && !fs.existsSync(underViewsDir)) {
+        addViolation('ADDON_MANIFEST_CONSISTENCY', manifestPath, `Addon '${addonName}' declares view file '${viewPath}' which does not exist.`);
+      }
+    }
+  }
+  }
+
+  // Package side: publicSurface symbols must be exported from the package src.
+  const packagesDir = path.join(ROOT_DIR, 'packages');
+  if (fs.existsSync(packagesDir)) {
+    for (const name of listUnitDirs(packagesDir, true)) {
+      const pkgDir = path.join(packagesDir, name);
+      const contractPath = path.join(pkgDir, 'CONTRACT.md');
+      const rel = path.relative(ROOT_DIR, contractPath).replace(/\\/g, '/');
+      if (!fs.existsSync(contractPath)) {
+        addViolation('UNIT_CONTRACT_CONSISTENCY', pkgDir, `Package '${name}' is missing CONTRACT.md.`);
+        continue;
+      }
+      const doc = parseContractMarkdown(fs.readFileSync(contractPath, 'utf8'));
+      const surface = doc?.lists?.publicSurface;
+      if (!Array.isArray(surface)) {
+        addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Package '${name}' CONTRACT.md must declare a 'publicSurface' list.`);
+        continue;
+      }
+      const srcDir = path.join(pkgDir, 'src');
+      if (!fs.existsSync(srcDir)) {
+        if (surface.length > 0) {
+          addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Package '${name}' declares publicSurface but has no src/ directory.`);
+        }
+        continue;
+      }
+      const exported = collectPackageExports(srcDir);
+      for (const sym of surface) {
+        if (!exported.has(sym)) {
+          addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `Package '${name}' CONTRACT.md publicSurface symbol '${sym}' is not exported from the package src.`);
+        }
+      }
+    }
+  }
+
+  // App side: declared routes must exist under src/app, and a declared skin must
+  // match the layout's <SkinRoot> (and vice versa for Next apps that render one).
+  const appsDir = path.join(ROOT_DIR, 'apps');
+  if (fs.existsSync(appsDir)) {
+    for (const name of listUnitDirs(appsDir, true)) {
+      const appDir = path.join(appsDir, name);
+      const contractPath = path.join(appDir, 'CONTRACT.md');
+      const rel = path.relative(ROOT_DIR, contractPath).replace(/\\/g, '/');
+      if (!fs.existsSync(contractPath)) {
+        addViolation('UNIT_CONTRACT_CONSISTENCY', appDir, `App '${name}' is missing CONTRACT.md.`);
+        continue;
+      }
+      const doc = parseContractMarkdown(fs.readFileSync(contractPath, 'utf8'));
+      const appRouteDir = path.join(appDir, 'src', 'app');
+      if (!fs.existsSync(appRouteDir)) continue; // backend/service app: no route tree
+
+      const routes = doc?.lists?.routes;
+      if (!Array.isArray(routes)) {
+        addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `App '${name}' is a Next app (src/app present) but CONTRACT.md declares no 'routes' list.`);
+      } else {
+        const actualDirs = fs.readdirSync(appRouteDir, { withFileTypes: true })
+          .filter((e) => e.isDirectory())
+          .map((e) => e.name);
+        for (const route of routes) {
+          if (!actualDirs.includes(route)) {
+            addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `App '${name}' declares route '${route}' that does not exist under src/app.`);
+          }
+        }
+      }
+
+      const actualSkin = readLayoutSkin(appRouteDir);
+      const skin = doc?.scalars?.skin;
+      if (actualSkin && !skin) {
+        addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `App '${name}' renders <SkinRoot skin="${actualSkin}"> but CONTRACT.md declares no 'skin'.`);
+      } else if (skin && actualSkin && skin !== actualSkin) {
+        addViolation('UNIT_CONTRACT_CONSISTENCY', rel, `App '${name}' CONTRACT.md skin '${skin}' does not match layout <SkinRoot skin="${actualSkin}">.`);
+      }
+    }
+  }
+}
+
 // Shared baseline for the ratcheting rules. Counts may only fall.
 const BASELINE_FILE = path.join(ROOT_DIR, 'packages', 'lint', 'style-baseline.json');
 
@@ -992,6 +1392,11 @@ checkNoSecrets();
 checkNoDebugger();
 checkTodoFixmeHack();
 checkAddonManifests();
+checkAddonDefaultData();
+checkAddonViews();
+checkLlmCatalogConsistency();
+checkSyncOutboxRedaction();
+checkUnitContractConsistency();
 
 const styleBaseline = readBaseline();
 checkStylePurity(styleBaseline);
@@ -1033,6 +1438,11 @@ if (violations.length > 0) {
   console.log('  ✓ No Debugger: debugger statement scan verified');
   console.log('  ✓ Blocking comments: scan verified');
   console.log('  ✓ Addon Manifest: Addon consistency verified');
+  console.log('  ✓ Addon Default Data: manifest data paths wired into DEFAULT_DATA_REGISTRY');
+  console.log('  ✓ Addon Views: manifest views declarations wired into VIEW_REGISTRY');
+  console.log('  ✓ LLM Catalog: plugin fallback specs in sync with the mw_llm_router addon dataset');
+  console.log('  ✓ Sync Outbox Redaction: encrypted/hashed columns stripped before the outbox ledger');
+  console.log('  ✓ Unit Contract: addon/package/app CONTRACT.md mirrors its code (models/data, publicSurface, routes/skin)');
   console.log('  ✓ Style Purity: token-driven app styles within baseline');
   console.log('  ✓ Inline Style Purity: painted inline styles within baseline');
   console.log('  ✓ State Parity: error, loading and not-found routes present');

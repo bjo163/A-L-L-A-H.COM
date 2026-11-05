@@ -2,10 +2,12 @@ import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import crypto from 'crypto';
 import { ok, fail, logger } from '@allah/arsy-core';
-import { dbEngine } from '@allah/arsy-orm';
+import { dbEngine, BaseRepository, modelRegistry } from '@allah/arsy-orm';
 import { SmartRouter } from './router';
 import { GatewayCache } from './cache';
 import { UsageManager } from './usage';
+import { rollupUsageDay, isoDay } from './usage_rollup';
+import { embedPrompt } from './embedding';
 import { OpenAiAdapter } from './adapters/openai';
 import { GeminiAdapter } from './adapters/gemini';
 import { toolRegistry } from './tools';
@@ -20,6 +22,9 @@ export * from './types';
 export * from './router';
 export * from './cache';
 export * from './usage';
+export * from './strategy';
+export * from './embedding';
+export * from './usage_rollup';
 export * from './circuit';
 export * from './ssrf';
 export * from './adapters/base';
@@ -38,6 +43,24 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
   const router = new SmartRouter(options);
   const cache = new GatewayCache();
   const usageManager = new UsageManager();
+
+  // Semantic cache (roadmap F2) is opt-in: default-off keeps the byte-for-byte today
+  // behavior, and the env toggle is read per-request so it never leaks across processes.
+  const semanticEnabled = () => process.env.LLM_SEMANTIC_CACHE === '1';
+  const semanticThreshold = () => Number(process.env.LLM_SEMANTIC_THRESHOLD ?? 0.95);
+  const semanticPromptText = (msgs: ChatCompletionRequest['messages']): string =>
+    msgs
+      .map((m: ChatCompletionRequest['messages'][number]) =>
+        typeof m.content === 'string'
+          ? m.content
+          : (m.content || []).filter((p: any) => p.type === 'text').map((p: any) => p.text).join(' ')
+      )
+      .join('\n');
+
+  // Per-tenant daily budget cap (roadmap F1). Off unless configured; read at request
+  // time so a test can toggle the env without a restart.
+  const dailyBudgetUsd = () =>
+    (options as any).dailyBudgetUsd ?? Number(process.env.LLM_DAILY_BUDGET_USD ?? 0);
 
   // Tenant always comes from the verified principal or the presented virtual key, never
   // from a query string or body field.
@@ -176,6 +199,20 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return fail('TENANT_REQUIRED', 'No tenant bound to this request');
     }
 
+    // Fail-closed per-tenant daily budget guard (roadmap F1). Skipped entirely when no
+    // cap is configured, so the default request path is byte-identical to before.
+    const budgetCap = dailyBudgetUsd();
+    if (budgetCap > 0) {
+      const spentToday = await usageManager.dailySpend(tenant, isoDay(0));
+      if (spentToday >= budgetCap) {
+        reply.status(429);
+        return fail(
+          'DAILY_BUDGET_EXCEEDED',
+          `Tenant has spent $${spentToday.toFixed(6)} today, at or over the $${budgetCap.toFixed(6)} daily budget`
+        );
+      }
+    }
+
     // Cache lookup for non-streaming calls
     if (!stream) {
       const cacheKey = cache.generateKey(model, messages, temperature);
@@ -193,6 +230,30 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
           isCached: true,
         });
         return cached;
+      }
+    }
+
+    // Semantic near-duplicate lookup (roadmap F2), only when enabled. Runs after the
+    // exact-key miss so a rephrased prompt short-circuits the provider call. The
+    // embedding is computed once here and reused for the store on the way out.
+    let semanticEmbedding: number[] | null = null;
+    if (!stream && semanticEnabled()) {
+      semanticEmbedding = embedPrompt(semanticPromptText(messages));
+      const semanticHit = await cache.getVector(tenant, model, semanticEmbedding, semanticThreshold());
+      if (semanticHit) {
+        reply.header('X-Cache-Hit', 'true');
+        reply.header('X-Semantic-Cache', 'hit');
+        usageManager.recordUsage({
+          companyId: tenant,
+          virtualKeyId: keyRecord?.id,
+          promptTokens: semanticHit.usage?.prompt_tokens || 0,
+          completionTokens: semanticHit.usage?.completion_tokens || 0,
+          costUsd: 0,
+          latencyMs: Date.now() - startTime,
+          statusCode: 200,
+          isCached: true,
+        });
+        return semanticHit;
       }
     }
 
@@ -273,6 +334,12 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       // Populate Cache
       const cacheKey = cache.generateKey(model, messages, temperature);
       cache.set(cacheKey, execResult.response);
+
+      // Persist the semantic layer too (roadmap F2) when enabled, keyed by the same
+      // embedding used for the lookup so a later near-duplicate resolves to it.
+      if (semanticEmbedding) {
+        await cache.setVector(tenant, model, semanticPromptText(messages), cacheKey, semanticEmbedding, execResult.response);
+      }
 
       // Async usage record
       usageManager.recordUsage({
@@ -590,6 +657,47 @@ const llmGatewayAsync: FastifyPluginAsync<LlmGatewayOptions> = async (
       return ok(logs);
     } catch (err: any) {
       return fail('USAGE_FETCH_ERROR', err.message);
+    }
+  });
+
+  // POST /v1/gateway/usage/rollup — recompute a tenant's ai.usage_daily totals (F1).
+  // Idempotent: the aggregate is absolute, so re-running a day yields the same totals.
+  fastify.post<{ Body: { day?: string } }>(`${prefix}/gateway/usage/rollup`, async (request, reply) => {
+    const tenant = tenantOf(request);
+    if (typeof tenant !== 'number') {
+      reply.status(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
+    const day = (request.body?.day || isoDay(0)) as string;
+    try {
+      const rows = await rollupUsageDay(day, tenant);
+      return ok({ day, company_id: tenant, rows });
+    } catch (err: any) {
+      reply.status(400);
+      return fail('USAGE_ROLLUP_ERROR', err.message);
+    }
+  });
+
+  // GET /v1/gateway/usage/daily?day= — read the tenant's rollup. Scoped by company_id,
+  // so a tenant never sees another tenant's aggregates (F1).
+  fastify.get<{ Querystring: { day?: string } }>(`${prefix}/gateway/usage/daily`, async (request, reply) => {
+    const tenant = tenantOf(request);
+    if (typeof tenant !== 'number') {
+      reply.status(403);
+      return fail('TENANT_REQUIRED', 'No tenant bound to this request');
+    }
+    const day = (request.query?.day || isoDay(0)) as string;
+    try {
+      const def = modelRegistry.get('ai.usage_daily');
+      if (!def) return ok([]);
+      const repo = new BaseRepository(def);
+      const rows = await repo.find({
+        scope: { companyId: tenant },
+        filters: [{ field: 'day', operator: '=', value: day }],
+      });
+      return ok(rows);
+    } catch (err: any) {
+      return fail('USAGE_DAILY_FETCH_ERROR', err.message);
     }
   });
 };

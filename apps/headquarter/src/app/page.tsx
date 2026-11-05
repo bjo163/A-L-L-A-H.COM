@@ -10,18 +10,13 @@ import {
   SectionHeading,
   WorldArtwork,
 } from "@moonwitness/ui";
+import { HQ_MODULE_NAV, hqIndexLabel } from "@/lib/nav-registry";
 
 export const metadata: Metadata = {
   title: "Overview | Headquarter",
 };
 
-const modules = [
-  { index: "01", name: "AI Gateway", href: "/ai-gateway", description: "Route requests, monitor providers, and inspect usage." },
-  { index: "02", name: "Agent Studio", href: "/agent", description: "Run agents with tools and review execution." },
-  { index: "03", name: "Swarm Ops", href: "/swarm", description: "Coordinate multi-agent tasks and inspect results." },
-  { index: "04", name: "Tool Registry", href: "/tools", description: "Browse registered MCP tools and capabilities." },
-  { index: "05", name: "Knowledge", href: "/knowledge", description: "Search Qorpus with grounded results." },
-];
+const moduleCount = HQ_MODULE_NAV.length;
 
 export default function HeadquarterHomePage() {
   return (
@@ -47,18 +42,18 @@ export default function HeadquarterHomePage() {
       <section className="hq-modules" aria-labelledby="hq-modules-title">
         <SectionHeading
           titleId="hq-modules-title"
-          kicker="MODULE INDEX / 05"
+          kicker={`MODULE INDEX / ${hqIndexLabel(moduleCount - 1)}`}
           title="Operational modules"
-          trailing={<Badge variant="gold">Five routes</Badge>}
+          trailing={<Badge variant="gold">{moduleCount} routes</Badge>}
         />
 
         <DestinationGrid label="Headquarter modules">
-          {modules.map((module) => (
+          {HQ_MODULE_NAV.map((module, index) => (
             <DestinationCard
               key={module.href}
-              index={module.index}
+              index={hqIndexLabel(index)}
               role="module"
-              title={module.name}
+              title={module.label}
               description={module.description}
               href={module.href}
             />

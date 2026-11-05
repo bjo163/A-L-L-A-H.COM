@@ -16,13 +16,20 @@ ports: [1812, 1813, 3799, 9181]
 
 The RADIUS daemon built on `@allah/sentinel-radius`: PAP authentication, RFC 2866
 accounting, and CoA/disconnect against the NAS registry, plus a small HTTP control
-port.
+port. Authentication failures append `mw_notify` events for the hub dispatcher.
 
 ## Routes / ports
 
 A Node UDP service, not a Next app: no `src/app` route tree. Default ports 1812
 (auth), 1813 (acct), 3799 (CoA), 9181 (HTTP control), each overridable via
 `SENTINEL_*_PORT`.
+
+The sync and alert throttles are configurable:
+
+| Variable | Default | Purpose |
+|---|---:|---|
+| `SENTINEL_NAS_SYNC_POLL_MS` | `5000` | Poll interval for NAS secret invalidation |
+| `SENTINEL_RADIUS_AUTH_ALERT_COOLDOWN_MS` | `60000` | Per-NAS/user auth failure alert cooldown |
 
 ## Depends
 
@@ -32,4 +39,5 @@ A Node UDP service, not a Next app: no `src/app` route tree. Default ports 1812
 
 The builder and runner must copy the complete `addons/` tree. `src/server.ts`
 loads `addons/index.ts`, whose registry imports every installable addon before
-selecting the `nexus` root at startup.
+selecting the `nexus` and `mw_notify` roots at startup. It idempotently seeds the
+notification template catalog after schema synchronization.

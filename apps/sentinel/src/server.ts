@@ -8,7 +8,7 @@
 
 import 'dotenv/config';
 import { logger } from '@allah/arsy-core';
-import { dbEngine, modelRegistry, BaseRepository, SYSTEM_ACTOR, decryptSecret } from '@allah/arsy-orm';
+import { dbEngine, modelRegistry, BaseRepository, SYSTEM_ACTOR, decryptSecret, drainOutbox, type SyncOutboxRow } from '@allah/arsy-orm';
 import {
   RadiusServer,
   RadiusCodec,
@@ -19,14 +19,16 @@ import {
   verifySubscriberPassword,
 } from '@allah/sentinel-radius';
 import { registerAddonsFor } from '../../../addons/index';
+import { recordNotifyEvent } from '../../../addons/mw_notify/services/events';
+import { loadDefaultData as loadNotifyDefaultData } from '../../../addons/mw_notify/data/index';
 import crypto from 'crypto';
 import dgram from 'dgram';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Get models
-const SentinelAccountModel = modelRegistry.get('sentinel.account');
-const SentinelSessionModel = modelRegistry.get('sentinel.session');
+let SentinelAccountModel = modelRegistry.get('sentinel.account');
+let SentinelSessionModel = modelRegistry.get('sentinel.session');
 
 // Configuration
 const AUTH_PORT = Number(process.env.SENTINEL_AUTH_PORT) || 1812;
@@ -149,6 +151,64 @@ async function resolveNasByIp(ip: string): Promise<NasCacheEntry | null> {
   }
 }
 
+// Cross-replica NAS secret-rotation invalidation (roadmap T3.3). The hub writes an
+// append-only outbox row whenever a `nexus.nas` record changes (see `ARSY_SYNC_MODELS`
+// in the ORM migrator; the trigger already strips every `*_encrypted`/`*_hash` column
+// before the payload lands in the ledger, so no secret material crosses the boundary).
+// The sentinel drains that ledger under its OWN consumer name — delivery is tracked per
+// (outbox_seq, consumer), so it never contends with other consumers' acks — and drops
+// the matching process-local cache entry. The next authentication then re-resolves the
+// freshly rotated secret from source instead of serving a stale one.
+const NAS_SYNC_CONSUMER = 'sentinel';
+const configuredNasSyncPollMs = Number(process.env.SENTINEL_NAS_SYNC_POLL_MS);
+const NAS_SYNC_POLL_MS =
+  Number.isSafeInteger(configuredNasSyncPollMs) && configuredNasSyncPollMs > 0
+    ? configuredNasSyncPollMs
+    : 5000;
+
+/**
+ * Drop cached NAS state for one outbox event. Targets the entry by IP (the cache key)
+ * AND by nas id (covers a record whose IP itself moved), so a rotation that kept the
+ * same IP or changed it both invalidate correctly.
+ */
+function invalidateNasCacheFromOutbox(row: SyncOutboxRow): void {
+  if (row.model_name !== 'nexus.nas') return;
+  const ip = typeof row.payload?.['ip_address'] === 'string' ? (row.payload['ip_address'] as string) : undefined;
+  const recordId = Number(row.record_id);
+  if (ip) nasCache.delete(ip);
+  if (Number.isFinite(recordId)) {
+    for (const [key, entry] of nasCache) {
+      if (entry.nasId === recordId) nasCache.delete(key);
+    }
+  }
+  logger.info({ ip, recordId, operation: row.operation }, 'Invalidated NAS cache via sync outbox');
+}
+
+/**
+ * Start the periodic outbox drain. Returns a stop handle so shutdown can clear the
+ * timer. The drain is best-effort: a transient failure is logged and retried next
+ * tick rather than crashing the RADIUS daemon (boot-resilience invariant).
+ */
+function startNasSyncSubscriber(): { stop: () => void } {
+  let running = false;
+  const tick = async () => {
+    if (running) return; // never overlap drains on a slow poll
+    running = true;
+    try {
+      await drainOutbox(NAS_SYNC_CONSUMER, async (row) => invalidateNasCacheFromOutbox(row));
+    } catch (err) {
+      logger.warn({ err }, 'NAS sync outbox drain failed; will retry next tick');
+    } finally {
+      running = false;
+    }
+  };
+  const timer = setInterval(() => void tick(), NAS_SYNC_POLL_MS);
+  // Do not hold the event loop open solely for the poller.
+  timer.unref?.();
+  void tick();
+  return { stop: () => clearInterval(timer) };
+}
+
 /**
  * Create Access-Accept response with MikroTik Rate Limit VSA
  */
@@ -256,6 +316,53 @@ function checkAcctDedup(key: string): boolean {
   return false; // New packet
 }
 
+// Roadmap T3.4 producer throttle: a genuine credential failure emits a
+// `radius.auth_failure` notify.event, but a brute-force burst must not flood the
+// append-only log. Per (NAS IP, username) we record at most one alert per window;
+// expired keys are pruned and the process-local map has a fixed size limit.
+const configuredRadiusAuthAlertCooldown = Number(process.env.SENTINEL_RADIUS_AUTH_ALERT_COOLDOWN_MS);
+const RADIUS_AUTH_ALERT_COOLDOWN_MS =
+  Number.isSafeInteger(configuredRadiusAuthAlertCooldown) && configuredRadiusAuthAlertCooldown > 0
+    ? configuredRadiusAuthAlertCooldown
+    : 60_000;
+const RADIUS_AUTH_ALERT_MAX_KEYS = 10_000;
+const radiusAuthAlertLastAt = new Map<string, number>();
+let nextRadiusAuthAlertPruneAt = 0;
+
+/** Emit one throttled auth-failure event; never throws into the auth path. */
+async function recordRadiusAuthFailure(
+  nasEntry: NasCacheEntry,
+  nasIp: string,
+  username: string | undefined,
+  reason: string,
+): Promise<void> {
+  const key = `${nasIp}|${username ?? ''}`;
+  const now = Date.now();
+  if (now >= nextRadiusAuthAlertPruneAt) {
+    const expiredBefore = now - RADIUS_AUTH_ALERT_COOLDOWN_MS;
+    for (const [entryKey, lastAt] of radiusAuthAlertLastAt) {
+      if (lastAt <= expiredBefore) radiusAuthAlertLastAt.delete(entryKey);
+    }
+    nextRadiusAuthAlertPruneAt = now + Math.min(RADIUS_AUTH_ALERT_COOLDOWN_MS, 60_000);
+  }
+  const last = radiusAuthAlertLastAt.get(key);
+  if (last !== undefined && now - last < RADIUS_AUTH_ALERT_COOLDOWN_MS) return;
+  if (!radiusAuthAlertLastAt.has(key) && radiusAuthAlertLastAt.size >= RADIUS_AUTH_ALERT_MAX_KEYS) {
+    const oldestKey = radiusAuthAlertLastAt.keys().next().value;
+    if (oldestKey !== undefined) radiusAuthAlertLastAt.delete(oldestKey);
+  }
+  radiusAuthAlertLastAt.set(key, now);
+  try {
+    await recordNotifyEvent({
+      companyId: nasEntry.companyId,
+      templateCode: 'radius.auth_failure',
+      payload: { nas_ip: nasIp, username: username ?? '', reason },
+    });
+  } catch (err) {
+    logger.warn({ err, nasIp, username }, 'Failed to append radius.auth_failure notify event');
+  }
+}
+
 /**
  * Handle Access-Request
  */
@@ -314,6 +421,7 @@ async function handleAccessRequest(
   const ok = verifySubscriberPassword(passwordStr, account.password_hash, account.password_salt);
   if (!ok) {
     logger.warn({ username, accountId: account.id }, 'Password verification failed');
+    await recordRadiusAuthFailure(nasEntry, rinfo.address, username, 'password mismatch');
     return createAccessReject(packet, nasEntry.secret, 'Invalid username or password');
   }
 
@@ -500,8 +608,13 @@ async function startSentinel() {
   logger.info(`HTTP Port: ${config.httpPort}`);
 
   // Dependency-ordered load (T8): requesting `nexus` transitively pulls `base`
-  // so the sentinel registers the same foundational models as the hub.
-  registerAddonsFor(['nexus'], (message) => logger.info(message));
+  // so the sentinel registers the same foundational models as the hub. `mw_notify`
+  // is added (roadmap T3.4) so the RADIUS auth-failure producer writes `notify.event`
+  // rows the hub's `notify_dispatch` cron drains; it transitively pulls `project`
+  // (its dispatch-registry dependency) without starting a runner in this process.
+  registerAddonsFor(['nexus', 'mw_notify'], (message) => logger.info(message));
+  SentinelAccountModel = modelRegistry.get('sentinel.account');
+  SentinelSessionModel = modelRegistry.get('sentinel.session');
   await dbEngine.connect();
   logger.info('Database connected');
 
@@ -509,6 +622,20 @@ async function startSentinel() {
   const migrator = await import('@allah/arsy-orm').then(m => new m.SchemaMigrator(dbEngine));
   await migrator.sync();
   logger.info('Database schema synchronized');
+  await loadNotifyDefaultData({
+    repository: (modelName) => {
+      const model = modelRegistry.get(modelName);
+      if (!model) throw new Error(`Cannot seed Sentinel notification data: model '${modelName}' is not registered`);
+      return new BaseRepository(model, dbEngine, dbEngine);
+    },
+    actor: SYSTEM_ACTOR,
+  });
+  logger.info('Notification templates synchronized');
+
+  // Subscribe to the cross-app sync outbox so rotated NAS secrets drop stale
+  // cache entries within one poll interval instead of surviving the full TTL.
+  const nasSyncSubscriber = startNasSyncSubscriber();
+  logger.info(`NAS sync subscriber started (poll ${NAS_SYNC_POLL_MS}ms)`);
 
   // Create UDP Auth Server
   const authServer = dgram.createSocket('udp4');
@@ -658,7 +785,8 @@ async function startSentinel() {
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}. Shutting down...`);
-    
+
+    nasSyncSubscriber.stop();
     authServer.close();
     acctServer.close();
     httpServer.close();

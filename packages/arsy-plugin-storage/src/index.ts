@@ -211,6 +211,134 @@ const storagePluginAsync: FastifyPluginAsync<StoragePluginOptions> = async (fast
     const bytesRemoved = await cas.remove(digest);
     return ok({ digest, attachmentReleased: true, bytesRemoved });
   });
+
+  // PATCH /api/storage/:digest/retention — manage the legal_hold / retention_until
+  // invariant end-to-end (roadmap T3.5). Before this the fail-closed DELETE was only
+  // reachable by flipping the flags straight in the database (as the tests did) and the
+  // `ir.legal.hold` model had no producer at all. Placing a hold also appends an
+  // `ir.legal.hold` provenance row; releasing stamps `released_at` on the open hold.
+  // Tenant + actor still derive only from the verified principal, never the body.
+  fastify.patch<{
+    Params: { digest: string };
+    Body: { legal_hold?: boolean; retention_until?: string | null; reason?: string };
+  }>(`${prefix}/:digest/retention`, async (request, reply) => {
+    let tenant: { companyId: number; ormUserId: number };
+    try {
+      tenant = principalOf(request);
+    } catch (err: any) {
+      reply.status(err.statusCode ?? 401);
+      return fail(err.code ?? 'UNAUTHORIZED', err.message);
+    }
+
+    const { digest } = request.params;
+    if (!DIGEST_PATTERN.test(digest)) {
+      reply.status(400);
+      return fail('VALIDATION_ERROR', 'Invalid digest format');
+    }
+
+    const body = request.body || {};
+    const setsHold = body.legal_hold === true;
+    const clearsHold = body.legal_hold === false;
+    const setsRetention = 'retention_until' in body;
+    if (!setsHold && !clearsHold && !setsRetention) {
+      reply.status(400);
+      return fail('VALIDATION_ERROR', 'Provide legal_hold and/or retention_until to update');
+    }
+
+    // A retention value must be a real datetime or an explicit null clear; garbage is
+    // refused fail-closed so a malformed body can never silently disable the hold.
+    let retentionUntil: string | null | undefined;
+    if (setsRetention) {
+      if (body.retention_until === null) {
+        retentionUntil = null;
+      } else {
+        const raw = body.retention_until;
+        const parsed = typeof raw === 'string' ? new Date(raw) : new Date('invalid');
+        if (Number.isNaN(parsed.getTime())) {
+          reply.status(400);
+          return fail('VALIDATION_ERROR', 'retention_until must be a valid ISO datetime or null');
+        }
+        retentionUntil = parsed.toISOString();
+      }
+    }
+
+    if (setsHold && !(typeof body.reason === 'string' && body.reason.trim() !== '')) {
+      reply.status(400);
+      return fail('VALIDATION_ERROR', 'A non-empty reason is required to place a legal hold');
+    }
+
+    const repo = attachmentRepo();
+    const rows = await repo.find({
+      scope: { companyId: tenant.companyId },
+      filters: [{ field: 'digest', operator: '=', value: digest }],
+      limit: 1,
+    });
+    const attachment = rows[0];
+    if (!attachment) {
+      reply.status(404);
+      return fail('NOT_FOUND', `Attachment with digest ${digest} not found`);
+    }
+
+    const actor = { type: 'user' as const, userId: tenant.ormUserId };
+    const updates: Record<string, unknown> = {};
+    if (setsHold || clearsHold) updates.legal_hold = setsHold;
+    if (setsRetention) updates.retention_until = retentionUntil;
+
+    const updated = await repo.updateById(
+      Number(attachment.id),
+      updates,
+      { companyId: tenant.companyId },
+      actor
+    );
+    if (!updated) {
+      reply.status(409);
+      return fail('NOT_FOUND', 'Attachment could not be updated');
+    }
+
+    // Provenance ledger: `ir.legal.hold` is only touched when mw_storage registered it,
+    // so the plugin degrades gracefully on hosts that mount storage without the addon.
+    const holdModel = modelRegistry.get('ir.legal.hold');
+    if (holdModel) {
+      const holdRepo = new BaseRepository(holdModel);
+      if (setsHold) {
+        await holdRepo.create(
+          {
+            name: `HOLD-${Number(attachment.id)}-${Date.now()}`,
+            attachment_id: Number(attachment.id),
+            res_model: attachment.res_model ?? null,
+            res_id: attachment.res_id ?? null,
+            reason: (body.reason as string).trim(),
+            held_at: new Date().toISOString(),
+          },
+          { companyId: tenant.companyId },
+          actor
+        );
+      } else if (clearsHold && attachment.legal_hold === true) {
+        const openHolds = await holdRepo.find({
+          scope: { companyId: tenant.companyId },
+          filters: [
+            { field: 'attachment_id', operator: '=', value: Number(attachment.id) },
+            { field: 'released_at', operator: '=', value: null },
+          ],
+        });
+        const releasedAt = new Date().toISOString();
+        for (const hold of openHolds) {
+          await holdRepo.updateById(
+            Number(hold.id),
+            { released_at: releasedAt },
+            { companyId: tenant.companyId },
+            actor
+          );
+        }
+      }
+    }
+
+    return ok({
+      digest,
+      legal_hold: updated.legal_hold === true,
+      retention_until: updated.retention_until ?? null,
+    });
+  });
 };
 
 export const storagePlugin = fp(storagePluginAsync, {

@@ -1,27 +1,31 @@
-// Lightweight cron runner that polls ir.cron every 10 s and executes due jobs.
-// Cross-tenant by design — the outbox pattern used in sync.ts applies here too:
-// each row still carries company_id for downstream scoping.
+// Cron work queue (roadmap T3.2). Polls ir.cron every 10 s and dispatches due
+// jobs through the addon-owned handler registry.
 //
-// All reads/writes go through the registered `ir.cron` / `project.project`
-// repositories rather than raw SQL (roadmap T3.1), so every state transition
-// flows through the ORM's tenant-scope + audit triggers. The claim is an
-// optimistic compare-and-swap on the row's previously-read `state`.
+// Claiming is a `FOR UPDATE SKIP LOCKED` select + a `state = running` write inside
+// ONE transaction (T2.2 `forUpdate` + `withTransaction`), so a concurrent runner
+// takes the next unlocked rows instead of racing on the same job. PGlite is a
+// single embedded writer, so this is about claim *correctness* and per-process
+// kind partitioning (`ARSY_CRON_KINDS`), not write throughput. The job body runs
+// AFTER the claim commits, so a handler that opens its own transaction never
+// nests inside the claim. Failures back off exponentially via `attempt_count`.
 
-import { BaseRepository, SYSTEM_ACTOR, dbEngine, type TenantScope } from '@allah/arsy-orm';
+import { BaseRepository, SYSTEM_ACTOR, dbEngine, withTransaction, type QueryFilter, type TenantScope } from '@allah/arsy-orm';
 import { IrCron } from '../models/ir_cron';
-import { ProjectProject } from '../models/project_project';
+import { resolveCronHandler } from './cron_registry';
 
 const POLL_INTERVAL_MS = 10_000;
+const CLAIM_BATCH = 10;
+// Exponential backoff ceiling so a persistently failing job cannot spin the loop.
+const MAX_BACKOFF_MS = 6 * 60 * 60 * 1000;
 
-interface CronRow extends Record<string, unknown> {
+interface ClaimedCron extends Record<string, unknown> {
   id: number;
   company_id: number;
-  name: string;
   model_name: string | null;
-  method_name: string | null;
+  method_name: string;
   interval_number: number;
   interval_unit: 'seconds' | 'minutes' | 'hours' | 'days';
-  state: string;
+  attempt_count: number;
   run_count: number;
 }
 
@@ -34,74 +38,109 @@ function intervalToMs(number: number, unit: string): number {
   }
 }
 
-async function runDueCrons(): Promise<void> {
-  const now = new Date().toISOString();
-  const cronRepo = new BaseRepository<CronRow>(IrCron, dbEngine);
-  const projectRepo = new BaseRepository<Record<string, unknown>>(ProjectProject, dbEngine);
+// `ARSY_CRON_KINDS` partitions jobs across runner processes by dispatch method.
+// Undefined => this process runs every kind; a defined value (even empty) =>
+// only the listed method names. Keeps "run all" and "run none" explicit.
+function allowedKinds(): Set<string> | null {
+  const raw = process.env.ARSY_CRON_KINDS;
+  if (raw === undefined) return null;
+  return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
+}
 
-  // Cross-tenant poll: `systemScope` reads every tenant's due rows (the row's
-  // own company_id scopes each job's work below). The default `active = true`
-  // filter is applied by the builder.
-  const due = await cronRepo.find({
-    scope: { systemScope: true },
-    filters: [
-      { field: 'state', operator: '!=', value: 'running' },
+function backoffMs(intervalMs: number, attempt: number): number {
+  const scaled = intervalMs * 2 ** Math.max(0, attempt - 1);
+  return Math.min(scaled, MAX_BACKOFF_MS);
+}
+
+// Atomically claim a batch of due, non-running, non-disabled jobs and mark them
+// running. Returns the rows with their post-increment `attempt_count`; the row
+// locks are held only for the duration of this transaction.
+async function claimDueCrons(now: string): Promise<ClaimedCron[]> {
+  const kinds = allowedKinds();
+  return withTransaction(async ({ repositoryFor }) => {
+    const repo = repositoryFor<ClaimedCron>(IrCron);
+    const filters: QueryFilter[] = [
+      { field: 'state', operator: 'IN', value: ['idle', 'error'] },
       { field: 'nextcall', operator: '<=', value: now },
-    ],
-    orderBy: 'nextcall',
-    limit: 10,
+    ];
+    if (kinds) filters.push({ field: 'method_name', operator: 'IN', value: [...kinds] });
+
+    const due = await repo.find({
+      scope: { systemScope: true },
+      filters,
+      orderBy: 'nextcall',
+      forUpdate: 'skip_locked',
+      limit: CLAIM_BATCH,
+    });
+
+    const claimed: ClaimedCron[] = [];
+    for (const cron of due) {
+      const writeScope: TenantScope = { systemScope: true, companyId: cron.company_id };
+      const attemptCount = Number(cron.attempt_count ?? 0) + 1;
+      const marked = await repo.updateById(
+        cron.id,
+        { state: 'running', attempt_count: attemptCount },
+        writeScope,
+        SYSTEM_ACTOR,
+        { state: String(cron.state ?? 'idle') },
+      );
+      if (marked) claimed.push({ ...cron, attempt_count: attemptCount });
+    }
+    return claimed;
   });
+}
 
-  for (const cron of due) {
+// Exported as a deterministic one-poll seam for tests (the loop calls it per
+// tick); production entry is `startCronRunner`.
+export async function runDueCrons(): Promise<void> {
+  const now = new Date().toISOString();
+  const claimed = await claimDueCrons(now);
+  if (claimed.length === 0) return;
+
+  const finalizeRepo = new BaseRepository<ClaimedCron>(IrCron, dbEngine);
+
+  for (const cron of claimed) {
     const writeScope: TenantScope = { systemScope: true, companyId: cron.company_id };
-
-    // Optimistic lock through the registered repository: the CAS `expected`
-    // clause only wins if nobody else transitioned the row since we read it,
-    // and the write is audited like every other ORM mutation.
-    const claimed = await cronRepo.updateById(
-      cron.id,
-      { state: 'running' },
-      writeScope,
-      SYSTEM_ACTOR,
-      { state: cron.state },
-    );
-    if (!claimed) continue;
+    const intervalMs = intervalToMs(cron.interval_number, cron.interval_unit);
 
     let lastError = '';
-    try {
-      // Dispatch table: extend here as new cron methods are added.
-      if (cron.method_name === 'sync_local_plans') {
-        // Deferred import to avoid circular dependency at module load time.
-        const { reconcilePlans } = await import('./sync_worker');
-        const projects = await projectRepo.find({
-          scope: { companyId: cron.company_id },
-          filters: [{ field: 'sync_mode', operator: '!=', value: 'disabled' }],
+    const handler = resolveCronHandler(cron.method_name);
+    if (!handler) {
+      lastError = `No cron handler registered for '${cron.method_name}'`;
+    } else {
+      try {
+        await handler({
+          id: cron.id,
+          company_id: cron.company_id,
+          model_name: cron.model_name,
+          method_name: cron.method_name,
+          attempt_count: cron.attempt_count,
         });
-        // Projects without a workspace_path use Extension-push sync only; skip here.
-        for (const project of projects) {
-          if (!project.workspace_path) continue;
-          // The Hub running in a local dev environment with filesystem access
-          // can call reconcilePlans with an empty plans array to trigger a no-op
-          // that updates last_sync_at. Full sync via Extension push is preferred.
-          await reconcilePlans(cron.company_id, Number(project.id), []);
-        }
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err.message : String(err);
       }
-    } catch (err: unknown) {
-      lastError = err instanceof Error ? err.message : String(err);
     }
 
-    const nextcall = new Date(Date.now() + intervalToMs(cron.interval_number, cron.interval_unit)).toISOString();
-    await cronRepo.updateById(
-      cron.id,
-      {
-        state: lastError ? 'error' : 'idle',
-        nextcall,
-        last_error: lastError,
-        run_count: cron.run_count + 1,
-      },
-      writeScope,
-      SYSTEM_ACTOR,
-    );
+    if (lastError) {
+      // Keep `attempt_count` (already incremented) and park the next attempt on
+      // an exponential backoff so a failing job cannot hot-loop.
+      const delay = backoffMs(intervalMs, cron.attempt_count);
+      const nextcall = new Date(Date.now() + delay).toISOString();
+      await finalizeRepo.updateById(
+        cron.id,
+        { state: 'error', nextcall, next_retry_at: nextcall, last_error: lastError },
+        writeScope,
+        SYSTEM_ACTOR,
+      );
+    } else {
+      const nextcall = new Date(Date.now() + intervalMs).toISOString();
+      await finalizeRepo.updateById(
+        cron.id,
+        { state: 'idle', nextcall, next_retry_at: null, last_error: '', run_count: cron.run_count + 1, attempt_count: 0 },
+        writeScope,
+        SYSTEM_ACTOR,
+      );
+    }
   }
 }
 

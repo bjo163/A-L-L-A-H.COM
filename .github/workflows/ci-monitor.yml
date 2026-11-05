@@ -1,11 +1,11 @@
 name: CI Monitor & Auto-Fix
 
 on:
-  schedule:
-    # Hourly is plenty: ci-dev.yml already gates every push, this job only
-    # watches for failures and attempts mechanical auto-fixes.
-    - cron: '0 * * * *'
-  workflow_dispatch: # Allow manual trigger
+  workflow_run:
+    workflows: ["CI Validation Gate & Promotion"]
+    types: [completed]
+    branches: [dev]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,6 +17,7 @@ concurrency:
 jobs:
   monitor:
     name: Monitor CI & Auto-Fix
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Only this job pushes auto-fixes, so only it holds write permissions.
@@ -52,6 +53,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          CI_MONITOR_RUN_ID: ${{ github.event.workflow_run.id }}
         # continue-on-error: the monitor itself failing (e.g. API hiccup) must
         # not look like a repo problem; downstream steps act on git state.
         continue-on-error: true

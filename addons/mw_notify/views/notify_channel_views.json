@@ -1,0 +1,24 @@
+{
+  "model": "notify.channel",
+  "views": {
+    "tree": {
+      "title": "Notification Channels",
+      "fields": [
+        { "name": "name", "label": "Channel Name", "sortable": true },
+        { "name": "channel_type", "label": "Type" },
+        { "name": "base_url", "label": "Base URL" },
+        { "name": "is_active", "label": "Active" }
+      ]
+    },
+    "form": {
+      "title": "Notification Channel Details",
+      "fields": [
+        { "name": "name", "label": "Channel Name", "col_span": 12 },
+        { "name": "channel_type", "label": "Type", "col_span": 6 },
+        { "name": "base_url", "label": "Base URL", "col_span": 6 },
+        { "name": "recipient_default", "label": "Default Recipient", "col_span": 6 },
+        { "name": "is_active", "label": "Active", "col_span": 6 }
+      ]
+    }
+  }
+}

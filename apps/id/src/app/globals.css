@@ -231,10 +231,49 @@
 @media (max-width: 40rem) {
   .id-auth-page {
     padding: 1rem 0.75rem 2rem;
+    overflow-x: clip;
   }
 
   .id-auth-form {
     max-width: none;
     padding-inline: 0.25rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .id-auth-form [data-slot="card"],
+  .id-auth-form [data-slot="status"] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .id-auth-form [data-slot="status-title"],
+  .id-auth-form [data-slot="status-message"] {
+    overflow-wrap: anywhere;
+  }
+
+  .id-auth-form [data-slot="input"] {
+    min-width: 0;
+  }
+
+  .id-auth-hero,
+  .id-auth-hero [data-slot="hero-kicker"],
+  .id-auth-hero [data-slot="hero-title"],
+  .id-auth-hero [data-slot="hero-summary"] {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .id-account-profile__identity {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .id-account-profile__identity > div {
+    min-width: 0;
+    width: 100%;
   }
 }

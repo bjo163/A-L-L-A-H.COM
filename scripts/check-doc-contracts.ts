@@ -1,6 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  CONTRACT_SCHEMA,
+  listUnits,
+  parseContractMarkdown,
+  setsEqual,
+  validateContractScalars,
+} from '../packages/lint/src/contract/parse.mjs';
 
 interface DocMetadata {
   contract?: string;
@@ -194,6 +201,75 @@ function checkDnaCanon(repoRoot: string): string[] {
   return errors;
 }
 
+/**
+ * Per-unit CONTRACT.md coverage and thin consistency.
+ *
+ * Every structural unit (addon, package, app) must ship a CONTRACT.md whose
+ * frontmatter obeys the shared schema (`packages/lint/src/contract/schema.json`
+ * — the same one `contract:check` and the arch gate read): a `tier` field,
+ * `owner`, semver `version`, ISO `last_verified`, a valid `status`, and the
+ * fields that name it. For addons we also cross-check that the declared
+ * `models`/`data` mirror `__manifest__.json` (the deep defineModel-vs-code check
+ * lives in `contract:check` / the arch gate). This is the documentation-side
+ * gate; a missing or malformed contract is a hard error.
+ */
+function checkUnitContracts(repoRoot: string): string[] {
+  const errors: string[] = [];
+  const units = listUnits(repoRoot);
+
+  for (const unit of units) {
+    const contractPath = path.join(repoRoot, unit.dir, 'CONTRACT.md');
+    if (!fs.existsSync(contractPath)) {
+      errors.push(`[${unit.dir}/CONTRACT.md] Missing required unit contract document`);
+      continue;
+    }
+    const content = fs.readFileSync(contractPath, 'utf-8');
+    const doc = parseContractMarkdown(content);
+
+    const prefix = `[${unit.dir}/CONTRACT.md]`;
+    // Shared schema, rendered in this gate's historical wording.
+    validateContractScalars(doc, unit.tier, {
+      report: (code, p) => {
+        switch (code) {
+          case 'malformed-frontmatter': errors.push(`${prefix} Missing required unit contract document frontmatter`); break;
+          case 'missing-field': errors.push(`${prefix} Missing required frontmatter field '${p.field}'`); break;
+          case 'tier': errors.push(`${prefix} tier '${p.actual}' does not match unit location '${p.tier}'`); break;
+          case 'tier-unknown': errors.push(`${prefix} tier '${p.actual}' not in ${CONTRACT_SCHEMA.tiers.join(', ')}`); break;
+          case 'id': errors.push(`${prefix} id '${p.actual}' must be UPPER_SNAKE`); break;
+          case 'version': errors.push(`${prefix} Invalid semantic version: "${p.actual}"`); break;
+          case 'status': errors.push(`${prefix} Invalid status: "${p.actual}". Allowed: ${CONTRACT_SCHEMA.statuses.join(', ')}`); break;
+          case 'last_verified': errors.push(`${prefix} Invalid date format for last_verified (expected YYYY-MM-DD): "${p.actual}"`); break;
+        }
+      },
+    });
+
+    errors.push(...checkAntislop(`${unit.dir}/CONTRACT.md`, doc ? doc.body : content.split('---').slice(2).join('---')));
+
+    // Thin addon consistency vs manifest (deep check is contract:check / lint:arch).
+    if (unit.tier === 'addon' && doc) {
+      const manifestPath = path.join(repoRoot, unit.dir, '__manifest__.json');
+      if (fs.existsSync(manifestPath)) {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as { name?: string; models?: string[]; data?: string[] };
+        if (doc.scalars.name && manifest.name && doc.scalars.name !== manifest.name) {
+          errors.push(`${prefix} name '${doc.scalars.name}' != manifest name '${manifest.name}'`);
+        }
+        const lists = doc.lists;
+        if (!Array.isArray(lists.models)) {
+          errors.push(`${prefix} addon must declare a 'models' list`);
+        } else if (Array.isArray(manifest.models) && !setsEqual(lists.models, manifest.models)) {
+          errors.push(`${prefix} models list does not mirror __manifest__.json`);
+        }
+        if (!Array.isArray(lists.data)) {
+          errors.push(`${prefix} addon must declare a 'data' list (empty allowed)`);
+        } else if (Array.isArray(manifest.data) && !setsEqual(lists.data, manifest.data)) {
+          errors.push(`${prefix} data list does not mirror __manifest__.json`);
+        }
+      }
+    }
+  }
+  return errors;
+}
+
 function main() {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   console.log(`\n============================================================`);
@@ -286,6 +362,13 @@ function main() {
   if (dnaErrors.length > 0) {
     totalErrors.push(...dnaErrors);
     frontmatterScore = Math.max(0, frontmatterScore - dnaErrors.length * 2);
+  }
+
+  // Per-unit CONTRACT.md coverage + stricter schema + thin manifest consistency.
+  const unitContractErrors = checkUnitContracts(repoRoot);
+  if (unitContractErrors.length > 0) {
+    totalErrors.push(...unitContractErrors);
+    frontmatterScore = Math.max(0, frontmatterScore - unitContractErrors.length * 2);
   }
 
   for (const insp of inspections) {

@@ -94,6 +94,11 @@ async function ghApi(endpoint: string, options: RequestInit = {}): Promise<any> 
 }
 
 async function getLatestWorkflowRuns(): Promise<WorkflowRun[]> {
+  const runId = process.env.CI_MONITOR_RUN_ID;
+  if (runId && /^\d+$/.test(runId)) {
+    const run = await ghApi(`/actions/runs/${runId}`);
+    return [run];
+  }
   const runs = await ghApi(`/actions/runs?branch=${BRANCH}&per_page=20&status=completed`);
   return runs.workflow_runs || [];
 }
