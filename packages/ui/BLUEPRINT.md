@@ -941,3 +941,746 @@ Do not:
 - A new component, asset family, or rendering technology must solve a real user task and justify its maintenance/performance cost.
 
 **North star:** the user should feel they have entered a distinct, beautifully authored world — but every action remains obvious, every fact remains honest, and the experience remains fast, accessible, and dependable.
+
+
+---
+
+# PART II — THE MOON UI CREATIVE INTERFACE ENGINE
+
+## 19. Expanded mission: from component library to creative engine
+
+Moon UI is the **Creative Interface Engine** for A-L-L-A-H.COM and the MoonWitness ecosystem. It is responsible for the complete visual language and production system through which applications become recognizable worlds.
+
+It must provide more than reusable React components. It must provide:
+1. a semantic visual grammar;
+2. six world-specific art directions;
+3. a complete atomic-to-composition hierarchy;
+4. identity, logo, icon and vector systems;
+5. artwork, cover, avatar and media production contracts;
+6. skin, token, material and typography systems;
+7. motion, effect and transition systems;
+8. loading, progress, feedback and state experiences;
+9. original sound-effect language;
+10. asset registry, provenance and delivery pipeline;
+11. generators and preview laboratories;
+12. automated and human visual certification.
+
+The engine is complete only when an application can compose a distinctive world from shared foundations without inventing a parallel component, palette, asset convention, motion system, or identity language.
+
+## 20. Moon UI architecture: the complete hierarchy
+
+The architecture is a layered production grammar. A higher layer composes lower layers; it must not bypass their contracts.
+
+```
+WORLD / APP EXPERIENCE
+  ├── World composition and page scene
+  │     ├── Blocks and templates
+  │     │     ├── Components and media objects
+  │     │     │     ├── Atoms
+  │     │     │     ├── Primitives
+  │     │     │     └── Raw layout
+  │     ├── Skin recipe and semantic tokens
+  │     ├── Artwork / brand / icon / vector assets
+  │     ├── Motion / effects / transitions
+  │     ├── SFX / sensory behavior
+  │     └── Loading / empty / error / offline / success states
+  └── Data and domain state supplied by the application
+```
+
+### 20.1 The package domains
+
+| Domain | Responsibility | Output |
+|---|---|---|
+| `atoms` | Smallest semantic visual units | typography roles, marks, dividers, indices, status |
+| `raw` | Layout-only structure | stack, cluster, grid, container, flow |
+| `primitives` | Interaction and runtime mechanics | focus, portal, overlay, selection, motion |
+| `components` | Accessible reusable controls and objects | inputs, buttons, menus, media, data controls |
+| `blocks` | Reusable task-level sections | hero, route shell, inspector, timeline, state panels |
+| `compositions` | Signature multi-block world scenes | gate, orbit, filmstrip, instrument bay, poster wall, network |
+| `templates` | Complete repeatable page archetypes | archive detail, chapter reader, world entry, operator workspace |
+| `skins` | Six complete world grammars | tokens, identity, type, shape, materials, motion, SFX |
+| `effects` | Visual atmosphere and scene effects | depth, grain, light, parallax, reveal |
+| `motion` | Named transition and choreography contracts | enter, focus, settle, route transition |
+| `sfx` | Original interface audio | interaction and ambient cues |
+| `assets` | Asset metadata, lookup and resolution | typed manifest, variants, fallbacks |
+| `foundry` | Asset production tools and specifications | avatar, logo, icon, cover, artwork generators |
+| `lab` | Preview, compare and certify | Skin Laboratory, asset preview, motion/sound test |
+| `tokens` | Single design-value authority | semantic and DNA token exports |
+
+The existing package may keep its current physical directory names where they already satisfy architecture. New directories must not be created simply to make the tree look comprehensive. Introduce a new module only with clear ownership and public API.
+
+## 21. Atomic design and component universe
+
+### 21.1 Atom family
+
+Atoms are the smallest reusable visual and semantic units. They are not miniature branded widgets.
+
+**Typography atoms**
+- DisplayText, Heading, BodyText, Label, Caption, Eyebrow, Kicker, Overline, MonoText, NumericText, InlineCode, QuoteMark, DropCap.
+- Text roles define semantic purpose, not arbitrary font-size aliases.
+- Display and narrative roles may vary by DNA; body readability and semantic hierarchy remain stable.
+
+**Signal and metadata atoms**
+- StatusMark, SignalDot, IndexMark, SequenceNumber, Counter, Timestamp, SourceNote, MetadataPair, RankMark, DataValue, UnitLabel.
+- Only real states/data may be represented as live indicators.
+
+**Line and frame atoms**
+- Hairline, Divider, Rule, Frame, CornerMark, Bracket, Notch, Rail, Track, AxisLine, ConnectorLine, OrbitArc, PathSegment, PanelGutter, RegistrationMark.
+- Line geometry has a tokenized stroke scale, cap, join, dash, opacity and semantic role.
+
+**Surface atoms**
+- Surface, InsetSurface, RaisedSurface, EdgeLight, TextureLayer, MaterialPlate, BackdropPlane.
+- Surface is a material primitive, not a mandate to put every item inside a card.
+
+**Identity atoms**
+- EmblemMark, Wordmark, BrandLockup, AvatarFrame, IconFrame, RoleSigil, Monogram.
+- Identity assets must resolve through the brand registry, not arbitrary text glyphs.
+
+**State atoms**
+- FocusRing, SelectionMark, ActiveRail, ProgressSegment, LoadingMark, ValidationMark, EmptyGlyph.
+- State atoms must have accessible text or a semantic parent.
+
+### 21.2 Raw layout primitives
+
+The raw layer is deliberately brand-neutral:
+- RawContainer, RawSection, RawStack, RawCluster, RawGrid;
+- RawInline, RawFlow, RawColumns, RawMasonry (only if deterministic and accessible);
+- RawCenter, RawBleed, RawAspect, RawSpacer, RawDivider;
+- RawViewport, RawScrollRegion, RawStickyRegion, RawSplitPane.
+
+Raw primitives own layout and responsive mechanics only. They must not import skin-specific artwork, brand marks, domain state, or business data.
+
+### 21.3 Interaction primitives
+
+Native-first behavior primitives:
+- FocusScope and FocusReturn;
+- PortalRoot and LayerManager;
+- DismissableLayer;
+- RovingFocus;
+- SelectionGroup;
+- Pressable and ToggleState;
+- ScrollLock;
+- ReducedMotion;
+- MotionPreference;
+- Presence;
+- ResizeObserver adapter;
+- VisuallyHidden;
+- Announcer / LiveRegion;
+- OutsideInteraction;
+- KeyboardShortcut;
+- PointerIntent.
+
+Use native browser semantics first. Add a dependency only when a documented accessibility or interaction requirement cannot be reliably met with platform primitives. Every primitive requires keyboard, touch, screen-reader and cleanup tests.
+
+### 21.4 Complete component taxonomy
+
+This is the long-term component universe. It is intentionally broad, but implementation priority is driven by real application workflows.
+
+**Actions and navigation**
+- Button, IconButton, Link, LinkButton, ButtonGroup, SplitButton, ToggleButton, MenuButton, BackButton, Breadcrumb, Pagination, Tabs, NavigationRail, NavigationList, WorldSwitcher, CommandPalette.
+
+**Text and form controls**
+- Input, Textarea, SearchField, Select, Combobox, Autocomplete, Checkbox, CheckboxGroup, Radio, RadioGroup, Switch, Toggle, Slider, RangeSlider, NumberField, PinInput, DatePicker, TimePicker, DateRangePicker, FileUpload, Dropzone, FormField, Fieldset, FormMessage.
+
+**Menus and disclosure**
+- Menu, DropdownMenu, ContextMenu, Menubar, Accordion, Collapsible, Tooltip, Popover, HoverCard, Disclosure, Sheet, Drawer, Dialog, AlertDialog, Modal, CommandSurface.
+
+**Feedback and status**
+- Badge, StatusBadge, StatusMark, Progress, ProgressRing, Meter, Spinner, Skeleton, Toast, ToastRegion, NotificationItem, NotificationCenter, InlineAlert, Banner, EmptyState, ErrorState, OfflineState, PermissionState, SuccessState.
+
+**Data and information**
+- Table, DataTable, DataList, DescriptionList, KeyValue, Stat, Metric, Timeline, ActivityFeed, Tree, TreeItem, Listbox, VirtualList, LogStream, CodeBlock, DiffView, CopyButton, DataInspector.
+
+**Media and identity**
+- Avatar, AvatarGroup, AvatarStack, AvatarFrame, ProfileIdentity, Emblem, Logo, BrandLockup, Icon, IconButton, Image, ImageFrame, Artwork, Cover, MediaStage, VideoPoster, AudioControl, SoundToggle.
+
+**Spatial and visual**
+- WorldMap, UniverseAtlas, OrbitMap, NodeGraph, RelationshipGraph, Pathway, SceneMarker, FocusReticle, Viewport, MiniMap, SpatialSelector, InstrumentPanel, ScopeFrame, Filmstrip, Poster, ComicPanel, PrintSpread, OrganicNode.
+
+**Utility**
+- Separator, ScrollArea, Scrollbar, Portal, VisuallyHidden, AspectRatio, Resizer, Splitter, DisclosureTrigger, Anchor, FocusBoundary, ErrorBoundary.
+
+Do not implement duplicate components with different names. Prefer variants only when semantics are identical; use distinct components when keyboard or accessibility contracts differ.
+
+### 21.5 Component definition of done
+
+Every public component must specify:
+- semantic HTML element and accessible role;
+- required/optional props and controlled/uncontrolled behavior;
+- keyboard interaction and focus management;
+- touch/pointer interaction;
+- state matrix and validation behavior;
+- responsive behavior;
+- all six skin recipes or an explicit skin exclusion;
+- reduced-motion and sound behavior if relevant;
+- test coverage and visual fixture;
+- package export and API documentation;
+- consumer migration note when changing a public contract.
+
+## 22. Blocks, compositions and templates
+
+### 22.1 Shared task blocks
+
+- PageFrame, RouteShell, AppHeader, EcosystemNavbar, NavigationConstellation;
+- PageHero, CinematicHero, Kicker, SectionHeading, ContentRail, EditorialSpread;
+- DestinationCard, DestinationGrid, DestinationField, WorldSwitcher;
+- SearchSurface, FilterWorkbench, SortBar, CommandSurface;
+- DetailInspector, MetadataPanel, KeyValuePanel, ActivityTimeline;
+- StatePanel, StatusMessage, EmptyStateScene, ErrorScene, OfflineScene, PermissionScene, SuccessScene;
+- LoadingWorld, TransitionCurtain, SceneBoundary, MediaStage;
+- ToolRegistry, ToolDetailPanel, ToolParameterField;
+- SkinLaboratory, AssetLaboratory, MotionLaboratory, SoundLaboratory.
+
+### 22.2 World compositions
+
+**IMPERIUM LUMEN**
+- MonumentalGate, GrandAxis, ThresholdPassage, HallOfPaths, InscribedRecord, HorizonStage, ArchitecturalDestinationField.
+- Composition should express vast scale, measured order, axial geometry and controlled antique-gold light.
+
+**LUNAR CHRONICLES**
+- OrbitalNavigation, LunarTimeline, CelestialArchive, ObservationChamber, UniverseAtlas, PhaseLedger, ConstellationIndex.
+- Astronomy must use sourced values; symbolic narrative is clearly differentiated from observation.
+
+**ROCKSOUL**
+- ChapterCover, Filmstrip, StoryTimeline, TransmissionPoster, TrackSleeve, QuietFrame, NarrativeReader, ChapterEndCard.
+- Keep the silent storyteller canon; human figures are back-facing where appropriate; no copied album/film artwork.
+
+**NEXUS PARADOX**
+- SpatialSelector, InstrumentBay, SensorScope, SystemTopology, CommandRail, CalibrationScene, SignalInspector, OperationTimeline.
+- No invented telemetry, coordinates, activity, or instrument readouts.
+
+**RIOT ANARCHY**
+- ComicSpread, PosterWall, StickerLayer, KineticHeadline, IssueIndex, XeroxArchive, PanelNavigator, PrintCaption.
+- Controlled visual disorder with a clear reading order and accessible panel navigation.
+
+**MYCELIUM**
+- LivingNetwork, OrganicNodeMap, GrowthPath, RelationshipGraph, MembraneDetail, EcosystemPulse, BranchInspector, RootNavigator.
+- Every connection represents real data or is explicitly labeled illustrative.
+
+### 22.3 Templates
+
+Templates are page-level archetypes assembled from blocks and compositions:
+- WorldEntranceTemplate;
+- DestinationExplorerTemplate;
+- ArchiveIndexTemplate and ArchiveDetailTemplate;
+- ChapterIndexTemplate and ChapterReaderTemplate;
+- TransmissionIndexTemplate and TransmissionDetailTemplate;
+- InstrumentWorkspaceTemplate;
+- NetworkExplorerTemplate;
+- ProfileIdentityTemplate;
+- SettingsWorkbenchTemplate;
+- SearchResultsTemplate;
+- Empty/Error/Offline/Permission templates.
+
+A template is not a route and must not fetch application data. Apps supply content, state, permissions and actions.
+
+## 23. The six skin systems — full contract
+
+A skin is a complete world definition, not a palette switch. Each registry entry must eventually provide:
+
+1. stable skin ID, display name, world narrative and canonical app usage;
+2. emblem, wordmark and identity asset references;
+3. semantic colors: canvas, surface, elevated, text, muted, border, focus, accent, success, warning, danger, info;
+4. typography roles: display, heading, body, label, mono, numeric;
+5. spacing, density, sizing, radius, border and stroke scales;
+6. shape language and geometry primitives;
+7. material recipes and shadow/elevation model;
+8. component variants and interaction state recipes;
+9. block and signature composition recipes;
+10. motion durations, easing, transition and ambient policy;
+11. effects allowlist and performance tier;
+12. SFX profile, volume policy and opt-in behavior;
+13. hero, cover, artwork and loading scene references;
+14. responsive adaptations and reduced-motion fallback;
+15. explicit exclusions and anti-patterns.
+
+### 23.1 World identity matrix
+
+| DNA | Geometry | Signature material | Line language | Motion | Sound character |
+|---|---|---|---|---|---|
+| Imperium Lumen | monumental, axial, portal geometry | ivory stone, obsidian, antique metal | architectural axes, measured seams | threshold reveal, slow focus | restrained tonal arrival, soft confirmation |
+| Lunar Chronicles | orbital, circular, precise | lunar glass, silver, deep slate | orbit arcs, phase ticks | orbit focus, constellation trace | delicate signal, quiet observation |
+| ROCKSOUL | cinematic frame, editorial cuts | paper, charcoal, wet reflective surfaces | film marks, chapter rules | cut, dissolve, film advance | tactile click, muted cinematic cue |
+| Nexus Paradox | instrument planes, clipped geometry | graphite, technical glass, signal surfaces | rails, calibration ticks, traces | focus, calibrate, resolve | precise short electronic cues |
+| Riot Anarchy | asymmetry, collage, torn panels | ink, paper, xerox texture | registration offsets, panel gutters | hard cut, stamp, offset | dry print/stamp-like cues |
+| Mycelium | branching, biomorphic, membrane forms | organic translucent layers, mineral surfaces | roots, filaments, growth paths | connection and growth | soft organic tonal cue |
+
+The sound character is a creative target, not permission to imitate a known game's signature sound.
+
+### 23.2 Skin parity contract
+
+The same task has the same semantics and outcome in all six skins. Its appearance, composition, density, navigation metaphor and motion may differ. Skin Laboratory must prove that difference using real world identities, not a generic mark.
+
+## 24. MoonWitness Avatar Studio
+
+Avatar Studio is a first-class identity creation capability. It should support both user-selected imagery and original generated artwork while respecting identity, consent and canon.
+
+### 24.1 Avatar families
+- Portrait: stylized, illustrated, photo-derived only with user permission.
+- Silhouette: anonymous, back-facing, low-detail identity.
+- Sigil: abstract personal mark, non-human symbol or geometric identity.
+- Role avatar: community/crew/team role without impersonating a real person.
+- World frame: skin-specific border, material, badge and crop treatment.
+- Group identity: stacked avatars or shared emblem with accessible participant list.
+
+### 24.2 Generator inputs and outputs
+
+Input schema (conceptual):
+- avatar family;
+- target skin/world;
+- visual style and material;
+- palette role;
+- silhouette/crop and focal point;
+- optional user-provided reference image;
+- content safety constraints;
+- output sizes and transparent-background requirement;
+- provenance and consent record.
+
+Output package:
+- high-resolution master;
+- 1024, 512, 256, 128 and 64 pixel variants as appropriate;
+- square and circular-safe crops;
+- transparent PNG/WebP where required;
+- metadata and alt text;
+- stable asset ID, checksum, generation/edit history and approval state.
+
+### 24.3 Safety and identity
+- Never create or imply an avatar representing ALLAH, a prophet, or a sacred being.
+- Never claim a generated avatar is a verified photograph or real identity.
+- User-provided likeness is processed only for the user's requested purpose and consent.
+- Provide initials/emblem fallback and a way to replace or remove the avatar in the consuming application.
+- Generation happens in an explicit creation workflow, never automatically during profile rendering.
+
+## 25. Brand, logo, icon and vector foundry
+
+### 25.1 Brand architecture
+
+Build identity families for:
+- parent ecosystem brand;
+- each of the six DNA worlds;
+- each application/product where a distinct product identity is approved;
+- MoonWitness universe and its narrative sub-series where canonical.
+
+Each identity family must contain:
+- primary emblem;
+- primary wordmark;
+- horizontal and stacked lockups;
+- compact mark and small-size mark;
+- monochrome positive and inverse;
+- light/dark safe versions;
+- favicon and maskable app icon;
+- social/avatar crop;
+- clear-space, minimum size and placement rules;
+- source master and export variants.
+
+No emblem may be copied across unrelated worlds as a placeholder. A shared parent endorsement is allowed only when explicitly designed as a lockup.
+
+### 25.2 Icon families
+
+- Action icons: edit, delete, open, close, search, filter, sort, copy, share, save, refresh, back, forward.
+- Navigation icons: world, gate, archive, chapter, instrument, network, settings, profile.
+- Status icons: success, warning, danger, info, offline, loading, locked, verified, pending.
+- Data icons: date, time, location, source, attachment, activity, signal.
+- DNA sigils: bespoke marks that identify a world but do not replace semantic action icons.
+
+All icons must have stable names, viewBox, stroke/fill policy, baseline alignment, size scale, accessible treatment and render tests. Third-party icon packages remain encapsulated inside the shared Icon component.
+
+### 25.3 Vector language
+
+Vector primitives include:
+- portal and architectural geometry;
+- orbital arcs, rings and phase marks;
+- film frames, perforations and cut marks;
+- instrument rails, scope reticles and signal traces;
+- collage shapes, panel borders and print-registration marks;
+- organic roots, branches, membranes and node links.
+
+Vector scenes must be responsive, performant, keyboard-independent where decorative, and have static or semantic alternatives where interactive. Avoid unbounded filters, giant path counts and embedded raster blobs.
+
+## 26. Artwork, media and cover foundry
+
+### 26.1 Asset families
+
+1. World hero and establishing scene.
+2. World identity cover.
+3. App hero and route scene.
+4. MoonWitness universe/observatory atlas.
+5. ROCKSOUL chapter and episode cover.
+6. Transmission and message poster.
+7. Lunar archive and observation plate.
+8. Nexus system/instrument scene.
+9. Riot issue, poster, comic and xerox plate.
+10. Mycelium organism, graph and growth scene.
+11. User/community avatar and identity media.
+12. Loading, arrival and transition artwork.
+13. Social/Open Graph and application icon.
+14. Material texture, decal, border and overlay assets.
+
+### 26.2 Artwork brief contract
+
+Every production brief records:
+- asset ID, world, application and intended route;
+- narrative purpose and focal subject;
+- camera/framing, lens language, perspective and scale;
+- composition layers and negative space;
+- lighting direction, color grade and material response;
+- DNA exclusions and sensitive-content constraints;
+- aspect ratios and crop-safe zones;
+- output resolution and delivery formats;
+- title-safe and UI-safe regions;
+- source/provenance/license and approval owner;
+- alt text or decorative classification;
+- fallback and responsive derivatives.
+
+### 26.3 Resolution policy
+
+- Master output: target 2560px or 3840px long edge only where detail and intended display justify it.
+- Responsive derivatives: generate real crops/resizes; do not rely on browser upscaling.
+- 4K is a source/delivery option, not a blanket requirement.
+- AVIF/WebP for photographic/painted art; SVG for clean vector work; PNG only when lossless alpha or compatibility requires it.
+- Do not bake dynamic labels, dates, counters or controls into artwork.
+- Keep image decode, memory and transfer budgets measured on target devices.
+
+## 27. Lines, geometry and graphic grammar
+
+Lines are a first-class art-direction system. They include more than separators:
+- semantic divider and grouping rule;
+- editorial baseline and column rule;
+- architectural axis and threshold seam;
+- orbital ring, trajectory and ephemeris tick;
+- film perforation, frame boundary and edit marker;
+- technical rail, calibration tick, scope grid and signal path;
+- collage edge, print registration and comic gutter;
+- organic branch, root, filament and growth path.
+
+Every line primitive defines stroke width, cap, join, dash, opacity, scaling, responsive behavior, animation policy and accessibility. Motion on lines must indicate progress, traversal or connection—not imply activity when none exists.
+
+## 28. Effects and motion engine
+
+### 28.1 Effect catalogue
+- AtmosphereField;
+- DepthField;
+- ParallaxField;
+- LightSweep;
+- EdgeLight;
+- ReflectionPass;
+- GrainLayer;
+- HalftoneLayer;
+- ChromaticOffset;
+- ScanTrace;
+- RevealMask;
+- FocusBloom (strictly limited);
+- ParticleField (rare, sparse, pausable);
+- PortalTransition;
+- OrbitTransition;
+- FilmCutTransition;
+- CalibrationTransition;
+- PrintStampTransition;
+- GrowthTransition.
+
+Effects are named, composable and scoped. Each declares skin allowlist, intensity, performance tier, reduced-motion fallback and pause behavior.
+
+### 28.2 Motion primitives
+- MotionFrame, Presence, MotionGroup, Stagger, SharedElementTransition;
+- Enter, Exit, Reveal, FocusShift, SelectionTravel, SceneTransition;
+- ScrollReveal only when it does not impair reading or navigation;
+- spring/physics behavior only when it improves tactile feedback and remains interruptible.
+
+### 28.3 Motion governance
+- User input must never wait for decorative animation.
+- No continuous high-cost blur or backdrop-filter animation.
+- No random movement or unbounded particle systems.
+- Honor prefers-reduced-motion; manual ambient toggle cannot override it.
+- Test route interruption, back navigation, focus retention and low-power mode.
+
+## 29. Loading, waiting, progress and transition system
+
+Loading is a family of distinct experiences, not one spinner reused everywhere.
+
+| Pattern | Use | Visual identity |
+|---|---|---|
+| WorldArrival | First entry to a world | world-specific scene reveal |
+| PassageLoader | Route transition | threshold/curtain/cut transition |
+| OrbitLoader | Lunar archive or observation load | orbital progress motif |
+| FilmAdvanceLoader | ROCKSOUL chapter sequence | film-frame advance |
+| CalibrationLoader | Nexus instrument initialization | measured calibration sequence |
+| PrintRevealLoader | Riot content reveal | panel/print registration |
+| GrowthLoader | Mycelium relationship resolution | branching growth |
+| Spinner | Small indeterminate operation | compact accessible motion mark |
+| Skeleton | Known content layout is loading | shape-matched placeholder |
+| Progress / ProgressRing | Measurable determinate work | actual percentage/value |
+| StreamIndicator | Incremental content arrival | subtle live status |
+| OfflineScene | Network unavailable | explicit offline and retry actions |
+
+Rules:
+- Never fabricate progress.
+- Never hold a user behind a cinematic intro when the task can be used immediately.
+- Provide timeout, cancel, retry or fallback where the operation supports it.
+- Announce meaningful loading state accessibly.
+- Spinner has an accessible label and respects reduced motion.
+- Skeletons must match the final content geometry and avoid excessive shimmer.
+- WorldArrival is skippable and does not repeat on every internal navigation.
+
+## 30. Moon UI Sound and SFX foundry
+
+### 30.1 Sound taxonomy
+- Focus: optional focus/hover cue.
+- Action: select, confirm, cancel, open, close.
+- Navigation: enter, exit, transition.
+- State: success, warning, error, unavailable.
+- Narrative: transmission arrival, archive unlock, chapter advance.
+- Ambient: optional world atmosphere, disabled by default.
+
+### 30.2 SFX metadata contract
+
+Every sound records:
+- stable sound ID and semantic event;
+- skin/world profile;
+- source asset and format;
+- duration and loudness target;
+- loop/one-shot behavior;
+- volume ceiling and mix group;
+- mute and preference behavior;
+- provenance/license;
+- fallback/no-audio behavior;
+- accessibility note.
+
+No copyrighted soundtrack, copied game UI sound, or recognizable imitation of a proprietary signature. Sound is off by default, never autoplayed, never the only way to communicate state, and must be stoppable immediately.
+
+## 31. Asset registry, generator and foundry workflow
+
+### 31.1 Typed asset classes
+- brand, logo, emblem, icon, sigil;
+- avatar, profile, group identity;
+- hero, world scene, cover, chapter, transmission, archive plate;
+- texture, material, decal, frame, border, overlay;
+- vector scene, map, graph, diagram;
+- motion, video poster, animation;
+- sound effect and ambient loop;
+- loading, empty, error, offline and success illustration.
+
+### 31.2 Registry metadata
+Every asset has:
+- immutable asset ID and version;
+- world/DNA and application ownership;
+- class, format, MIME type, dimensions, aspect ratio and file size;
+- source master and generated variants;
+- crop/focal point and safe areas;
+- alt text/decorative flag;
+- creator, provenance, license and attribution;
+- creation/modification timestamps;
+- approval and review status;
+- consuming routes and component references;
+- checksum and fallback.
+
+### 31.3 Generator contracts
+A generator is a repeatable authoring workflow, not a magic runtime dependency. Provide:
+- LogoFoundry;
+- IconFoundry;
+- VectorSceneFoundry;
+- AvatarStudio;
+- ArtworkStudio;
+- CoverStudio;
+- SkinComposer;
+- TokenInspector;
+- MotionStudio;
+- SFXStudio;
+- LoadingSceneStudio;
+- AssetInspector.
+
+Each generator has a preview, explicit input contract, constraints, output specification, provenance record, approval step, and export validation. Generative AI may create source candidates; deterministic package code validates, transforms and serves approved outputs. Do not generate artwork on every page render.
+
+## 32. Skin Laboratory and Creative Foundry
+
+The current Skin Laboratory should evolve into a unified **Creative Foundry** with dedicated workbenches:
+
+1. **Skin Lab:** compare all six worlds on the same task and states.
+2. **Component Lab:** inspect every component variant, state and keyboard path.
+3. **Atom Lab:** typography, lines, geometry, surfaces and signal marks.
+4. **Brand Lab:** emblem, logo lockup, favicon and app icon previews.
+5. **Icon Lab:** semantic icon families, sizes, strokes and contrast.
+6. **Avatar Lab:** avatar families, crops, frames, safety and output variants.
+7. **Artwork Lab:** hero, cover, chapter, transmission and spatial artwork.
+8. **Motion Lab:** transitions, timing, interruption and reduced-motion.
+9. **Effects Lab:** depth, atmosphere, grain, parallax and device tiers.
+10. **Sound Lab:** SFX audition, mute, volume, duration and licensing.
+11. **Loading Lab:** world arrival, spinner, skeleton, progress and offline.
+12. **Asset Lab:** metadata, provenance, missing files, variants and duplicates.
+
+The Foundry is a development/design tool. It must not expose unapproved generator controls or internal asset management to public users by accident.
+
+## 33. Package organization target
+
+Preserve current public entrypoints and evolve toward this conceptual structure:
+
+```
+packages/ui/
+  src/
+    atoms/
+    raw/
+    primitives/
+    components/
+    blocks/
+    compositions/
+    templates/
+    skins/
+    tokens/
+    assets/
+      manifest/
+      resolvers/
+      validators/
+    brand/
+      emblems/
+      wordmarks/
+      lockups/
+    icons/
+      semantic/
+      worlds/
+    vectors/
+      geometry/
+      scenes/
+      lines/
+    avatar/
+      contracts/
+      frames/
+      fallbacks/
+    artwork/
+      contracts/
+      covers/
+      scenes/
+    effects/
+    motion/
+    loading/
+    sfx/
+    foundry/
+    lab/
+    lib/
+    theme.css
+    skins.css
+  test/
+    unit/
+    contract/
+    accessibility/
+    assets/
+    visual/
+    performance/
+  README.md
+  BLUEPRINT.md
+```
+
+This is a target vocabulary, not an instruction to move every current file immediately. Avoid disruptive mass relocation. Keep compatibility exports, migrate incrementally, and update import paths only with consumer tests.
+
+## 34. Naming, API and versioning rules
+
+- Public component names are PascalCase; hooks begin with `use`; CSS/data slots are stable and namespaced.
+- Asset IDs are stable, descriptive and independent of file paths.
+- Skin IDs remain the six canonical kebab-case IDs.
+- Generator outputs are immutable versions; never silently overwrite a released identity asset.
+- Public exports are explicit; no deep imports into private implementation paths.
+- Props are semantic and typed; avoid boolean-prop explosions and arbitrary style escape hatches.
+- Use variants for meaningful presentation options, not for arbitrary one-off styling.
+- Breaking API changes require a migration note and consumer verification.
+- Keep runtime asset manifests deterministic and free of filesystem discovery at request time.
+
+## 35. Expanded implementation roadmap
+
+### Wave 0 — Audit and freeze contracts
+- Reconfirm source inventory, exports, consumer imports, DNA assignments and current CI.
+- Approve the expanded taxonomy and mark each item implemented/proposed.
+- Define asset IDs, manifest schema, generator boundaries and ownership.
+- Resolve current duplicate emblem, font, palette and temporary-file defects.
+
+### Wave 1 — Identity and visual atoms
+- Complete six world identity systems and application lockups.
+- Build icon/sigil library and vector line grammar.
+- Implement typography, metadata, status, frame, divider, marker and focus atoms.
+- Build Brand Lab and Atom Lab.
+
+### Wave 2 — Core interaction components
+- Complete action, form, navigation, disclosure, feedback and data primitives.
+- Establish keyboard, screen-reader, touch, reduced-motion and state parity.
+- Build Component Lab and public API docs.
+
+### Wave 3 — Blocks and six world compositions
+- Complete shared task blocks and state scenes.
+- Build at least two high-value signature compositions per world.
+- Build responsive templates and route-state fixtures.
+- Certify all six worlds in Skin Lab.
+
+### Wave 4 — Asset and generator foundries
+- Ship asset manifest, resolver, provenance, licensing and variant pipeline.
+- Build Logo, Icon, Vector, Avatar, Artwork and Cover Foundries.
+- Produce real hero, cover, chapter, transmission, archive and spatial map families.
+- Establish human approval and regeneration workflow.
+
+### Wave 5 — Motion, effects, loading and sound
+- Ship named motion/effect contracts and device-aware tiers.
+- Build seven world-specific loading/arrival identities plus generic spinner/skeleton/progress.
+- Build SFX taxonomy, original library and Sound Lab.
+- Verify reduced-motion, no-audio and low-power fallbacks.
+
+### Wave 6 — Certification and adoption
+- Migrate applications to package-only visual primitives.
+- Remove duplicate app-local visual systems and accidental duplicate assets.
+- Capture desktop/tablet/mobile and reduced-motion screenshots.
+- Run accessibility, performance, asset, contrast, app-build and documentation gates.
+- Publish a truthful completion matrix and changelog.
+
+## 36. Definition of complete — Creative Interface Engine
+
+Moon UI is considered complete only when all of the following are true:
+
+**Identity**
+- Six independent world identities have emblem, wordmark, lockups, app icons and social variants.
+- No accidental duplicate identity asset exists.
+- Every app has an approved brand-to-DNA mapping.
+
+**Atoms and controls**
+- Atomic typography, line, geometry, metadata, status and identity vocabulary is implemented.
+- Required interaction components are accessible and tested.
+- All public exports are documented and stable.
+
+**Compositions**
+- Shared task blocks cover all real app workflows.
+- Each DNA has signature compositions and page templates.
+- Loading, empty, error, offline, permission and success states are complete.
+
+**Media**
+- Artwork, covers, spatial scenes, avatars and icon/vector families have manifests, variants and provenance.
+- The Avatar Studio has explicit consent and safety boundaries.
+- No artwork or asset falsely represents ALLAH or sacred entities.
+
+**Skin and effects**
+- Each skin defines full visual grammar, not only colors.
+- Motion and effects are named, scoped, device-aware and reduced-motion safe.
+- No fake telemetry, random activity or meaningless decoration.
+
+**Audio**
+- Original SFX are optional, licensed, documented and off by default.
+- All information remains available without sound.
+
+**Foundry**
+- Skin, Component, Atom, Brand, Icon, Avatar, Artwork, Motion, Effects, Sound, Loading and Asset Labs exist and are usable by maintainers.
+- Generated outputs pass deterministic validation and explicit approval.
+
+**Quality**
+- Accessibility, visual regression, responsive, performance, contrast and asset-integrity gates pass.
+- Every consuming app builds and uses the shared engine.
+- Documentation status matches actual implementation and verification evidence.
+
+---
+
+## 37. Explicit non-goals
+
+- A single universal component that tries to express every world through dozens of booleans.
+- Six duplicated component libraries.
+- Runtime AI generation for every avatar, icon or artwork request.
+- An asset dump with no provenance, manifest or review.
+- Sound imitation of proprietary games or copyrighted music.
+- 3D/WebGPU for ordinary forms, tables and text.
+- Decorative fake data, telemetry, progress, maps or network graphs.
+- A public asset-generation console exposed without authorization.
+- A new dependency when native browser semantics already solve the task.
+- Moving all package files in one disruptive refactor just to match a proposed folder tree.
+
+**Final doctrine:** Moon UI is a world-building and interface-production engine. Its atoms provide precision; its primitives provide reliable behavior; its components provide semantics; its blocks provide tasks; its compositions provide identity; its skins provide complete worlds; its foundries provide original media; its effects and sound provide atmosphere; and its verification system protects quality. One engine, six worlds, one unmistakable creative language.
