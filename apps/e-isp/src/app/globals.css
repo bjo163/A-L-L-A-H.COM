@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@import "@moonwitness/ui/theme.css";
+@import "@moonwitness/ui/skins.css";
+@import "tw-animate-css";
+
+/* E-ISP keeps its own rhythm; colour, type, radius and shape come from the skin. */
+.esp-shell {
+  --mw-route-gap: clamp(3rem, 7vw, 6rem);
+}
+
+.esp-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mw-card-padding);
+}
+
+.esp-label {
+  display: block;
+  font-size: var(--mw-font-label);
+  letter-spacing: var(--mw-label-tracking);
+  color: var(--mw-muted-text);
+}
+
+/* Public top-of-funnel header */
+.esp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mw-card-padding);
+  flex-wrap: wrap;
+  padding-block: var(--mw-card-padding);
+}
+
+.esp-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.esp-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--mw-card-padding);
+  flex-wrap: wrap;
+}
+
+/* Plan and coverage listings */
+.esp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--mw-card-padding);
+}
+
+.esp-spec {
+  display: flex;
+  gap: var(--mw-card-padding);
+  flex-wrap: wrap;
+}
+
+.esp-spec__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.esp-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+/* How-to-connect flow */
+.esp-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--mw-card-padding);
+}
+
+.esp-step__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Closing band */
+.esp-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mw-card-padding);
+  flex-wrap: wrap;
+}
+
+/* Coverage checker */
+.esp-checker {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: end;
+  max-inline-size: 44rem;
+}
+
+.esp-checker__field {
+  flex: 1 1 18rem;
+}
+
+.esp-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mw-card-padding);
+  flex-wrap: wrap;
+}
+
+.esp-result__place {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.esp-results {
+  margin-block-start: var(--mw-card-padding);
+}
+
+.esp-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .esp-grid,
+  .esp-steps {
+    grid-template-columns: 1fr;
+  }
+}
