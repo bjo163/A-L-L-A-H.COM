@@ -18,7 +18,7 @@
     "id:dev": "pnpm --filter @moonwitness/id dev",
     "id:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/id build",
     "jizz:dev": "pnpm --filter @moonwitness/jizz dev",
-    "jizz:build": "pnpm --filter @moonwitness/jizz build",
+    "jizz:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/jizz build",
     "gate:dev": "pnpm --filter @moonwitness/gate dev",
     "gate:build": "pnpm --filter @moonwitness/types build && pnpm --filter @allah/sdk build && pnpm --filter @moonwitness/gate build",
     "extension:build": "pnpm --filter allah-vscode-extension check-standalone && pnpm --filter allah-vscode-extension build",
