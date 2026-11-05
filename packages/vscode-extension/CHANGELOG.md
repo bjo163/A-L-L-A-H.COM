@@ -14,5 +14,5 @@
 ### Validation
 
 - Extension unit tests, typecheck, manifest checks, standalone checks, and VSIX package inspection pass.
-- Ten extension-host tests pass across no-workspace, single-root, and multi-root profiles.
+- Thirteen extension-host tests pass across no-workspace, single-root, and multi-root profiles.
 - Full manual webview click-through, live Ollama model execution, and persisted timeline recovery remain unverified.

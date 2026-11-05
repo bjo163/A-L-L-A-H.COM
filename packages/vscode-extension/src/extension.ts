@@ -4,6 +4,7 @@ import { MoonWitnessClient } from './client';
 import { PlanTreeDataProvider } from './planTreeProvider';
 import { PlanManager, type PlanItem, type TaskItem, type TaskStatus } from './planManager';
 import { LocalAgentWorkbenchProvider } from './localAgentWorkbench';
+export { LocalAgentWorkbenchProvider };
 
 // Phase 1 Providers
 import { ProviderRegistry } from './providers/ProviderRegistry';

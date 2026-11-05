@@ -103,6 +103,15 @@ The gateway request timeout now remains active until the response body has been 
 | `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
 | `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed on isolated rerun: three launches, ten host tests |
 
+## Edit approval and conflict handling
+
+Extension-host tests run the Workspace Agent's real edit flow against fixture files. An approved proposal updates the in-memory document, rejection leaves it unchanged, and an external modification made while the diff is open causes a failure rather than overwriting that modification.
+
+| Command | Result |
+|---|---|
+| `node --check packages/vscode-extension/test/suite/extension.test.js` | Passed |
+| `$env:VSCODE_EXECUTABLE_PATH='C:\Program Files\Microsoft VS Code\Code.exe'; pnpm --filter allah-vscode-extension test:integration` | Passed: three isolated launches, thirteen host tests |
+
 ## Roadmap claim audit
 
 The P1/P2 checklist now distinguishes tested utilities from shipped workflows. VSC-058, 059, 061, 063-067, and 069-074 remain pending because their helpers are not consumed by a user-facing or runtime workflow. Their unit tests remain useful, but they are not acceptance evidence for product integration. VSC-068 remains complete because workspace diffs and validation commands are approval-gated in the active Workspace Agent flow.

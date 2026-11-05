@@ -22,7 +22,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-014 Test single-root and multi-root workspaces in separate extension-host launches.
 - [x] VSC-015 Test plan Explorer refresh, opening spec/task artifacts, and task progress updates in the host.
 - [x] VSC-016 Test provider setup/discovery/failure/timeout/offline/cancellation. Host acceptance covers SecretStorage setup, Ollama model discovery, unavailable-provider messaging, and no Gateway fallback; unit tests cover body-read timeout, caller cancellation, and malformed success responses.
-- [ ] VSC-017 Test diff review, approval/rejection, conflicts and safe apply.
+- [x] VSC-017 Test diff review, approval/rejection, conflicts and safe apply. Host tests verify approved edits apply, rejected edits remain unchanged, and external edits made during review are not overwritten.
 - [ ] VSC-018 Test validation approval/cancellation and bounded repair.
 - [ ] VSC-019 Test timeline, reload, interruption, explicit resume and replay.
 - [x] VSC-020 Install the VSIX in isolated user-data and extension directories, then verify its installed identifier and version without a monorepo checkout.

@@ -4,6 +4,21 @@ const http = require('node:http');
 const path = require('node:path');
 const vscode = require('vscode');
 
+function createLocalAgentProvider(client) {
+  const values = new Map();
+  const state = {
+    get(key, defaultValue) {
+      return values.has(key) ? values.get(key) : defaultValue;
+    },
+    async update(key, value) {
+      values.set(key, value);
+    },
+  };
+  const Provider = require('../../dist/extension.js').LocalAgentWorkbenchProvider;
+  assert.equal(typeof Provider, 'function');
+  return new Provider({ globalState: state, workspaceState: state }, client);
+}
+
 suite('A-L-L-A-H.COM extension host', () => {
   test('starts with the expected workspace state', () => {
     const expectedRootCount = Number(process.env.ALLAH_EXPECTED_WORKSPACE_ROOTS);
@@ -206,6 +221,125 @@ suite('A-L-L-A-H.COM extension host', () => {
       } finally {
         vscode.window.showWarningMessage = originalWarningMessage;
         await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      }
+    });
+
+    test('applies proposed edits only after approval', async () => {
+      const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const filePath = path.join(root, 'src', 'agent-approval-accepted.ts');
+      const original = 'const version = "before";\n';
+      await fs.writeFile(filePath, original);
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent() {
+          return JSON.stringify({
+            response: 'Update the version.',
+            edits: [{ path: 'src/agent-approval-accepted.ts', oldText: original, newText: 'const version = "proposed";\n' }],
+          });
+        },
+      };
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = async (message) =>
+          message.startsWith('Apply ') ? 'Apply changes' : undefined;
+        const provider = createLocalAgentProvider(client);
+        assert.equal(await provider.run('code', 'Update the version.'), 'completed');
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        assert.equal(document.getText(), 'const version = "proposed";\n');
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        await document.save();
+        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        await fs.rm(filePath, { force: true });
+      }
+    });
+
+    test('rejected edit approval leaves the workspace document unchanged', async () => {
+      const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const filePath = path.join(root, 'src', 'agent-approval-rejected.ts');
+      const original = 'const version = "before";\n';
+      await fs.writeFile(filePath, original);
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent() {
+          return JSON.stringify({
+            response: 'Update the version.',
+            edits: [{ path: 'src/agent-approval-rejected.ts', oldText: original, newText: 'const version = "proposed";\n' }],
+          });
+        },
+      };
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = async () => undefined;
+        const provider = createLocalAgentProvider(client);
+        assert.equal(await provider.run('code', 'Update the version.'), 'blocked');
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        assert.equal(document.getText(), original);
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        await fs.rm(filePath, { force: true });
+      }
+    });
+
+    test('preserves external changes made while an approved diff is open', async () => {
+      const root = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const filePath = path.join(root, 'src', 'agent-approval-conflict.ts');
+      const original = 'const version = "before";\n';
+      const external = 'const version = "external";\n';
+      await fs.writeFile(filePath, original);
+      const originalQuickPick = vscode.window.showQuickPick;
+      const originalWarning = vscode.window.showWarningMessage;
+      const client = {
+        async checkAgentProvider() {
+          return { ok: true, provider: 'gateway', model: 'test-model', models: [], message: 'ready' };
+        },
+        async completeAgent() {
+          return JSON.stringify({
+            response: 'Update the version.',
+            edits: [{ path: 'src/agent-approval-conflict.ts', oldText: original, newText: 'const version = "proposed";\n' }],
+          });
+        },
+      };
+
+      try {
+        vscode.window.showQuickPick = async (items) => items.find((item) => item.value === 'none');
+        vscode.window.showWarningMessage = async (message) => {
+          if (!message.startsWith('Apply ')) return undefined;
+          const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+          const edit = new vscode.WorkspaceEdit();
+          edit.replace(
+            document.uri,
+            new vscode.Range(new vscode.Position(0, 0), document.positionAt(document.getText().length)),
+            external
+          );
+          await vscode.workspace.applyEdit(edit);
+          return 'Apply changes';
+        };
+        const provider = createLocalAgentProvider(client);
+        assert.equal(await provider.run('code', 'Update the version.'), 'failed');
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        assert.equal(document.getText(), external);
+      } finally {
+        vscode.window.showQuickPick = originalQuickPick;
+        vscode.window.showWarningMessage = originalWarning;
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        await document.save();
+        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        await fs.rm(filePath, { force: true });
       }
     });
   }
