@@ -99,7 +99,7 @@ Client badges, hidden navigation, route guards, and visual states are not author
 
 ## 4. Current source baseline
 
-Inspected on `dev` at repository HEAD `7d5711fdbaf757590de5cf823cc33f7acc1d9087`. At verification, `origin/dev` was 57 commits ahead; the current ID implementation changes are uncommitted and are not a production deployment claim.
+Inspected on `dev` at ID implementation commit `d7a57dc`, then synchronized with the 57 upstream commits in merge `23c8eab`. This source baseline is not a production deployment claim.
 - Package: `@moonwitness/id`, ESM.
 - Scripts: `dev` / `start` on port 3003, `build`, `typecheck`, `test`.
 - Dependencies include Next.js 16.4.3, React 19.3.0, Better Auth 1.7.16, `@allah/sdk`, `@moonwitness/types`, `@moonwitness/ui`.

@@ -8,7 +8,7 @@ status: "completed"
 ## Status
 - Completed in the working tree; no production, DNS, proxy, TLS, secret, or database changes.
 - Baseline commit: `7d5711fdbaf757590de5cf823cc33f7acc1d9087` on `dev`.
-- `origin/dev` was 57 commits ahead during verification. Changes remain uncommitted; no final commit SHA exists.
+- At baseline verification, `origin/dev` was 57 commits ahead. The ID implementation was later committed in `d7a57dc` and integrated with upstream in merge `23c8eab`; publication was pending when this report was updated.
 
 ## Evidence by task
 - **BL-001:** Read root `AGENTS.md`, `AUTONOMOUS.md`, `QUALITY.md`, `SECURITY.md`, `BLUEPRINT.md`, `DECISIONS.md`, and the LUNAR CHRONICLES / engine DNA contracts.

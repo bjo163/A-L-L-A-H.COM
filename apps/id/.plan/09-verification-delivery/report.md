@@ -6,12 +6,13 @@ status: "completed"
 # Execution Report — Verification, Documentation and Delivery
 
 ## Status
-Completed in the working tree. No production, DNS, proxy, TLS, secret, database, commit, or push operation occurred.
+Completed and committed. No production, DNS, proxy, TLS, secret, or database changes occurred. The ID implementation is in `d7a57dc`; upstream was integrated in merge `23c8eab`.
 
 ## Baseline and delivery
 - Branch: `dev`; base HEAD `7d5711fdbaf757590de5cf823cc33f7acc1d9087`.
-- `origin/dev` was 57 commits ahead. Worktree contained extensive unrelated tracked/untracked changes before this work; no commit was created to avoid including or staging them.
-- Final commit SHA: none (uncommitted working-tree changes).
+- `origin/dev` was 57 commits ahead at the start of delivery. The merge brought the local branch up to date without rewriting commits.
+- ID implementation commit: `d7a57dc`; upstream sync merge: `23c8eab`.
+- Unrelated tracked/untracked work was kept out of these commits. Push was pending when this report was updated.
 
 ## Evidence by task
 - **VD-001:** Reviewed all plan task/spec/report files and updated every task with source/test evidence.
@@ -45,4 +46,4 @@ Completed in the working tree. No production, DNS, proxy, TLS, secret, database,
 - The full root lint blocker and metadataBase warning are retained as explicit limitations; neither was hidden with a fallback.
 
 ## Completion
-Plan 00–09 is completed with evidence and truthful limits. Delivery is intentionally uncommitted because the shared worktree is dirty and the branch is behind upstream.
+Plan 00–09 is completed with evidence and truthful limits. The implementation and upstream sync are committed; publication status above reflects the time this report was updated.
