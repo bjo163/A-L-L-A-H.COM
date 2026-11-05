@@ -46,7 +46,7 @@ Status: `[ ] pending` · `[~] in progress` · `[x] verified complete` · `[!] bl
 - [x] **MU-0017** Capture baseline asset counts, sizes, duplicate hashes, font presence and SVG validation results.
 - [x] **MU-0018** Capture baseline route/consumer map for GATE, DOCK, ID, HARBOR, HEADQUARTER, MOONSKY and JIZZ.
 - [x] **MU-0019** Verify current six root skin assignments against `DESIGN.md`, DNA docs and actual `SkinRoot`/route scopes; record conflicts without changing them yet.
-- [ ] **MU-0020** Produce a source-backed baseline report distinguishing implemented, tested, visually verified, proposed and blocked.
+- [x] **MU-0020** Produce a source-backed baseline report distinguishing implemented, tested, visually verified, proposed and blocked.
 
 ### P0.2 Existing plan overlap and conflict control
 - [ ] **MU-0021** Inspect `.plans/20261104-2157-six-world-premium-skins/`; verify which tasks are complete from current source and evidence.

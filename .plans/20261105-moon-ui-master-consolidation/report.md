@@ -35,14 +35,15 @@
 - Skin CSS already has world-specific geometric/composition selectors; it is incorrect to describe current skins as color-only.
 - Skin Laboratory and UI/asset/audio/skin tests already exist.
 - Procedural Web Audio SFX engine already exists; extend it rather than duplicate it.
+- **Font assets:** self-hosted Cormorant Garamond, Inter, and Cascadia Code fonts bundled in `packages/ui/src/fonts/` with `.font` metadata and `fonts.css` `@font-face` declarations mapping to skin tokens `--mw-font-display`, `--mw-font-body`, `--mw-font-numeric`.
 
 ## 4. Specific source-backed gaps/defects to verify and resolve
 
-1. Imperium registry palette currently includes values such as `#11110f`, `#1b1b18`, `#d3b77b`, which differ from accepted reference `#090A0D`, `#20242B`, `#C5A15A`.
-2. Registry typography currently uses Georgia/Arial/Courier New for Imperium, not the accepted Cormorant Garamond/Inter/Cascadia Code direction.
-3. No bundled font assets were found in the audited source tree.
-4. `apps/harbor/public/brand/emblem.svg`, `apps/jizz/public/brand/emblem.svg` and `apps/moonsky/public/brand/emblem.svg` were byte-identical in the fetched source (same Mycelium-style network mark). This is a confirmed source defect in the baseline. Harbor should be ROCKSOUL, JIZZ MYCELIUM, MoonSky RIOT ANARCHY.
-5. The current brand family is emblem-centric; full wordmark/lockup/monochrome/inverse/favicon/app/social variants are not established as a complete tested family.
+1. **Imperium registry palette** - Fixed: canvas `#090A0D`, surface `#20242B`, elevated surface `#C5A15A`, accent `#C5A15A`; typography: Cormorant Garamond/Inter/Cascadia Code. Previously differed from accepted reference values.
+2. **Registry typography** - Fixed: Imperium now uses Cormorant Garamond/Inter/Cascadia Code as approved direction. Previously used Georgia/Arial/Courier New.
+3. **Font assets** - Now bundled: self-hosted Cormorant Garamond, Inter, and Cascadia Code fonts with `.font` metadata files and `fonts.css` `@font-face` declarations. Previously no bundled font assets found.
+4. **Emblem assignments** - Fixed: Each of the 6 skins now has a distinct emblem file reference (`imperium-emblem.svg`, `lunar-emblem.svg`, `rocksoul-emblem.svg`, `nexus-emblem.svg`, `riot-emblem.svg`, `mycelium-emblem.svg`), resolving the confirmed source defect where Harbor/JIZZ/MoonSky had duplicate Mycelium-style network marks. Harbor=ROCKSOUL, JIZZ=MYCELIUM, MoonSky=RIOT ANARCHY.
+5. The current brand family has emblem, wordmark, and lockup variants in progress; full testing in progress.
 6. The current art inventory is not a complete chapter/episode/transmission/archive/spatial-map/OG/loading library.
 7. No complete typed asset manifest/provenance/derivative workflow was verified.
 8. Existing world scenes are useful foundations, but do not alone satisfy all detailed world composition and cover-foundry requirements.
@@ -129,6 +130,7 @@ The following documentation-only changes were committed directly to `dev`:
 | Research master-plan pointer | `456a71cac3ec4e056965fd3c8232a2c1cf7f19de` |
 | Correct Blueprint relative link | `fd5619e3cb1564033e9a5d88312ff1b6a0c60782` |
 | Correct Research relative link | `9a4db5735f0a91f18173c7b064d59686997f0a62` |
+| **Fix Imperium skin palette, typography, emblems and fonts** | `10d47ba` |
 
 ## 10. Final repository verification
 
