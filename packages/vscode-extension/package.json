@@ -305,11 +305,6 @@
           "type": "string",
           "default": "http://127.0.0.1:11434",
           "description": "Ollama HTTP endpoint used when agentProvider is ollama."
-        },
-        "allah.apiKey": {
-          "type": "string",
-          "default": "",
-          "deprecationMessage": "Use the MoonWitness: Set API Key command. Credentials are stored in VS Code SecretStorage."
         }
       }
     }

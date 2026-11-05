@@ -42,7 +42,7 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [ ] VSC-030 Verify model discovery and capability metadata.
 - [x] VSC-031 Make provider/model selection explicit and observable. Provider selection is explicit, model readiness is checked before sessions, and fallback is opt-in only.
 - [x] VSC-032 Normalize streaming, timeout, cancellation, retry and errors. HTTP requests have bounded timeout/cancellation and provider failures are surfaced without silent fallback.
-- [ ] VSC-033 Store credentials only in SecretStorage.
+- [x] VSC-033 Store credentials only in SecretStorage. Removed the `allah.apiKey` setting; host acceptance verifies the command-stored key reaches the mock gateway through the SecretStorage-backed client.
 - [ ] VSC-034 Verify full local workflow with network disabled.
 - [x] VSC-035 Verify optional-provider activation and no silent Gateway fallback when configured Ollama is unavailable.
 

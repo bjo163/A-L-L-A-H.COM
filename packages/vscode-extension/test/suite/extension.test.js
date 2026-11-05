@@ -113,6 +113,57 @@ suite('A-L-L-A-H.COM extension host', () => {
       }
     });
 
+    test('stores gateway credentials in SecretStorage and sends them to the configured endpoint', async () => {
+      const extension = vscode.extensions.getExtension('a-l-l-a-h.allah-vscode-extension');
+      const properties = extension.packageJSON.contributes.configuration.properties;
+      assert.equal(properties['allah.apiKey'], undefined);
+
+      const originalInputBox = vscode.window.showInputBox;
+      const originalInformationMessage = vscode.window.showInformationMessage;
+      const configuration = vscode.workspace.getConfiguration('allah');
+      const originalGatewayUrl = configuration.inspect('gatewayUrl')?.globalValue;
+      const originalProvider = configuration.inspect('agentProvider')?.globalValue;
+      const requests = [];
+      const server = http.createServer((request, response) => {
+        requests.push({ path: request.url, key: request.headers['x-virtual-key'] });
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(request.url === '/health'
+          ? { status: 'ok' }
+          : { data: [{ id: 'dx-reasoning' }] }));
+      });
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', resolve);
+      });
+
+      try {
+        const address = server.address();
+        await configuration.update('agentProvider', 'gateway', vscode.ConfigurationTarget.Global);
+        await configuration.update(
+          'gatewayUrl',
+          `http://127.0.0.1:${address.port}`,
+          vscode.ConfigurationTarget.Global
+        );
+        vscode.window.showInputBox = async () => 'host-test-secret';
+        vscode.window.showInformationMessage = async () => undefined;
+        await vscode.commands.executeCommand('allah.setApiKey');
+        assert.equal(configuration.get('apiKey'), undefined);
+
+        await vscode.commands.executeCommand('allah.testConnection');
+        assert.ok(requests.some((request) => request.path === '/health' && request.key === 'host-test-secret'));
+        assert.ok(requests.some((request) => request.path === '/v1/models' && request.key === 'host-test-secret'));
+      } finally {
+        vscode.window.showInputBox = async () => '';
+        vscode.window.showInformationMessage = async () => undefined;
+        await vscode.commands.executeCommand('allah.setApiKey');
+        vscode.window.showInputBox = originalInputBox;
+        vscode.window.showInformationMessage = originalInformationMessage;
+        await configuration.update('gatewayUrl', originalGatewayUrl, vscode.ConfigurationTarget.Global);
+        await configuration.update('agentProvider', originalProvider, vscode.ConfigurationTarget.Global);
+        await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      }
+    });
+
     test('discovers Ollama models and does not fall back when Ollama is unavailable', async () => {
       const requests = [];
       const server = http.createServer((request, response) => {

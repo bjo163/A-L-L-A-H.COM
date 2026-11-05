@@ -61,7 +61,7 @@ Health Dashboard, Provider Configuration, Impact Analyzer, Usage and Budget,
 and Audit Trail and Replay. Their commands focus the corresponding view before
 starting the action.
 
-The `allah.gatewayUrl` and `allah.arsyUrl` settings default to `http://127.0.0.1:5150`. Set `allah.plannerModel` to a gateway model identifier. `allah.apiKey` is optional when the endpoint requires authentication.
+The `allah.gatewayUrl` and `allah.arsyUrl` settings default to `http://127.0.0.1:5150`. Set `allah.plannerModel` to a gateway model identifier. Enter a gateway key with `MoonWitness: Set API Key`; the extension stores it in VS Code SecretStorage.
 
 ## Local agent and safety
 
