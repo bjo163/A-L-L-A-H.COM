@@ -167,14 +167,6 @@ jobs:
           path: ${{ runner.temp }}/gate-timings.jsonl
           if-no-files-found: ignore
           retention-days: 30
-      - name: Verify harbor
-        env:
-          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
-        run: node scripts/run-gate.mjs 'Verify harbor' pnpm harbor:build
-      - name: Verify moonsky
-        env:
-          GATE_TIMINGS_FILE: ${{ runner.temp }}/gate-timings.jsonl
-        run: node scripts/run-gate.mjs 'Verify moonsky' pnpm moonsky:build
 
   build:
     name: Build ${{ matrix.component }}
