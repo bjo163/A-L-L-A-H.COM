@@ -1,7 +1,7 @@
 ---
 title: "Six-world premium visual transformation"
 version: "1.0.0"
-status: in_progress
+status: superseded
 owner: "product-design"
 ---
 
@@ -40,3 +40,16 @@ The approved DNA documents define six distinct worlds, but current runtime proof
 - [ ] Skin Laboratory can exercise every skin with equivalent content and a real interactive task.
 - [ ] Canonical DNA docs accurately state the implementation and verification status.
 - [ ] Browser review covers all six skins at desktop and narrow viewport; any blocked verification is reported.
+
+
+---
+
+## Execution disposition — 2026-11-05
+
+The initial six-world runtime foundation is retained as existing implementation evidence. This plan is no longer an independent execution queue.
+
+- Preserve completed work: six registered skins, initial six vector scenes, SkinScope, first hero recipes, root mapping and initial motion/contrast improvements.
+- Do not rebuild or duplicate these capabilities.
+- Residual fresh verification is tracked by MU-0011–MU-0020 and MU-0901–MU-0929.
+- Further art/composition expansion is tracked by MU-0414–MU-0435 and MU-0601–MU-0617.
+- Continue execution only through `.plans/20261105-moon-ui-master-consolidation/`.
