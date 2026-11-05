@@ -82,10 +82,10 @@ Legend: [ ] pending · [x] verified with evidence · [!] blocked. All tasks star
 - [x] VSC-062 Documentation drift detection and proposed updates. Added metadata-only drift findings with actionable suggestions.
 
 ## P1 — 0.6.0
-- [ ] VSC-063 Define agent roles, tools, inputs, outputs and capabilities.
+- [x] VSC-063 Define agent roles, tools, inputs, outputs and capabilities. Added typed supervisor, researcher, builder, and reviewer definitions with approval requirements.
 - [ ] VSC-064 Add supervisor and bounded delegation.
 - [ ] VSC-065 Add researcher, builder and reviewer roles.
-- [ ] VSC-066 Add inter-agent message schema and trace correlation.
+- [x] VSC-066 Add inter-agent message schema and trace correlation. Messages require IDs, source/target roles, bounded payloads, and correlation IDs.
 - [ ] VSC-067 Add concurrency/resource limits and failure isolation.
 - [ ] VSC-068 Add review checkpoint before consequential actions.
 
