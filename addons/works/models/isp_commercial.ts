@@ -35,7 +35,7 @@ export const IspSubscription = defineModel({
     // column stays an integer id (no constraint added — per-m2o FK enforcement is
     // deliberately deferred), but the relation label lets `expand` traverse it and
     // makes the reference auditable instead of a bare int.
-    customer_id: fields.many2one('res.partner', { label: 'Customer' }),
+    customer_id: fields.many2one('res.partner', { label: 'Customer', deferFk: true }),
     plan_id: fields.many2one('isp.plan', { label: 'Plan' }),
     state: fields.selection(
       { draft: 'Draft', active: 'Active', grace: 'Grace', suspended: 'Suspended', cancelled: 'Cancelled' },

@@ -132,7 +132,7 @@ test('trust boundary', async (t) => {
       method: 'POST',
       url: '/v1/qorpus/ingest',
       headers,
-      payload: { title: 'Runbook', category: 'ops', content: 'The core switch reboot runbook for the POP.' },
+      payload: { title: 'Runbook', category: 'documentation', content: 'The core switch reboot runbook for the POP.' },
     });
     assert.equal(ingest.statusCode, 201, ingest.payload);
 
@@ -140,7 +140,7 @@ test('trust boundary', async (t) => {
       method: 'POST',
       url: '/v1/qorpus/ingest',
       headers,
-      payload: { title: 'Runbook', category: 'ops', content: 'The core switch reboot runbook for the POP.' },
+      payload: { title: 'Runbook', category: 'documentation', content: 'The core switch reboot runbook for the POP.' },
     });
     assert.equal(dupe.statusCode, 200);
     assert.equal(JSON.parse(dupe.payload).data.deduplicated, true);

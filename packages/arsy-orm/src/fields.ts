@@ -41,6 +41,10 @@ export interface FieldDefinition<T = unknown> {
   // record is deleted. Defaults to 'set null' for optional fields, 'restrict'
   // for required fields.
   ondelete?: 'cascade' | 'set null' | 'restrict';
+  // Set true to keep a many2one as an unenforced integer id: the relation label
+  // still drives expand/audit traversal, but no database FK constraint is
+  // created. Used where the reference is deliberately deferred (roadmap T3.5).
+  deferFk?: boolean;
 }
 
 export const fields = {

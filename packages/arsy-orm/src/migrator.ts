@@ -319,6 +319,7 @@ export class SchemaMigrator {
     for (const model of models) {
       for (const [fieldName, fieldDef] of Object.entries(model.fields)) {
         if (fieldDef.type !== 'many2one' || !fieldDef.relation) continue;
+        if (fieldDef.deferFk) continue;
         const targetModel = modelMap.get(fieldDef.relation);
         if (!targetModel) continue;
         if (!isSafeIdentifier(fieldName)) {
