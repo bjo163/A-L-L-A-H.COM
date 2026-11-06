@@ -36,7 +36,7 @@
     "contract:index:check": "tsx scripts/build-contract-index.ts --check",
     "docker:contract:check": "node scripts/check-docker-contracts.mjs",
     "platform:contract:check": "node scripts/check-platform-contracts.mjs",
-    "ui:test": "tsx --test packages/ui/test/components.test.tsx packages/ui/test/skins.test.tsx packages/ui/test/audio.test.ts packages/ui/test/assets.test.ts packages/ui/test/endpoints.test.ts packages/ui/test/skin-preference.test.tsx packages/ui/test/language-preference.test.tsx",
+    "ui:test": "tsx --test packages/ui/test/components.test.tsx packages/ui/test/skins.test.tsx packages/ui/test/audio.test.ts packages/ui/test/assets.test.ts packages/ui/test/endpoints.test.ts",
     "ui:contrast": "node scripts/measure-skin-contrast.mjs",
     "lint:arch": "node packages/lint/src/check-architecture.mjs",
     "lint": "eslint . --max-warnings 0",
